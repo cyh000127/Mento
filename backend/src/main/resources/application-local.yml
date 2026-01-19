@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:mready;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: h2
+    password: h2
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ${REDIS_PASSWORD}
+
+
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        show_sql: true
+        format_sql: true
+        use_sql_comments: true
+        criteria:
+          literal_handling_mode: bind
+        query:
+          in_clause_parameter_padding: true
+        connection:
+          provider_disables_autocommit: true
