@@ -8,13 +8,14 @@ import com.mready.domain.member.entity.Member;
 import com.mready.domain.member.exception.MemberException;
 import com.mready.domain.member.repository.MemberRepository;
 
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
 @Transactional(readOnly = true)
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class MemberQueryService {
 
 	private final MemberRepository memberRepository;

@@ -9,10 +9,11 @@ import com.mready.domain.member.entity.Member;
 import com.mready.domain.member.service.command.MemberCommandService;
 import com.mready.domain.member.service.query.MemberQueryService;
 
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class MemberFacadeService {
 
 	private final MemberCommandService memberCommandService;

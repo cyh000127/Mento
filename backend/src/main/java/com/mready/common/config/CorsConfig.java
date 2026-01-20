@@ -13,7 +13,8 @@ import com.mready.common.constant.FrontDomain;
 
 @Configuration
 public class CorsConfig {
-	private static final List<String> ALLOWED_ORIGINS = List.of(		BackDomain.LOCAL.getUrl(),
+	private static final List<String> ALLOWED_ORIGINS = List.of(
+		BackDomain.LOCAL.getUrl(),
 		FrontDomain.LOCAL.getUrl()
 	);
 

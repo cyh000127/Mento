@@ -1,10 +1,11 @@
 package com.mready.common.constant;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @Getter
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public enum BackDomain {
 
 	LOCAL("http://localhost:8080", "백엔드 로컬 서버"),

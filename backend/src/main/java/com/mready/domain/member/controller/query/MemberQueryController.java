@@ -13,12 +13,13 @@ import com.mready.domain.member.service.MemberFacadeService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Member", description = "회원 관리 API")
 @RestController
 @RequestMapping("/api/members")
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class MemberQueryController {
 
 	private final MemberFacadeService memberFacadeService;
