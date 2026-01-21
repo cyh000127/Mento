@@ -13,6 +13,9 @@ public class MemberConverter {
 		return Member.builder()
 			.name(dto.name())
 			.email(dto.email())
+			.kakaoId("kakao_" + dto.email())
+			.password("password")
+			.role(Member.Role.USER)
 			.build();
 	}
 
@@ -21,23 +24,22 @@ public class MemberConverter {
 			.id(entity.getId())
 			.name(entity.getName())
 			.email(entity.getEmail())
+			.birthDate(entity.getBirthDate())
 			.createdAt(entity.getCreatedAt())
 			.updatedAt(entity.getUpdatedAt())
 			.build();
 	}
 
 	public Member toEntity(final OAuth2Attribute attribute) {
+		String password = String.valueOf(attribute.getKakaoId().hashCode());
+		
 		return Member.builder()
-				.provider(attribute.getProvider())
-				.providerId(attribute.getProviderId())
 				.name(attribute.getName())
 				.email(attribute.getEmail())
-				.nickname(attribute.getNickname())
-				.profileImageUrl(attribute.getProfileUrl())
-				.phoneNumber(attribute.getPhoneNumber())
-				.ageRange(attribute.getAgeRange())
-				.birthday(attribute.getBirthday())
-				.birthYear(attribute.getBirthYear())
+				.kakaoId(attribute.getKakaoId())
+				.password(password)
+				.birthDate(attribute.getBirthDate())
+				.role(Member.Role.USER)
 				.build();
 	}
 }

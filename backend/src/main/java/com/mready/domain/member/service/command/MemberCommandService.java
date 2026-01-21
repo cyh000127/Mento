@@ -33,7 +33,7 @@ public class MemberCommandService {
 
 	public Member create(final Member member) {
 		Member savedMember = memberRepository.save(member);
-		log.info("[Member] OAuth 가입 완료 {id: {}, email: {}, provider: {}}", savedMember.getId(), savedMember.getEmail(), savedMember.getProvider());
+		log.info("[Member] OAuth 가입 완료 {id: {}, email: {}}", savedMember.getId(), savedMember.getEmail());
 		return savedMember;
 	}
 }

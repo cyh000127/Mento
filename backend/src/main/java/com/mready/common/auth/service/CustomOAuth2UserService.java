@@ -18,8 +18,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -39,22 +37,15 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
 		// 회원가입 또는 로그인 처리
 		MemberResDto memberResDto = loginOrRegister(attributes);
-		
-		// Principal(CustomOAuth2User)을 생성하기 위해 Member 엔티티가 필요함.
-		// Facade가 DTO를 반환하므로, ID를 이용해 엔티티를 다시 조회함. (추후 리팩토링 대상)
+
 		Member member = memberRepository.findById(memberResDto.id()).orElseThrow();
 
 		return new CustomOAuth2User(member, attributes.getAttributes());
 	}
 
 
-	public Optional<Member> findByProviderId(final String providerId) {
-		return memberRepository.findByProviderId(providerId);
-	}
-
-
 	public MemberResDto loginOrRegister(final OAuth2Attribute attributes){
-		return findByProviderId(attributes.getProviderId())
+		return memberRepository.findByEmail(attributes.getEmail())
 				.map(MemberConverter::toMemberResDto)
 				.orElseGet(() -> {
 					Member newMember = MemberConverter.toEntity(attributes);

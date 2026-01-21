@@ -24,6 +24,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("JwtTokenProvider 단위 테스트")
 class JwtTokenProviderTest {
 
 	@Mock
@@ -51,7 +52,8 @@ class JwtTokenProviderTest {
 	void 토큰_생성() {
 		// given
 		Member member = Member.builder()
-			.providerId("123456789") // providerId
+			.id(1L)
+			.email("test@example.com") 
 			.build();
 
 		// when
@@ -67,7 +69,10 @@ class JwtTokenProviderTest {
 	@DisplayName("유효한_토큰_검증")
 	void 유효한_토큰_검증() {
 		// given
-		Member member = Member.builder().providerId("123456789").build();
+		Member member = Member.builder()
+		.id(1L)
+		.email("test@example.com")
+		.build();
 		String accessToken = jwtTokenProvider.createToken(member).accessToken();
 
 		// when & then
@@ -80,7 +85,7 @@ class JwtTokenProviderTest {
 	void 만료된_토큰_검증() {
 		// given
 		// 만료 시간을 짧게 설정하여 토큰 생성
-		String expiredToken = createExpiredToken("123456789");
+		String expiredToken = createExpiredToken("1");
 
 		// when & then
 		assertThatThrownBy(() -> jwtTokenProvider.validateToken(expiredToken))
@@ -91,26 +96,26 @@ class JwtTokenProviderTest {
 	@DisplayName("토큰에서_Member_정보_조회")
 	void 토큰에서_Member_정보_조회() {
 		// given
-		String socialId = "123456789";
-		Member member = Member.builder().providerId(socialId).build();
+		Long memberId = 1L;
+		Member member = Member.builder().id(memberId).email("test@example.com").build();
 		String accessToken = jwtTokenProvider.createToken(member).accessToken();
 
-		given(memberRepository.findByProviderId(socialId)).willReturn(Optional.of(member));
+		given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
 
 		// when
 		Optional<Member> result = jwtTokenProvider.getMember(accessToken);
 
 		// then
 		assertThat(result).isPresent();
-		assertThat(result.get().getProviderId()).isEqualTo(socialId);
+		assertThat(result.get().getId()).isEqualTo(memberId);
 	}
 
-	private String createExpiredToken(String socialId) {
+	private String createExpiredToken(String memberId) {
 		Date now = new Date();
 		Date past = new Date(now.getTime() - 1000); // 1초 전 만료
 
 		return Jwts.builder()
-			.subject(socialId)
+			.subject(memberId)
 			.claim("type", "ACCESS_TOKEN")
 			.issuedAt(past)
 			.expiration(past)
