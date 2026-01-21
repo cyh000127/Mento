@@ -2,6 +2,9 @@ package com.mready.domain.member.entity;
 
 import com.mready.common.entity.BaseEntity;
 import jakarta.persistence.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.*;
 
 @Entity
@@ -14,41 +17,32 @@ public class Member extends BaseEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "user_id")
 	private Long id;
-
-	/**
-	 * 현재는 PROVIDER_PROVIDERID로 변환 (ex. KAKAO_13859193)
-	 **/
-	@Column(unique = true)
-	private String providerId;  // OAuth 고유 ID
-
-	@Column(nullable = false)
-	private String provider; // OAuth 가입 서비스 ( KAKAO, NAVER . . . )
-
-	@Column(nullable = false, length = 50)
-	private String name;
 
 	@Column(nullable = false, unique = true, length = 100)
 	private String email;
 
-	@Column(length = 50)
-	private String nickname; // 닉네임
+	@Column(nullable = false, length = 100)
+	private String name;
 
-	@Column(length = 500)
-	private String profileImageUrl; // 프로필 이미지 URL
+	@Column(nullable = false)
+	private String password;
 
+	@Column(nullable = false, length = 100)
+	private String kakaoId;
 
-	@Column(length = 20)
-	private String phoneNumber; // 전화번호
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	@Builder.Default
+	private Role role = Role.USER;
 
-	@Column(length = 10)
-	private String ageRange; // 연령대 (20~29)
+	@Column(name = "birth_date")
+	private LocalDate birthDate;
 
-	@Column(length = 4)
-	private String birthday; // 생일 (MMDD)
+	@Column(name = "deleted_at")
+	private LocalDateTime deletedAt;
 
-	@Column(length = 4)
-	private String birthYear; // 출생연도
 
 	public void updateName(final String name) {
 		this.name = name;
@@ -57,9 +51,10 @@ public class Member extends BaseEntity {
 	public void updateEmail(final String email) {
 		this.email = email;
 	}
+
+    public enum Role {
+        USER, CONSULTANT
+    }
 }
-
-
-
 
 

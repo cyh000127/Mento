@@ -11,7 +11,7 @@ import org.springframework.data.redis.core.TimeToLive;
 public class RefreshToken {
 
     @Id
-    private String socialId;
+    private String memberId;
 
     private String token;
 
@@ -19,8 +19,8 @@ public class RefreshToken {
     private Long expirationTime;
 
     @Builder
-    public RefreshToken(String socialId, String token, Long expirationTime) {
-        this.socialId = socialId;
+    public RefreshToken(String memberId, String token, Long expirationTime) {
+        this.memberId = memberId;
         this.token = token;
         this.expirationTime = expirationTime;
     }

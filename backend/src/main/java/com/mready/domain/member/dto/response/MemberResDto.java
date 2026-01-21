@@ -1,5 +1,6 @@
 package com.mready.domain.member.dto.response;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -17,6 +18,9 @@ public record MemberResDto(
 
 	@Schema(description = "회원 이메일", example = "hong@example.com")
 	String email,
+
+	@Schema(description = "생년월일", example = "1990-01-01")
+    LocalDate birthDate,
 
 	@Schema(description = "생성 시각")
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")

@@ -52,10 +52,10 @@ public class JwtTokenProvider {
 	}
 
 	private String generateToken(final Member member, final String tokenType, final Long expiration) {
-		String socialId = member.getProviderId();
+		String memberId = String.valueOf(member.getId());
 		
 		Claims claims = Jwts.claims()
-			.subject(socialId)
+			.subject(memberId)
 			.add(TYPE, tokenType)
 			.issuedAt(new Date())
 			.expiration(new Date(System.currentTimeMillis() + expiration))
@@ -95,7 +95,7 @@ public class JwtTokenProvider {
 				.getPayload();
 		} catch (ExpiredJwtException _) {
 			throw new BusinessException(ErrorCode.TOKEN_EXPIRED_EXCEPTION);
-		} catch (MalformedJwtException | IllegalArgumentException _) { // e 대신 _ 사용
+		} catch (MalformedJwtException | IllegalArgumentException _) {
 			throw new BusinessException(ErrorCode.INVALID_TOKEN);
 		} catch (SignatureException _) {
 			throw new BusinessException(ErrorCode.INVALID_TOKEN_SIGNATURE);
@@ -108,8 +108,8 @@ public class JwtTokenProvider {
 
 	public Optional<Member> getMember(String token) {
 		Claims claims = getClaims(token);
-		final String socialId = claims.getSubject();
-		return memberRepository.findByProviderId(socialId);
+		final String memberId = claims.getSubject();
+		return memberRepository.findById(Long.valueOf(memberId));
 	}
 
 	// TODO : setBlackList 생성

@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("OAuth2LoginSuccessHandler 단위 테스트")
 class OAuth2LoginSuccessHandlerTest {
 
     @InjectMocks
@@ -58,7 +59,7 @@ class OAuth2LoginSuccessHandlerTest {
 
         given(authentication.getPrincipal()).willReturn(customOAuth2User);
         given(customOAuth2User.getMember()).willReturn(member);
-        given(member.getProviderId()).willReturn("provider-id-123");
+        given(member.getId()).willReturn(1L);
 
         Token token = new Token("access-token", "refresh-token");
         given(jwtTokenProvider.createToken(any(Member.class))).willReturn(token);
