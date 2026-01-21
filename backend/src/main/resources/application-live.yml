@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?rewriteBatchedStatements=true&zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=utf8&autoReconnect=true&useSSL=false&requireSSL=false&connectTimeout=3000&socketTimeout=60000&serverTimezone=Asia/Seoul&sessionVariables=character_set_results=utf8mb4
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?rewriteBatchedStatements=true&zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=utf8&autoReconnect=true&useSSL=false&requireSSL=false&connectTimeout=3000&socketTimeout=60000&serverTimezone=UTC&sessionVariables=character_set_results=utf8mb4
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
@@ -31,3 +31,5 @@ spring:
           in_clause_parameter_padding: true
         connection:
           provider_disables_autocommit: true
+        jdbc:
+          time_zone: UTC

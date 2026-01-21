@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.mready.common.util.TimeUtils;
 
 import lombok.Builder;
 
@@ -29,7 +30,7 @@ public record BaseResponse<T>(
 			.success(true)
 			.data(data)
 			.error(null)
-			.timestamp(LocalDateTime.now())
+			.timestamp(TimeUtils.nowAsLocalDateTime())
 			.build();
 	}
 
@@ -42,7 +43,7 @@ public record BaseResponse<T>(
 			.success(true)
 			.data(data)
 			.error(null)
-			.timestamp(LocalDateTime.now())
+			.timestamp(TimeUtils.nowAsLocalDateTime())
 			.build();
 	}
 
@@ -55,7 +56,7 @@ public record BaseResponse<T>(
 			.success(true)
 			.data(null)
 			.error(null)
-			.timestamp(LocalDateTime.now())
+			.timestamp(TimeUtils.nowAsLocalDateTime())
 			.build();
 	}
 
@@ -68,7 +69,7 @@ public record BaseResponse<T>(
 			.success(false)
 			.data(null)
 			.error(error)
-			.timestamp(LocalDateTime.now())
+			.timestamp(TimeUtils.nowAsLocalDateTime())
 			.build();
 	}
 }
