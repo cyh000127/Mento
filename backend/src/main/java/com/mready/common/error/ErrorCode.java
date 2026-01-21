@@ -28,8 +28,7 @@ public enum ErrorCode {
 	 * Member Error (M-xxx)
 	 */
 	MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "M-001", "회원을 찾을 수 없습니다."),
-	MEMBER_EMAIL_DUPLICATE(HttpStatus.CONFLICT, "M-002", "이미 존재하는 이메일입니다."),
-	;
+	MEMBER_EMAIL_DUPLICATE(HttpStatus.CONFLICT, "M-002", "이미 존재하는 이메일입니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;
