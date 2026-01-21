@@ -1,0 +1,22 @@
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE}
+  web:
+    resources:
+      add-mappings: false
+  jpa:
+    open-in-view: false
+  threads:
+    virtual:
+      enabled: on
+  jmx:
+    enabled: true
+
+springdoc:
+  swagger-ui:
+    display-request-duration: true
+    operations-sorter: alpha
+
+logging:
+  level:
+    org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver: ERROR
