@@ -47,22 +47,22 @@ pipeline {
     stage('Smoke') {
       steps {
         echo "===== SMOKE TEST ====="
-        echo "✅ Webhook/SCM trigger CI test pipeline executed."
+        echo "Webhook/SCM trigger CI test pipeline executed."
       }
     }
   }
 
   post {
     success {
-      echo "✅ SUCCESS"
+      echo "SUCCESS"
       sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
     }
     failure {
-      echo "❌ FAILURE"
+      echo "FAILURE"
       sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
     }
     always {
-      echo "🧾 DONE"
+      echo "DONE"
     }
   }
 }
