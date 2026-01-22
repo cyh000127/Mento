@@ -1,9 +1,11 @@
 package com.mready.common.auth.jwt;
 
-import com.mready.common.auth.constant.AuthConstant;
 import com.mready.common.auth.dto.Token;
+import com.mready.common.auth.principal.AuthenticatedUser;
+import com.mready.common.auth.redis.BlackList;
+import com.mready.common.auth.redis.repository.BlackListRepository;
 import com.mready.common.error.ErrorCode;
-import com.mready.common.error.exception.BusinessException;
+import com.mready.common.error.exception.AuthException;
 import com.mready.domain.member.entity.Member;
 import com.mready.domain.member.repository.MemberRepository;
 import io.jsonwebtoken.*;
@@ -19,6 +21,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Optional;
 
+import static com.mready.common.auth.constant.AuthConstant.*;
+
+
+/**
+ * JWT 토큰 생성 및 검증
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -28,8 +36,13 @@ public class JwtTokenProvider {
 	private static final String TYPE = "type";
 	public static final String BLANK = "";
 
+	private static final String KEY_ID = "id"; 
+	private static final String KEY_NAME = "name";
+	private static final String KEY_EMAIL = "email";
+	private static final String KEY_ROLE = "role";
+
 	private final JwtProperties jwtProperties;
-	// private final BlackListRepository blackListRepository; // Redis 구현 전까지 주석 처리 혹은 추후
+	private final BlackListRepository blackListRepository;
 	private final MemberRepository memberRepository;
 
 	public Token createToken(final Member member) {
@@ -52,11 +65,13 @@ public class JwtTokenProvider {
 	}
 
 	private String generateToken(final Member member, final String tokenType, final Long expiration) {
-		String memberId = String.valueOf(member.getId());
-		
 		Claims claims = Jwts.claims()
-			.subject(memberId)
+			.subject(String.valueOf(member.getId()))
 			.add(TYPE, tokenType)
+			.add(KEY_ID, member.getId())
+			.add(KEY_NAME, member.getName())
+			.add(KEY_EMAIL, member.getEmail())
+			.add(KEY_ROLE, ROLE_USER)
 			.issuedAt(new Date())
 			.expiration(new Date(System.currentTimeMillis() + expiration))
 			.build();
@@ -73,20 +88,22 @@ public class JwtTokenProvider {
 		Claims claims = getClaims(accessToken);
 		validateTokenType(claims, ACCESS_TOKEN);
 
-		//todo : blacklist 검사
+		if (blackListRepository.existsById(accessToken)) {
+			throw new AuthException(ErrorCode.TOKEN_BLACKLISTED_EXCEPTION);
+		}
 	}
 
 	public Optional<String> extractAccessToken(HttpServletRequest request) {
-		return Optional.ofNullable(request.getHeader(AuthConstant.AUTHORIZATION)).filter(
-			accessToken -> accessToken.startsWith(AuthConstant.BEARER)
-		).map(accessToken -> accessToken.replace(AuthConstant.BEARER, BLANK));
+		return Optional.ofNullable(request.getHeader(AUTHORIZATION)).filter(
+			accessToken -> accessToken.startsWith(BEARER)
+		).map(accessToken -> accessToken.replace(BEARER, BLANK));
 	}
 
 	public Optional<String> getType(Claims claims) {
 		return Optional.of(claims.get(TYPE, String.class));
 	}
 
-	private Claims getClaims(final String token) {
+	public Claims getClaims(final String token) {
 		try {
 			return Jwts.parser()
 				.verifyWith(Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8)))
@@ -94,35 +111,68 @@ public class JwtTokenProvider {
 				.parseSignedClaims(token)
 				.getPayload();
 		} catch (ExpiredJwtException _) {
-			throw new BusinessException(ErrorCode.TOKEN_EXPIRED_EXCEPTION);
+			throw new AuthException(ErrorCode.TOKEN_EXPIRED_EXCEPTION);
 		} catch (MalformedJwtException | IllegalArgumentException _) {
-			throw new BusinessException(ErrorCode.INVALID_TOKEN);
+			throw new AuthException(ErrorCode.INVALID_TOKEN);
 		} catch (SignatureException _) {
-			throw new BusinessException(ErrorCode.INVALID_TOKEN_SIGNATURE);
+			throw new AuthException(ErrorCode.INVALID_TOKEN_SIGNATURE);
 		} catch (UnsupportedJwtException _) {
-			throw new BusinessException(ErrorCode.INVALID_TOKEN_TYPE);
+			throw new AuthException(ErrorCode.INVALID_TOKEN_TYPE);
 		} catch (Exception _) {
-			throw new BusinessException(ErrorCode.TOKEN_PROCESSING_ERROR);
+			throw new AuthException(ErrorCode.TOKEN_PROCESSING_ERROR);
 		}
 	}
 
 	public Optional<Member> getMember(String token) {
 		Claims claims = getClaims(token);
-		final String memberId = claims.getSubject();
-		return memberRepository.findById(Long.valueOf(memberId));
+		final String id = claims.getSubject();
+		return memberRepository.findById(Long.valueOf(id));
+	}
+	
+	public void setBlackList(final String token) {
+		Long expiration = getRemainingTime(token);
+		if (expiration > 0) {
+			BlackList blackList = BlackList.builder()
+					.id(token)
+					.expirationTime(expiration / 1000)
+					.build();
+			blackListRepository.save(blackList);
+		}
 	}
 
-	// TODO : setBlackList 생성
+	public AuthenticatedUser getAuthenticatedUser(final String accessToken) {
+		Claims claims = getClaims(accessToken);
+		validateTokenType(claims, ACCESS_TOKEN);
+
+		String id = claims.get(KEY_ID, Integer.class) != null ? String.valueOf(claims.get(KEY_ID)) : claims.getSubject();
+		String name = claims.get(KEY_NAME, String.class);
+		String email = claims.get(KEY_EMAIL, String.class);
+		String role = claims.get(KEY_ROLE, String.class);
+
+		return AuthenticatedUser.builder()
+				.id(Long.valueOf(id))
+				.name(name != null ? name : "UNKNOWN")
+				.email(email != null ? email : "UNKNOWN")
+				.role(role)
+				.attributes(null)
+				.build();
+	}
 	
+	public Long getRemainingTime(String token) {
+		Claims claims = getClaims(token);
+		Date expiration = claims.getExpiration();
+		return expiration.getTime() - System.currentTimeMillis();
+	}
+
 	private void validateTokenType(Claims claims, String tokenType) {
 		getType(claims)
 			.filter(type -> type.equals(tokenType))
-			.orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN_TYPE));
+			.orElseThrow(() -> new AuthException(ErrorCode.INVALID_TOKEN_TYPE));
 	}
 
 	private void validateUndeformedToken(String accessToken) {
 		if (accessToken == null || accessToken.isEmpty()) {
-			throw new BusinessException(ErrorCode.MALFORMED_TOKEN_EXCEPTION);
+			throw new AuthException(ErrorCode.MALFORMED_TOKEN_EXCEPTION);
 		}
 	}
 }

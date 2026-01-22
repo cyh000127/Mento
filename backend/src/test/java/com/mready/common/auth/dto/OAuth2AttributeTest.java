@@ -19,7 +19,7 @@ class OAuth2AttributeTest {
 		Map<String, Object> attributes = new HashMap<>();
 		Map<String, Object> kakaoAccount = new HashMap<>();
 
-		attributes.put("id", 123456789L); // Long type id
+		attributes.put("id", 123456789L);
 
 		kakaoAccount.put("email", "gildong@example.com");
 		kakaoAccount.put("name", "홍길동");

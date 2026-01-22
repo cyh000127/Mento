@@ -12,6 +12,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ * 카카오 로그인
+ **/
 @Getter
 @RequiredArgsConstructor
 public class CustomOAuth2User implements OAuth2User {

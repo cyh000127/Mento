@@ -1,5 +1,9 @@
 package com.mready.common.config;
 
+import com.mready.common.auth.handler.OAuth2LoginSuccessHandler;
+import com.mready.common.auth.jwt.JwtAuthenticationFilter;
+import com.mready.common.auth.jwt.JwtExceptionFilter;
+import com.mready.common.auth.service.CustomOAuth2UserService;
 import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,7 +27,10 @@ public class SecurityConfig {
 		"/swagger-ui/**",
 		"/v3/api-docs/**",
 		"/error",
-		"/"
+		"/",
+
+		//OAuth2
+		"/login/oauth/**"
 	};
 	private final CorsConfig corsFilter;
 
@@ -31,17 +38,36 @@ public class SecurityConfig {
 		session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 	}
 
+	private final CorsConfig corsFilter;
+	private final CustomOAuth2UserService customOAuth2UserService;
+	private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+	
+	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+	private final JwtExceptionFilter jwtExceptionFilter;
+
+	private static void createSessionPolicy(SessionManagementConfigurer<HttpSecurity> session) {
+		session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+	}
+
 	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http) {
+	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http
 			.csrf(AbstractHttpConfigurer::disable)
 			.httpBasic(AbstractHttpConfigurer::disable)
 			.formLogin(AbstractHttpConfigurer::disable)
 			.logout(AbstractHttpConfigurer::disable)
 			.sessionManagement(SecurityConfig::createSessionPolicy)
-			.addFilterBefore(corsFilter.corsFilter(), UsernamePasswordAuthenticationFilter.class);
+			.addFilterBefore(corsFilter.corsFilter(), UsernamePasswordAuthenticationFilter.class)
+			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+			.addFilterBefore(jwtExceptionFilter, JwtAuthenticationFilter.class);
 
 		http
+			.oauth2Login(oauth2 -> oauth2
+				.userInfoEndpoint(userInfo -> userInfo
+					.userService(customOAuth2UserService)
+				)
+				.successHandler(oAuth2LoginSuccessHandler)
+			)
 			.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
 				.requestMatchers(WHITELIST).permitAll()

@@ -1,6 +1,6 @@
 package com.mready.common.auth.jwt;
 
-import com.mready.common.auth.principal.CustomOAuth2User;
+import com.mready.common.auth.principal.AuthenticatedUser;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,15 +39,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	}
 
 	private void setAuthentication(String accessToken) {
-		// 토큰에서 사용자 정보 추출하여 SecurityContext에 설정
-		jwtTokenProvider.getMember(accessToken).ifPresent(member -> {
-			CustomOAuth2User customOAuth2User = new CustomOAuth2User(member);
-			Authentication authentication = new UsernamePasswordAuthenticationToken(
-				customOAuth2User,
-				null,
-				customOAuth2User.getAuthorities()
-			);
-			SecurityContextHolder.getContext().setAuthentication(authentication);
-		});
+		AuthenticatedUser user = jwtTokenProvider.getAuthenticatedUser(accessToken);
+		Authentication authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+		SecurityContextHolder.getContext().setAuthentication(authentication);
 	}
 }

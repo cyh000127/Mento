@@ -8,5 +8,6 @@ public class AuthConstant {
 
 	public static final String AUTHORIZATION = "Authorization";
 	public static final String BEARER = "Bearer ";
-	public static final String ROLE_USER = "ROLE_USER";
+	public static final String ROLE_USER = "USER";
+	public static final String REFRESH_TOKEN = "refreshToken";
 }
