@@ -41,6 +41,7 @@ public enum ErrorCode {
 	TOKEN_BLACKLISTED_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-006", "블랙리스트에 등록된 토큰입니다."),
 	MALFORMED_TOKEN_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-007", "토큰 형식이 올바르지 않습니다."),
 	AUTHENTICATION_PRINCIPAL_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "A-008", "인증 주체 정보를 찾을 수 없습니다."),
+	TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "A-009", "토큰을 찾을 수 없습니다."),
 	;
 
 	private final HttpStatus httpStatus;

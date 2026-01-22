@@ -1,4 +1,4 @@
-package com.mready.common.auth.entity;
+package com.mready.common.auth.redis;
 
 import lombok.Builder;
 import lombok.Getter;

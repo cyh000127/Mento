@@ -2,11 +2,11 @@ package com.mready.common.auth.handler;
 
 import com.mready.common.auth.constant.AuthConstant;
 import com.mready.common.auth.dto.Token;
-import com.mready.common.auth.entity.RefreshToken;
+import com.mready.common.auth.redis.RefreshToken;
 import com.mready.common.auth.jwt.JwtProperties;
 import com.mready.common.auth.jwt.JwtTokenProvider;
 import com.mready.common.auth.principal.CustomOAuth2User;
-import com.mready.common.auth.repository.RefreshTokenRepository;
+import com.mready.common.auth.redis.repository.RefreshTokenRepository;
 import com.mready.common.constant.FrontDomain;
 import com.mready.common.error.ErrorCode;
 import com.mready.common.error.exception.BusinessException;
@@ -49,7 +49,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
 		Token token = jwtTokenProvider.createToken(user.getMember());
 
-		// Refresh Token 쿠키 설정 (CookieUtil 사용)
+		// Refresh Token 쿠키 설정
 		CookieUtil.addCookie(response, "refreshToken", token.refreshToken(),
 				(int) (jwtProperties.refreshTokenExpiration() / 1000));
 
@@ -65,7 +65,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 		// Access Token 헤더 설정
 		response.setHeader(AuthConstant.AUTHORIZATION, AuthConstant.BEARER + token.accessToken());
 
-		// 리다이렉트 (Access Token을 쿼리 파라미터로 포함)
+		// Access Token을 쿼리 파라미터로 포함
 		String targetUrl = UriComponentsBuilder.fromUriString(FrontDomain.LOCAL.getUrl() + "/login/oauth2/callback")
 				.queryParam("accessToken", token.accessToken())
 				.build().toUriString();

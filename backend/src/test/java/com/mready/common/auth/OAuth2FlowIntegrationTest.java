@@ -3,10 +3,10 @@ package com.mready.common.auth;
 import com.mready.common.auth.constant.AuthConstant;
 import com.mready.common.auth.dto.OAuth2Attribute;
 import com.mready.domain.member.dto.response.MemberResDto;
-import com.mready.common.auth.entity.RefreshToken;
+import com.mready.common.auth.redis.RefreshToken;
 import com.mready.common.auth.handler.OAuth2LoginSuccessHandler;
 import com.mready.common.auth.principal.CustomOAuth2User;
-import com.mready.common.auth.repository.RefreshTokenRepository;
+import com.mready.common.auth.redis.repository.RefreshTokenRepository;
 import com.mready.common.auth.service.CustomOAuth2UserService;
 import com.mready.domain.member.entity.Member;
 import com.mready.domain.member.repository.MemberRepository;
@@ -20,6 +20,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.mockito.ArgumentCaptor;
@@ -33,12 +34,11 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ActiveProfiles("local")
 @SpringBootTest(properties = {
-    "spring.data.redis.host=localhost",
-    "spring.data.redis.port=6379",
-    "jwt.secret=secretKeySECRETKEYsecretKeySECRETKEYsecretKeySECRETKEY",
-    "jwt.access-token-expiration=3600000",
-    "jwt.refresh-token-expiration=86400000"
+        "jwt.secret=thisIsASampleSecretKeyForTest123456789012345678901234567890",
+        "jwt.access-token-expiration=3600000",
+        "jwt.refresh-token-expiration=86400000"
 })
 @Transactional
 @DisplayName("회원가입부터_로그인_플로우_통합테스트")
@@ -60,14 +60,11 @@ class OAuth2FlowIntegrationTest {
     @Test
     @DisplayName("OAuth2_로그인_흐름_통합_테스트")
     void OAuth2_로그인_흐름_통합_테스트() throws Exception {
-        // Kakao 사용자 정보 모킹
-        Map<String, Object> attributes = new HashMap<>();
+        Map<String, Object>  attributes = new HashMap<>();
         Map<String, Object> kakaoAccount = new HashMap<>();
-        
-        // Kakao ID
+
         attributes.put("id", 123456789L);
-        
-        // 프로필 정보
+
         kakaoAccount.put("email", "flowtest@example.com");
         kakaoAccount.put("name", "Flow Tester");
         kakaoAccount.put("birthyear", "1990");
@@ -77,7 +74,7 @@ class OAuth2FlowIntegrationTest {
         // OAuth2Attribute 생성
         OAuth2Attribute oAuth2Attribute = OAuth2Attribute.of(OAuth2Attribute.KAKAO, attributes);
 
-        // 신규 회원 가입 (loginOrRegister)
+        // 신규 회원 가입
         MemberResDto memberResDto = customOAuth2UserService.loginOrRegister(oAuth2Attribute);
 
         // 회원 생성 검증
@@ -106,17 +103,17 @@ class OAuth2FlowIntegrationTest {
         oAuth2LoginSuccessHandler.onAuthenticationSuccess(request, response, authentication);
 
         // 토큰 검증
-        // Refresh Token (쿠키)
+        // Refresh Token
         Cookie refreshTokenCookie = response.getCookie("refreshToken");
         assertThat(refreshTokenCookie).isNotNull();
         String refreshTokenValue = refreshTokenCookie.getValue();
         assertThat(refreshTokenValue).isNotEmpty();
 
-        // Redis에 저장된 Refresh Token (Mock)
+        // Refresh Token
         ArgumentCaptor<RefreshToken> captor = ArgumentCaptor.forClass(RefreshToken.class);
         Mockito.verify(refreshTokenRepository, Mockito.atLeastOnce()).save(captor.capture());
         
-        RefreshToken savedToken = captor.getValue();
+        RefreshToken savedToken = captor.getAllValues().get(0);
         assertThat(savedToken.getMemberId()).isEqualTo(String.valueOf(member.getId()));
         assertThat(savedToken.getToken()).isEqualTo(refreshTokenValue);
 
@@ -126,8 +123,13 @@ class OAuth2FlowIntegrationTest {
                 .isNotNull()
                 .startsWith(AuthConstant.BEARER);
 
+        // 토큰 중복 방지를 위한 1초 대기
+        Thread.sleep(1000);
+
+        // 이전 호출 기록 초기화 (중요)
+        Mockito.clearInvocations(refreshTokenRepository);
+
         // 재로그인
-        // 서비스 재호출
         MemberResDto loginMemberResDto = customOAuth2UserService.loginOrRegister(oAuth2Attribute);
         
         // Member ID 동일 여부 확인
@@ -142,9 +144,12 @@ class OAuth2FlowIntegrationTest {
         assertThat(newRefreshTokenCookie).isNotNull();
         String newRefreshTokenValue = newRefreshTokenCookie.getValue();
         
-        // 새로운 토큰으로 다시 저장되었는지 검증
-        Mockito.verify(refreshTokenRepository, Mockito.atLeast(2)).save(captor.capture());
-        RefreshToken latestsavedToken = captor.getValue();
+        // 새로운 토큰으로 다시 저장되었는지 검증 (초기화했으므로 1번만 호출되어야 함)
+        ArgumentCaptor<RefreshToken> newCaptor = ArgumentCaptor.forClass(RefreshToken.class);
+        Mockito.verify(refreshTokenRepository, Mockito.times(1)).save(newCaptor.capture());
+        
+        RefreshToken latestsavedToken = newCaptor.getValue();
         assertThat(latestsavedToken.getToken()).isEqualTo(newRefreshTokenValue);
+        assertThat(latestsavedToken.getToken()).isNotEqualTo(savedToken.getToken());
     }
 }

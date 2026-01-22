@@ -2,11 +2,11 @@ package com.mready.common.auth.handler;
 
 import com.mready.common.auth.constant.AuthConstant;
 import com.mready.common.auth.dto.Token;
-import com.mready.common.auth.entity.RefreshToken;
+import com.mready.common.auth.redis.RefreshToken;
 import com.mready.common.auth.jwt.JwtProperties;
 import com.mready.common.auth.jwt.JwtTokenProvider;
 import com.mready.common.auth.principal.CustomOAuth2User;
-import com.mready.common.auth.repository.RefreshTokenRepository;
+import com.mready.common.auth.redis.repository.RefreshTokenRepository;
 import com.mready.common.constant.FrontDomain;
 import com.mready.domain.member.entity.Member;
 import jakarta.servlet.http.Cookie;
