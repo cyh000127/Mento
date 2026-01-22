@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.0.1'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'checkstyle'
 }
 
 group = 'com'
@@ -62,4 +63,29 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+// plain jar 파일 생성되지 않도록
+jar {
+    enabled = false
+}
+
+checkstyle {
+    toolVersion = '10.12.4'
+    configFile = file('config/checkstyle/mready-checkstyle-rules.xml')
+    configProperties = [
+            'suppressionFile': 'config/checkstyle/mready-checkstyle-suppressions.xml'
+    ]
+    sourceSets = [sourceSets.main]
+    ignoreFailures = false
+    maxWarnings = 0
+    maxErrors = 0
+}
+
+checkstyleMain {
+    source = 'src/main/java'
+}
+
+checkstyleTest {
+    source = 'src/test/java'
 }

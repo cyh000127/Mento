@@ -19,14 +19,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class SecurityConfig {
 
-	private final CorsConfig corsFilter;
-
 	private static final String[] WHITELIST = {
 		"/swagger-ui/**",
 		"/v3/api-docs/**",
 		"/error",
 		"/"
 	};
+	private final CorsConfig corsFilter;
+
+	private static void createSessionPolicy(SessionManagementConfigurer<HttpSecurity> session) {
+		session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+	}
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) {
@@ -42,13 +45,8 @@ public class SecurityConfig {
 			.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
 				.requestMatchers(WHITELIST).permitAll()
-				.anyRequest().permitAll()
-			);
+				.anyRequest().permitAll());
 
 		return http.build();
-	}
-
-	private static void createSessionPolicy(SessionManagementConfigurer<HttpSecurity> session) {
-		session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 	}
 }
