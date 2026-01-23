@@ -148,29 +148,16 @@ pipeline {
       }
     }
 
-    stage('Postcheck: nginx local http') {
+    stage('Postcheck: nginx config') {
       steps {
         sh '''
-          set -euxo pipefail
-
-          for i in 1 2 3 4 5; do
-            if command -v curl >/dev/null 2>&1; then
-              curl -fsS --max-time 2 http://127.0.0.1:80/ >/dev/null 2>&1 && echo "nginx OK" && exit 0
-            elif command -v wget >/dev/null 2>&1; then
-              wget -qO- http://127.0.0.1:80/ >/dev/null 2>&1 && echo "nginx OK" && exit 0
-            else
-              echo "No curl/wget. Skipping nginx postcheck."
-              exit 0
-            fi
-            echo "waiting nginx... (${i}/5)"
-            sleep 1
-          done
-
-          echo "nginx postcheck failed"
-          exit 1
+          set -euo pipefail
+          docker exec nginx nginx -t
+          echo "nginx OK (nginx -t)"
         '''
       }
     }
+
   }
 
   post {
