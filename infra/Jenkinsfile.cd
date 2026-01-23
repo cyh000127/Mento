@@ -1,0 +1,265 @@
+pipeline {
+  /*
+   * CD Pipeline (Infra)
+   * - 체크아웃(ref 검증 포함) → (옵션) pull → compose up -d → 헬스체크
+   * - IMPORTANT: 배포는 배포 전용 노드에서만 실행되도록 라벨 고정
+   */
+
+  agent { label 'cd-node' }
+
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+    ansiColor('xterm')
+  }
+
+  parameters {
+    string(name: 'DEPLOY_REF', defaultValue: 'develop-infra', description: '배포할 Git ref(branch/tag). 예: develop-infra or v1.2.3')
+    string(name: 'DEPLOY_DIR', defaultValue: '/opt/S14P11A704', description: '배포 서버 내 배포 디렉토리(고정 경로 권장)')
+    string(name: 'COMPOSE_FILE', defaultValue: 'deploy/infra/docker-compose.yml', description: 'docker-compose.yml 경로 (DEPLOY_DIR 기준 상대)')
+    string(name: 'COMPOSE_PROJECT', defaultValue: 's14-infra', description: 'docker compose project name')
+    string(name: 'HEALTHCHECK_URL', defaultValue: 'http://127.0.0.1:80/', description: '배포 후 헬스체크 URL (서버 내부 접근)')
+
+    booleanParam(name: 'FORCE_RECREATE', defaultValue: false, description: 'true면 컨테이너 재생성(--force-recreate)')
+    booleanParam(name: 'PULL_IMAGES', defaultValue: true, description: 'true면 배포 전 docker compose pull 수행')
+  }
+
+  environment {
+    COMPOSE_DOCKER_CLI_BUILD = '1'
+    DOCKER_BUILDKIT = '1'
+  }
+
+  stages {
+
+    stage('Context') {
+      steps {
+        echo "===== CD CONTEXT ====="
+        sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
+        echo "JOB_NAME=${env.JOB_NAME}"
+        echo "BUILD_NUMBER=${env.BUILD_NUMBER}"
+        echo "BUILD_URL=${env.BUILD_URL}"
+        echo "DEPLOY_REF=${params.DEPLOY_REF}"
+        echo "DEPLOY_DIR=${params.DEPLOY_DIR}"
+        echo "COMPOSE_FILE=${params.COMPOSE_FILE}"
+        echo "COMPOSE_PROJECT=${params.COMPOSE_PROJECT}"
+        echo "HEALTHCHECK_URL=${params.HEALTHCHECK_URL}"
+        sh 'whoami && pwd'
+        sh 'docker --version'
+        sh 'docker compose version'
+      }
+    }
+
+    stage('Prepare deploy dir') {
+      steps {
+        sh '''
+          set -euo pipefail
+          mkdir -p "${DEPLOY_DIR}"
+          ls -al "${DEPLOY_DIR}"
+        '''
+      }
+    }
+
+    stage('Checkout (with ref verification)') {
+      steps {
+        dir("${params.DEPLOY_DIR}") {
+          withCredentials([usernamePassword(credentialsId: 'Gitlab_PAT', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PAT')]) {
+            sh '''
+              set -euo pipefail
+
+              REPO_URL="https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git"
+
+              if [ ! -d ".git" ]; then
+                echo "Repo not found. Cloning into ${DEPLOY_DIR} ..."
+                git clone "$REPO_URL" .
+              else
+                echo "Repo exists. Fetching latest..."
+              fi
+
+              # 임시 credential store (clone/fetch 용)
+              git config credential.helper "store --file=.git-credentials"
+              printf "https://%s:%s@lab.ssafy.com\n" "$GIT_USER" "$GIT_PAT" > .git-credentials
+
+              git remote set-url origin "$REPO_URL"
+              git fetch --all --prune
+
+              # --- remote ref 검증 (branch/tag 모두 허용) ---
+              ORIGIN_URL="$(git remote get-url origin)"
+              REF="${DEPLOY_REF}"
+
+              if git ls-remote --exit-code --heads "$ORIGIN_URL" "$REF" >/dev/null 2>&1; then
+                echo "Remote branch found: $REF"
+                REF_TYPE="branch"
+              elif git ls-remote --exit-code --tags "$ORIGIN_URL" "$REF" >/dev/null 2>&1; then
+                echo "Remote tag found: $REF"
+                REF_TYPE="tag"
+              else
+                echo "Remote ref not found (branch/tag): $REF"
+                exit 1
+              fi
+
+              # --- checkout ---
+              if [ "$REF_TYPE" = "branch" ]; then
+                git checkout -f "$REF"
+                git reset --hard "origin/$REF"
+              else
+                # tag 배포: tag로 checkout (detached HEAD)
+                git checkout -f "tags/$REF"
+              fi
+
+              echo "===== CURRENT REVISION ====="
+              git rev-parse HEAD
+              git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso || true
+
+              # cleanup credential file
+              rm -f .git-credentials
+              git config --unset credential.helper || true
+            '''
+          }
+        }
+      }
+    }
+
+    stage('Precheck files') {
+      steps {
+        dir("${params.DEPLOY_DIR}") {
+          sh '''
+            set -euo pipefail
+            if [ ! -f "${COMPOSE_FILE}" ]; then
+              echo "compose file not found: ${DEPLOY_DIR}/${COMPOSE_FILE}"
+              exit 1
+            fi
+            echo "===== COMPOSE FILE ====="
+            ls -al "${COMPOSE_FILE}"
+          '''
+        }
+      }
+    }
+
+    stage('Snapshot (rollback point)') {
+      steps {
+        dir("${params.DEPLOY_DIR}") {
+          sh '''
+            set -euo pipefail
+
+            SNAP_DIR=".deploy_snapshots"
+            mkdir -p "$SNAP_DIR"
+
+            TS="$(date +%Y%m%d_%H%M%S)"
+            SNAP_FILE="$SNAP_DIR/compose_${COMPOSE_PROJECT}_${TS}.yml"
+
+            cp -f "${COMPOSE_FILE}" "$SNAP_FILE"
+            echo "Snapshot saved: $SNAP_FILE"
+
+            # 최근 10개만 유지
+            ls -1t "$SNAP_DIR"/compose_"${COMPOSE_PROJECT}"_*.yml 2>/dev/null | tail -n +11 | xargs -r rm -f
+          '''
+        }
+      }
+    }
+
+    stage('Compose Pull') {
+      when { expression { return params.PULL_IMAGES } }
+      steps {
+        dir("${params.DEPLOY_DIR}") {
+          sh '''
+            set -euo pipefail
+            docker compose -p "${COMPOSE_PROJECT}" -f "${COMPOSE_FILE}" pull
+          '''
+        }
+      }
+    }
+
+    stage('Deploy (compose up)') {
+      steps {
+        dir("${params.DEPLOY_DIR}") {
+          sh '''
+            set -euo pipefail
+
+            EXTRA=""
+            if [ "${FORCE_RECREATE}" = "true" ]; then
+              EXTRA="--force-recreate"
+            fi
+
+            docker compose -p "${COMPOSE_PROJECT}" -f "${COMPOSE_FILE}" up -d $EXTRA
+
+            echo "===== RUNNING CONTAINERS ====="
+            docker compose -p "${COMPOSE_PROJECT}" -f "${COMPOSE_FILE}" ps
+          '''
+        }
+      }
+    }
+
+    stage('Healthcheck (strict)') {
+      steps {
+        dir("${params.DEPLOY_DIR}") {
+          sh '''
+            set -euo pipefail
+
+            echo "===== HEALTHCHECK ====="
+            URL="${HEALTHCHECK_URL}"
+
+            # strict: curl/wget 없으면 실패 처리 (헬스체크를 "건너뛰지" 않음)
+            if command -v curl >/dev/null 2>&1; then
+              HC_CMD="curl -sS --max-time 2 -I"
+            elif command -v wget >/dev/null 2>&1; then
+              # wget은 -I가 없어서 헤더만 보려면 -S -O-로 처리
+              HC_CMD="sh -c 'wget -S -O- 2>&1 | head -n 20'"
+            else
+              echo "No curl/wget on node. Install one of them to run healthcheck."
+              exit 1
+            fi
+
+            for i in 1 2 3 4 5 6 7 8 9 10; do
+              sleep 2
+
+              if command -v curl >/dev/null 2>&1; then
+                if curl -sS --max-time 2 -I "$URL" | grep -q "HTTP/"; then
+                  echo "Healthcheck OK (curl): $URL"
+                  exit 0
+                fi
+              else
+                # wget 방식
+                if wget -S -O- "$URL" 2>&1 | grep -q "HTTP/"; then
+                  echo "Healthcheck OK (wget): $URL"
+                  exit 0
+                fi
+              fi
+
+              echo "waiting for service... ($i/10)"
+            done
+
+            echo "Healthcheck FAILED: $URL"
+            exit 1
+          '''
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "DEPLOY SUCCESS"
+    }
+
+    failure {
+      echo "DEPLOY FAILURE - collecting logs"
+      script {
+        try {
+          sh """
+            set +e
+            cd '${params.DEPLOY_DIR}'
+            docker compose -p '${params.COMPOSE_PROJECT}' -f '${params.COMPOSE_FILE}' ps || true
+            docker compose -p '${params.COMPOSE_PROJECT}' -f '${params.COMPOSE_FILE}' logs --tail=200 || true
+          """
+        } catch (ignored) {
+          echo "Failed to collect logs."
+        }
+      }
+    }
+
+    always {
+      echo "DONE"
+      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
+    }
+  }
+}
