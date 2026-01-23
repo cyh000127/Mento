@@ -38,7 +38,7 @@ pipeline {
   stages {
     stage('Context') {
       steps {
-        sh """
+        sh '''
           set -euxo pipefail
           echo "===== CD CONTEXT ====="
           date "+%Y-%m-%d %H:%M:%S %Z"
@@ -49,19 +49,19 @@ pipeline {
           echo "DEPLOY_REF=${DEPLOY_REF}"
           echo "COMPOSE_FILES=${COMPOSE_FILES}"
           echo "DC=${DC}"
-        """
+        '''
       }
     }
 
     stage('Precheck') {
       steps {
-        sh """
+        sh '''
           set -euxo pipefail
           command -v git >/dev/null
           command -v docker >/dev/null
           docker info >/dev/null
           docker compose version >/dev/null
-        """
+        '''
       }
     }
 
@@ -82,12 +82,12 @@ pipeline {
             ]]
           ])
 
-          sh """
+          sh '''
             set -euxo pipefail
             echo "Checked out commit:"
             git rev-parse HEAD
             git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso
-          """
+          '''
         }
       }
     }
@@ -95,7 +95,7 @@ pipeline {
     stage('Prepare Nginx conf (http-only -> app.conf)') {
       steps {
         dir("${env.DEPLOY_DIR}") {
-          sh """
+          sh '''
             set -euxo pipefail
 
             SRC="infra/nginx/conf.d/app.1-http-only.conf"
@@ -104,14 +104,14 @@ pipeline {
             test -f "\$SRC"
             cp -f "\$SRC" "\$DST"
             echo "Prepared nginx conf: \$DST (from \$SRC)"
-          """
+          '''
         }
       }
     }
 
     stage('Validate compose (merged)') {
       steps {
-        sh """
+        sh '''
           set -euxo pipefail
 
           # 루트 compose 존재 확인
@@ -127,13 +127,13 @@ pipeline {
             in_services && \$1=="nginx:" {in_nginx=1}
             in_nginx && \$1=="image:" {print "nginx image =>", \$2; exit}
           ' || true
-        """
+        '''
       }
     }
 
     stage('Deploy nginx only') {
       steps {
-        sh """
+        sh '''
           set -euxo pipefail
 
           # 1) nginx 이미지 pull (compose 파일에 적힌 image:tag 기준)
@@ -144,13 +144,13 @@ pipeline {
 
           # 3) 상태 출력
           ${DC} ps
-        """
+        '''
       }
     }
 
     stage('Postcheck: nginx local http') {
       steps {
-        sh """
+        sh '''
           set -euxo pipefail
 
           for i in 1 2 3 4 5; do
@@ -168,18 +168,18 @@ pipeline {
 
           echo "nginx postcheck failed"
           exit 1
-        """
+        '''
       }
     }
   }
 
   post {
     always {
-      sh """
+      sh '''
         set +e
         echo "===== FINAL STATUS ====="
         ${DC} ps 2>/dev/null || true
-      """
+      '''
     }
   }
 }
