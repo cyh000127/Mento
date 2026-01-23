@@ -2,10 +2,10 @@ package com.mready.domain.member.entity;
 
 import com.mready.common.entity.BaseEntity;
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import lombok.*;
 
 @Entity
 @Getter
@@ -35,7 +35,7 @@ public class Member extends BaseEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	@Builder.Default
-	private Role role = Role.USER;
+	private Role role = Role.USER; // [USER, CONSULTANT, ADMIN]
 
 	@Column(name = "birth_date")
 	private LocalDate birthDate;
@@ -52,9 +52,6 @@ public class Member extends BaseEntity {
 		this.email = email;
 	}
 
-    public enum Role {
-        USER, CONSULTANT
-    }
 }
 
 

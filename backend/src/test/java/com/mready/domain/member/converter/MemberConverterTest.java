@@ -3,6 +3,7 @@ package com.mready.domain.member.converter;
 import com.mready.common.auth.dto.OAuth2Attribute;
 import com.mready.domain.member.dto.response.MemberResDto;
 import com.mready.domain.member.entity.Member;
+import com.mready.domain.member.entity.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -57,7 +58,7 @@ class MemberConverterTest {
 				.password("password")
 				.kakaoId("kakao_12345")
 				.birthDate(LocalDate.of(1995, 5, 5))
-				.role(Member.Role.USER)
+				.role(Role.USER)
 				.build();
 
 		// when

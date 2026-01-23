@@ -21,8 +21,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Optional;
 
-import static com.mready.common.auth.constant.AuthConstant.*;
-
+import static com.mready.common.auth.constant.AuthConstant.AUTHORIZATION;
+import static com.mready.common.auth.constant.AuthConstant.BEARER;
 
 /**
  * JWT 토큰 생성 및 검증
@@ -37,7 +37,6 @@ public class JwtTokenProvider {
 	public static final String BLANK = "";
 
 	private static final String KEY_ID = "id"; 
-	private static final String KEY_NAME = "name";
 	private static final String KEY_EMAIL = "email";
 	private static final String KEY_ROLE = "role";
 
@@ -69,9 +68,8 @@ public class JwtTokenProvider {
 			.subject(String.valueOf(member.getId()))
 			.add(TYPE, tokenType)
 			.add(KEY_ID, member.getId())
-			.add(KEY_NAME, member.getName())
 			.add(KEY_EMAIL, member.getEmail())
-			.add(KEY_ROLE, ROLE_USER)
+			.add(KEY_ROLE, member.getRole())
 			.issuedAt(new Date())
 			.expiration(new Date(System.currentTimeMillis() + expiration))
 			.build();
@@ -145,13 +143,11 @@ public class JwtTokenProvider {
 		validateTokenType(claims, ACCESS_TOKEN);
 
 		String id = claims.get(KEY_ID, Integer.class) != null ? String.valueOf(claims.get(KEY_ID)) : claims.getSubject();
-		String name = claims.get(KEY_NAME, String.class);
 		String email = claims.get(KEY_EMAIL, String.class);
 		String role = claims.get(KEY_ROLE, String.class);
 
 		return AuthenticatedUser.builder()
 				.id(Long.valueOf(id))
-				.name(name != null ? name : "UNKNOWN")
 				.email(email != null ? email : "UNKNOWN")
 				.role(role)
 				.attributes(null)

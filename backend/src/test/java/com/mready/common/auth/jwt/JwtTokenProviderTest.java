@@ -8,14 +8,12 @@ import com.mready.common.error.ErrorCode;
 import com.mready.common.error.exception.AuthException;
 import com.mready.domain.member.entity.Member;
 import com.mready.domain.member.repository.MemberRepository;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -85,7 +83,7 @@ class JwtTokenProviderTest {
         AuthenticatedUser user = jwtTokenProvider.getAuthenticatedUser(token.accessToken());
 
         assertThat(user.getId()).isEqualTo(1L);
-        assertThat(user.getName()).isEqualTo("Test User");
         assertThat(user.getEmail()).isEqualTo("test@example.com");
+        assertThat(user.getRole()).isEqualTo("USER");
     }
 }
