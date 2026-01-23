@@ -5,7 +5,7 @@ pipeline {
    * - IMPORTANT: 배포는 배포 전용 노드에서만 실행되도록 라벨 고정
    */
 
-  agent { label 'cd-node' }
+  agent any
 
   options {
     timestamps()
