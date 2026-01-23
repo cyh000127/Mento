@@ -115,7 +115,6 @@ pipeline {
           set -euxo pipefail
 
           # 루트 compose 존재 확인
-          test -f ${APP_DIR}/docker-compose.yml
           # nginx compose 존재 확인(체크아웃된 infra 레포 기준)
           test -f ${DEPLOY_DIR}/infra/compose/docker-compose.nginx.yml
 
