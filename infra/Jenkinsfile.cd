@@ -17,12 +17,12 @@ pipeline {
       description: '배포할 ref (branch/tag/commit). 예: develop-infra')
 
     string(name: 'DEPLOY_DIR',
-        defaultValue: '/home/ubuntu/app/infra',
-        description: '호스트에 checkout할 디렉토리 (예: /home/ubuntu/app/infra)')
+      defaultValue: '/home/ubuntu/app/infra',
+      description: '호스트에 checkout할 디렉토리 (예: /home/ubuntu/app/infra)')
 
     string(name: 'COMPOSE_FILE',
-      defaultValue: 'deploy/infra/docker-compose.yml',
-      description: 'repo 내부 compose 파일 경로')
+      defaultValue: 'infra/compose/docker-compose.nginx.yml',
+      description: 'repo 내부 compose 파일 경로 (예: infra/compose/docker-compose.nginx.yml)')
 
     string(name: 'PROJECT_NAME',
       defaultValue: 'a704',
@@ -95,21 +95,39 @@ pipeline {
       }
     }
 
+    stage('Prepare DEPLOY_DIR') {
+      /*
+       * - DEPLOY_DIR이 없으면 dir() 단계에서 실패할 수 있으므로 미리 생성
+       * - 배포 디렉토리는 Jenkins workspace가 아니라 "호스트 고정 경로"로 운용
+       */
+      steps {
+        echo "===== PREPARE DEPLOY DIR ====="
+        sh '''
+          set -euo pipefail
+          mkdir -p "${DEPLOY_DIR}"
+          ls -al "${DEPLOY_DIR}"
+        '''
+      }
+    }
+
     stage('Checkout (to DEPLOY_DIR)') {
       /*
        * - 쉘에서 git clone을 직접 하지 않음 (인증/대화형 입력 이슈 방지)
        * - Jenkins checkout이 credentialsId로 인증을 처리함
+       * - DEPLOY_DIR을 항상 "현재 ref 기준"으로 맞추기 위해 deleteDir()로 정리 후 checkout
        */
       steps {
         echo "===== CHECKOUT ====="
         dir("${params.DEPLOY_DIR}") {
+          deleteDir()
+
           checkout([
             $class: 'GitSCM',
             branches: [[name: "${params.DEPLOY_REF}"]],
             doGenerateSubmoduleConfigurations: false,
             extensions: [
-              [$class: 'WipeWorkspace'],                 // DEPLOY_DIR 안을 항상 깨끗하게 맞춤(재현성)
-              [$class: 'CloneOption', shallow: false, noTags: false, depth: 0, timeout: 20]
+              [$class: 'CloneOption', shallow: false, noTags: false, depth: 0, timeout: 20],
+              [$class: 'CleanBeforeCheckout']
             ],
             userRemoteConfigs: [[
               url: "${params.REPO_URL}",
@@ -117,12 +135,43 @@ pipeline {
             ]]
           ])
 
-          // 어떤 commit이 배포되는지 명확히 로그로 남김
           sh '''
             set -euo pipefail
             echo "Checked out commit:"
             git rev-parse HEAD
             git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso
+          '''
+        }
+      }
+    }
+
+    stage('Select nginx conf (http-only)') {
+      /*
+       * - 지금은 app.1-http-only.conf를 사용한다고 했으므로,
+       *   compose가 마운트하는 app.conf를 "항상" 만들어준다.
+       *
+       *   compose 예시:
+       *   - ../nginx/conf.d/app.conf:/etc/nginx/conf.d/app.conf:ro
+       */
+      steps {
+        echo "===== SELECT NGINX CONF ====="
+        dir("${params.DEPLOY_DIR}") {
+          sh '''
+            set -euo pipefail
+
+            SRC="infra/nginx/conf.d/app.1-http-only.conf"
+            DST="infra/nginx/conf.d/app.conf"
+
+            if [ ! -f "${SRC}" ]; then
+              echo "nginx source conf missing: ${SRC}"
+              echo "available files:"
+              ls -al infra/nginx/conf.d || true
+              exit 1
+            fi
+
+            cp -f "${SRC}" "${DST}"
+            echo "nginx conf selected: ${SRC} -> ${DST}"
+            ls -al infra/nginx/conf.d
           '''
         }
       }
@@ -139,8 +188,10 @@ pipeline {
               echo "Compose file not found: ${COMPOSE_FILE}"
               echo "Repo root:"
               ls -al
-              echo "deploy tree (if exists):"
-              ls -al deploy || true
+              echo "infra tree:"
+              ls -al infra || true
+              echo "infra/compose tree:"
+              ls -al infra/compose || true
               exit 1
             fi
 
@@ -161,16 +212,13 @@ pipeline {
             PROJECT="${PROJECT_NAME}"
             SERVICES_STR="${SERVICES}"
 
-            # 공백 정리
             SERVICES_STR="$(echo "${SERVICES_STR}" | xargs || true)"
 
-            # 공통 compose 명령 템플릿
             base_cmd="docker compose -p ${PROJECT} -f ${COMPOSE_PATH}"
 
             echo "Compose base: ${base_cmd}"
             echo "Services: '${SERVICES_STR}'"
 
-            # (선택) 이미지 pull
             if [ "${PULL_IMAGES}" = "true" ]; then
               if [ -n "${SERVICES_STR}" ]; then
                 echo "Pulling images (selected services)..."
@@ -183,13 +231,11 @@ pipeline {
               echo "Skipping image pull"
             fi
 
-            # up 옵션 구성
             up_opts="-d"
             if [ "${FORCE_RECREATE}" = "true" ]; then
               up_opts="${up_opts} --force-recreate"
             fi
 
-            # 서비스 선택 up
             if [ -n "${SERVICES_STR}" ]; then
               echo "Bringing up selected services..."
               ${base_cmd} up ${up_opts} ${SERVICES_STR}
@@ -205,20 +251,13 @@ pipeline {
       }
     }
 
-    stage('Postcheck') {
-
-      when {
-        expression {
-          def s = (params.SERVICES ?: '').trim()
-          return (s == '' || s.split(/\s+/).contains('nginx'))
-        }
-      }
+    stage('Postcheck (nginx 80)') {
       steps {
-        echo "===== POSTCHECK: NGINX (example) ====="
+        echo "===== POSTCHECK: NGINX ====="
         sh '''
           set -euo pipefail
 
-          # curl이 없을 수 있으니 둘 다 시도
+          # 80 포트 응답 확인 (http-only conf 기준)
           if command -v curl >/dev/null 2>&1; then
             for i in 1 2 3 4 5; do
               if curl -fsS --max-time 2 http://127.0.0.1:80/ >/dev/null 2>&1; then
