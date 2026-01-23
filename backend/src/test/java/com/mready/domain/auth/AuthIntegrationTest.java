@@ -11,6 +11,7 @@ import com.mready.common.response.BaseResponse;
 import com.mready.domain.auth.controller.command.AuthCommandController;
 import com.mready.domain.auth.service.command.AuthCommandServiceImpl;
 import com.mready.domain.member.entity.Member;
+import com.mready.domain.member.entity.Role;
 import com.mready.domain.member.repository.MemberRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,7 +102,7 @@ class AuthIntegrationTest {
                 .name("Integration User")
                 .password("password")
                 .kakaoId("12345")
-                .role(Member.Role.USER) 
+                .role(Role.USER)
                 .build();
     }
 

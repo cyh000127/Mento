@@ -4,6 +4,7 @@ import com.mready.common.auth.dto.OAuth2Attribute;
 import com.mready.domain.member.dto.request.MemberCreateReqDto;
 import com.mready.domain.member.dto.response.MemberResDto;
 import com.mready.domain.member.entity.Member;
+import com.mready.domain.member.entity.Role;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -15,7 +16,7 @@ public class MemberConverter {
 			.email(dto.email())
 			.kakaoId("kakao_" + dto.email())
 			.password("password")
-			.role(Member.Role.USER)
+			.role(Role.USER)
 			.build();
 	}
 
@@ -39,7 +40,7 @@ public class MemberConverter {
 				.kakaoId(attribute.getKakaoId())
 				.password(password)
 				.birthDate(attribute.getBirthDate())
-				.role(Member.Role.USER)
+				.role(Role.USER)
 				.build();
 	}
 }

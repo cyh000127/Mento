@@ -1,23 +1,19 @@
 package com.mready.common.auth.jwt;
 
-import java.io.IOException;
-
-
-import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mready.common.error.ErrorCode;
 import com.mready.common.error.exception.AuthException;
 import com.mready.common.response.ErrorResponse;
-
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
 
 @Slf4j
 @Component
@@ -31,7 +27,7 @@ public class JwtExceptionFilter extends OncePerRequestFilter {
 		HttpServletRequest request,
 		HttpServletResponse response,
 		FilterChain filterChain
-	) throws ServletException, IOException {
+	) throws IOException {
 		try {
 			filterChain.doFilter(request, response);
 		} catch (AuthException e) {

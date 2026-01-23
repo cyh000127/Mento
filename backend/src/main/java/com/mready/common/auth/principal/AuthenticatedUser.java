@@ -18,7 +18,6 @@ public class AuthenticatedUser {
 
     private final Long id;
     private final String email;
-    private final String name;
     private final String role;
     private final Map<String, Object> attributes;
 
