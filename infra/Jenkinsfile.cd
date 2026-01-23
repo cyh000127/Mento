@@ -1,5 +1,4 @@
 pipeline {
-
   agent any
 
   options {
@@ -7,219 +6,153 @@ pipeline {
     disableConcurrentBuilds()
   }
 
-  parameters {
-    string(name: 'REPO_URL',
-      defaultValue: 'https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git',
-      description: 'GitLab repository URL')
-
-    string(name: 'DEPLOY_REF',
-      defaultValue: 'develop-infra',
-      description: '배포할 ref (branch/tag/commit). 예: develop-infra')
-
-    string(name: 'DEPLOY_DIR',
-      defaultValue: '/home/ubuntu/app/infra',
-      description: '호스트에 checkout할 디렉토리 (예: /home/ubuntu/app/infra)')
-
-    // ✅ 실제 리포 경로로 수정
-    string(name: 'COMPOSE_FILE',
-      defaultValue: 'infra/compose/docker-compose.nginx.yml',
-      description: 'repo 내부 compose 파일 경로')
-
-    string(name: 'PROJECT_NAME',
-      defaultValue: 'a704',
-      description: 'docker compose -p <name> (프로젝트명/네트워크/컨테이너 prefix)')
-
-    string(name: 'SERVICES',
-      defaultValue: '',
-      description: '선택 배포할 서비스명(공백 구분). 비우면 전체')
-
-    booleanParam(name: 'PULL_IMAGES',
-      defaultValue: true,
-      description: 'true면 docker compose pull 수행')
-
-    booleanParam(name: 'FORCE_RECREATE',
-      defaultValue: false,
-      description: 'true면 docker compose up -d --force-recreate')
-  }
-
   environment {
-    GIT_CRED_ID = 'Gitlab_PAT'
+    // 운영 서버에서 "통합 스택의 루트"
+    APP_DIR = "/home/ubuntu/app"
+
+    // 이번 CD는 infra 레포를 이 경로에 체크아웃해서 사용
+    DEPLOY_DIR = "/home/ubuntu/app/infra"
+
+    // docker compose 프로젝트 이름을 app으로 고정
+    PROJECT_NAME = "app"
+
+    // nginx 서비스명(compose에서 services.nginx 이어야 함)
+    SERVICE_NAME = "nginx"
+
+    // Git 인증 (기존 그대로)
+    GIT_CRED_ID = "Gitlab_PAT"
+
+    // 배포할 브랜치(ref) 고정 (infra CD면 develop-infra 고정이 자연스러움)
+    REPO_URL = "https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git"
+    DEPLOY_REF = "develop-infra"
+
+    // "하나의 프로젝트(app)"를 구성하는 compose 파일 조합
+    // - 루트 compose + nginx compose 조각
+    COMPOSE_FILES = """
+      -f ${DEPLOY_DIR}/infra/compose/docker-compose.nginx.yml
+    """.trim().replaceAll("\\s+", " ")
+
+    DC = "docker compose -p ${PROJECT_NAME} ${COMPOSE_FILES}"
   }
 
   stages {
-
     stage('Context') {
       steps {
-        echo "===== CD CONTEXT ====="
-        sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
-        echo "JOB_NAME=${env.JOB_NAME}"
-        echo "BUILD_NUMBER=${env.BUILD_NUMBER}"
-        echo "BUILD_URL=${env.BUILD_URL}"
-        echo "DEPLOY_REF=${params.DEPLOY_REF}"
-        echo "DEPLOY_DIR=${params.DEPLOY_DIR}"
-        echo "COMPOSE_FILE=${params.COMPOSE_FILE}"
-        echo "PROJECT_NAME=${params.PROJECT_NAME}"
-        echo "SERVICES=${params.SERVICES}"
-        echo "PULL_IMAGES=${params.PULL_IMAGES}"
-        echo "FORCE_RECREATE=${params.FORCE_RECREATE}"
+        sh """
+          set -euxo pipefail
+          echo "===== CD CONTEXT ====="
+          date "+%Y-%m-%d %H:%M:%S %Z"
+          echo "APP_DIR=${APP_DIR}"
+          echo "DEPLOY_DIR=${DEPLOY_DIR}"
+          echo "PROJECT_NAME=${PROJECT_NAME}"
+          echo "SERVICE_NAME=${SERVICE_NAME}"
+          echo "DEPLOY_REF=${DEPLOY_REF}"
+          echo "COMPOSE_FILES=${COMPOSE_FILES}"
+          echo "DC=${DC}"
+        """
       }
     }
 
     stage('Precheck') {
       steps {
-        echo "===== PRECHECK ====="
-        sh '''
-          set -euo pipefail
-
-          command -v git >/dev/null 2>&1 || { echo "git not available"; exit 1; }
-          command -v docker >/dev/null 2>&1 || { echo "docker not available"; exit 1; }
-
-          docker info >/dev/null 2>&1 || { echo "docker unusable (permission/daemon)"; exit 1; }
-          docker compose version >/dev/null 2>&1 || { echo "docker compose v2 not available"; exit 1; }
-
-          echo "Precheck OK"
-        '''
+        sh """
+          set -euxo pipefail
+          command -v git >/dev/null
+          command -v docker >/dev/null
+          docker info >/dev/null
+          docker compose version >/dev/null
+        """
       }
     }
 
-    stage('Checkout (to DEPLOY_DIR)') {
-      /*
-       * - 쉘에서 git clone을 직접 하지 않음 (인증/대화형 입력 이슈 방지)
-       * - Jenkins checkout이 credentialsId로 인증을 처리함
-       */
+    stage('Checkout (to /home/ubuntu/app/infra)') {
       steps {
-        echo "===== CHECKOUT ====="
-        dir("${params.DEPLOY_DIR}") {
+        dir("${env.DEPLOY_DIR}") {
           checkout([
             $class: 'GitSCM',
-            branches: [[name: "${params.DEPLOY_REF}"]],
+            branches: [[name: "${env.DEPLOY_REF}"]],
             doGenerateSubmoduleConfigurations: false,
             extensions: [
               [$class: 'WipeWorkspace'],
               [$class: 'CloneOption', shallow: false, noTags: false, depth: 0, timeout: 20]
             ],
             userRemoteConfigs: [[
-              url: "${params.REPO_URL}",
+              url: "${env.REPO_URL}",
               credentialsId: "${env.GIT_CRED_ID}"
             ]]
           ])
 
-          sh '''
-            set -euo pipefail
+          sh """
+            set -euxo pipefail
             echo "Checked out commit:"
             git rev-parse HEAD
             git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso
-          '''
+          """
         }
       }
     }
 
     stage('Prepare Nginx conf (http-only -> app.conf)') {
-      /*
-       * - 현재는 app.1-http-only.conf를 사용
-       * - compose는 ../nginx/conf.d/app.conf 를 마운트하므로
-       *   배포 시 app.conf를 강제로 생성해서 항상 경로 일치
-       */
       steps {
-        echo "===== PREPARE NGINX CONF ====="
-        dir("${params.DEPLOY_DIR}") {
-          sh '''
-            set -euo pipefail
+        dir("${env.DEPLOY_DIR}") {
+          sh """
+            set -euxo pipefail
 
             SRC="infra/nginx/conf.d/app.1-http-only.conf"
             DST="infra/nginx/conf.d/app.conf"
 
-            if [ ! -f "$SRC" ]; then
-              echo "nginx source conf missing: $SRC"
-              echo "conf.d tree:"
-              ls -al infra/nginx/conf.d || true
-              exit 1
-            fi
-
-            cp -f "$SRC" "$DST"
-            echo "Prepared nginx conf: $DST (from $SRC)"
-          '''
+            test -f "\$SRC"
+            cp -f "\$SRC" "\$DST"
+            echo "Prepared nginx conf: \$DST (from \$SRC)"
+          """
         }
       }
     }
 
-    stage('Validate compose file') {
+    stage('Validate compose (merged)') {
       steps {
-        echo "===== VALIDATE COMPOSE ====="
-        dir("${params.DEPLOY_DIR}") {
-          sh '''
-            set -euo pipefail
+        sh """
+          set -euxo pipefail
 
-            if [ ! -f "${COMPOSE_FILE}" ]; then
-              echo "Compose file not found: ${COMPOSE_FILE}"
-              echo "Repo root:"
-              ls -al
-              echo "infra tree:"
-              ls -al infra || true
-              echo "infra/compose tree:"
-              ls -al infra/compose || true
-              exit 1
-            fi
+          # 루트 compose 존재 확인
+          test -f ${APP_DIR}/docker-compose.yml
+          # nginx compose 존재 확인(체크아웃된 infra 레포 기준)
+          test -f ${DEPLOY_DIR}/infra/compose/docker-compose.nginx.yml
 
-            echo "Compose file exists: ${COMPOSE_FILE}"
-          '''
-        }
+          # 합쳐진 compose가 유효한지 검증
+          ${DC} config > /dev/null
+
+          # nginx가 어떤 image를 바라보는지 한 줄 확인(디버깅)
+          ${DC} config | awk '
+            \$0 ~ /^services:/ {in_services=1}
+            in_services && \$1=="nginx:" {in_nginx=1}
+            in_nginx && \$1=="image:" {print "nginx image =>", \$2; exit}
+          ' || true
+        """
       }
     }
 
-    stage('Deploy (docker compose)') {
+    stage('Deploy nginx only') {
       steps {
-        echo "===== DEPLOY ====="
-        dir("${params.DEPLOY_DIR}") {
-          sh '''
-            set -euo pipefail
+        sh """
+          set -euxo pipefail
 
-            COMPOSE_PATH="${COMPOSE_FILE}"
-            PROJECT="${PROJECT_NAME}"
-            SERVICES_STR="${SERVICES}"
+          # 1) nginx 이미지 pull (compose 파일에 적힌 image:tag 기준)
+          ${DC} pull ${SERVICE_NAME}
 
-            SERVICES_STR="$(echo "${SERVICES_STR}" | xargs || true)"
-            base_cmd="docker compose -p ${PROJECT} -f ${COMPOSE_PATH}"
+          # 2) nginx만 교체 (다른 서비스 건드리지 않음)
+          ${DC} up -d --no-deps ${SERVICE_NAME}
 
-            echo "Compose base: ${base_cmd}"
-            echo "Services: '${SERVICES_STR}'"
-
-            if [ "${PULL_IMAGES}" = "true" ]; then
-              if [ -n "${SERVICES_STR}" ]; then
-                ${base_cmd} pull ${SERVICES_STR}
-              else
-                ${base_cmd} pull
-              fi
-            fi
-
-            up_opts="-d"
-            if [ "${FORCE_RECREATE}" = "true" ]; then
-              up_opts="${up_opts} --force-recreate"
-            fi
-
-            if [ -n "${SERVICES_STR}" ]; then
-              ${base_cmd} up ${up_opts} ${SERVICES_STR}
-            else
-              ${base_cmd} up ${up_opts}
-            fi
-
-            ${base_cmd} ps
-          '''
-        }
+          # 3) 상태 출력
+          ${DC} ps
+        """
       }
     }
 
-    stage('Postcheck') {
-      when {
-        expression {
-          def s = (params.SERVICES ?: '').trim()
-          return (s == '' || s.split(/\s+/).contains('nginx'))
-        }
-      }
+    stage('Postcheck: nginx local http') {
       steps {
-        echo "===== POSTCHECK: NGINX ====="
-        sh '''
-          set -euo pipefail
+        sh """
+          set -euxo pipefail
 
           for i in 1 2 3 4 5; do
             if command -v curl >/dev/null 2>&1; then
@@ -236,22 +169,18 @@ pipeline {
 
           echo "nginx postcheck failed"
           exit 1
-        '''
+        """
       }
     }
   }
 
   post {
-    success {
-      echo "SUCCESS"
-      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
-    }
-    failure {
-      echo "FAILURE"
-      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
-    }
     always {
-      echo "DONE"
+      sh """
+        set +e
+        echo "===== FINAL STATUS ====="
+        ${DC} ps 2>/dev/null || true
+      """
     }
   }
 }
