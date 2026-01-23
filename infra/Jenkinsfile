@@ -1,50 +1,215 @@
 pipeline {
+  /*
+   * Jenkins Declarative Pipeline
+   */
+
   agent any
+  /*
+   * - Jenkins에 연결된 어떤 agent에서든 실행 가능
+   * - 현재는 특정 OS / Docker / Tooling 의존성이 없기 때문에 무방
+   */
 
   options {
     timestamps()
+    /*
+     * - 모든 콘솔 로그 앞에 시간 정보 추가
+    */
+
     disableConcurrentBuilds()
+    /*
+     * - 동일 Job에 대해 동시에 여러 빌드가 실행되는 것을 방지
+    */
   }
 
   stages {
+
     stage('Context') {
+      /*
+       *  - 이 CI가 언제, 어떤 환경에서, 어떤 Job으로 실행되었는지 메타 정보를 빠르게 확인
+       *  - 사실상 로깅용
+       */
       steps {
         echo "===== CI TEST CONTEXT ====="
+
+        // 현재 시각 (타임존 포함)
         sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
+
+        // Jenkins Job 메타 정보
         echo "JOB_NAME=${env.JOB_NAME}"
         echo "BUILD_NUMBER=${env.BUILD_NUMBER}"
         echo "BUILD_URL=${env.BUILD_URL}"
+
+        // Multibranch / SCM 기반 Job일 경우 어떤 브랜치인지 확인
         echo "BRANCH_NAME=${env.BRANCH_NAME}"
+
+        // 워크스페이스 위치 확인
         sh 'pwd'
+
+        // 실행 중인 에이전트 OS / 커널 정보
         sh 'uname -a || true'
+
+        // git 사용 가능 여부 확인
         sh 'git --version || true'
       }
     }
 
     stage('Git info') {
+      /*
+       * - 현재 체크아웃된 Git 상태를 명확히 확인
+       * - Webhook / SCM Trigger가 의도한 commit을 정확히 가져왔는지 검증
+       */
       steps {
         echo "===== GIT INFO ====="
+
+        // 현재 브랜치명
         sh 'git rev-parse --abbrev-ref HEAD || true'
+
+        // 현재 커밋 SHA
         sh 'git rev-parse HEAD || true'
-        sh 'git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso || true'
+
+        // 마지막 커밋 요약 (누가, 언제, 어떤 메시지로 커밋했는지)
+        sh '''
+          git log -1 \
+            --pretty=format:"%h | %an | %ad | %s" \
+            --date=iso || true
+        '''
       }
     }
 
     stage('What changed?') {
+      /*
+       *   - 이번 CI 트리거의 직접적인 변경 파일을 확인
+       *   - nginx 변경 → nginx lint
+       *   - BE 변경 → backend build
+       *   조건부 stage 분기를 위한 사전 조사 성격
+       */
       steps {
         echo "===== CHANGED FILES (last commit) ====="
         sh '''
           set +e
+          /*
+           * git show -1
+           * - 마지막 커밋에서 변경된 파일 목록 출력
+           * - 실패하더라도 CI 전체 실패로 처리하지 않기 위해 set +e
+           */
           git show --name-status --pretty=format:"" -1
+
           echo ""
           echo "===== LAST 20 FILES IN REPO ROOT ====="
+
+          // 워크스페이스 구조가 정상인지 빠르게 확인
           ls -al | head -n 20
+
+          // 이 stage는 정보 출력 목적이므로 항상 성공 처리
           exit 0
         '''
       }
     }
 
+    stage('Nginx Lint') {
+          when {
+            // deploy/nginx 아래 파일이 바뀐 경우에만 실행
+            changeset "deploy/nginx/**"
+          }
+          steps {
+            echo "===== NGINX CONFIG LINT ====="
+            sh '''
+              set -euo pipefail
+
+              CONF_PATH="${WORKSPACE}/deploy/nginx/nginx.conf"
+              if [ ! -f "$CONF_PATH" ]; then
+                echo "nginx config not found at $CONF_PATH"
+                exit 1
+              fi
+
+              if command -v nginx >/dev/null 2>&1; then
+                echo "Using system nginx to test config"
+                nginx -t -c "$CONF_PATH"
+              elif command -v docker >/dev/null 2>&1; then
+                echo "Using nginx docker image to test config"
+                docker run --rm \
+                  -v "$WORKSPACE":/workspace \
+                  -w /workspace \
+                  nginx:stable-alpine \
+                  sh -c "nginx -t -c /workspace/deploy/nginx/nginx.conf"
+              else
+                echo "Neither nginx nor docker available on agent. Cannot lint nginx config."
+                exit 1
+              fi
+            '''
+          }
+        }
+
+        stage('Nginx Runtime Check') {
+          when {
+            // deploy/nginx 아래 파일이 바뀐 경우에만 실행
+            changeset "deploy/nginx/**"
+          }
+          steps {
+            echo "===== NGINX RUNTIME CHECK (container) ====="
+            sh '''
+              set -euo pipefail
+
+              CONTAINER_NAME=ci-test-nginx
+              CONF_DIR="${WORKSPACE}/deploy/nginx"
+              CONF_FILE="${CONF_DIR}/nginx.conf"
+
+              if [ ! -f "$CONF_FILE" ]; then
+                echo "nginx.conf missing: $CONF_FILE"
+                exit 1
+              fi
+
+              if ! command -v docker >/dev/null 2>&1; then
+                echo "docker not available on agent. Skipping runtime check."
+                exit 0
+              fi
+
+              # cleanup (leftover)
+              docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+
+              # run nginx with mounted nginx.conf only (avoid wiping /etc/nginx entirely)
+              # map random host port to avoid conflicts
+              docker run -d --name "$CONTAINER_NAME" -p 0:80 \
+                -v "$CONF_FILE":/etc/nginx/nginx.conf:ro \
+                nginx:stable-alpine
+
+              HOST_PORT="$(docker port "$CONTAINER_NAME" 80/tcp | awk -F: '{print $2}' | tail -n 1)"
+              if [ -z "$HOST_PORT" ]; then
+                echo "failed to detect mapped port"
+                docker logs "$CONTAINER_NAME" || true
+                docker rm -f "$CONTAINER_NAME" || true
+                exit 1
+              fi
+
+              # wait for nginx to be ready (avoid host curl dependency)
+              for i in 1 2 3 4 5; do
+                sleep 1
+                if docker exec "$CONTAINER_NAME" sh -c "wget -qO- http://127.0.0.1/ >/dev/null 2>&1"; then
+                  echo "nginx responding (container internal check)"
+                  break
+                fi
+                echo "waiting for nginx..."
+              done
+
+              # final check: ensure HTTP response exists
+              if ! docker exec "$CONTAINER_NAME" sh -c "wget -S -O- http://127.0.0.1/ 2>&1 | grep -q 'HTTP/'"; then
+                echo "nginx did not respond correctly"
+                docker logs "$CONTAINER_NAME" || true
+                docker rm -f "$CONTAINER_NAME" || true
+                exit 1
+              fi
+
+              docker rm -f "$CONTAINER_NAME" >/dev/null || true
+              echo "nginx runtime check passed"
+            '''
+          }
+        }
+
     stage('Smoke') {
+      /*
+       * - 이 Jenkinsfile이 실제로 실행되었음을 가장 단순하게 증명하는 Smoke Test
+       * - Webhook / SCM Trigger / Branch Filter 테스트용
+       */
       steps {
         echo "===== SMOKE TEST ====="
         echo "Webhook/SCM trigger CI test pipeline executed."
@@ -53,15 +218,25 @@ pipeline {
   }
 
   post {
+    /*
+     * post 블록
+     * - 파이프라인 전체 실행 결과에 따른 후처리 영역
+     */
+
     success {
+      // 모든 stage가 성공했을 때
       echo "SUCCESS"
       sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
     }
+
     failure {
+      // 어느 stage든 실패했을 때
       echo "FAILURE"
       sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
     }
+
     always {
+      // 성공/실패와 무관하게 항상 실행
       echo "DONE"
     }
   }
