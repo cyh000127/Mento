@@ -1,32 +1,48 @@
 pipeline {
-  /*
-   * CD Pipeline (Infra)
-   * - 체크아웃(ref 검증 포함) → (옵션) pull → compose up -d → 헬스체크
-   * - IMPORTANT: 배포는 배포 전용 노드에서만 실행되도록 라벨 고정
-   */
 
   agent any
 
   options {
     timestamps()
     disableConcurrentBuilds()
-    ansiColor('xterm')
   }
 
   parameters {
-    string(name: 'DEPLOY_REF', defaultValue: 'develop-infra', description: '배포할 Git ref(branch/tag). 예: develop-infra or v1.2.3')
-    string(name: 'DEPLOY_DIR', defaultValue: '/opt/S14P11A704', description: '배포 서버 내 배포 디렉토리(고정 경로 권장)')
-    string(name: 'COMPOSE_FILE', defaultValue: 'deploy/infra/docker-compose.yml', description: 'docker-compose.yml 경로 (DEPLOY_DIR 기준 상대)')
-    string(name: 'COMPOSE_PROJECT', defaultValue: 's14-infra', description: 'docker compose project name')
-    string(name: 'HEALTHCHECK_URL', defaultValue: 'http://127.0.0.1:80/', description: '배포 후 헬스체크 URL (서버 내부 접근)')
+    string(name: 'REPO_URL',
+      defaultValue: 'https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git',
+      description: 'GitLab repository URL')
 
-    booleanParam(name: 'FORCE_RECREATE', defaultValue: false, description: 'true면 컨테이너 재생성(--force-recreate)')
-    booleanParam(name: 'PULL_IMAGES', defaultValue: true, description: 'true면 배포 전 docker compose pull 수행')
+    string(name: 'DEPLOY_REF',
+      defaultValue: 'develop-infra',
+      description: '배포할 ref (branch/tag/commit). 예: develop-infra')
+
+    string(name: 'DEPLOY_DIR',
+        defaultValue: '/home/ubuntu/app/infra',
+        description: '호스트에 checkout할 디렉토리 (예: /home/ubuntu/app/infra)')
+
+    string(name: 'COMPOSE_FILE',
+      defaultValue: 'deploy/infra/docker-compose.yml',
+      description: 'repo 내부 compose 파일 경로')
+
+    string(name: 'PROJECT_NAME',
+      defaultValue: 'a704',
+      description: 'docker compose -p <name> (프로젝트명/네트워크/컨테이너 prefix)')
+
+    string(name: 'SERVICES',
+      defaultValue: '',
+      description: '선택 배포할 서비스명(공백 구분). 비우면 전체')
+
+    booleanParam(name: 'PULL_IMAGES',
+      defaultValue: true,
+      description: 'true면 docker compose pull 수행')
+
+    booleanParam(name: 'FORCE_RECREATE',
+      defaultValue: false,
+      description: 'true면 docker compose up -d --force-recreate')
   }
 
   environment {
-    COMPOSE_DOCKER_CLI_BUILD = '1'
-    DOCKER_BUILDKIT = '1'
+    GIT_CRED_ID = 'Gitlab_PAT'
   }
 
   stages {
@@ -41,225 +57,212 @@ pipeline {
         echo "DEPLOY_REF=${params.DEPLOY_REF}"
         echo "DEPLOY_DIR=${params.DEPLOY_DIR}"
         echo "COMPOSE_FILE=${params.COMPOSE_FILE}"
-        echo "COMPOSE_PROJECT=${params.COMPOSE_PROJECT}"
-        echo "HEALTHCHECK_URL=${params.HEALTHCHECK_URL}"
-        sh 'whoami && pwd'
-        sh 'docker --version'
-        sh 'docker compose version'
+        echo "PROJECT_NAME=${params.PROJECT_NAME}"
+        echo "SERVICES=${params.SERVICES}"
+        echo "PULL_IMAGES=${params.PULL_IMAGES}"
+        echo "FORCE_RECREATE=${params.FORCE_RECREATE}"
       }
     }
 
-    stage('Prepare deploy dir') {
+    stage('Precheck') {
       steps {
+        echo "===== PRECHECK ====="
         sh '''
           set -euo pipefail
-          mkdir -p "${DEPLOY_DIR}"
-          ls -al "${DEPLOY_DIR}"
+
+          if ! command -v git >/dev/null 2>&1; then
+            echo "git not available on this node"
+            exit 1
+          fi
+
+          if ! command -v docker >/dev/null 2>&1; then
+            echo "docker not available on this node"
+            exit 1
+          fi
+
+          if ! docker info >/dev/null 2>&1; then
+            echo "docker is not usable (permission / daemon issue)"
+            exit 1
+          fi
+
+          if ! docker compose version >/dev/null 2>&1; then
+            echo "docker compose v2 plugin not available"
+            exit 1
+          fi
+
+          echo "Precheck OK"
         '''
       }
     }
 
-    stage('Checkout (with ref verification)') {
+    stage('Checkout (to DEPLOY_DIR)') {
+      /*
+       * - 쉘에서 git clone을 직접 하지 않음 (인증/대화형 입력 이슈 방지)
+       * - Jenkins checkout이 credentialsId로 인증을 처리함
+       */
       steps {
+        echo "===== CHECKOUT ====="
         dir("${params.DEPLOY_DIR}") {
-          withCredentials([usernamePassword(credentialsId: 'Gitlab_PAT', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PAT')]) {
-            sh '''
-              set -euo pipefail
+          checkout([
+            $class: 'GitSCM',
+            branches: [[name: "${params.DEPLOY_REF}"]],
+            doGenerateSubmoduleConfigurations: false,
+            extensions: [
+              [$class: 'WipeWorkspace'],                 // DEPLOY_DIR 안을 항상 깨끗하게 맞춤(재현성)
+              [$class: 'CloneOption', shallow: false, noTags: false, depth: 0, timeout: 20]
+            ],
+            userRemoteConfigs: [[
+              url: "${params.REPO_URL}",
+              credentialsId: "${env.GIT_CRED_ID}"
+            ]]
+          ])
 
-              REPO_URL="https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git"
-
-              if [ ! -d ".git" ]; then
-                echo "Repo not found. Cloning into ${DEPLOY_DIR} ..."
-                git clone "$REPO_URL" .
-              else
-                echo "Repo exists. Fetching latest..."
-              fi
-
-              # 임시 credential store (clone/fetch 용)
-              git config credential.helper "store --file=.git-credentials"
-              printf "https://%s:%s@lab.ssafy.com\n" "$GIT_USER" "$GIT_PAT" > .git-credentials
-
-              git remote set-url origin "$REPO_URL"
-              git fetch --all --prune
-
-              # --- remote ref 검증 (branch/tag 모두 허용) ---
-              ORIGIN_URL="$(git remote get-url origin)"
-              REF="${DEPLOY_REF}"
-
-              if git ls-remote --exit-code --heads "$ORIGIN_URL" "$REF" >/dev/null 2>&1; then
-                echo "Remote branch found: $REF"
-                REF_TYPE="branch"
-              elif git ls-remote --exit-code --tags "$ORIGIN_URL" "$REF" >/dev/null 2>&1; then
-                echo "Remote tag found: $REF"
-                REF_TYPE="tag"
-              else
-                echo "Remote ref not found (branch/tag): $REF"
-                exit 1
-              fi
-
-              # --- checkout ---
-              if [ "$REF_TYPE" = "branch" ]; then
-                git checkout -f "$REF"
-                git reset --hard "origin/$REF"
-              else
-                # tag 배포: tag로 checkout (detached HEAD)
-                git checkout -f "tags/$REF"
-              fi
-
-              echo "===== CURRENT REVISION ====="
-              git rev-parse HEAD
-              git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso || true
-
-              # cleanup credential file
-              rm -f .git-credentials
-              git config --unset credential.helper || true
-            '''
-          }
+          // 어떤 commit이 배포되는지 명확히 로그로 남김
+          sh '''
+            set -euo pipefail
+            echo "Checked out commit:"
+            git rev-parse HEAD
+            git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso
+          '''
         }
       }
     }
 
-    stage('Precheck files') {
+    stage('Validate compose file') {
       steps {
+        echo "===== VALIDATE COMPOSE ====="
         dir("${params.DEPLOY_DIR}") {
           sh '''
             set -euo pipefail
+
             if [ ! -f "${COMPOSE_FILE}" ]; then
-              echo "compose file not found: ${DEPLOY_DIR}/${COMPOSE_FILE}"
-              exit 1
-            fi
-            echo "===== COMPOSE FILE ====="
-            ls -al "${COMPOSE_FILE}"
-          '''
-        }
-      }
-    }
-
-    stage('Snapshot (rollback point)') {
-      steps {
-        dir("${params.DEPLOY_DIR}") {
-          sh '''
-            set -euo pipefail
-
-            SNAP_DIR=".deploy_snapshots"
-            mkdir -p "$SNAP_DIR"
-
-            TS="$(date +%Y%m%d_%H%M%S)"
-            SNAP_FILE="$SNAP_DIR/compose_${COMPOSE_PROJECT}_${TS}.yml"
-
-            cp -f "${COMPOSE_FILE}" "$SNAP_FILE"
-            echo "Snapshot saved: $SNAP_FILE"
-
-            # 최근 10개만 유지
-            ls -1t "$SNAP_DIR"/compose_"${COMPOSE_PROJECT}"_*.yml 2>/dev/null | tail -n +11 | xargs -r rm -f
-          '''
-        }
-      }
-    }
-
-    stage('Compose Pull') {
-      when { expression { return params.PULL_IMAGES } }
-      steps {
-        dir("${params.DEPLOY_DIR}") {
-          sh '''
-            set -euo pipefail
-            docker compose -p "${COMPOSE_PROJECT}" -f "${COMPOSE_FILE}" pull
-          '''
-        }
-      }
-    }
-
-    stage('Deploy (compose up)') {
-      steps {
-        dir("${params.DEPLOY_DIR}") {
-          sh '''
-            set -euo pipefail
-
-            EXTRA=""
-            if [ "${FORCE_RECREATE}" = "true" ]; then
-              EXTRA="--force-recreate"
-            fi
-
-            docker compose -p "${COMPOSE_PROJECT}" -f "${COMPOSE_FILE}" up -d $EXTRA
-
-            echo "===== RUNNING CONTAINERS ====="
-            docker compose -p "${COMPOSE_PROJECT}" -f "${COMPOSE_FILE}" ps
-          '''
-        }
-      }
-    }
-
-    stage('Healthcheck (strict)') {
-      steps {
-        dir("${params.DEPLOY_DIR}") {
-          sh '''
-            set -euo pipefail
-
-            echo "===== HEALTHCHECK ====="
-            URL="${HEALTHCHECK_URL}"
-
-            # strict: curl/wget 없으면 실패 처리 (헬스체크를 "건너뛰지" 않음)
-            if command -v curl >/dev/null 2>&1; then
-              HC_CMD="curl -sS --max-time 2 -I"
-            elif command -v wget >/dev/null 2>&1; then
-              # wget은 -I가 없어서 헤더만 보려면 -S -O-로 처리
-              HC_CMD="sh -c 'wget -S -O- 2>&1 | head -n 20'"
-            else
-              echo "No curl/wget on node. Install one of them to run healthcheck."
+              echo "Compose file not found: ${COMPOSE_FILE}"
+              echo "Repo root:"
+              ls -al
+              echo "deploy tree (if exists):"
+              ls -al deploy || true
               exit 1
             fi
 
-            for i in 1 2 3 4 5 6 7 8 9 10; do
-              sleep 2
+            echo "Compose file exists: ${COMPOSE_FILE}"
+          '''
+        }
+      }
+    }
 
-              if command -v curl >/dev/null 2>&1; then
-                if curl -sS --max-time 2 -I "$URL" | grep -q "HTTP/"; then
-                  echo "Healthcheck OK (curl): $URL"
-                  exit 0
-                fi
+    stage('Deploy (docker compose)') {
+      steps {
+        echo "===== DEPLOY ====="
+        dir("${params.DEPLOY_DIR}") {
+          sh '''
+            set -euo pipefail
+
+            COMPOSE_PATH="${COMPOSE_FILE}"
+            PROJECT="${PROJECT_NAME}"
+            SERVICES_STR="${SERVICES}"
+
+            # 공백 정리
+            SERVICES_STR="$(echo "${SERVICES_STR}" | xargs || true)"
+
+            # 공통 compose 명령 템플릿
+            base_cmd="docker compose -p ${PROJECT} -f ${COMPOSE_PATH}"
+
+            echo "Compose base: ${base_cmd}"
+            echo "Services: '${SERVICES_STR}'"
+
+            # (선택) 이미지 pull
+            if [ "${PULL_IMAGES}" = "true" ]; then
+              if [ -n "${SERVICES_STR}" ]; then
+                echo "Pulling images (selected services)..."
+                ${base_cmd} pull ${SERVICES_STR}
               else
-                # wget 방식
-                if wget -S -O- "$URL" 2>&1 | grep -q "HTTP/"; then
-                  echo "Healthcheck OK (wget): $URL"
-                  exit 0
-                fi
+                echo "Pulling images (all services)..."
+                ${base_cmd} pull
               fi
+            else
+              echo "Skipping image pull"
+            fi
 
-              echo "waiting for service... ($i/10)"
-            done
+            # up 옵션 구성
+            up_opts="-d"
+            if [ "${FORCE_RECREATE}" = "true" ]; then
+              up_opts="${up_opts} --force-recreate"
+            fi
 
-            echo "Healthcheck FAILED: $URL"
-            exit 1
+            # 서비스 선택 up
+            if [ -n "${SERVICES_STR}" ]; then
+              echo "Bringing up selected services..."
+              ${base_cmd} up ${up_opts} ${SERVICES_STR}
+            else
+              echo "Bringing up all services..."
+              ${base_cmd} up ${up_opts}
+            fi
+
+            echo "Deploy done. Current status:"
+            ${base_cmd} ps
           '''
         }
+      }
+    }
+
+    stage('Postcheck') {
+
+      when {
+        expression {
+          def s = (params.SERVICES ?: '').trim()
+          return (s == '' || s.split(/\s+/).contains('nginx'))
+        }
+      }
+      steps {
+        echo "===== POSTCHECK: NGINX (example) ====="
+        sh '''
+          set -euo pipefail
+
+          # curl이 없을 수 있으니 둘 다 시도
+          if command -v curl >/dev/null 2>&1; then
+            for i in 1 2 3 4 5; do
+              if curl -fsS --max-time 2 http://127.0.0.1:80/ >/dev/null 2>&1; then
+                echo "nginx OK (http://127.0.0.1:80/)"
+                exit 0
+              fi
+              echo "waiting nginx... (${i}/5)"
+              sleep 1
+            done
+            echo "nginx postcheck failed"
+            exit 1
+          fi
+
+          if command -v wget >/dev/null 2>&1; then
+            for i in 1 2 3 4 5; do
+              if wget -qO- http://127.0.0.1:80/ >/dev/null 2>&1; then
+                echo "nginx OK (http://127.0.0.1:80/)"
+                exit 0
+              fi
+              echo "waiting nginx... (${i}/5)"
+              sleep 1
+            done
+            echo "nginx postcheck failed"
+            exit 1
+          fi
+
+          echo "No curl/wget. Skipping nginx postcheck."
+          exit 0
+        '''
       }
     }
   }
 
   post {
     success {
-      echo "DEPLOY SUCCESS"
+      echo "SUCCESS"
+      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
     }
-
     failure {
-      echo "DEPLOY FAILURE - collecting logs"
-      script {
-        try {
-          sh """
-            set +e
-            cd '${params.DEPLOY_DIR}'
-            docker compose -p '${params.COMPOSE_PROJECT}' -f '${params.COMPOSE_FILE}' ps || true
-            docker compose -p '${params.COMPOSE_PROJECT}' -f '${params.COMPOSE_FILE}' logs --tail=200 || true
-          """
-        } catch (ignored) {
-          echo "Failed to collect logs."
-        }
-      }
+      echo "FAILURE"
+      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
     }
-
     always {
       echo "DONE"
-      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
     }
   }
 }
