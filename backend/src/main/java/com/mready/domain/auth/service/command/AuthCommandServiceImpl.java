@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static com.mready.common.auth.constant.AuthConstant.AUTHORIZATION;
 import static com.mready.common.auth.constant.AuthConstant.BEARER;
-import static com.mready.common.auth.constant.AuthConstant.REFRESH_TOKEN;
 
 @Slf4j
 @Service
@@ -42,8 +41,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
                 .orElseThrow(() -> new AuthException(ErrorCode.TOKEN_NOT_FOUND));
 
         if (refreshToken != null) {
-            jwtTokenProvider.setBlackList(refreshToken);
-             try {
+            try {
                 String memberId = jwtTokenProvider.getClaims(refreshToken).getSubject();
                 refreshTokenRepository.deleteById(memberId);
             } catch (Exception e) {

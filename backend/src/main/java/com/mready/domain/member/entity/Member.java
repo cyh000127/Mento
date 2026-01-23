@@ -35,7 +35,7 @@ public class Member extends BaseEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	@Builder.Default
-	private Role role = Role.USER; // [USER, CONSULTANT, ADMIN]
+	private Role role = Role.USER; // [USER, MENTO, ADMIN]
 
 	@Column(name = "birth_date")
 	private LocalDate birthDate;
