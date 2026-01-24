@@ -5,8 +5,8 @@ services:
 
     # nginx와 "같은 경로"를 봐야 challenge/인증서 공유가 됨
     volumes:
-      - /home/ubuntu/app/infra-runtime/certbot/www:/var/www/certbot
-      - /home/ubuntu/app/infra-runtime/certbot/conf:/etc/letsencrypt
+      - /home/ubuntu/app/infra/infra-runtime/certbot/www:/var/www/certbot
+      - /home/ubuntu/app/infra/infra-runtime/certbot/conf:/etc/letsencrypt
 
     entrypoint: /bin/sh -c
     command: >

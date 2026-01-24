@@ -7,33 +7,27 @@ pipeline {
   }
 
   environment {
-    // 운영 서버에서 "통합 스택의 루트"
-    APP_DIR = "/home/ubuntu/app"
+    // 최상위 고정
+    APP_DIR      = "/home/ubuntu/app/infra"
 
-    // 이번 CD는 infra 레포를 이 경로에 체크아웃해서 사용
-    DEPLOY_DIR = "/home/ubuntu/app/infra-repo"
+    // 레포(코드)와 런타임(운영 데이터) 분리
+    REPO_DIR     = "${APP_DIR}/infra-repo"
+    RUNTIME_DIR  = "${APP_DIR}/infra-runtime"
 
-    // docker compose 프로젝트 이름을 app으로 고정
+    // Git
+    REPO_URL     = "https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git"
+    DEPLOY_REF   = "develop-infra"
+    GIT_CRED_ID  = "Gitlab_PAT"
+
+    // compose project
     PROJECT_NAME = "app"
 
-    // nginx 서비스명(compose에서 services.nginx 이어야 함)
+    // compose 파일 (레포 내부 경로)
+    COMPOSE_NGINX   = "${REPO_DIR}/infra/compose/docker-compose.nginx.yml"
+    COMPOSE_CERTBOT = "${REPO_DIR}/infra/compose/docker-compose.certbot.yml"
+
+    // 기본은 nginx만 배포
     SERVICE_NAME = "nginx"
-
-    // Git 인증 (기존 그대로)
-    GIT_CRED_ID = "Gitlab_PAT"
-
-    // 배포할 브랜치(ref) 고정 (infra CD면 develop-infra-f ${DEPLOY_DIR}/infra/compose/docker-compose.certbot.yml 고정이 자연스러움)
-    REPO_URL = "https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git"
-    DEPLOY_REF = "develop-infra"
-
-    // "하나의 프로젝트(app)"를 구성하는 compose 파일 조합
-    // - 루트 compose + nginx compose 조각
-    COMPOSE_FILES = """
-      -f ${DEPLOY_DIR}/infra/compose/docker-compose.nginx.yml
-      -f ${DEPLOY_DIR}/infra/compose/docker-compose.certbot.yml
-    """.trim().replaceAll("\\s+", " ")
-
-    DC = "docker compose -p ${PROJECT_NAME} ${COMPOSE_FILES}"
   }
 
   stages {
@@ -44,12 +38,12 @@ pipeline {
           echo "===== CD CONTEXT ====="
           date "+%Y-%m-%d %H:%M:%S %Z"
           echo "APP_DIR=${APP_DIR}"
-          echo "DEPLOY_DIR=${DEPLOY_DIR}"
-          echo "PROJECT_NAME=${PROJECT_NAME}"
-          echo "SERVICE_NAME=${SERVICE_NAME}"
+          echo "REPO_DIR=${REPO_DIR}"
+          echo "RUNTIME_DIR=${RUNTIME_DIR}"
           echo "DEPLOY_REF=${DEPLOY_REF}"
-          echo "COMPOSE_FILES=${COMPOSE_FILES}"
-          echo "DC=${DC}"
+          echo "PROJECT_NAME=${PROJECT_NAME}"
+          echo "COMPOSE_NGINX=${COMPOSE_NGINX}"
+          echo "COMPOSE_CERTBOT=${COMPOSE_CERTBOT}"
         '''
       }
     }
@@ -66,9 +60,21 @@ pipeline {
       }
     }
 
-    stage('Checkout (to /home/ubuntu/app/infra)') {
+    stage('Ensure runtime dirs') {
       steps {
-        dir("${env.DEPLOY_DIR}") {
+        sh '''
+          set -euxo pipefail
+          sudo mkdir -p ${RUNTIME_DIR}/certbot/www
+          sudo mkdir -p ${RUNTIME_DIR}/certbot/conf
+          sudo chown -R ubuntu:ubuntu ${RUNTIME_DIR} || true
+          ls -al ${RUNTIME_DIR}
+        '''
+      }
+    }
+
+    stage('Checkout repo (to infra-repo)') {
+      steps {
+        dir("${env.REPO_DIR}") {
           checkout([
             $class: 'GitSCM',
             branches: [[name: "${env.DEPLOY_REF}"]],
@@ -93,40 +99,39 @@ pipeline {
       }
     }
 
-    stage('Prepare Nginx conf (http-only -> app.conf)') {
+    stage('Prepare nginx conf (http-only -> app.conf)') {
       steps {
-        dir("${env.DEPLOY_DIR}") {
+        dir("${env.REPO_DIR}") {
           sh '''
             set -euxo pipefail
-
             SRC="infra/nginx/conf.d/app.1-http-only.conf"
             DST="infra/nginx/conf.d/app.conf"
-
-            test -f "\$SRC"
-            cp -f "\$SRC" "\$DST"
-            echo "Prepared nginx conf: \$DST (from \$SRC)"
+            test -f "$SRC"
+            cp -f "$SRC" "$DST"
+            echo "Prepared nginx conf: $DST"
           '''
         }
       }
     }
 
-    stage('Validate compose (merged)') {
+    stage('Validate compose') {
       steps {
         sh '''
           set -euxo pipefail
 
-          # 루트 compose 존재 확인
-          # nginx compose 존재 확인(체크아웃된 infra 레포 기준)
-          test -f ${DEPLOY_DIR}/infra/compose/docker-compose.nginx.yml
+          test -f "${COMPOSE_NGINX}"
+          test -f "${COMPOSE_CERTBOT}"
 
-          # 합쳐진 compose가 유효한지 검증
-          ${DC} config > /dev/null
+          DC="docker compose -p ${PROJECT_NAME} -f ${COMPOSE_NGINX} -f ${COMPOSE_CERTBOT}"
 
-          # nginx가 어떤 image를 바라보는지 한 줄 확인(디버깅)
-          ${DC} config | awk '
-            \$0 ~ /^services:/ {in_services=1}
-            in_services && \$1=="nginx:" {in_nginx=1}
-            in_nginx && \$1=="image:" {print "nginx image =>", \$2; exit}
+          # merge된 compose 검증
+          $DC config > /dev/null
+
+          # 디버그
+          $DC config | awk '
+            $0 ~ /^services:/ {in_services=1}
+            in_services && $1=="nginx:" {in_nginx=1}
+            in_nginx && $1=="image:" {print "nginx image =>", $2; exit}
           ' || true
         '''
       }
@@ -136,20 +141,18 @@ pipeline {
       steps {
         sh '''
           set -euxo pipefail
+          DC="docker compose -p ${PROJECT_NAME} -f ${COMPOSE_NGINX} -f ${COMPOSE_CERTBOT}"
 
-          # 1) nginx 이미지 pull (compose 파일에 적힌 image:tag 기준)
-          ${DC} pull ${SERVICE_NAME}
+          # nginx만 갱신
+          $DC pull ${SERVICE_NAME}
+          $DC up -d --no-deps ${SERVICE_NAME}
 
-          # 2) nginx만 교체 (다른 서비스 건드리지 않음)
-          ${DC} up -d --no-deps ${SERVICE_NAME}
-
-          # 3) 상태 출력
-          ${DC} ps
+          $DC ps
         '''
       }
     }
 
-    stage('Postcheck: nginx config') {
+    stage('Postcheck: nginx -t') {
       steps {
         sh '''
           set -euo pipefail
@@ -158,15 +161,15 @@ pipeline {
         '''
       }
     }
-
   }
 
   post {
     always {
       sh '''
         set +e
+        DC="docker compose -p ${PROJECT_NAME} -f ${COMPOSE_NGINX} -f ${COMPOSE_CERTBOT}"
         echo "===== FINAL STATUS ====="
-        ${DC} ps 2>/dev/null || true
+        $DC ps 2>/dev/null || true
       '''
     }
   }
