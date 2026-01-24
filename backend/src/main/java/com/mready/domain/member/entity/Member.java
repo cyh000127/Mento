@@ -43,7 +43,6 @@ public class Member extends BaseEntity {
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
 
-
 	public void updateName(final String name) {
 		this.name = name;
 	}
@@ -52,6 +51,8 @@ public class Member extends BaseEntity {
 		this.email = email;
 	}
 
+	public void withdraw() {
+		this.deletedAt = LocalDateTime.now();
+	}
+
 }
-
-

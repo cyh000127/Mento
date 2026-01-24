@@ -1,5 +1,6 @@
 package com.mready.domain.member.service.command;
 
+import com.mready.common.auth.redis.repository.RefreshTokenRepository;
 import com.mready.common.error.ErrorCode;
 import com.mready.domain.member.converter.MemberConverter;
 import com.mready.domain.member.dto.request.MemberCreateReqDto;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberCommandService {
 
 	private final MemberRepository memberRepository;
+	private final RefreshTokenRepository refreshTokenRepository;
 
 	public Member create(final MemberCreateReqDto dto) {
 		if (memberRepository.existsByEmail(dto.email())) {
@@ -35,5 +37,18 @@ public class MemberCommandService {
 		Member savedMember = memberRepository.save(member);
 		log.info("[Member] OAuth 가입 완료 {id: {}, email: {}}", savedMember.getId(), savedMember.getEmail());
 		return savedMember;
+	}
+
+	public void withdraw(final Long memberId) {
+		Member member = memberRepository.findById(memberId)
+				.orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
+
+		if (member.getDeletedAt() != null) {
+			throw new MemberException(ErrorCode.ALREADY_WITHDRAWN);
+		}
+
+		member.withdraw();
+		refreshTokenRepository.deleteById(String.valueOf(memberId));
+		log.info("[Member] 탈퇴 완료 {id: {}}", member.getId());
 	}
 }
