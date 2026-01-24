@@ -99,20 +99,33 @@ pipeline {
       }
     }
 
-    stage('Prepare nginx conf (http-only -> app.conf)') {
+    stage('Check nginx conf state') {
       steps {
         dir("${env.REPO_DIR}") {
           sh '''
             set -euxo pipefail
-            SRC="infra/nginx/conf.d/app.1-http-only.conf"
-            DST="infra/nginx/conf.d/app.conf"
-            test -f "$SRC"
-            cp -f "$SRC" "$DST"
-            echo "Prepared nginx conf: $DST"
+
+            CONF_DIR="infra/nginx/conf.d"
+
+            echo "=== nginx conf files ==="
+            ls -al "$CONF_DIR"
+
+            # https conf는 반드시 존재해야 함
+            test -f "$CONF_DIR/app.2-https.conf"
+
+            # http-only conf는 비활성 상태여야 함
+            if [ -f "$CONF_DIR/app.1-http-only.conf" ]; then
+              echo "ERROR: app.1-http-only.conf must be disabled"
+              exit 1
+            fi
+
+            echo "nginx conf state OK"
           '''
         }
       }
     }
+
+
 
     stage('Validate compose') {
       steps {
