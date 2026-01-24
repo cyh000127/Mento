@@ -60,17 +60,17 @@ pipeline {
       }
     }
 
-    stage('Ensure runtime dirs') {
+    stage('Check runtime dirs') {
       steps {
         sh '''
           set -euxo pipefail
-          sudo mkdir -p ${RUNTIME_DIR}/certbot/www
-          sudo mkdir -p ${RUNTIME_DIR}/certbot/conf
-          sudo chown -R ubuntu:ubuntu ${RUNTIME_DIR} || true
+          test -d ${RUNTIME_DIR}/certbot/www
+          test -d ${RUNTIME_DIR}/certbot/conf
           ls -al ${RUNTIME_DIR}
         '''
       }
     }
+
 
     stage('Checkout repo (to infra-repo)') {
       steps {
