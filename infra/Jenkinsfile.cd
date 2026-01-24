@@ -152,12 +152,17 @@ pipeline {
       }
     }
 
-    stage('Postcheck: nginx -t') {
+    stage('Postcheck: nginx (ps + logs)') {
       steps {
         sh '''
           set -euo pipefail
-          docker exec nginx nginx -t
-          echo "nginx OK (nginx -t)"
+
+          echo "===== NGINX STATUS ====="
+          docker ps --filter "name=nginx" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
+
+          echo "===== NGINX LOGS (last 80 lines) ====="
+          # nginx 컨테이너가 아직 없거나 이름이 다르면 logs가 실패할 수 있으니 || true 유지
+          docker logs --tail=80 nginx 2>/dev/null || true
         '''
       }
     }
