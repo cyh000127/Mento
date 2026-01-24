@@ -10,7 +10,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.mready.domain.member.dto.request.MemberCreateReqDto;
 import com.mready.domain.member.dto.response.MemberResDto;
 import com.mready.domain.member.entity.Member;
 import com.mready.domain.member.service.command.MemberCommandService;
@@ -30,44 +29,15 @@ class MemberFacadeServiceTest {
 	private MemberFacadeService memberFacadeService;
 
 	@Test
-	@DisplayName("회원_생성_및_DTO_변환_성공_테스트")
-	void 회원_생성_및_DTO_변환_성공_테스트() {
-		// given
-		MemberCreateReqDto request = MemberCreateReqDto.builder()
-			.name("홍길동")
-			.email("hong@example.com")
-			.build();
-
-		Member savedMember = Member.builder()
-			.id(1L)
-			.name("홍길동")
-			.email("hong@example.com")
-			.build();
-
-		given(memberCommandService.create(request)).willReturn(savedMember);
-
-		// when
-		MemberResDto result = memberFacadeService.createMember(request);
-
-		// then
-		assertThat(result).isNotNull();
-		assertThat(result.id()).isEqualTo(1L);
-		assertThat(result.name()).isEqualTo("홍길동");
-		assertThat(result.email()).isEqualTo("hong@example.com");
-
-		then(memberCommandService).should(times(1)).create(request);
-	}
-
-	@Test
 	@DisplayName("회원_조회_및_DTO_변환_성공_테스트")
 	void 회원_조회_및_DTO_변환_성공_테스트() {
 		// given
 		Long memberId = 1L;
 		Member member = Member.builder()
-			.id(memberId)
-			.name("홍길동")
-			.email("hong@example.com")
-			.build();
+				.id(memberId)
+				.name("홍길동")
+				.email("hong@example.com")
+				.build();
 
 		given(memberQueryService.findById(memberId)).willReturn(member);
 

@@ -1,37 +1,32 @@
 package com.mready.domain.member.controller.command;
 
+import com.mready.common.auth.principal.AuthenticatedUser;
+import com.mready.common.response.BaseResponse;
+import com.mready.common.util.ResponseUtils;
+import com.mready.domain.member.service.command.MemberCommandService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.mready.common.response.BaseResponse;
-import com.mready.common.util.ResponseUtils;
-import com.mready.domain.member.dto.request.MemberCreateReqDto;
-import com.mready.domain.member.dto.response.MemberResDto;
-import com.mready.domain.member.service.MemberFacadeService;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-
-@Tag(name = "Member", description = "회원 관리 API")
+@Tag(name = "Account", description = "계정 관리 API")
 @RestController
-@RequestMapping("/api/members")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class MemberCommandController {
 
-	private final MemberFacadeService memberFacadeService;
+    private final MemberCommandService memberCommandService;
 
-	@Operation(summary = "회원 생성", description = "새로운 회원을 생성합니다.")
-	@PostMapping
-	public ResponseEntity<BaseResponse<MemberResDto>> createMember(
-		@Valid @RequestBody final MemberCreateReqDto request
-	) {
-		MemberResDto response = memberFacadeService.createMember(request);
-		return ResponseUtils.created(response);
-	}
+    @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 수행합니다 (Soft Delete).")
+    @DeleteMapping("/account")
+    public ResponseEntity<BaseResponse<Void>> withdraw(
+            @AuthenticationPrincipal AuthenticatedUser user) {
+        memberCommandService.withdraw(user.getId());
+        return ResponseUtils.ok(null);
+    }
 }

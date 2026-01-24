@@ -18,25 +18,28 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class SecurityConfig {
 
 	private static final String[] WHITELIST = {
-		"/swagger-ui/**",
-		"/v3/api-docs/**",
-		"/error",
-		"/",
+			"/swagger-ui/**",
+			"/v3/api-docs/**",
+			"/error",
+			"/",
 
-		//OAuth2
-		"/login/oauth/**"
+			// OAuth2
+			"/login/oauth/**"
 	};
 
 	private final CorsConfig corsFilter;
 	private final CustomOAuth2UserService customOAuth2UserService;
 	private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-	
+
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 	private final JwtExceptionFilter jwtExceptionFilter;
 
@@ -47,26 +50,24 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http
-			.csrf(AbstractHttpConfigurer::disable)
-			.httpBasic(AbstractHttpConfigurer::disable)
-			.formLogin(AbstractHttpConfigurer::disable)
-			.logout(AbstractHttpConfigurer::disable)
-			.sessionManagement(SecurityConfig::createSessionPolicy)
-			.addFilterBefore(corsFilter.corsFilter(), UsernamePasswordAuthenticationFilter.class)
-			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-			.addFilterBefore(jwtExceptionFilter, JwtAuthenticationFilter.class);
+				.csrf(AbstractHttpConfigurer::disable)
+				.httpBasic(AbstractHttpConfigurer::disable)
+				.formLogin(AbstractHttpConfigurer::disable)
+				.logout(AbstractHttpConfigurer::disable)
+				.sessionManagement(SecurityConfig::createSessionPolicy)
+				.addFilterBefore(corsFilter.corsFilter(), UsernamePasswordAuthenticationFilter.class)
+				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+				.addFilterBefore(jwtExceptionFilter, JwtAuthenticationFilter.class);
 
 		http
-			.oauth2Login(oauth2 -> oauth2
-				.userInfoEndpoint(userInfo -> userInfo
-					.userService(customOAuth2UserService)
-				)
-				.successHandler(oAuth2LoginSuccessHandler)
-			)
-			.authorizeHttpRequests(authorize -> authorize
-				.requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
-				.requestMatchers(WHITELIST).permitAll()
-				.anyRequest().permitAll());
+				.oauth2Login(oauth2 -> oauth2
+						.userInfoEndpoint(userInfo -> userInfo
+								.userService(customOAuth2UserService))
+						.successHandler(oAuth2LoginSuccessHandler))
+				.authorizeHttpRequests(authorize -> authorize
+						.requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
+						.requestMatchers(WHITELIST).permitAll()
+						.anyRequest().permitAll());
 
 		return http.build();
 	}
