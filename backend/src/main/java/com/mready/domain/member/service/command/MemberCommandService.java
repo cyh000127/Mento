@@ -2,8 +2,6 @@ package com.mready.domain.member.service.command;
 
 import com.mready.common.auth.redis.repository.RefreshTokenRepository;
 import com.mready.common.error.ErrorCode;
-import com.mready.domain.member.converter.MemberConverter;
-import com.mready.domain.member.dto.request.MemberCreateReqDto;
 import com.mready.domain.member.entity.Member;
 import com.mready.domain.member.exception.MemberException;
 import com.mready.domain.member.repository.MemberRepository;
@@ -21,17 +19,6 @@ public class MemberCommandService {
 
 	private final MemberRepository memberRepository;
 	private final RefreshTokenRepository refreshTokenRepository;
-
-	public Member create(final MemberCreateReqDto dto) {
-		if (memberRepository.existsByEmail(dto.email())) {
-			throw new MemberException(ErrorCode.MEMBER_EMAIL_DUPLICATE);
-		}
-
-		Member member = MemberConverter.toEntity(dto);
-		Member savedMember = memberRepository.save(member);
-		log.info("[Member] 생성 완료 {id: {}, email: {}}", savedMember.getId(), savedMember.getEmail());
-		return savedMember;
-	}
 
 	public Member create(final Member member) {
 		Member savedMember = memberRepository.save(member);

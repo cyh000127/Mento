@@ -16,20 +16,22 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @Tag(name = "Member", description = "회원 관리 API")
 @RestController
-@RequestMapping("/api/members")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class MemberQueryController {
 
 	private final MemberFacadeService memberFacadeService;
 
 	@Operation(summary = "회원 조회", description = "ID로 회원을 조회합니다.")
-	@GetMapping("/{id}")
+	@PreAuthorize("hasAnyAuthority('MENTO', 'ADMIN')")
+	@GetMapping("/members/{memberId}")
 	public ResponseEntity<BaseResponse<MemberResDto>> getMember(
-		@PathVariable final Long id
-	) {
-		MemberResDto response = memberFacadeService.getMember(id);
+			@PathVariable final Long memberId) {
+		MemberResDto response = memberFacadeService.getMember(memberId);
 		return ResponseUtils.ok(response);
 	}
 }

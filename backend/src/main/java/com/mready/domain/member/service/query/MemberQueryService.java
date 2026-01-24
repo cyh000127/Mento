@@ -20,7 +20,12 @@ public class MemberQueryService {
 
 	public Member findById(final Long id) {
 		Member member = memberRepository.findById(id)
-			.orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
+				.orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
+
+		if (member.getDeletedAt() != null) {
+			throw new MemberException(ErrorCode.MEMBER_NOT_FOUND);
+		}
+
 		log.info("[Member] 조회 완료 {id: {}, email: {}}", member.getId(), member.getEmail());
 		return member;
 	}

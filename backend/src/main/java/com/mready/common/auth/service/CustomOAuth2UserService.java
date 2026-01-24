@@ -6,9 +6,7 @@ import com.mready.domain.member.converter.MemberConverter;
 import com.mready.domain.member.dto.response.MemberResDto;
 import com.mready.domain.member.entity.Member;
 import com.mready.domain.member.repository.MemberRepository;
-import com.mready.domain.member.service.MemberFacadeService;
 import com.mready.domain.member.service.command.MemberCommandService;
-import com.mready.domain.member.service.query.MemberQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -23,9 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
-	private final MemberFacadeService memberFacadeService;
 	private final MemberRepository memberRepository;
-	private final MemberQueryService memberQueryService;
 	private final MemberCommandService memberCommandService;
 
 	@Override

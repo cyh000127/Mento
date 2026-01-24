@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import com.mready.domain.member.entity.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
@@ -21,6 +22,9 @@ public record MemberResDto(
 
 	@Schema(description = "생년월일", example = "1990-01-01")
     LocalDate birthDate,
+
+	@Schema(description = "권한", example = "USER")
+	Role role,
 
 	@Schema(description = "생성 시각")
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")

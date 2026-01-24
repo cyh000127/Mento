@@ -60,14 +60,14 @@ class MemberFacadeServiceTest {
 
 	@Test
 	@DisplayName("회원_조회_및_DTO_변환_성공_테스트")
-	void 회원_조회_및_Dto_변환_성공_테스트() {
+	void 회원_조회_및_DTO_변환_성공_테스트() {
 		// given
 		Long memberId = 1L;
 		Member member = Member.builder()
-			.id(memberId)
-			.name("홍길동")
-			.email("hong@example.com")
-			.build();
+				.id(memberId)
+				.name("홍길동")
+				.email("hong@example.com")
+				.build();
 
 		given(memberQueryService.findById(memberId)).willReturn(member);
 
