@@ -11,9 +11,9 @@ services:
       - /home/ubuntu/app/infra/infra-repo/infra/nginx/conf.d:/etc/nginx/conf.d:ro
 
       # (2) 운영 데이터: ACME challenge (webroot)
-      - /home/ubuntu/app/infra-runtime/certbot/www:/var/www/certbot:ro
+      - /home/ubuntu/app/infra/infra-runtime/certbot/www:/var/www/certbot:ro
 
       # (3) 운영 데이터: 인증서 저장소
-      - /home/ubuntu/app/infra-runtime/certbot/conf:/etc/letsencrypt:ro
+      - /home/ubuntu/app/infra/infra-runtime/certbot/conf:/etc/letsencrypt:ro
 
     restart: unless-stopped
