@@ -5,28 +5,15 @@ services:
     ports:
       - "80:80"
       - "443:443"
+
     volumes:
-      - ../nginx/conf.d/app.conf:/etc/nginx/conf.d/app.conf:ro
+      # (1) 레포에서 관리되는 nginx 설정(conf.d)
+      - /home/ubuntu/app/infra/nginx/conf.d:/etc/nginx/conf.d:ro
 
-      - certbot-www:/var/www/certbot:ro
-      - letsencrypt:/etc/letsencrypt:ro
+      # (2) 운영 데이터: ACME challenge (webroot)
+      - /home/ubuntu/app/infra-runtime/certbot/www:/var/www/certbot:ro
+
+      # (3) 운영 데이터: 인증서 저장소
+      - /home/ubuntu/app/infra-runtime/certbot/conf:/etc/letsencrypt:ro
+
     restart: unless-stopped
-
-  certbot:
-    image: certbot/certbot:latest
-    container_name: certbot
-    volumes:
-      - certbot-www:/var/www/certbot
-      - letsencrypt:/etc/letsencrypt
-    entrypoint: /bin/sh -c
-    command: >
-      "trap exit TERM;
-      while :; do
-        certbot renew --webroot -w /var/www/certbot --quiet;
-        sleep 12h;
-      done"
-    restart: unless-stopped
-
-volumes:
-  certbot-www:
-  letsencrypt:

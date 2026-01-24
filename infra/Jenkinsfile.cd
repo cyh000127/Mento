@@ -11,7 +11,7 @@ pipeline {
     APP_DIR = "/home/ubuntu/app"
 
     // 이번 CD는 infra 레포를 이 경로에 체크아웃해서 사용
-    DEPLOY_DIR = "/home/ubuntu/app/infra"
+    DEPLOY_DIR = "/home/ubuntu/app/infra-repo"
 
     // docker compose 프로젝트 이름을 app으로 고정
     PROJECT_NAME = "app"
@@ -22,7 +22,7 @@ pipeline {
     // Git 인증 (기존 그대로)
     GIT_CRED_ID = "Gitlab_PAT"
 
-    // 배포할 브랜치(ref) 고정 (infra CD면 develop-infra 고정이 자연스러움)
+    // 배포할 브랜치(ref) 고정 (infra CD면 develop-infra-f ${DEPLOY_DIR}/infra/compose/docker-compose.certbot.yml 고정이 자연스러움)
     REPO_URL = "https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git"
     DEPLOY_REF = "develop-infra"
 
@@ -30,6 +30,7 @@ pipeline {
     // - 루트 compose + nginx compose 조각
     COMPOSE_FILES = """
       -f ${DEPLOY_DIR}/infra/compose/docker-compose.nginx.yml
+      -f ${DEPLOY_DIR}/infra/compose/docker-compose.certbot.yml
     """.trim().replaceAll("\\s+", " ")
 
     DC = "docker compose -p ${PROJECT_NAME} ${COMPOSE_FILES}"
