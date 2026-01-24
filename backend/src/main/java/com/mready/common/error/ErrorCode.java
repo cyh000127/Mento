@@ -28,7 +28,7 @@ public enum ErrorCode {
 	 */
 	MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "M-001", "회원을 찾을 수 없습니다."),
 	MEMBER_EMAIL_DUPLICATE(HttpStatus.CONFLICT, "M-002", "이미 존재하는 이메일입니다."),
-
+	ALREADY_WITHDRAWN(HttpStatus.CONFLICT, "M-003", "이미 탈퇴한 회원입니다."),
 
 	/**
 	 * Auth Error (A-xxx)

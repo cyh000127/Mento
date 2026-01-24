@@ -45,7 +45,8 @@ public class AuthCommandServiceImpl implements AuthCommandService {
                 String memberId = jwtTokenProvider.getClaims(refreshToken).getSubject();
                 refreshTokenRepository.deleteById(memberId);
             } catch (Exception e) {
-                log.info("리프레시 토큰에서 사용자 ID 추출 실패: {} | 예외 발생 지점 [{} {}]", e.getMessage(), request.getMethod(), request.getRequestURI());
+                log.info("리프레시 토큰에서 사용자 ID 추출 실패: {} | 예외 발생 지점 [{} {}]", e.getMessage(), request.getMethod(),
+                        request.getRequestURI());
             }
             CookieUtil.deleteCookie(request, response, AuthConstant.REFRESH_TOKEN);
         }
@@ -66,6 +67,10 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         // Member 조회
         Member member = jwtTokenProvider.getMember(refreshToken)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
+        if (member.getDeletedAt() != null) {
+            throw new BusinessException(ErrorCode.ALREADY_WITHDRAWN);
+        }
 
         // DB 저장된 RT 확인
         RefreshToken savedToken = refreshTokenRepository.findById(String.valueOf(member.getId()))
@@ -92,6 +97,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
 
         // 응답 설정
         response.setHeader(AUTHORIZATION, BEARER + newToken.accessToken());
-        CookieUtil.addCookie(response, AuthConstant.REFRESH_TOKEN, newToken.refreshToken(), (int) (jwtProperties.refreshTokenExpiration() / 1000));
+        CookieUtil.addCookie(response, AuthConstant.REFRESH_TOKEN, newToken.refreshToken(),
+                (int) (jwtProperties.refreshTokenExpiration() / 1000));
     }
 }

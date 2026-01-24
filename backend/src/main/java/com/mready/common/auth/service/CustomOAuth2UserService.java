@@ -43,10 +43,15 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 		return new CustomOAuth2User(member, attributes.getAttributes());
 	}
 
-
-	public MemberResDto loginOrRegister(final OAuth2Attribute attributes){
+	public MemberResDto loginOrRegister(final OAuth2Attribute attributes) {
 		return memberRepository.findByEmail(attributes.getEmail())
-				.map(MemberConverter::toMemberResDto)
+				.map(member -> {
+					if (member.getDeletedAt() != null) {
+						throw new com.mready.common.error.exception.BusinessException(
+								com.mready.common.error.ErrorCode.ALREADY_WITHDRAWN);
+					}
+					return MemberConverter.toMemberResDto(member);
+				})
 				.orElseGet(() -> {
 					Member newMember = MemberConverter.toEntity(attributes);
 					Member savedMember = memberCommandService.create(newMember);
