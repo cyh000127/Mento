@@ -31,7 +31,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 		String registrationId = userRequest.getClientRegistration().getRegistrationId();
 		OAuth2Attribute attributes = OAuth2Attribute.of(registrationId, oAuth2User.getAttributes());
 
-		// 회원가입 또는 로그인 처리
 		MemberResDto memberResDto = loginOrRegister(attributes);
 
 		Member member = memberRepository.findById(memberResDto.id()).orElseThrow();

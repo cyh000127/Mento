@@ -11,10 +11,10 @@ import org.springframework.data.redis.core.TimeToLive;
 public class BlackList {
 
     @Id
-    private String id; 
+    private final String id;
     
     @TimeToLive
-    private Long expirationTime;
+    private final Long expirationTime;
 
     @Builder
     public BlackList(String id, Long expirationTime) {
