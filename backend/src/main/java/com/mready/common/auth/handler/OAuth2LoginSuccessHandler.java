@@ -53,7 +53,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 		CookieUtil.addCookie(response, "refreshToken", token.refreshToken(),
 				(int) (jwtProperties.refreshTokenExpiration() / 1000));
 
-		// 2. Redis에 Refresh Token 저장
+		// Redis에 Refresh Token 저장
 		RefreshToken refreshToken = RefreshToken.builder()
 				.id(String.valueOf(user.getMember().getId()))
 				.token(token.refreshToken())
