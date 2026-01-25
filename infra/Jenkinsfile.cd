@@ -155,11 +155,6 @@ pipeline {
           build job: 'CD/Final', wait: true, parameters: [
             string(name: 'PROJECT_NAME', value: "${env.PROJECT_NAME}"),
             string(name: 'TARGET_SERVICES', value: targetStr),
-            booleanParam(name: 'SYNC_REPOS', value: true),
-
-            string(name: 'DEPLOY_REF_INFRA', value: 'develop-infra'),
-            string(name: 'DEPLOY_REF_BE',    value: 'develop-be'),
-            string(name: 'DEPLOY_REF_FE',    value: 'develop-fe')
           ]
 
         }
