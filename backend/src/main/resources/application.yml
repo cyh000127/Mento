@@ -11,6 +11,10 @@ spring:
       enabled: on
   jmx:
     enabled: true
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 500MB
 
 springdoc:
   swagger-ui:
@@ -20,3 +24,10 @@ springdoc:
 logging:
   level:
     org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver: ERROR
+
+cloudflare:
+  r2:
+    endpoint: ${CLOUDFLARE_ENDPOINT}
+    bucket: ${CLOUDFLARE_BUCKET}
+    access-key: ${CLOUDFLARE_ACCESS_KEY}
+    secret-key: ${CLOUDFLARE_SECRET_KEY}
