@@ -91,9 +91,16 @@ pipeline {
       }
     }
 
+    /* =======================================================
+     * Nginx Lint
+     * ======================================================= */
     stage('Nginx Lint (conf.d)') {
       when {
-        expression { return (env.TARGET_SERVICES?.split("\\s+") as List).contains('nginx') }
+        expression {
+          // 완전한 null-safe: when 평가 시점에 TARGET_SERVICES가 null이어도 절대 NPE 안 남
+          def ts = (env.TARGET_SERVICES ?: '').trim()
+          return ts != '' && ts.split(/\s+/).contains('nginx')
+        }
       }
       steps {
         echo "===== NGINX CONFIG LINT (conf.d mount) ====="
@@ -122,9 +129,16 @@ pipeline {
       }
     }
 
+    /* =======================================================
+     * Nginx Runtime Check
+     * ======================================================= */
     stage('Nginx Runtime Check (container)') {
       when {
-        expression { return (env.TARGET_SERVICES?.split("\\s+") as List).contains('nginx') }
+        expression {
+          // 동일하게 null-safe
+          def ts = (env.TARGET_SERVICES ?: '').trim()
+          return ts != '' && ts.split(/\s+/).contains('nginx')
+        }
       }
       steps {
         echo "===== NGINX RUNTIME CHECK (host-side HTTP client) ====="
