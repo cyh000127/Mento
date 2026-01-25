@@ -7,27 +7,18 @@ pipeline {
   }
 
   environment {
-    // 최상위 고정
     APP_DIR      = "/home/ubuntu/app/infra"
-
-    // 레포(코드)와 런타임(운영 데이터) 분리
     REPO_DIR     = "${APP_DIR}/infra-repo"
     RUNTIME_DIR  = "${APP_DIR}/infra-runtime"
 
-    // Git
     REPO_URL     = "https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git"
     DEPLOY_REF   = "develop-infra"
     GIT_CRED_ID  = "Gitlab_PAT"
 
-    // compose project
     PROJECT_NAME = "app"
 
-    // compose 파일 (레포 내부 경로)
     COMPOSE_NGINX   = "${REPO_DIR}/infra/compose/docker-compose.nginx.yml"
     COMPOSE_CERTBOT = "${REPO_DIR}/infra/compose/docker-compose.certbot.yml"
-
-    // 기본은 nginx만 배포
-    SERVICE_NAME = "nginx"
   }
 
   stages {
@@ -71,7 +62,6 @@ pipeline {
       }
     }
 
-
     stage('Checkout repo (to infra-repo)') {
       steps {
         dir("${env.REPO_DIR}") {
@@ -104,16 +94,13 @@ pipeline {
         dir("${env.REPO_DIR}") {
           sh '''
             set -euxo pipefail
-
             CONF_DIR="infra/nginx/conf.d"
 
             echo "=== nginx conf files ==="
             ls -al "$CONF_DIR"
 
-            # https conf는 반드시 존재해야 함
             test -f "$CONF_DIR/app.2-https.conf"
 
-            # http-only conf는 비활성 상태여야 함
             if [ -f "$CONF_DIR/app.1-http-only.conf" ]; then
               echo "ERROR: app.1-http-only.conf must be disabled"
               exit 1
@@ -125,22 +112,16 @@ pipeline {
       }
     }
 
-
-
-    stage('Validate compose') {
+    stage('Validate compose (infra only)') {
       steps {
         sh '''
           set -euxo pipefail
-
           test -f "${COMPOSE_NGINX}"
           test -f "${COMPOSE_CERTBOT}"
 
           DC="docker compose -p ${PROJECT_NAME} -f ${COMPOSE_NGINX} -f ${COMPOSE_CERTBOT}"
-
-          # merge된 compose 검증
           $DC config > /dev/null
 
-          # 디버그
           $DC config | awk '
             $0 ~ /^services:/ {in_services=1}
             in_services && $1=="nginx:" {in_nginx=1}
@@ -150,44 +131,48 @@ pipeline {
       }
     }
 
-    stage('Deploy nginx only') {
+    stage('Trigger CD/Final') {
       steps {
-        sh '''
-          set -euxo pipefail
-          DC="docker compose -p ${PROJECT_NAME} -f ${COMPOSE_NGINX} -f ${COMPOSE_CERTBOT}"
+        script {
+          def changed = sh(
+            script: 'cd "${REPO_DIR}" && git diff --name-only HEAD^1..HEAD || true',
+            returnStdout: true
+          ).trim()
 
-          # nginx만 갱신
-          $DC pull ${SERVICE_NAME}
-          $DC up -d --no-deps ${SERVICE_NAME}
+          echo "===== CHANGED FILES (HEAD^1..HEAD) =====\n${changed}"
 
-          $DC ps
-        '''
-      }
-    }
+          def targets = []
+          if (changed =~ /(^infra\/|^infra\/nginx\/|^infra\/compose\/)/) {
+            targets << 'nginx'
+            targets << 'certbot'
+          }
 
-    stage('Postcheck: nginx (ps + logs)') {
-      steps {
-        sh '''
-          set -euo pipefail
+          def targetStr = targets.unique().join(' ').trim()
 
-          echo "===== NGINX STATUS ====="
-          docker ps --filter "name=nginx" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
+          echo "===== CALL CD/Final ====="
+          echo "TARGET_SERVICES=${targetStr}"
 
-          echo "===== NGINX LOGS (last 80 lines) ====="
-          # nginx 컨테이너가 아직 없거나 이름이 다르면 logs가 실패할 수 있으니 || true 유지
-          docker logs --tail=80 nginx 2>/dev/null || true
-        '''
+          build job: 'CD/Final', wait: true, parameters: [
+            string(name: 'PROJECT_NAME', value: "${env.PROJECT_NAME}"),
+            string(name: 'TARGET_SERVICES', value: targetStr),
+            booleanParam(name: 'SYNC_REPOS', value: true),
+
+            string(name: 'DEPLOY_REF_INFRA', value: 'develop-infra'),
+            string(name: 'DEPLOY_REF_BE',    value: 'develop-be'),
+            string(name: 'DEPLOY_REF_FE',    value: 'develop-fe')
+          ]
+
+        }
       }
     }
   }
 
+  // Infra 쪽 post는 굳이 DC ps 안 찍는 걸 추천
   post {
     always {
       sh '''
         set +e
-        DC="docker compose -p ${PROJECT_NAME} -f ${COMPOSE_NGINX} -f ${COMPOSE_CERTBOT}"
-        echo "===== FINAL STATUS ====="
-        $DC ps 2>/dev/null || true
+        echo "===== INFRA CD DONE (Final will deploy) ====="
       '''
     }
   }
