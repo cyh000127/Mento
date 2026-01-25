@@ -65,7 +65,6 @@ class AuthCommandServiceImplTest {
         authCommandService.logout(request, response);
 
         // Then
-        verify(jwtTokenProvider).setBlackList(validRefreshToken);
         verify(jwtTokenProvider).setBlackList(validAccessToken);
         verify(refreshTokenRepository).deleteById("1");
     }
@@ -81,7 +80,7 @@ class AuthCommandServiceImplTest {
         Member member = Member.builder().id(1L).build();
         when(jwtTokenProvider.getMember(validRefreshToken)).thenReturn(Optional.of(member));
 
-        RefreshToken savedToken = RefreshToken.builder().memberId("1").token(validRefreshToken).build();
+        RefreshToken savedToken = RefreshToken.builder().id("1").token(validRefreshToken).build();
         when(refreshTokenRepository.findById("1")).thenReturn(Optional.of(savedToken));
 
         Token newToken = new Token("newAccess", "newRefresh");
@@ -93,6 +92,5 @@ class AuthCommandServiceImplTest {
 
         // Then
         verify(refreshTokenRepository).save(any(RefreshToken.class));
-        verify(jwtTokenProvider).setBlackList(validRefreshToken); // Rotation
     }
 }

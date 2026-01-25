@@ -81,15 +81,10 @@ public class AuthCommandServiceImpl implements AuthCommandService {
             throw new AuthException(ErrorCode.INVALID_TOKEN);
         }
 
-        // 이전 RT 블랙리스트 처리
-        jwtTokenProvider.setBlackList(refreshToken);
-
-        // 새 토큰 발급
-        Token newToken = jwtTokenProvider.createToken(member);
-
         // DB 업데이트
+        Token newToken = jwtTokenProvider.createToken(member);
         RefreshToken newRefreshToken = RefreshToken.builder()
-                .memberId(String.valueOf(member.getId()))
+                .id(String.valueOf(member.getId()))
                 .token(newToken.refreshToken())
                 .expirationTime(jwtProperties.refreshTokenExpiration() / 1000)
                 .build();

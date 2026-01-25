@@ -55,7 +55,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
 		// 2. Redis에 Refresh Token 저장
 		RefreshToken refreshToken = RefreshToken.builder()
-				.memberId(String.valueOf(user.getMember().getId()))
+				.id(String.valueOf(user.getMember().getId()))
 				.token(token.refreshToken())
 				.expirationTime(jwtProperties.refreshTokenExpiration() / 1000)
 				.build();
