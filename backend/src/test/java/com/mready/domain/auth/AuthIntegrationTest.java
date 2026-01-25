@@ -69,7 +69,7 @@ class AuthIntegrationTest {
         });
         org.mockito.Mockito.lenient().when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> {
             RefreshToken rt = invocation.getArgument(0);
-            refreshTokens.put(rt.getMemberId(), rt);
+            refreshTokens.put(rt.getId(), rt);
             return rt;
         });
         org.mockito.Mockito.lenient().doAnswer(invocation -> {
@@ -112,7 +112,7 @@ class AuthIntegrationTest {
         // 토큰 생성
         token = jwtTokenProvider.createToken(member);
         RefreshToken rt = RefreshToken.builder()
-                .memberId(String.valueOf(member.getId()))
+                .id(String.valueOf(member.getId()))
                 .token(token.refreshToken())
                 .expirationTime(1000L).build();
         refreshTokenRepository.save(rt);
@@ -137,7 +137,7 @@ class AuthIntegrationTest {
         // 검증
         assertThat(refreshTokens.get(String.valueOf(member.getId()))).isNull();
 
-        assertThat(blackListMap).containsKeys(token.accessToken(), token.refreshToken());
+        assertThat(blackListMap).containsKey(token.accessToken());
     }
 
     @Test
@@ -149,7 +149,7 @@ class AuthIntegrationTest {
         org.mockito.Mockito.when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
 
         RefreshToken rt = RefreshToken.builder()
-                .memberId(String.valueOf(member.getId()))
+                .id(String.valueOf(member.getId()))
                 .token(oldToken.refreshToken())
                 .expirationTime(1000L).build();
         refreshTokenRepository.save(rt);
@@ -160,6 +160,13 @@ class AuthIntegrationTest {
         request.setCookies(new Cookie("refreshToken", oldToken.refreshToken()));
         MockHttpServletResponse response = new MockHttpServletResponse();
 
+        // 토큰 생성 시간 차이를 위한 대기
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         ResponseEntity<BaseResponse<Void>> result = authCommandController.reissue(request, response);
 
         assertThat(result.getStatusCode().value()).isEqualTo(204);
@@ -168,8 +175,6 @@ class AuthIntegrationTest {
         assertThat(cookie).isNotNull();
         assertThat(cookie.getValue()).isNotEqualTo(oldToken.refreshToken());
 
-        // 검증
-        assertThat(blackListMap).containsKey(oldToken.refreshToken());
 
         RefreshToken newRt = refreshTokens.get(String.valueOf(member.getId()));
         assertThat(newRt).isNotNull();

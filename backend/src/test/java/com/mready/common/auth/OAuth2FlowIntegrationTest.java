@@ -114,7 +114,7 @@ class OAuth2FlowIntegrationTest {
         Mockito.verify(refreshTokenRepository, Mockito.atLeastOnce()).save(captor.capture());
         
         RefreshToken savedToken = captor.getAllValues().get(0);
-        assertThat(savedToken.getMemberId()).isEqualTo(String.valueOf(member.getId()));
+        assertThat(savedToken.getId()).isEqualTo(String.valueOf(member.getId()));
         assertThat(savedToken.getToken()).isEqualTo(refreshTokenValue);
 
         // Access Token (헤더)

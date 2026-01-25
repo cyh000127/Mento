@@ -11,16 +11,16 @@ import org.springframework.data.redis.core.TimeToLive;
 public class RefreshToken {
 
     @Id
-    private String memberId;
+    private final String id;
 
-    private String token;
+    private final String token;
 
     @TimeToLive
-    private Long expirationTime;
+    private final Long expirationTime;
 
     @Builder
-    public RefreshToken(String memberId, String token, Long expirationTime) {
-        this.memberId = memberId;
+    public RefreshToken(String id, String token, Long expirationTime) {
+        this.id = id;
         this.token = token;
         this.expirationTime = expirationTime;
     }

@@ -28,10 +28,10 @@ public class MemberQueryController {
 
 	@Operation(summary = "회원 조회", description = "ID로 회원을 조회합니다.")
 	@PreAuthorize("hasAnyAuthority('MENTO', 'ADMIN')")
-	@GetMapping("/members/{memberId}")
+	@GetMapping("/members/{id}")
 	public ResponseEntity<BaseResponse<MemberResDto>> getMember(
-			@PathVariable final Long memberId) {
-		MemberResDto response = memberFacadeService.getMember(memberId);
+			@PathVariable final Long id) {
+		MemberResDto response = memberFacadeService.getMember(id);
 		return ResponseUtils.ok(response);
 	}
 }

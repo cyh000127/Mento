@@ -26,8 +26,8 @@ public class MemberCommandService {
 		return savedMember;
 	}
 
-	public void withdraw(final Long memberId) {
-		Member member = memberRepository.findById(memberId)
+	public void withdraw(final Long id) {
+		Member member = memberRepository.findById(id)
 				.orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
 
 		if (member.getDeletedAt() != null) {
@@ -35,7 +35,7 @@ public class MemberCommandService {
 		}
 
 		member.withdraw();
-		refreshTokenRepository.deleteById(String.valueOf(memberId));
+		refreshTokenRepository.deleteById(String.valueOf(id));
 		log.info("[Member] 탈퇴 완료 {id: {}}", member.getId());
 	}
 }
