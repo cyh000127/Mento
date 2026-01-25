@@ -6,33 +6,38 @@ pipeline {
     disableConcurrentBuilds()
   }
 
+  parameters {
+    string(name: 'DEPLOY_REF', defaultValue: 'develop-infra', description: 'deploy ref/branch')
+    string(name: 'PROJECT_NAME', defaultValue: 'app', description: 'docker compose project name')
+    string(name: 'TARGET_SERVICES', defaultValue: '', description: '공백 구분 서비스 목록 (비우면 배포 안 함)')
+  }
+
   environment {
     APP_DIR      = "/home/ubuntu/app/infra"
     REPO_DIR     = "${APP_DIR}/infra-repo"
     RUNTIME_DIR  = "${APP_DIR}/infra-runtime"
 
     REPO_URL     = "https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git"
-    DEPLOY_REF   = "develop-infra"
     GIT_CRED_ID  = "Gitlab_PAT"
-
-    PROJECT_NAME = "app"
 
     COMPOSE_NGINX   = "${REPO_DIR}/infra/compose/docker-compose.nginx.yml"
     COMPOSE_CERTBOT = "${REPO_DIR}/infra/compose/docker-compose.certbot.yml"
   }
 
   stages {
+
     stage('Context') {
       steps {
         sh '''
           set -euxo pipefail
-          echo "===== CD CONTEXT ====="
+          echo "===== CD/INFRA CONTEXT ====="
           date "+%Y-%m-%d %H:%M:%S %Z"
           echo "APP_DIR=${APP_DIR}"
           echo "REPO_DIR=${REPO_DIR}"
           echo "RUNTIME_DIR=${RUNTIME_DIR}"
           echo "DEPLOY_REF=${DEPLOY_REF}"
           echo "PROJECT_NAME=${PROJECT_NAME}"
+          echo "TARGET_SERVICES=${TARGET_SERVICES}"
           echo "COMPOSE_NGINX=${COMPOSE_NGINX}"
           echo "COMPOSE_CERTBOT=${COMPOSE_CERTBOT}"
         '''
@@ -51,23 +56,30 @@ pipeline {
       }
     }
 
-    stage('Check runtime dirs') {
+    stage('Check runtime dirs (create if missing)') {
       steps {
         sh '''
           set -euxo pipefail
-          test -d ${RUNTIME_DIR}/certbot/www
-          test -d ${RUNTIME_DIR}/certbot/conf
-          ls -al ${RUNTIME_DIR}
+
+          # 없으면 생성(실행 실패 방지)
+          mkdir -p "${RUNTIME_DIR}/certbot/www"
+          mkdir -p "${RUNTIME_DIR}/certbot/conf"
+
+          # 권한은 환경 따라 실패할 수 있어 best-effort
+          chmod -R 0755 "${RUNTIME_DIR}" || true
+
+          echo "Runtime dirs ready"
+          ls -al "${RUNTIME_DIR}" || true
         '''
       }
     }
 
-    stage('Checkout repo (to infra-repo)') {
+    stage('Checkout repo (infra-repo)') {
       steps {
         dir("${env.REPO_DIR}") {
           checkout([
             $class: 'GitSCM',
-            branches: [[name: "${env.DEPLOY_REF}"]],
+            branches: [[name: "${params.DEPLOY_REF}"]],
             doGenerateSubmoduleConfigurations: false,
             extensions: [
               [$class: 'WipeWorkspace'],
@@ -89,20 +101,20 @@ pipeline {
       }
     }
 
-    stage('Check nginx conf state') {
+    stage('Check nginx conf state (policy)') {
       steps {
         dir("${env.REPO_DIR}") {
           sh '''
             set -euxo pipefail
             CONF_DIR="infra/nginx/conf.d"
 
-            echo "=== nginx conf files ==="
+            echo "=== nginx conf.d files ==="
             ls -al "$CONF_DIR"
 
             test -f "$CONF_DIR/app.2-https.conf"
 
             if [ -f "$CONF_DIR/app.1-http-only.conf" ]; then
-              echo "ERROR: app.1-http-only.conf must be disabled"
+              echo "ERROR: app.1-http-only.conf must be disabled/removed"
               exit 1
             fi
 
@@ -122,52 +134,49 @@ pipeline {
           DC="docker compose -p ${PROJECT_NAME} -f ${COMPOSE_NGINX} -f ${COMPOSE_CERTBOT}"
           $DC config > /dev/null
 
-          $DC config | awk '
-            $0 ~ /^services:/ {in_services=1}
-            in_services && $1=="nginx:" {in_nginx=1}
-            in_nginx && $1=="image:" {print "nginx image =>", $2; exit}
-          ' || true
+          echo "compose config OK"
         '''
       }
     }
 
     stage('Trigger CD/Final') {
+      when {
+        expression { return (params.TARGET_SERVICES ?: '').trim() != '' }
+      }
       steps {
         script {
-          def changed = sh(
-            script: 'cd "${REPO_DIR}" && git diff --name-only HEAD^1..HEAD || true',
-            returnStdout: true
-          ).trim()
+          def targetStr = (params.TARGET_SERVICES ?: '').trim()
 
-          echo "===== CHANGED FILES (HEAD^1..HEAD) =====\n${changed}"
-
-          def targets = []
-          if (changed =~ /(^infra\/|^infra\/nginx\/|^infra\/compose\/)/) {
-            targets << 'nginx'
-            targets << 'certbot'
-          }
-
-          def targetStr = targets.unique().join(' ').trim()
-
-          echo "===== CALL CD/Final ====="
+          echo "===== TRIGGER CD/FINAL ====="
+          echo "PROJECT_NAME=${params.PROJECT_NAME}"
           echo "TARGET_SERVICES=${targetStr}"
 
-          build job: 'CD/Final', wait: true, parameters: [
-            string(name: 'PROJECT_NAME', value: "${env.PROJECT_NAME}"),
-            string(name: 'TARGET_SERVICES', value: targetStr),
-          ]
-
+          // Final이 받는 파라미터만 전달
+          build job: 'CD/Final',
+            wait: true,
+            parameters: [
+              string(name: 'PROJECT_NAME', value: params.PROJECT_NAME),
+              string(name: 'TARGET_SERVICES', value: targetStr),
+            ]
         }
+      }
+    }
+
+    stage('Skip Final (no targets)') {
+      when {
+        expression { return (params.TARGET_SERVICES ?: '').trim() == '' }
+      }
+      steps {
+        echo "TARGET_SERVICES is empty. Skipping CD/Final."
       }
     }
   }
 
-  // Infra 쪽 post는 굳이 DC ps 안 찍는 걸 추천
   post {
     always {
       sh '''
         set +e
-        echo "===== INFRA CD DONE (Final will deploy) ====="
+        echo "===== CD/INFRA DONE (Final handles deploy) ====="
       '''
     }
   }
