@@ -1,53 +1,50 @@
 import { Check } from "lucide-react"
 
-interface StepIndicatorProps {
-  currentStep: number
-  totalSteps: number
+interface Step {
+  id: number
+  label: string
 }
+
+interface StepIndicatorProps {
+  steps: Step[]
+  currentStep: number
+}
+
 
 const stepLabels = ["분야 선택", "일정 선택", "사전 설문"]
 
-export function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
+export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
   return (
     <div className="flex items-center justify-center">
       <div className="flex items-center gap-2">
-        {Array.from({ length: totalSteps }, (_, i) => {
-          const stepNumber = i + 1
+        {steps.map((step, index) => {
+          const stepNumber = step.id
           const isCompleted = stepNumber < currentStep
           const isActive = stepNumber === currentStep
 
           return (
-            <div key={stepNumber} className="flex items-center">
-              {/* Step Circle */}
+            <div key={step.id} className="flex items-center">
               <div className="flex flex-col items-center">
                 <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold transition-all ${
+                  className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold ${
                     isCompleted
                       ? "bg-primary-500 text-dark-bg"
                       : isActive
-                        ? "bg-primary-500 text-dark-bg shadow-lg shadow-primary-500/30"
+                        ? "bg-primary-500 text-dark-bg shadow-lg"
                         : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {isCompleted ? (
-                    <Check className="h-5 w-5" />
-                  ) : (
-                    stepNumber
-                  )}
+                  {isCompleted ? "✓" : stepNumber}
                 </div>
-                <span
-                  className={`mt-2 text-xs font-medium ${
-                    isActive ? "text-text-primary" : "text-text-secondary"
-                  }`}
-                >
-                  {stepLabels[i]}
+
+                <span className="mt-2 text-xs font-medium">
+                  {step.label}
                 </span>
               </div>
 
-              {/* Connector Line */}
-              {stepNumber < totalSteps && (
+              {index < steps.length - 1 && (
                 <div
-                  className={`mx-4 h-0.5 w-16 transition-colors ${
+                  className={`mx-4 h-0.5 w-16 ${
                     isCompleted ? "bg-primary-500" : "bg-muted"
                   }`}
                 />
@@ -59,3 +56,4 @@ export function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
     </div>
   )
 }
+
