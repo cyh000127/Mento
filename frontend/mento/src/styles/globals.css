@@ -2,69 +2,81 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===============================
+   Root Color Tokens
+================================ */
 :root {
   /* Brand Primary */
-  --primary-500: #4DE2FF;
-  --primary-400: #6AE9FF;
-  --primary-300: #8FF0FF;
-  --primary-200: #B8F6FF;
-  --primary-100: #E6FCFF;
+  --primary-500: #4de2ff;
+  --primary-400: #6ae9ff;
+  --primary-300: #8ff0ff;
+  --primary-200: #b8f6ff;
+  --primary-100: #e6fcff;
 
   /* Pastel */
-  --pastel-blue-200: #BEEFFC;
-  --pastel-blue-100: #CCF8FF;
-  --pastel-purple-200: #E6E3FA;
-  --pastel-purple-100: #F2F0FF;
-  --pastel-green-200: #BFEEDD;
-  --pastel-green-100: #DFFAF0;
+  --pastel-blue-200: #beeffc;
+  --pastel-blue-100: #ccf8ff;
+  --pastel-purple-200: #e6e3fa;
+  --pastel-purple-100: #f2f0ff;
+  --pastel-green-200: #bfeedd;
+  --pastel-green-100: #dffaf0;
 
   /* Text */
   --text-primary: #111827;
-  --text-secondary: #6B7280;
+  --text-secondary: #6b7280;
 
   /* Background */
+  --bg-main: #ffffff;
+  --dark-bg: #0f172b;
+
+  /* Semantic */
   --background: #ffffff;
   --foreground: #111827;
   --card: #ffffff;
   --card-foreground: #111827;
-
-  /* Semantic */
-  --primary: #4DE2FF;
-  --primary-foreground: #0F172B;
-  --secondary: #F2F0FF;
+  --primary: #4de2ff;
+  --primary-foreground: #0f172b;
+  --secondary: #f2f0ff;
   --secondary-foreground: #111827;
-  --muted: #F3F4F6;
-  --muted-foreground: #6B7280;
-  --accent: #E6FCFF;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --accent: #e6fcff;
   --accent-foreground: #111827;
-  --destructive: #EF4444;
-  --border: #E5E7EB;
-  --input: #E5E7EB;
-  --ring: #4DE2FF;
+  --destructive: #ef4444;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #4de2ff;
 
   --radius: 0.75rem;
 
   /* Chart */
-  --chart-1: #4DE2FF;
-  --chart-2: #BFEEDD;
-  --chart-3: #E6E3FA;
-  --chart-4: #BEEFFC;
-  --chart-5: #8FF0FF;
-
-  /* Sidebar */
-  --sidebar: #f8fafc;
-  --sidebar-foreground: #111827;
-  --sidebar-primary: #0f172b;
-  --sidebar-accent: #e5e7eb;
-  --sidebar-border: #e5e7eb;
+  --chart-1: #4de2ff;
+  --chart-2: #bfeedd;
+  --chart-3: #e6e3fa;
+  --chart-4: #beeffc;
+  --chart-5: #8ff0ff;
 }
 
+/* ===============================
+   Dark Mode
+================================ */
 .dark {
   --background: #0f172b;
   --foreground: #ffffff;
+  --card: #0f172b;
+  --card-foreground: #ffffff;
+  --muted: #1f2937;
+  --muted-foreground: #9ca3af;
 }
 
+/* ===============================
+   Base Apply
+================================ */
 @layer base {
+  * {
+    @apply border-border;
+  }
+
   body {
     @apply bg-background text-foreground;
   }

@@ -46,6 +46,10 @@ export default {
         "text-primary": "var(--text-primary)",
         "text-secondary": "var(--text-secondary)",
 
+        /* Background helpers */
+        "bg-main": "var(--bg-main)",
+        "dark-bg": "var(--dark-bg)",
+
         /* Chart */
         chart: {
           1: "var(--chart-1)",
@@ -53,15 +57,6 @@ export default {
           3: "var(--chart-3)",
           4: "var(--chart-4)",
           5: "var(--chart-5)",
-        },
-
-        /* Sidebar */
-        sidebar: {
-          DEFAULT: "var(--sidebar)",
-          foreground: "var(--sidebar-foreground)",
-          primary: "var(--sidebar-primary)",
-          accent: "var(--sidebar-accent)",
-          border: "var(--sidebar-border)",
         },
       },
 
