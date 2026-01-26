@@ -8,27 +8,27 @@ export default {
       colors: {
         /* Brand */
         primary: {
-          500: "var(--primary-500)",
-          400: "var(--primary-400)",
-          300: "var(--primary-300)",
-          200: "var(--primary-200)",
-          100: "var(--primary-100)",
+          500: "#4de2ff",
+          400: "#6ae9ff",
+          300: "#8ff0ff",
+          200: "#b8f6ff",
+          100: "#e6fcff",
           DEFAULT: "var(--primary)",
           foreground: "var(--primary-foreground)",
         },
 
         /* Pastel */
         "pastel-blue": {
-          200: "var(--pastel-blue-200)",
-          100: "var(--pastel-blue-100)",
+          200: "#beeffc",
+          100: "#ccf8ff",
         },
         "pastel-purple": {
-          200: "var(--pastel-purple-200)",
-          100: "var(--pastel-purple-100)",
+          200: "#e6e3fa",
+          100: "#f2f0ff",
         },
         "pastel-green": {
-          200: "var(--pastel-green-200)",
-          100: "var(--pastel-green-100)",
+          200: "#bfeedd",
+          100: "#dffaf0",
         },
 
         /* Semantic */
