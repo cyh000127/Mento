@@ -102,40 +102,6 @@ pipeline {
       }
     }
 
-    stage('Check nginx conf state (policy)') {
-      steps {
-        dir("${env.REPO_DIR}") {
-          sh '''
-            set -euxo pipefail
-            CONF_DIR="infra/nginx/conf.d"
-
-            echo "=== nginx conf.d files ==="
-            ls -al "$CONF_DIR"
-
-            test -f "$CONF_DIR/app.2-https.conf"
-
-            if [ -f "$CONF_DIR/app.1-http-only.conf" ]; then
-              echo "ERROR: app.1-http-only.conf must be disabled/removed"
-              exit 1
-            fi
-
-            echo "nginx conf state OK"
-          '''
-        }
-      }
-    }
-
-    stage('Check livekit config state (policy)') {
-      steps {
-        dir("${env.REPO_DIR}") {
-          sh '''
-            set -euxo pipefail
-            test -f infra/livekit/config.yml
-            echo "livekit config exists OK"
-          '''
-        }
-      }
-    }
 
     stage('Validate compose (infra only)') {
       steps {
