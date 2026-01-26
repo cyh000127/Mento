@@ -102,7 +102,7 @@ pipeline {
           set -euo pipefail
           echo "===== FE DEV CI DONE ====="
           echo "FE_REPO_DIR=${FE_REPO_DIR}"
-          echo "FE_BRANCH=${FE_BRANCH}"
+          echo "FE_BRANCH=${FE_BRANCH:-"-"}"
         '''
       }
     }
