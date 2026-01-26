@@ -13,7 +13,7 @@ spring:
     enabled: true
   servlet:
     multipart:
-      max-file-size: 50MB
+      max-file-size: 100MB
       max-request-size: 500MB
 
 springdoc:

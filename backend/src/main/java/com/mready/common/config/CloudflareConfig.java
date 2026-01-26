@@ -13,6 +13,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 
 @Configuration
 @EnableConfigurationProperties(CloudflareProperties.class)
@@ -32,6 +33,9 @@ public class CloudflareConfig {
 			.endpointOverride(URI.create(cloudflareProperties.endpoint()))
 			.credentialsProvider(StaticCredentialsProvider.create(credentials))
 			.region(Region.of("auto"))
+			.serviceConfiguration(S3Configuration.builder()
+				.chunkedEncodingEnabled(false)
+				.build())
 			.build();
 	}
 }
