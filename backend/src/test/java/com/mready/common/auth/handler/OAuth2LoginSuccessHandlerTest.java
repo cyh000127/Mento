@@ -5,8 +5,6 @@ import com.mready.common.auth.dto.Token;
 import com.mready.common.auth.jwt.JwtProperties;
 import com.mready.common.auth.jwt.JwtTokenProvider;
 import com.mready.common.auth.principal.CustomOAuth2User;
-import com.mready.common.auth.redis.RefreshToken;
-import com.mready.common.auth.redis.repository.RefreshTokenRepository;
 import com.mready.common.constant.FrontDomain;
 import com.mready.domain.user.entity.User;
 import jakarta.servlet.http.Cookie;
@@ -23,7 +21,8 @@ import org.springframework.security.core.Authentication;
 import java.net.URI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.*;
+import static org.mockito.BDDMockito.any;
+import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("OAuth2LoginSuccessHandler 단위 테스트")
@@ -39,9 +38,6 @@ class OAuth2LoginSuccessHandlerTest {
     JwtProperties jwtProperties;
 
     @Mock
-    RefreshTokenRepository refreshTokenRepository;
-
-    @Mock
     Authentication authentication;
 
     @Mock
@@ -49,6 +45,7 @@ class OAuth2LoginSuccessHandlerTest {
 
     @Mock
     User user;
+
 
     @DisplayName("RefreshToken_AccessToken_발급_확인")
     @Test
@@ -59,8 +56,7 @@ class OAuth2LoginSuccessHandlerTest {
 
         given(authentication.getPrincipal()).willReturn(customOAuth2User);
         given(customOAuth2User.getUser()).willReturn(user);
-        given(user.getId()).willReturn(1L);
-
+        
         Token token = new Token("access-token", "refresh-token");
         given(jwtTokenProvider.createToken(any(User.class))).willReturn(token);
 
@@ -77,9 +73,6 @@ class OAuth2LoginSuccessHandlerTest {
         assertThat(refreshTokenCookie.isHttpOnly()).isTrue();
         assertThat(refreshTokenCookie.getPath()).isEqualTo("/");
         assertThat(refreshTokenCookie.getMaxAge()).isEqualTo(1209600); // 1209600000 / 1000
-
-        // Redis 저장 호출 검증
-        verify(refreshTokenRepository, times(1)).save(any(RefreshToken.class));
 
         // Access Token 헤더 검증
         String authHeader = response.getHeader(AuthConstant.AUTHORIZATION);

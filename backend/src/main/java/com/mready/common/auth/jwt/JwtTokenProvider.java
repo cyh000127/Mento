@@ -91,6 +91,17 @@ public class JwtTokenProvider {
 		}
 	}
 
+	public void validateRefreshToken(final String refreshToken) {
+		validateUndeformedToken(refreshToken);
+
+		Claims claims = getClaims(refreshToken);
+		validateTokenType(claims, REFRESH_TOKEN);
+
+		if (blackListRepository.existsById(refreshToken)) {
+			throw new AuthException(ErrorCode.TOKEN_BLACKLISTED_EXCEPTION);
+		}
+	}
+
 	public Optional<String> extractAccessToken(HttpServletRequest request) {
 		return Optional.ofNullable(request.getHeader(AUTHORIZATION)).filter(
 			accessToken -> accessToken.startsWith(BEARER)

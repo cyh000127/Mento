@@ -31,7 +31,6 @@ public class OAuth2Attribute {
 
 	private static OAuth2Attribute ofKakao(Map<String, Object> attributes) {
 		Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-//		Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile"); //  Profile에서는 닉네임 / 프로필 사진만 가져옴
 
 		String kakaoId = KAKAO + "_" + attributes.get("id");
 

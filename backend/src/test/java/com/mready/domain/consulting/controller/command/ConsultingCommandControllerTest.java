@@ -13,8 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.time.LocalDateTime;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -44,14 +42,13 @@ class ConsultingCommandControllerTest {
     void 상담_세션_생성_응답_검증() throws Exception {
         // Given
         Long timetableId = 456L;
-        LiveKitSessionResponse response = LiveKitSessionResponse.builder()
-                .timetableId(timetableId)
-                .roomToken("livekit_token_abc123")
-                .roomName("room_456")
-                .livekitUrl("wss://livekit.example.com")
-                .participantRole("MENTO")
-                .enteredAt(LocalDateTime.of(2026, 1, 25, 14, 0, 0))
-                .build();
+        LiveKitSessionResponse response = LiveKitSessionResponse.of(
+                timetableId,
+                "livekit_token_abc123",
+                "room_456",
+                "wss://livekit.example.com",
+                "MENTOR"
+        );
 
         given(consultingFacadeService.createSession(eq(timetableId), any()))
                 .willReturn(response);
@@ -66,7 +63,7 @@ class ConsultingCommandControllerTest {
                 .andExpect(jsonPath("$.data.roomToken").value("livekit_token_abc123"))
                 .andExpect(jsonPath("$.data.roomName").value("room_456"))
                 .andExpect(jsonPath("$.data.livekitUrl").value("wss://livekit.example.com"))
-                .andExpect(jsonPath("$.data.participantRole").value("MENTO"))
+                .andExpect(jsonPath("$.data.participantRole").value("MENTOR"))
                 .andExpect(jsonPath("$.data.enteredAt").exists())
                 .andExpect(jsonPath("$.error").isEmpty());
     }

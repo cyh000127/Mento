@@ -86,4 +86,20 @@ class JwtTokenProviderTest {
         assertThat(authenticatedUser.getEmail()).isEqualTo("test@example.com");
         assertThat(authenticatedUser.getRole()).isEqualTo("USER");
     }
+
+    @Test
+    @DisplayName("블랙리스트 추가 성공")
+    void setBlackList() {
+        // Given
+        Token token = jwtTokenProvider.createToken(user);
+        String accessToken = token.accessToken();
+        
+        // When
+        jwtTokenProvider.setBlackList(accessToken);
+
+        // Then
+        // BlackListRepository save 호출 검증
+        org.mockito.Mockito.verify(blackListRepository, org.mockito.Mockito.times(1))
+                .save(org.mockito.ArgumentMatchers.any(com.mready.common.auth.redis.BlackList.class));
+    }
 }

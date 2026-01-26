@@ -1,6 +1,5 @@
 package com.mready.domain.user.service.command;
 
-import com.mready.common.auth.redis.repository.RefreshTokenRepository;
 import com.mready.common.error.ErrorCode;
 import com.mready.domain.user.entity.User;
 import com.mready.domain.user.exception.UserException;
@@ -25,9 +24,6 @@ class UserCommandServiceTest {
 	@Mock
 	private UserRepository userRepository;
 
-	@Mock
-	private RefreshTokenRepository refreshTokenRepository;
-
 	@InjectMocks
 	private UserCommandService userCommandService;
 
@@ -42,9 +38,7 @@ class UserCommandServiceTest {
 				.email("leave@example.com")
 				.build();
 		// 초기 상태
-
 		given(userRepository.findById(userId)).willReturn(Optional.of(user));
-		willDoNothing().given(refreshTokenRepository).deleteById(String.valueOf(userId));
 
 		// when
 		userCommandService.withdraw(userId);
@@ -52,7 +46,6 @@ class UserCommandServiceTest {
 		// then
 		assertThat(user.getDeletedAt()).isNotNull(); // deletedAt이 설정되었는지 확인
 		then(userRepository).should(times(1)).findById(userId);
-		then(refreshTokenRepository).should(times(1)).deleteById(String.valueOf(userId));
 	}
 
 	@Test
@@ -75,7 +68,6 @@ class UserCommandServiceTest {
 				.hasMessageContaining(ErrorCode.ALREADY_WITHDRAWN.getMessage());
 
 		then(userRepository).should(times(1)).findById(userId);
-		then(refreshTokenRepository).should(never()).deleteById(anyString());
 	}
 
 	@Test
@@ -89,7 +81,5 @@ class UserCommandServiceTest {
 		assertThatThrownBy(() -> userCommandService.withdraw(userId))
 				.isInstanceOf(UserException.class)
 				.hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
-
-		then(refreshTokenRepository).should(never()).deleteById(anyString());
 	}
 }

@@ -3,6 +3,7 @@ package com.mready.domain.timetable.entity;
 import com.mready.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 
