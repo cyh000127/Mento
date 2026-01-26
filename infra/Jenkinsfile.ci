@@ -59,9 +59,19 @@ pipeline {
         sh '''
           set -euo pipefail
 
-          # Infra는 push/merge 모두 반영: "이전 성공 빌드 커밋 ~ HEAD" 범위를 우선 사용
-          # 없으면 HEAD~1 fallback
+          HEAD_SHA="$(git rev-parse HEAD)"
           BASE="${GIT_PREVIOUS_SUCCESSFUL_COMMIT:-}"
+
+          echo "HEAD=$HEAD_SHA"
+          echo "BASE(raw)=${BASE:-}"
+
+          # BASE가 HEAD랑 같으면 의미 없으니 무시
+          if [ -n "$BASE" ] && [ "$BASE" = "$HEAD_SHA" ]; then
+            echo "WARN: BASE equals HEAD. Ignoring GIT_PREVIOUS_SUCCESSFUL_COMMIT."
+            BASE=""
+          fi
+
+          # BASE가 비면 HEAD~1 fallback
           if [ -z "$BASE" ]; then
             BASE="HEAD~1"
           fi
@@ -73,11 +83,18 @@ pipeline {
           # diff가 실패하더라도 파이프라인이 죽지 않도록 안전 처리
           git diff --name-only "$RANGE" > changed_files.txt || true
 
+          # diff 결과가 비면 HEAD~1..HEAD로 재시도
+          if [ ! -s changed_files.txt ]; then
+            echo "WARN: empty diff for $RANGE -> retry HEAD~1..HEAD"
+            git diff --name-only "HEAD~1..HEAD" > changed_files.txt 2>/dev/null || true
+          fi
+
           echo "----- changed_files.txt -----"
           sed -n '1,200p' changed_files.txt || true
         '''
       }
     }
+
 
     stage('Compute TARGET_SERVICES') {
       steps {
