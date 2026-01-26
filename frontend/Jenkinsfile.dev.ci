@@ -35,50 +35,53 @@ pipeline {
       }
     }
 
-    stage('Sync FE repo on EC2') {
-          steps {
-            withCredentials([usernamePassword(
-              credentialsId: 'Gitlab_PAT',
-              usernameVariable: 'GIT_USER',
-              passwordVariable: 'GIT_PASS'
-            )]) {
-              sh '''
-                set -euo pipefail
+   stage('Sync FE repo on EC2') {
+         steps {
+           withCredentials([usernamePassword(
+             credentialsId: 'Gitlab_PAT',
+             usernameVariable: 'GIT_USER',
+             passwordVariable: 'GIT_PASS'
+           )]) {
+             sh '''
+               set -euo pipefail
 
-                # URL에 인증 정보 결합
-                RAW_URL="${GIT_URL#https://}"
-                AUTH_URL="https://${GIT_USER}:${GIT_PASS}@${RAW_URL}"
+               # [해결] "dubious ownership" 에러 방지
+               # Root(Jenkins)가 Ubuntu 소유의 폴더를 다룰 수 있도록 안전한 경로로 등록
+               git config --global --add safe.directory "${FE_REPO_DIR}"
 
-                # 1. 디렉토리 생성
-                if [ ! -d "$(dirname "${FE_REPO_DIR}")" ]; then
-                  echo "Creating parent directory..."
-                  mkdir -p "$(dirname "${FE_REPO_DIR}")"
-                fi
+               # URL에 인증 정보 결합
+               RAW_URL="${GIT_URL#https://}"
+               AUTH_URL="https://${GIT_USER}:${GIT_PASS}@${RAW_URL}"
 
-                # 2. Git Clone / Update
-                if [ ! -d "${FE_REPO_DIR}/.git" ]; then
-                  echo "[FE] First time: Cloning branch ${FE_BRANCH}..."
-                  rm -rf "${FE_REPO_DIR}" || true
-                  git clone -b "${FE_BRANCH}" --single-branch "${AUTH_URL}" "${FE_REPO_DIR}"
-                else
-                  echo "[FE] Update: Switching to ${FE_BRANCH} and syncing..."
-                  cd "${FE_REPO_DIR}"
-                  git fetch "${AUTH_URL}" "${FE_BRANCH}"
-                  git checkout -B "${FE_BRANCH}" FETCH_HEAD
-                  git clean -fd
-                fi
+               # 1. 디렉토리 생성
+               if [ ! -d "$(dirname "${FE_REPO_DIR}")" ]; then
+                 echo "Creating parent directory..."
+                 mkdir -p "$(dirname "${FE_REPO_DIR}")"
+               fi
 
-                echo "Fixing ownership to UID 1000 (ubuntu)..."
-                chown -R 1000:1000 "$(dirname "${FE_REPO_DIR}")"
+               # 2. Git Clone / Update
+               if [ ! -d "${FE_REPO_DIR}/.git" ]; then
+                 echo "[FE] First time: Cloning branch ${FE_BRANCH}..."
+                 rm -rf "${FE_REPO_DIR}" || true
+                 git clone -b "${FE_BRANCH}" --single-branch "${AUTH_URL}" "${FE_REPO_DIR}"
+               else
+                 echo "[FE] Update: Switching to ${FE_BRANCH} and syncing..."
+                 cd "${FE_REPO_DIR}"
+                 git fetch "${AUTH_URL}" "${FE_BRANCH}"
+                 git checkout -B "${FE_BRANCH}" FETCH_HEAD
+                 git clean -fd
+               fi
 
-                echo "[FE] Current Commit Info:"
-                cd "${FE_REPO_DIR}"
-                git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso
-              '''
-            }
-          }
-        }
+               echo "Fixing ownership to UID 1000 (ubuntu)..."
+               chown -R 1000:1000 "$(dirname "${FE_REPO_DIR}")"
 
+               echo "[FE] Current Commit Info:"
+               cd "${FE_REPO_DIR}"
+               git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso
+             '''
+           }
+         }
+       }
     stage('Trigger CD/Final') {
       steps {
         script {
