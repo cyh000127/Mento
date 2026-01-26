@@ -2,10 +2,10 @@ package com.mready.common.auth.handler;
 
 import com.mready.common.auth.constant.AuthConstant;
 import com.mready.common.auth.dto.Token;
-import com.mready.common.auth.redis.RefreshToken;
 import com.mready.common.auth.jwt.JwtProperties;
 import com.mready.common.auth.jwt.JwtTokenProvider;
 import com.mready.common.auth.principal.CustomOAuth2User;
+import com.mready.common.auth.redis.RefreshToken;
 import com.mready.common.auth.redis.repository.RefreshTokenRepository;
 import com.mready.common.constant.FrontDomain;
 import com.mready.common.error.ErrorCode;
@@ -43,11 +43,11 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 		if (user == null) {
 			throw new BusinessException(ErrorCode.AUTHENTICATION_PRINCIPAL_NOT_FOUND);
 		}
-		if (user.getMember() == null) {
-			throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
+		if (user.getUser() == null) {
+			throw new BusinessException(ErrorCode.USER_NOT_FOUND);
 		}
 
-		Token token = jwtTokenProvider.createToken(user.getMember());
+		Token token = jwtTokenProvider.createToken(user.getUser());
 
 		// Refresh Token 쿠키 설정
 		CookieUtil.addCookie(response, "refreshToken", token.refreshToken(),
@@ -55,7 +55,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
 		// Redis에 Refresh Token 저장
 		RefreshToken refreshToken = RefreshToken.builder()
-				.id(String.valueOf(user.getMember().getId()))
+				.id(String.valueOf(user.getUser().getId()))
 				.token(token.refreshToken())
 				.expirationTime(jwtProperties.refreshTokenExpiration() / 1000)
 				.build();

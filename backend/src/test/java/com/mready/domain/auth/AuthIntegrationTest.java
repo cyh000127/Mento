@@ -10,9 +10,9 @@ import com.mready.common.auth.redis.repository.RefreshTokenRepository;
 import com.mready.common.response.BaseResponse;
 import com.mready.domain.auth.controller.command.AuthCommandController;
 import com.mready.domain.auth.service.command.AuthCommandServiceImpl;
-import com.mready.domain.member.entity.Member;
-import com.mready.domain.member.entity.Role;
-import com.mready.domain.member.repository.MemberRepository;
+import com.mready.domain.user.entity.Role;
+import com.mready.domain.user.entity.User;
+import com.mready.domain.user.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +36,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 class AuthIntegrationTest {
 
     @Mock
-    private MemberRepository memberRepository;
+    private UserRepository userRepository;
 
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
@@ -54,7 +54,7 @@ class AuthIntegrationTest {
     private Map<String, RefreshToken> refreshTokens = new HashMap<>();
     private Map<String, BlackList> blackListMap = new HashMap<>();
 
-    private Member member;
+    private User user;
     private Token token;
     private final String secret = "testSecretKeytestSecretKeytestSecretKeytestSecretKey";
 
@@ -92,11 +92,11 @@ class AuthIntegrationTest {
         org.mockito.Mockito.lenient().when(jwtProperties.accessTokenExpiration()).thenReturn(100000L);
         org.mockito.Mockito.lenient().when(jwtProperties.refreshTokenExpiration()).thenReturn(200000L);
 
-        jwtTokenProvider = new JwtTokenProvider(jwtProperties, blackListRepository, memberRepository);
+        jwtTokenProvider = new JwtTokenProvider(jwtProperties, blackListRepository, userRepository);
         authCommandService = new AuthCommandServiceImpl(jwtTokenProvider, refreshTokenRepository, blackListRepository, jwtProperties);
         authCommandController = new AuthCommandController(authCommandService);
 
-        member = Member.builder()
+        user = User.builder()
                 .id(1L)
                 .email("test@integration.com")
                 .name("Integration User")
@@ -110,14 +110,14 @@ class AuthIntegrationTest {
     @DisplayName("회원가입 -> 토큰 생성 -> 로그아웃 -> 검증")
     void 회원가입_토큰_로그아웃_검증() {
         // 토큰 생성
-        token = jwtTokenProvider.createToken(member);
+        token = jwtTokenProvider.createToken(user);
         RefreshToken rt = RefreshToken.builder()
-                .id(String.valueOf(member.getId()))
+                .id(String.valueOf(user.getId()))
                 .token(token.refreshToken())
                 .expirationTime(1000L).build();
         refreshTokenRepository.save(rt);
 
-        assertThat(refreshTokens).containsKey(String.valueOf(member.getId()));
+        assertThat(refreshTokens).containsKey(String.valueOf(user.getId()));
 
         // 로그아웃 요청
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -135,7 +135,7 @@ class AuthIntegrationTest {
         assertThat(cookie.getMaxAge()).isZero();
 
         // 검증
-        assertThat(refreshTokens.get(String.valueOf(member.getId()))).isNull();
+        assertThat(refreshTokens.get(String.valueOf(user.getId()))).isNull();
 
         assertThat(blackListMap).containsKey(token.accessToken());
     }
@@ -144,12 +144,12 @@ class AuthIntegrationTest {
     @DisplayName("로그인 -> 리프레시 토큰 재발급 -> 검증")
     void 로그인_리프레시_토큰_재발급() {
         // 초기 토큰 생성
-        Token oldToken = jwtTokenProvider.createToken(member);
+        Token oldToken = jwtTokenProvider.createToken(user);
 
-        org.mockito.Mockito.when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+        org.mockito.Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         RefreshToken rt = RefreshToken.builder()
-                .id(String.valueOf(member.getId()))
+                .id(String.valueOf(user.getId()))
                 .token(oldToken.refreshToken())
                 .expirationTime(1000L).build();
         refreshTokenRepository.save(rt);
@@ -176,7 +176,7 @@ class AuthIntegrationTest {
         assertThat(cookie.getValue()).isNotEqualTo(oldToken.refreshToken());
 
 
-        RefreshToken newRt = refreshTokens.get(String.valueOf(member.getId()));
+        RefreshToken newRt = refreshTokens.get(String.valueOf(user.getId()));
         assertThat(newRt).isNotNull();
         assertThat(newRt.getToken()).isNotEqualTo(oldToken.refreshToken());
     }
