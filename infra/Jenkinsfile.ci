@@ -6,371 +6,149 @@ pipeline {
     disableConcurrentBuilds()
   }
 
+  parameters {
+    string(name: 'PROJECT_NAME', defaultValue: 'app', description: 'docker compose project name (passed to CD/Infra)')
+    // 수동 override를 유지하고 싶으면 남겨도 되지만, 없어도 됨
+    string(name: 'TARGET_SERVICES', defaultValue: '', description: '(optional) Manual override. 공백 구분 서비스 목록 (비우면 auto detect)')
+  }
+
   environment {
-    // Nginx 설정 경로 (repo 기준)
-    NGINX_CONFD_DIR = "${env.WORKSPACE}/infra/nginx/conf.d"
-    NGINX_IMAGE     = "nginx:1.27-alpine"
-
-    // LiveKit 설정 파일 (repo 기준)
-    LIVEKIT_CONFIG  = "${env.WORKSPACE}/infra/livekit/config.yml"
-    LIVEKIT_IMAGE   = "livekit/livekit-server:latest"
-
-    // CI가 계산해서 CD로 넘길 값
-    TARGET_SERVICES = ""
-    COMPOSE_CHANGED = "false"
+    COMPOSE_PATH_PREFIX = "infra/compose/"
+    CD_JOB_NAME = "CD/Infra"
   }
 
   stages {
 
-    stage('Context') {
-      steps {
-        echo "===== CI CONTEXT (infra) ====="
-        sh '''
-          set -euo pipefail
-          date "+%Y-%m-%d %H:%M:%S %Z"
-          echo "JOB_NAME=$JOB_NAME"
-          echo "BUILD_NUMBER=$BUILD_NUMBER"
-          echo "BUILD_URL=$BUILD_URL"
-          echo "BRANCH_NAME=${BRANCH_NAME:-}"
-          pwd
-          uname -a || true
-          git --version || true
-          docker --version || true
-          docker compose version || true
-        '''
-      }
-    }
-
-    stage('Git info') {
-      steps {
-        echo "===== GIT INFO ====="
-        sh '''
-          set -euo pipefail
-          git rev-parse --abbrev-ref HEAD || true
-          git rev-parse HEAD || true
-          git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso || true
-        '''
-      }
-    }
-
     stage('Detect Changes (range-aware)') {
       steps {
         echo "===== DETECT CHANGES ====="
-        sh '''
+        sh '''#!/usr/bin/env bash
           set -euo pipefail
 
           HEAD_SHA="$(git rev-parse HEAD)"
           BASE="${GIT_PREVIOUS_SUCCESSFUL_COMMIT:-}"
 
           echo "HEAD=$HEAD_SHA"
-          echo "BASE(raw)=${BASE:-}"
+          echo "BASE(raw)=$BASE"
 
-          # BASE가 HEAD랑 같으면 의미 없으니 무시
-          if [ -n "$BASE" ] && [ "$BASE" = "$HEAD_SHA" ]; then
-            echo "WARN: BASE equals HEAD. Ignoring GIT_PREVIOUS_SUCCESSFUL_COMMIT."
-            BASE=""
+          if [ -z "$BASE" ] || [ "$BASE" = "$HEAD_SHA" ]; then
+            RANGE="HEAD~50..HEAD"
+          else
+            RANGE="$BASE..HEAD"
           fi
-
-          # BASE가 비면 HEAD~1 fallback
-          if [ -z "$BASE" ]; then
-            BASE="HEAD~1"
-          fi
-          RANGE="${BASE}..HEAD"
-
-          echo "BASE=$BASE"
           echo "RANGE=$RANGE"
 
-          # diff가 실패하더라도 파이프라인이 죽지 않도록 안전 처리
           git diff --name-only "$RANGE" > changed_files.txt || true
-
-          # diff 결과가 비면 HEAD~1..HEAD로 재시도
-          if [ ! -s changed_files.txt ]; then
-            echo "WARN: empty diff for $RANGE -> retry HEAD~1..HEAD"
-            git diff --name-only "HEAD~1..HEAD" > changed_files.txt 2>/dev/null || true
-          fi
-
           echo "----- changed_files.txt -----"
           sed -n '1,200p' changed_files.txt || true
         '''
       }
     }
 
-
-    stage('Compute TARGET_SERVICES') {
+    stage('Compute Targets (env-safe)') {
       steps {
         script {
-          def changedTxt = ''
-          try {
-            changedTxt = readFile('changed_files.txt')
-          } catch (ignored) {
-            changedTxt = ''
-          }
+          // 항상 초기화: 다음 stage에서 null/false 찍히는 문제 방지
+          env.RUN_CD = 'false'
+          env.COMPOSE_CHANGED = 'false'
+          env.EFFECTIVE_TARGET_SERVICES = '' // CD로 넘길 값(빈 문자열도 "의도된 값")
 
-          def lines = changedTxt.readLines().collect { it.trim() }.findAll { it }
-          echo "===== CHANGED FILES (computed) =====\n" + (lines ? lines.join('\n') : '(none)')
-
-          // compose 변경은 전체 deploy(=TARGET_SERVICES 비움) 유도
-          def composeChanged = lines.any { it.startsWith('infra/compose/') }
-
-          if (composeChanged) {
-            env.COMPOSE_CHANGED = "true"
-            env.TARGET_SERVICES = ""
-            echo "infra/compose changed -> COMPOSE_CHANGED=true, TARGET_SERVICES empty (full deploy semantics at CD side)"
+          // 1) 수동 override가 있으면 그걸 최우선 (원치 않으면 이 블록 삭제 가능)
+          def manual = (params.TARGET_SERVICES ?: '').trim()
+          if (manual != '') {
+            env.RUN_CD = 'true'
+            env.EFFECTIVE_TARGET_SERVICES = manual
+            echo "Manual override -> RUN_CD=true, TARGET_SERVICES='${env.EFFECTIVE_TARGET_SERVICES}'"
             return
           }
 
-          env.COMPOSE_CHANGED = "false"
+          // 2) 변경 파일 읽기
+          def changedLines = []
+          try {
+            changedLines = readFile('changed_files.txt')
+              .readLines()
+              .collect { it.trim() }
+              .findAll { it }
+          } catch (ignored) {
+            changedLines = []
+          }
 
+          echo "===== CHANGED FILES (computed) ====="
+          changedLines.each { echo it }
+
+          // 3) compose 변경이면: CD 트리거 + TARGET_SERVICES는 '빈 문자열'(full deploy 의미)
+          def composeChanged = changedLines.any { it.startsWith(env.COMPOSE_PATH_PREFIX) }
+          if (composeChanged) {
+            env.COMPOSE_CHANGED = 'true'
+            env.RUN_CD = 'true'
+            env.EFFECTIVE_TARGET_SERVICES = ''   // 중요: 빈 값이어도 트리거돼야 함
+            echo "infra/compose changed -> COMPOSE_CHANGED=true, RUN_CD=true, TARGET_SERVICES='' (full deploy semantics)"
+            return
+          }
+
+          // 4) 그 외 infra 타깃 자동 계산(최소 예시)
           def targets = []
-          if (lines.any { it.startsWith('infra/nginx/') })   targets << 'nginx'
-          if (lines.any { it.startsWith('infra/certbot/') }) targets << 'certbot'
-          if (lines.any { it.startsWith('infra/livekit/') }) targets << 'livekit'
 
-          env.TARGET_SERVICES = targets.unique().join(' ').trim()
-          echo "Computed TARGET_SERVICES='${env.TARGET_SERVICES}', COMPOSE_CHANGED='${env.COMPOSE_CHANGED}'"
+          if (changedLines.any { it.startsWith("infra/nginx/") || it.startsWith("infra/certbot/") }) {
+            targets << 'nginx'
+            targets << 'certbot'
+          }
+          if (changedLines.any { it.contains("livekit") || it.startsWith("infra/livekit/") }) {
+            targets << 'livekit'
+          }
+
+          targets = targets.unique()
+
+          if (!targets.isEmpty()) {
+            env.RUN_CD = 'true'
+            env.EFFECTIVE_TARGET_SERVICES = targets.join(' ')
+            echo "auto targets -> RUN_CD=true, TARGET_SERVICES='${env.EFFECTIVE_TARGET_SERVICES}'"
+          } else {
+            env.RUN_CD = 'false'
+            env.EFFECTIVE_TARGET_SERVICES = ''
+            echo "no infra targets -> RUN_CD=false"
+          }
         }
       }
     }
 
-    /* =======================================================
-     * Nginx Lint
-     * ======================================================= */
-    stage('Nginx Lint (conf.d)') {
-      when {
-        expression {
-          def ts = (env.TARGET_SERVICES ?: '').trim()
-          return ts != '' && ts.split(/\s+/).contains('nginx')
-        }
-      }
-      steps {
-        echo "===== NGINX CONFIG LINT ====="
-        sh '''
-          set -euo pipefail
-
-          if [ ! -d "${NGINX_CONFD_DIR}" ]; then
-            echo "ERROR: nginx conf.d dir not found: ${NGINX_CONFD_DIR}"
-            ls -al "${WORKSPACE}/infra/nginx" || true
-            exit 1
-          fi
-
-          if ! command -v docker >/dev/null 2>&1; then
-            echo "ERROR: docker not available on agent."
-            exit 1
-          fi
-
-          echo "Listing conf.d:"
-          ls -al "${NGINX_CONFD_DIR}"
-
-          docker run --rm \
-            -v "${NGINX_CONFD_DIR}":/etc/nginx/conf.d:ro \
-            "${NGINX_IMAGE}" \
-            sh -lc 'nginx -t'
-        '''
-      }
-    }
-
-    stage('Nginx Runtime Check (container)') {
-      when {
-        expression {
-          def ts = (env.TARGET_SERVICES ?: '').trim()
-          return ts != '' && ts.split(/\s+/).contains('nginx')
-        }
-      }
-      steps {
-        echo "===== NGINX RUNTIME CHECK ====="
-        sh '''
-          set -euo pipefail
-
-          if ! command -v docker >/dev/null 2>&1; then
-            echo "docker not available on agent. Skipping runtime check."
-            exit 0
-          fi
-
-          if [ ! -d "${NGINX_CONFD_DIR}" ]; then
-            echo "ERROR: nginx conf.d dir not found: ${NGINX_CONFD_DIR}"
-            exit 1
-          fi
-
-          CONTAINER_NAME="ci-test-nginx-$$"
-          docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
-
-          # ephemeral port 시도 -> 실패하면 8080으로 재시도
-          if ! docker run -d --name "$CONTAINER_NAME" -p 0:80 \
-              -v "${NGINX_CONFD_DIR}":/etc/nginx/conf.d:ro \
-              "${NGINX_IMAGE}"; then
-            echo "docker run with host port 0 failed, retrying with 8080:80"
-            docker run -d --name "$CONTAINER_NAME" -p 8080:80 \
-              -v "${NGINX_CONFD_DIR}":/etc/nginx/conf.d:ro \
-              "${NGINX_IMAGE}"
-          fi
-
-          HOST_PORT="$(docker port "$CONTAINER_NAME" 80/tcp | sed -n 's/.*://p' | tail -n 1 || true)"
-          if [ -z "$HOST_PORT" ]; then
-            echo "Failed to determine host port for nginx container"
-            docker logs "$CONTAINER_NAME" || true
-            docker rm -f "$CONTAINER_NAME" || true
-            exit 1
-          fi
-          echo "Host port => ${HOST_PORT}"
-
-          if command -v curl >/dev/null 2>&1; then
-            CLIENT="curl -sS --max-time 3"
-          elif command -v wget >/dev/null 2>&1; then
-            CLIENT="wget -qO- --timeout=3"
-          else
-            echo "No curl/wget on agent. Skipping runtime check."
-            docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
-            exit 0
-          fi
-
-          OK=0
-          for i in 1 2 3 4 5; do
-            sleep 1
-            if $CLIENT "http://127.0.0.1:${HOST_PORT}/" >/dev/null 2>&1; then
-              OK=1
-              echo "nginx responding on ${HOST_PORT}"
-              break
-            fi
-            echo "waiting for nginx (attempt $i)..."
-          done
-
-          if [ "$OK" -ne 1 ]; then
-            echo "nginx did not respond"
-            docker logs "$CONTAINER_NAME" || true
-            docker rm -f "$CONTAINER_NAME" || true
-            exit 1
-          fi
-
-          docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
-          echo "nginx runtime check passed"
-        '''
-      }
-    }
-
-    /* =======================================================
-     * LiveKit Check
-     * ======================================================= */
-    stage('LiveKit Config / Boot Check (container)') {
-      when {
-        expression {
-          def ts = (env.TARGET_SERVICES ?: '').trim()
-          return ts != '' && ts.split(/\s+/).contains('livekit')
-        }
-      }
-      steps {
-        echo "===== LIVEKIT CONFIG / BOOT CHECK ====="
-        sh '''
-          set -euo pipefail
-
-          if [ ! -f "${LIVEKIT_CONFIG}" ]; then
-            echo "ERROR: LiveKit config not found: ${LIVEKIT_CONFIG}"
-            ls -al "${WORKSPACE}/infra/livekit" || true
-            exit 1
-          fi
-
-          if ! command -v docker >/dev/null 2>&1; then
-            echo "ERROR: docker not available on agent."
-            exit 1
-          fi
-
-          CONTAINER_NAME="ci-test-livekit-$$"
-          docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
-
-          # 짧게 띄워서 즉시 크래시 여부만 확인
-          docker run -d --name "$CONTAINER_NAME" \
-            -v "${LIVEKIT_CONFIG}":/etc/livekit/config.yml:ro \
-            "${LIVEKIT_IMAGE}" \
-            --config /etc/livekit/config.yml
-
-          sleep 3
-
-          if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-            echo "LiveKit container exited early. Logs:"
-            docker logs "$CONTAINER_NAME" || true
-            docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
-            exit 1
-          fi
-
-          echo "LiveKit boot check passed (alive for 3s)."
-          docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
-        '''
-      }
-    }
-
-    stage('Smoke') {
+    stage('Smoke (env view)') {
       steps {
         echo "===== SMOKE ====="
-        echo "TARGET_SERVICES='${env.TARGET_SERVICES}', COMPOSE_CHANGED='${env.COMPOSE_CHANGED}'"
+        echo "RUN_CD='${env.RUN_CD}'"
+        echo "COMPOSE_CHANGED='${env.COMPOSE_CHANGED}'"
+        echo "EFFECTIVE_TARGET_SERVICES='${env.EFFECTIVE_TARGET_SERVICES}'"
       }
     }
 
     stage('Trigger CD/Infra') {
       when {
-        allOf {
-          // targets가 있거나 composeChanged면 트리거
-          expression {
-            def ts = (env.TARGET_SERVICES ?: '').trim()
-            def cc = (env.COMPOSE_CHANGED ?: 'false').trim()
-            return (ts != '') || (cc == 'true')
-          }
-
-          // develop-infra HEAD일 때만 트리거 (원래 너 규칙 유지)
-          expression {
-            def rc = sh(
-              script: 'git fetch -q origin develop-infra:refs/remotes/origin/develop-infra',
-              returnStatus: true
-            )
-            if (rc != 0) { return false }
-
-            def head = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
-            def target = sh(script: 'git rev-parse refs/remotes/origin/develop-infra', returnStdout: true).trim()
-            return head == target
-          }
-        }
+        expression { return (env.RUN_CD ?: 'false') == 'true' }
       }
       steps {
-        echo "===== TRIGGER CD/INFRA ====="
-        echo "DEPLOY_REF=develop-infra"
-        echo "COMPOSE_CHANGED=${env.COMPOSE_CHANGED}"
-        echo "TARGET_SERVICES=${env.TARGET_SERVICES}"
+        script {
+          echo "===== TRIGGER CD/INFRA ====="
+          echo "PROJECT_NAME=${params.PROJECT_NAME}"
+          echo "TARGET_SERVICES='${env.EFFECTIVE_TARGET_SERVICES ?: ''}' (empty means full deploy)"
 
-        build job: 'CD/Infra',
-          parameters: [
-            string(name: 'DEPLOY_REF', value: 'develop-infra'),
-            string(name: 'PROJECT_NAME', value: 'app'),
-            // compose 변경(full deploy semantics)이면 빈 문자열 전달
-            string(name: 'TARGET_SERVICES', value: "${env.TARGET_SERVICES}")
-          ],
-          wait: false,
-          propagate: false
+          build job: env.CD_JOB_NAME,
+            wait: true,
+            parameters: [
+              string(name: 'PROJECT_NAME', value: params.PROJECT_NAME),
+              // 빈 문자열이어도 그대로 전달
+              string(name: 'TARGET_SERVICES', value: (env.EFFECTIVE_TARGET_SERVICES ?: '')),
+            ]
+        }
       }
     }
 
-    stage('Skip CD (no targets)') {
+    stage('Skip CD') {
       when {
-        expression {
-          def ts = (env.TARGET_SERVICES ?: '').trim()
-          def cc = (env.COMPOSE_CHANGED ?: 'false').trim()
-          return (ts == '') && (cc != 'true')
-        }
+        expression { return (env.RUN_CD ?: 'false') != 'true' }
       }
       steps {
-        echo "No infra-related targets detected. Skipping CD trigger."
+        echo "RUN_CD=false -> CD 트리거를 수행하지 않습니다."
       }
-    }
-  }
-
-  post {
-    success {
-      echo "CI(Infra) SUCCESS"
-      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
-    }
-    failure {
-      echo "CI(Infra) FAILURE"
-      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
-    }
-    always {
-      echo "CI(Infra) DONE"
     }
   }
 }
