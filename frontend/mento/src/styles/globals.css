@@ -3,6 +3,26 @@
 @tailwind utilities;
 
 /* ===============================
+   Fonts
+================================ */
+
+@font-face {
+  font-family: "GmarketSans";
+  src: url("/fonts/GmarketSansMedium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/Pretendard-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ===============================
    Root Color Tokens
 ================================ */
 :root {
@@ -55,6 +75,9 @@
   --chart-3: #e6e3fa;
   --chart-4: #beeffc;
   --chart-5: #8ff0ff;
+
+  /* 폰트 */
+  --font-sans: "GmarketSans", "Pretendard", system-ui, -apple-system, sans-serif;
 }
 
 /* ===============================
@@ -78,6 +101,7 @@
   }
 
   body {
+    font-family: var(--font-sans);
     @apply bg-background text-foreground;
   }
 }
