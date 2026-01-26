@@ -1,9 +1,10 @@
 package com.mready.common.error;
 
+import org.springframework.http.HttpStatus;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
@@ -24,6 +25,15 @@ public enum ErrorCode {
 	DATA_INTEGRITY_VIOLATION(HttpStatus.CONFLICT, "C-010", "데이터 무결성 위반입니다."),
 
 	/**
+	 * File Error (F-xxx)
+	 */
+	FILE_EMPTY(HttpStatus.BAD_REQUEST, "F-001", "업로드할 파일이 비어있습니다."),
+	FILE_NAME_INVALID(HttpStatus.BAD_REQUEST, "F-002", "파일명이 유효하지 않습니다."),
+	FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "F-003", "파일 업로드에 실패했습니다."),
+	FILE_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "F-004", "파일 삭제에 실패했습니다."),
+	FILE_TYPE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "F-005", "허용되지 않는 파일 형식입니다."),
+
+	/**
 	 * User Error (U-xxx)
 	 */
 	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U-001", "회원을 찾을 수 없습니다."),
@@ -42,7 +52,7 @@ public enum ErrorCode {
 	MALFORMED_TOKEN_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-007", "토큰 형식이 올바르지 않습니다."),
 	AUTHENTICATION_PRINCIPAL_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "A-008", "인증 주체 정보를 찾을 수 없습니다."),
 	TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "A-009", "토큰을 찾을 수 없습니다."),
-	
+
 	/**
 	 * Consulting Error (CS-xxx)
 	 */
