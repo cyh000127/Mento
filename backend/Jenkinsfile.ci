@@ -1,0 +1,264 @@
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+  }
+
+  // 파라미터 "형태"는 CD/Final과 통일
+  parameters {
+    string(
+      name: 'PROJECT_NAME',
+      defaultValue: 'app',
+      description: 'docker compose project name (passed to CD/Final)'
+    )
+    string(
+      name: 'TARGET_SERVICES',
+      defaultValue: '',
+      description: '[manual] e.g. "be" or "be fe" (empty = auto detect from changes)'
+    )
+  }
+
+  environment {
+    BE_DIR         = "backend"
+    BE_PATH_PREFIX = "backend/"
+
+    // Docker Hub repo + 고정 태그
+    IMAGE_REPO = "ejjem/s14p11a704"
+    IMAGE_TAG  = "backend"
+    IMAGE_FULL = "${IMAGE_REPO}:${IMAGE_TAG}"
+  }
+
+  stages {
+
+    stage('Context') {
+      steps {
+        echo "===== CI CONTEXT (BE) ====="
+        sh '''
+          set -euo pipefail
+          date "+%Y-%m-%d %H:%M:%S %Z"
+          echo "JOB_NAME=$JOB_NAME"
+          echo "BUILD_NUMBER=$BUILD_NUMBER"
+          echo "BUILD_URL=$BUILD_URL"
+          echo "BRANCH_NAME=${BRANCH_NAME:-}"
+          echo "PROJECT_NAME=${PROJECT_NAME}"
+          echo "PARAM_TARGET_SERVICES=${TARGET_SERVICES}"
+          pwd
+          uname -a || true
+          git --version || true
+          docker --version || true
+          docker info >/dev/null 2>&1 || true
+          docker compose version >/dev/null 2>&1 || true
+        '''
+      }
+    }
+
+    stage('Git info') {
+      steps {
+        echo "===== GIT INFO ====="
+        sh '''
+          set -euo pipefail
+          git rev-parse --abbrev-ref HEAD || true
+          git rev-parse HEAD || true
+          git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso || true
+        '''
+      }
+    }
+
+    stage('Decide Run Mode (manual vs auto)') {
+      steps {
+        script {
+          def manual = (params.TARGET_SERVICES ?: '').trim()
+          // 공백 구분 + 혹시 모를 콤마 입력도 허용
+          manual = manual.replaceAll(/\s*,\s*/, ' ').trim()
+
+          def manualBe = (manual != '' && manual.tokenize().contains('be'))
+
+          writeFile file: 'manual_be.flag', text: (manualBe ? 'true' : 'false') + "\n"
+          echo "manual='${manual}'"
+          echo "manualBe=${manualBe}"
+        }
+      }
+    }
+
+    stage('Detect Changes (merge-only, auto)') {
+      when {
+        expression {
+          return fileExists('manual_be.flag') && readFile('manual_be.flag').trim() != 'true'
+        }
+      }
+      steps {
+        echo "===== DETECT CHANGES (BE: merge-only) ====="
+        sh '''
+          set -euo pipefail
+
+          # merge commit인지 확인: parent가 2개 이상이면 merge commit
+          PARENTS_CNT="$(git show -s --pretty=%P HEAD | wc -w | tr -d ' ')"
+          echo "PARENTS_CNT=$PARENTS_CNT"
+
+          if [ "$PARENTS_CNT" -lt 2 ]; then
+            echo "Not a merge commit. Auto-detect disabled."
+            : > changed_files.txt
+            echo "false" > auto_be.flag
+            exit 0
+          fi
+
+          # 이전 성공 커밋이 있으면 그 범위부터, 없으면 최근 50개 커밋 범위로
+          PREV="${GIT_PREVIOUS_SUCCESSFUL_COMMIT:-}"
+          if [ -n "$PREV" ]; then
+            RANGE="$PREV..HEAD"
+          else
+            RANGE="HEAD~50..HEAD"
+          fi
+          echo "RANGE=$RANGE"
+
+          git diff --name-only "$RANGE" > changed_files.txt || true
+
+          echo "----- changed_files.txt (first 200) -----"
+          sed -n '1,200p' changed_files.txt || true
+        '''
+
+        script {
+          def changedLines = []
+          try {
+            changedLines = readFile('changed_files.txt')
+              .readLines()
+              .collect { it.trim() }
+              .findAll { it }
+          } catch (ignored) {
+            changedLines = []
+          }
+
+          def beChanged = changedLines.any { it.startsWith(env.BE_PATH_PREFIX) }
+          writeFile file: 'auto_be.flag', text: (beChanged ? 'true' : 'false') + "\n"
+
+          echo "beChanged=${beChanged}"
+        }
+      }
+    }
+
+    stage('Finalize Decision (run_be.flag)') {
+      steps {
+        script {
+          def manualBe = fileExists('manual_be.flag') && readFile('manual_be.flag').trim() == 'true'
+          def autoBe   = fileExists('auto_be.flag')   && readFile('auto_be.flag').trim() == 'true'
+          def runBe    = manualBe || autoBe
+
+          writeFile file: 'run_be.flag', text: (runBe ? 'true' : 'false') + "\n"
+
+          echo "manualBe=${manualBe}"
+          echo "autoBe=${autoBe}"
+          echo "RUN_BE=${runBe}"
+        }
+      }
+    }
+
+    stage('Build & Test (Gradle)') {
+      when {
+        expression { return fileExists('run_be.flag') && readFile('run_be.flag').trim() == 'true' }
+      }
+      steps {
+        dir("${env.BE_DIR}") {
+          sh '''
+            set -euo pipefail
+            chmod +x ./gradlew || true
+            ./gradlew clean test
+            ./gradlew bootJar
+          '''
+        }
+      }
+    }
+
+    stage('Docker Build') {
+      when {
+        expression { return fileExists('run_be.flag') && readFile('run_be.flag').trim() == 'true' }
+      }
+      steps {
+        dir("${env.BE_DIR}") {
+          sh '''
+            set -euo pipefail
+            echo "Building image: ${IMAGE_FULL}"
+            docker build -t "${IMAGE_FULL}" .
+          '''
+        }
+      }
+    }
+
+    stage('Docker Hub Login & Push') {
+      when {
+        expression { return fileExists('run_be.flag') && readFile('run_be.flag').trim() == 'true' }
+      }
+      steps {
+        withCredentials([usernamePassword(
+          credentialsId: 'DockerHub_Token',
+          usernameVariable: 'DH_USER',
+          passwordVariable: 'DH_PASS'
+        )]) {
+          sh '''
+            set -euo pipefail
+            docker logout || true
+            echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
+            docker push "${IMAGE_FULL}"
+          '''
+        }
+      }
+    }
+
+    stage('Trigger CD/Final') {
+      when {
+        expression { return fileExists('run_be.flag') && readFile('run_be.flag').trim() == 'true' }
+      }
+      steps {
+        script {
+          echo "===== TRIGGER CD/FINAL ====="
+          echo "PROJECT_NAME=${params.PROJECT_NAME}"
+          echo "TARGET_SERVICES='be'"
+
+          build job: 'CD/Final',
+            wait: true,
+            parameters: [
+              string(name: 'PROJECT_NAME', value: params.PROJECT_NAME),
+              string(name: 'TARGET_SERVICES', value: 'be'),
+            ]
+        }
+      }
+    }
+
+    stage('Skip (RUN_BE=false)') {
+      when {
+        expression { return !(fileExists('run_be.flag') && readFile('run_be.flag').trim() == 'true') }
+      }
+      steps {
+        echo "RUN_BE=false -> BE CI/CD 트리거를 수행하지 않습니다."
+      }
+    }
+
+    stage('Smoke') {
+      steps {
+        sh '''
+          set -euo pipefail
+          echo "===== CI DONE (BE) ====="
+          echo "IMAGE_FULL=${IMAGE_FULL}"
+          echo -n "manualBe="; (test -f manual_be.flag && cat manual_be.flag || echo "false")
+          echo -n "autoBe=";   (test -f auto_be.flag   && cat auto_be.flag   || echo "false")
+          echo -n "RUN_BE=";   (test -f run_be.flag    && cat run_be.flag    || echo "false")
+        '''
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "CI(BE) SUCCESS"
+      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
+    }
+    failure {
+      echo "CI(BE) FAILURE"
+      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
+    }
+    always {
+      echo "CI(BE) DONE"
+    }
+  }
+}
