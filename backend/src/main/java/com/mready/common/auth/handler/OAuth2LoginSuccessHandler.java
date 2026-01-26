@@ -5,8 +5,6 @@ import com.mready.common.auth.dto.Token;
 import com.mready.common.auth.jwt.JwtProperties;
 import com.mready.common.auth.jwt.JwtTokenProvider;
 import com.mready.common.auth.principal.CustomOAuth2User;
-import com.mready.common.auth.redis.RefreshToken;
-import com.mready.common.auth.redis.repository.RefreshTokenRepository;
 import com.mready.common.constant.FrontDomain;
 import com.mready.common.error.ErrorCode;
 import com.mready.common.error.exception.BusinessException;
@@ -30,7 +28,6 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
 	private final JwtTokenProvider jwtTokenProvider;
 	private final JwtProperties jwtProperties;
-	private final RefreshTokenRepository refreshTokenRepository;
 
 	@Override
 	public void onAuthenticationSuccess(
@@ -49,23 +46,11 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
 		Token token = jwtTokenProvider.createToken(user.getUser());
 
-		// Refresh Token 쿠키 설정
 		CookieUtil.addCookie(response, "refreshToken", token.refreshToken(),
 				(int) (jwtProperties.refreshTokenExpiration() / 1000));
 
-		// Redis에 Refresh Token 저장
-		RefreshToken refreshToken = RefreshToken.builder()
-				.id(String.valueOf(user.getUser().getId()))
-				.token(token.refreshToken())
-				.expirationTime(jwtProperties.refreshTokenExpiration() / 1000)
-				.build();
-
-		refreshTokenRepository.save(refreshToken);
-
-		// Access Token 헤더 설정
 		response.setHeader(AuthConstant.AUTHORIZATION, AuthConstant.BEARER + token.accessToken());
 
-		// Access Token을 쿼리 파라미터로 포함
 		String targetUrl = UriComponentsBuilder.fromUriString(FrontDomain.LOCAL.getUrl() + "/login/oauth2/callback")
 				.queryParam("accessToken", token.accessToken())
 				.build().toUriString();

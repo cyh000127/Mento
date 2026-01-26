@@ -46,30 +46,26 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) {
-		try {
-			http
-					.csrf(AbstractHttpConfigurer::disable)
-					.httpBasic(AbstractHttpConfigurer::disable)
-					.formLogin(AbstractHttpConfigurer::disable)
-					.logout(AbstractHttpConfigurer::disable)
-					.sessionManagement(SecurityConfig::createSessionPolicy)
-					.addFilterBefore(corsFilter.corsFilter(), UsernamePasswordAuthenticationFilter.class)
-					.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-					.addFilterBefore(jwtExceptionFilter, JwtAuthenticationFilter.class);
+		http
+				.csrf(AbstractHttpConfigurer::disable)
+				.httpBasic(AbstractHttpConfigurer::disable)
+				.formLogin(AbstractHttpConfigurer::disable)
+				.logout(AbstractHttpConfigurer::disable)
+				.sessionManagement(SecurityConfig::createSessionPolicy)
+				.addFilterBefore(corsFilter.corsFilter(), UsernamePasswordAuthenticationFilter.class)
+				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+				.addFilterBefore(jwtExceptionFilter, JwtAuthenticationFilter.class);
 
-			http
-					.oauth2Login(oauth2 -> oauth2
-							.userInfoEndpoint(userInfo -> userInfo
-									.userService(customOAuth2UserService))
-							.successHandler(oAuth2LoginSuccessHandler))
-					.authorizeHttpRequests(authorize -> authorize
-							.requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
-							.requestMatchers(WHITELIST).permitAll()
-							.anyRequest().permitAll());
+		http
+				.oauth2Login(oauth2 -> oauth2
+						.userInfoEndpoint(userInfo -> userInfo
+								.userService(customOAuth2UserService))
+						.successHandler(oAuth2LoginSuccessHandler))
+				.authorizeHttpRequests(authorize -> authorize
+						.requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
+						.requestMatchers(WHITELIST).permitAll()
+						.anyRequest().permitAll());
 
-			return http.build();
-		} catch (Exception e) {
-			throw new RuntimeException("Security Filter Chain 구성 중 오류가 발생했습니다.", e);
-		}
+		return http.build();
 	}
 }

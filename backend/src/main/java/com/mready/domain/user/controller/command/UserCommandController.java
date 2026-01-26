@@ -3,9 +3,12 @@ package com.mready.domain.user.controller.command;
 import com.mready.common.auth.principal.AuthenticatedUser;
 import com.mready.common.response.BaseResponse;
 import com.mready.common.util.ResponseUtils;
+import com.mready.domain.auth.service.command.AuthCommandService;
 import com.mready.domain.user.service.command.UserCommandService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,17 +19,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "User", description = "회원 관리 API")
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/users")
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserCommandController {
 
     private final UserCommandService userCommandService;
+    private final AuthCommandService authCommandService;
 
     @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 수행합니다 (Soft Delete).")
     @DeleteMapping("/account")
     public ResponseEntity<BaseResponse<Void>> withdraw(
-            @AuthenticationPrincipal AuthenticatedUser user) {
+            @AuthenticationPrincipal AuthenticatedUser user,
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
         userCommandService.withdraw(user.getId());
+        authCommandService.logout(request, response);
         return ResponseUtils.ok(null);
     }
 }

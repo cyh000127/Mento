@@ -69,7 +69,7 @@ class ConsultingCommandServiceTest {
 
         given(timetableRepository.findById(timetableId)).willReturn(Optional.of(timetable));
         given(reservationRepository.findByTimetableId(timetableId)).willReturn(Optional.of(reservation));
-        given(liveKitManager.createToken(anyString(), anyString(), anyString(), eq("MENTO"), eq(true), anyLong()))
+        given(liveKitManager.createToken(anyString(), anyString(), anyString(), eq("MENTOR"), eq(true), anyLong()))
                 .willReturn("mock_token");
         given(liveKitManager.getUrl()).willReturn("wss://test.url");
 
@@ -77,8 +77,7 @@ class ConsultingCommandServiceTest {
         LiveKitSessionResponse response = consultingCommandService.createSession(timetableId, authenticatedUser);
 
         // Then
-        assertThat(response.getRoomToken()).isEqualTo("mock_token");
-        assertThat(response.getParticipantRole()).isEqualTo("MENTO");
+        assertThat(response.roomToken()).isEqualTo("mock_token");
     }
 
     @Test
@@ -107,7 +106,7 @@ class ConsultingCommandServiceTest {
 
         given(timetableRepository.findById(timetableId)).willReturn(Optional.of(timetable));
         given(reservationRepository.findByTimetableId(timetableId)).willReturn(Optional.of(reservation));
-        given(liveKitManager.createToken(anyString(), anyString(), anyString(), eq("USER"), eq(false), anyLong()))
+        given(liveKitManager.createToken(anyString(), anyString(), anyString(), eq("CUSTOMER"), eq(false), anyLong()))
                 .willReturn("mock_token_user");
         given(liveKitManager.getUrl()).willReturn("wss://test.url");
 
@@ -115,8 +114,11 @@ class ConsultingCommandServiceTest {
         LiveKitSessionResponse response = consultingCommandService.createSession(timetableId, authenticatedUser);
 
         // Then
-        assertThat(response.getRoomToken()).isEqualTo("mock_token_user");
-        assertThat(response.getParticipantRole()).isEqualTo("USER");
+        // Then
+        assertThat(response.roomToken()).isEqualTo("mock_token_user");
+        assertThat(response.participantRole()).isEqualTo("CUSTOMER");
+        assertThat(response.livekitUrl()).isEqualTo("wss://test.url");
+        assertThat(response.timetableId()).isEqualTo(timetableId);
     }
 
     @Test

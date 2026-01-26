@@ -16,7 +16,7 @@ public class LiveKitManager {
     private final LiveKitProperties liveKitProperties;
 
     public String createToken(String userId, String name, String roomName, String role, boolean isAdmin, long ttlSeconds) {
-        log.info("LiveKit 토큰 생성 user: {}, room: {}, role: {}, admin: {}, ttl: {}", userId, roomName, role, isAdmin, ttlSeconds);
+        log.info("[Consulting] LiveKit 토큰 생성, userId={}, roomName={}, role={}, isAdmin={}, ttlSeconds={}",userId, roomName, role, isAdmin, ttlSeconds);
 
         AccessToken token = new AccessToken(liveKitProperties.getApiKey(), liveKitProperties.getSecret());
         token.setName(name);

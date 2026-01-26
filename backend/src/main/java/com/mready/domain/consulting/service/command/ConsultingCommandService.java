@@ -4,7 +4,6 @@ import com.mready.common.auth.principal.AuthenticatedUser;
 import com.mready.common.error.ErrorCode;
 import com.mready.common.error.exception.ConsultingException;
 import com.mready.common.livekit.LiveKitManager;
-import com.mready.domain.consulting.converter.ConsultingConverter;
 import com.mready.domain.consulting.dto.LiveKitSessionResponse;
 import com.mready.domain.reservation.entity.Reservation;
 import com.mready.domain.reservation.repository.ReservationRepository;
@@ -24,9 +23,12 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class ConsultingCommandService {
 
-    private final LiveKitManager liveKitManager;
     private final TimetableRepository timetableRepository;
     private final ReservationRepository reservationRepository;
+    private final LiveKitManager liveKitManager;
+
+    private static final int EARLY_ENTRY_MINUTES = 10;
+    private static final int END_MINUTES = 10;
 
     public LiveKitSessionResponse createSession(Long timetableId, AuthenticatedUser user) {
         Timetable timetable = timetableRepository.findById(timetableId)
@@ -34,8 +36,8 @@ public class ConsultingCommandService {
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startTime = LocalDateTime.of(timetable.getScheduledDate(), timetable.getScheduledTime());
-        LocalDateTime entryStartTime = startTime.minusMinutes(10); // 10분
-        LocalDateTime endTime = startTime.plusMinutes(70); // 70분
+        LocalDateTime entryStartTime = startTime.minusMinutes(EARLY_ENTRY_MINUTES); // 10분
+        LocalDateTime endTime = startTime.plusMinutes(END_MINUTES); // 70분
 
         if (now.isBefore(entryStartTime)) {
             throw new ConsultingException(ErrorCode.NOT_STARTED_YET);
@@ -54,7 +56,7 @@ public class ConsultingCommandService {
             throw new ConsultingException(ErrorCode.NOT_AUTHORIZED);
         }
 
-        String role = isMento ? "MENTO" : "USER";
+        String role = isMento ? "MENTOR" : "CUSTOMER";
 
         long ttlSeconds = Duration.between(now, endTime).getSeconds();
         if (ttlSeconds <= 0) {
@@ -72,7 +74,7 @@ public class ConsultingCommandService {
                 ttlSeconds
         );
 
-        return ConsultingConverter.toLiveKitSessionResponse(
+        return LiveKitSessionResponse.of(
                 timetableId,
                 token,
                 roomName,

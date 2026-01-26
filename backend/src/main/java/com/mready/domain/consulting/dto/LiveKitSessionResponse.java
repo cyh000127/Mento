@@ -1,18 +1,16 @@
 package com.mready.domain.consulting.dto;
 
-import lombok.Builder;
-import lombok.Getter;
-
 import java.time.LocalDateTime;
 
-@Getter
-@Builder
-public class LiveKitSessionResponse {
-    private Long timetableId;
-    private String roomToken;
-    private String roomName;
-    private String livekitUrl;
-    private String participantRole;
-    private LocalDateTime enteredAt;
-
+public record LiveKitSessionResponse(
+        Long timetableId,
+        String roomToken,
+        String roomName,
+        String livekitUrl,
+        String participantRole,
+        LocalDateTime enteredAt
+) {
+    public static LiveKitSessionResponse of(Long timetableId, String roomToken, String roomName, String livekitUrl, String participantRole) {
+        return new LiveKitSessionResponse(timetableId, roomToken, roomName, livekitUrl, participantRole, LocalDateTime.now());
+    }
 }
