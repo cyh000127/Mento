@@ -15,6 +15,12 @@ pipeline {
   environment {
     COMPOSE_PATH_PREFIX = "infra/compose/"
     CD_JOB_NAME = "CD/Infra"
+
+    NGINX_CONFD_DIR = "${env.WORKSPACE}/infra/nginx/conf.d"
+    NGINX_IMAGE     = "nginx:1.27-alpine"
+
+    LIVEKIT_CONFIG  = "${env.WORKSPACE}/infra/livekit/config.yml"
+    LIVEKIT_IMAGE   = "livekit/livekit-server:latest"
   }
 
   stages {
@@ -111,6 +117,184 @@ pipeline {
         }
       }
     }
+
+    /* =======================================================
+         * 1. Nginx 설정 문법 검사 (Syntax Lint)
+         * ======================================================= */
+        stage('Nginx Lint (conf.d)') {
+          when {
+            expression {
+              // [수정 1] RUN_CD가 true가 아니면 검사할 필요 없음
+              if (env.RUN_CD != 'true') return false
+
+              // [수정 2] 계산된 타겟(EFFECTIVE_TARGET_SERVICES)을 가져옴
+              def ts = (env.EFFECTIVE_TARGET_SERVICES ?: '').trim()
+
+              // [수정 3] 타겟이 'nginx'를 포함하거나, '전체 배포(빈 값)'면 실행
+              return ts == '' || ts.tokenize().contains('nginx')
+            }
+          }
+          steps {
+            echo "===== NGINX CONFIG LINT ====="
+            sh '''
+              set -euo pipefail
+
+              if [ ! -d "${NGINX_CONFD_DIR}" ]; then
+                echo "ERROR: nginx conf.d dir not found: ${NGINX_CONFD_DIR}"
+                ls -al "${WORKSPACE}/infra/nginx" || true
+                exit 1
+              fi
+
+              if ! command -v docker >/dev/null 2>&1; then
+                echo "ERROR: docker not available on agent."
+                exit 1
+              fi
+
+              echo "Listing conf.d:"
+              ls -al "${NGINX_CONFD_DIR}"
+
+              docker run --rm \
+                -v "${NGINX_CONFD_DIR}":/etc/nginx/conf.d:ro \
+                "${NGINX_IMAGE}" \
+                sh -lc 'nginx -t'
+            '''
+          }
+        }
+
+        /* =======================================================
+         * 2. Nginx 실행 테스트 (Container Boot Check)
+         * ======================================================= */
+        stage('Nginx Runtime Check (container)') {
+          when {
+            expression {
+              if (env.RUN_CD != 'true') return false
+              def ts = (env.EFFECTIVE_TARGET_SERVICES ?: '').trim()
+              // nginx 포함 혹은 전체 배포 시 실행
+              return ts == '' || ts.tokenize().contains('nginx')
+            }
+          }
+          steps {
+            echo "===== NGINX RUNTIME CHECK ====="
+            sh '''
+              set -euo pipefail
+
+              if ! command -v docker >/dev/null 2>&1; then
+                echo "docker not available on agent. Skipping runtime check."
+                exit 0
+              fi
+
+              if [ ! -d "${NGINX_CONFD_DIR}" ]; then
+                echo "ERROR: nginx conf.d dir not found: ${NGINX_CONFD_DIR}"
+                exit 1
+              fi
+
+              CONTAINER_NAME="ci-test-nginx-$$"
+              docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+
+              # 1차 시도: 포트 자동 할당(0:80)
+              if ! docker run -d --name "$CONTAINER_NAME" -p 0:80 \
+                  -v "${NGINX_CONFD_DIR}":/etc/nginx/conf.d:ro \
+                  "${NGINX_IMAGE}"; then
+                echo "docker run with host port 0 failed, retrying with 8080:80"
+                # 2차 시도: 8080 포트 강제 할당
+                docker run -d --name "$CONTAINER_NAME" -p 8080:80 \
+                  -v "${NGINX_CONFD_DIR}":/etc/nginx/conf.d:ro \
+                  "${NGINX_IMAGE}"
+              fi
+
+              HOST_PORT="$(docker port "$CONTAINER_NAME" 80/tcp | sed -n 's/.*://p' | tail -n 1 || true)"
+              if [ -z "$HOST_PORT" ]; then
+                echo "Failed to determine host port for nginx container"
+                docker logs "$CONTAINER_NAME" || true
+                docker rm -f "$CONTAINER_NAME" || true
+                exit 1
+              fi
+              echo "Host port => ${HOST_PORT}"
+
+              if command -v curl >/dev/null 2>&1; then
+                CLIENT="curl -sS --max-time 3"
+              elif command -v wget >/dev/null 2>&1; then
+                CLIENT="wget -qO- --timeout=3"
+              else
+                echo "No curl/wget on agent. Skipping runtime check."
+                docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+                exit 0
+              fi
+
+              OK=0
+              for i in 1 2 3 4 5; do
+                sleep 1
+                if $CLIENT "http://127.0.0.1:${HOST_PORT}/" >/dev/null 2>&1; then
+                  OK=1
+                  echo "nginx responding on ${HOST_PORT}"
+                  break
+                fi
+                echo "waiting for nginx (attempt $i)..."
+              done
+
+              if [ "$OK" -ne 1 ]; then
+                echo "nginx did not respond"
+                docker logs "$CONTAINER_NAME" || true
+                docker rm -f "$CONTAINER_NAME" || true
+                exit 1
+              fi
+
+              docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+              echo "nginx runtime check passed"
+            '''
+          }
+        }
+
+        /* =======================================================
+         * 3. LiveKit 설정 및 부팅 검사
+         * ======================================================= */
+        stage('LiveKit Config / Boot Check (container)') {
+          when {
+            expression {
+              if (env.RUN_CD != 'true') return false
+              def ts = (env.EFFECTIVE_TARGET_SERVICES ?: '').trim()
+              // livekit 포함 혹은 전체 배포 시 실행
+              return ts == '' || ts.tokenize().contains('livekit')
+            }
+          }
+          steps {
+            echo "===== LIVEKIT CONFIG / BOOT CHECK ====="
+            sh '''
+              set -euo pipefail
+
+              if [ ! -f "${LIVEKIT_CONFIG}" ]; then
+                echo "ERROR: LiveKit config not found: ${LIVEKIT_CONFIG}"
+                ls -al "${WORKSPACE}/infra/livekit" || true
+                exit 1
+              fi
+
+              if ! command -v docker >/dev/null 2>&1; then
+                echo "ERROR: docker not available on agent."
+                exit 1
+              fi
+
+              CONTAINER_NAME="ci-test-livekit-$$"
+              docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+
+              docker run -d --name "$CONTAINER_NAME" \
+                -v "${LIVEKIT_CONFIG}":/etc/livekit/config.yml:ro \
+                "${LIVEKIT_IMAGE}" \
+                --config /etc/livekit/config.yml
+
+              sleep 3
+
+              if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+                echo "LiveKit container exited early. Logs:"
+                docker logs "$CONTAINER_NAME" || true
+                docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+                exit 1
+              fi
+
+              echo "LiveKit boot check passed (alive for 3s)."
+              docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+            '''
+          }
+        }
 
     stage('Smoke (env view)') {
       steps {
