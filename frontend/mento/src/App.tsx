@@ -1,7 +1,7 @@
-import { RouterProvider } from 'react-router-dom'
-import { router } from './routes/router'
+import AppRouter from "@/router"
 
-// App.tsx → Router만 담당
-export default function App() {
-  return <RouterProvider router={router} />
+function App() {
+  return <AppRouter />
 }
+
+export default App
