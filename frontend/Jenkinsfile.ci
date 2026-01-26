@@ -47,7 +47,7 @@ pipeline {
           echo "JOB_NAME=$JOB_NAME"
           echo "BUILD_NUMBER=$BUILD_NUMBER"
           echo "BUILD_URL=$BUILD_URL"
-          echo "BRANCH_NAME=$BRANCH_NAME"
+          echo "BRANCH_NAME=${BRANCH_NAME:-}"
           pwd
           uname -a || true
           git --version || true
