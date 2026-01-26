@@ -10,6 +10,11 @@ pipeline {
     string(name: 'DEPLOY_REF', defaultValue: 'develop-infra', description: 'deploy ref/branch')
     string(name: 'PROJECT_NAME', defaultValue: 'app', description: 'docker compose project name')
     string(name: 'TARGET_SERVICES', defaultValue: '', description: '공백 구분 서비스 목록 (비우면 배포 안 함)')
+    booleanParam(
+      name: 'FULL_DEPLOY',
+      defaultValue: false,
+      description: 'TARGET_SERVICES가 비어있어도 전체 배포(Full deploy)로 CD/Final을 트리거'
+    )
   }
 
   environment {
@@ -22,6 +27,7 @@ pipeline {
 
     COMPOSE_NGINX   = "${REPO_DIR}/infra/compose/docker-compose.nginx.yml"
     COMPOSE_CERTBOT = "${REPO_DIR}/infra/compose/docker-compose.certbot.yml"
+    COMPOSE_LIVEKIT = "${REPO_DIR}/infra/compose/docker-compose.livekit.yml"
   }
 
   stages {
@@ -38,6 +44,7 @@ pipeline {
           echo "DEPLOY_REF=${DEPLOY_REF}"
           echo "PROJECT_NAME=${PROJECT_NAME}"
           echo "TARGET_SERVICES=${TARGET_SERVICES}"
+          echo "FULL_DEPLOY=${FULL_DEPLOY}"
           echo "COMPOSE_NGINX=${COMPOSE_NGINX}"
           echo "COMPOSE_CERTBOT=${COMPOSE_CERTBOT}"
         '''
@@ -124,14 +131,28 @@ pipeline {
       }
     }
 
+    stage('Check livekit config state (policy)') {
+      steps {
+        dir("${env.REPO_DIR}") {
+          sh '''
+            set -euxo pipefail
+            test -f infra/livekit/config.yml
+            echo "livekit config exists OK"
+          '''
+        }
+      }
+    }
+
+
     stage('Validate compose (infra only)') {
       steps {
         sh '''
           set -euxo pipefail
           test -f "${COMPOSE_NGINX}"
           test -f "${COMPOSE_CERTBOT}"
+          test -f "${COMPOSE_LIVEKIT}"
 
-          DC="docker compose -p ${PROJECT_NAME} -f ${COMPOSE_NGINX} -f ${COMPOSE_CERTBOT}"
+          DC="docker compose -p ${PROJECT_NAME} -f ${COMPOSE_NGINX} -f ${COMPOSE_CERTBOT} -f ${COMPOSE_LIVEKIT}"
           $DC config > /dev/null
 
           echo "compose config OK"
@@ -140,18 +161,15 @@ pipeline {
     }
 
     stage('Trigger CD/Final') {
-      when {
-        expression { return (params.TARGET_SERVICES ?: '').trim() != '' }
-      }
       steps {
         script {
           def targetStr = (params.TARGET_SERVICES ?: '').trim()
 
           echo "===== TRIGGER CD/FINAL ====="
           echo "PROJECT_NAME=${params.PROJECT_NAME}"
-          echo "TARGET_SERVICES=${targetStr}"
+          echo "FULL_DEPLOY=${params.FULL_DEPLOY}"
+          echo "TARGET_SERVICES='${targetStr}' (empty means FULL deploy when FULL_DEPLOY=true)"
 
-          // Final이 받는 파라미터만 전달
           build job: 'CD/Final',
             wait: true,
             parameters: [
@@ -164,10 +182,13 @@ pipeline {
 
     stage('Skip Final (no targets)') {
       when {
-        expression { return (params.TARGET_SERVICES ?: '').trim() == '' }
+        expression {
+          def ts = (params.TARGET_SERVICES ?: '').trim()
+          return (ts == '') && (params.FULL_DEPLOY != true)
+        }
       }
       steps {
-        echo "TARGET_SERVICES is empty. Skipping CD/Final."
+        echo "TARGET_SERVICES is empty and FULL_DEPLOY is false. Skipping CD/Final."
       }
     }
   }

@@ -8,11 +8,18 @@ pipeline {
 
   environment {
     // 운영 compose 기준 경로
+
+    // Nginx 설정 경로
     NGINX_CONFD_DIR = "${env.WORKSPACE}/infra/nginx/conf.d"
     NGINX_IMAGE     = "nginx:1.27-alpine"
 
+    // livekit 설정 경로
+    LIVEKIT_CONFD_DIR = "${env.WORKSPACE}/infra/livekit/config.yml"
+    LIVEKIT_IMAGE = "livekit/livekit-server:latest"
+
     // CI가 계산해서 CD로 넘길 값
     TARGET_SERVICES = ""
+    COMPOSE_CHANGEd = "false"
   }
 
   stages {
@@ -61,7 +68,6 @@ pipeline {
     stage('Compute TARGET_SERVICES') {
       steps {
         script {
-          // 마지막 커밋 기준 변경 파일 목록
           def changed = sh(
             script: 'git show --name-only --pretty="" -1 || true',
             returnStdout: true
@@ -69,24 +75,26 @@ pipeline {
 
           echo "===== CHANGED FILES (name-only) =====\n${changed}"
 
+          def composeChanged = (changed =~ /(?m)^infra\/compose\//)
+
           def targets = []
 
-          // nginx 설정 변경
-          if (changed =~ /(?m)^infra\/nginx\//) {
-            targets << 'nginx'
+          if (composeChanged) {
+            // compose 변경은 전체 up 유도
+            env.COMPOSE_CHANGED = "true"
+            env.TARGET_SERVICES = ""
+            echo "infra/compose changed -> COMPOSE_CHANGED=true, TARGET_SERVICES empty (full deploy)"
+            return
           }
 
-          // compose 변경은 영향 범위가 넓으니 보수적으로
-          if (changed =~ /(?m)^infra\/compose\//) {
-            targets << 'nginx'
-            targets << 'certbot'
-          }
+          env.COMPOSE_CHANGED = "false"
 
-          // 필요 시 확장:
-          // if (changed =~ /(?m)^infra\/livekit\//) targets << 'livekit'
+          if (changed =~ /(?m)^infra\/nginx\//)   targets << 'nginx'
+          if (changed =~ /(?m)^infra\/certbot\//) targets << 'certbot'
+          if (changed =~ /(?m)^infra\/livekit\//) targets << 'livekit'
 
           env.TARGET_SERVICES = targets.unique().join(' ').trim()
-          echo "Computed TARGET_SERVICES='${env.TARGET_SERVICES}'"
+          echo "Computed TARGET_SERVICES='${env.TARGET_SERVICES}', COMPOSE_CHANGED='${env.COMPOSE_CHANGED}'"
         }
       }
     }
@@ -214,6 +222,58 @@ pipeline {
       }
     }
 
+
+    /* =======================================================
+     * LiveKit Config Lint
+     * ======================================================= */
+    stage('LiveKit Config / Boot Check (container)') {
+      when {
+        expression {
+          def ts = (env.TARGET_SERVICES ?: '').trim()
+          return ts != '' && ts.split(/\s+/).contains('livekit')
+        }
+      }
+      steps {
+        echo "===== LIVEKIT CONFIG / BOOT CHECK ====="
+        sh '''
+          set -euo pipefail
+
+          if [ ! -f "${LIVEKIT_CONFIG}" ]; then
+            echo "ERROR: LiveKit config not found: ${LIVEKIT_CONFIG}"
+            ls -al "${WORKSPACE}/infra/livekit" || true
+            exit 1
+          fi
+
+          if ! command -v docker >/dev/null 2>&1; then
+            echo "ERROR: docker not available on agent. Cannot validate LiveKit via container."
+            exit 1
+          fi
+
+          CONTAINER_NAME="ci-test-livekit-$$"
+          docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+
+          # LiveKit 서버를 짧게 띄워서(백그라운드) 즉시 크래시 여부만 확인
+          docker run -d --name "$CONTAINER_NAME" \
+            -v "${LIVEKIT_CONFIG}":/etc/livekit/config.yml:ro \
+            ${LIVEKIT_IMAGE} \
+            --config /etc/livekit/config.yml
+
+          # 3초 내 즉시 종료하면 실패로 간주
+          sleep 3
+          if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+            echo "LiveKit container exited early (boot failure suspected). Logs:"
+            docker logs "$CONTAINER_NAME" || true
+            docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+            exit 1
+          fi
+
+          echo "LiveKit boot check passed (container stayed up for 3s)."
+          docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+        '''
+      }
+    }
+
+
     stage('Smoke') {
       steps {
         echo "===== SMOKE TEST ====="
@@ -224,10 +284,14 @@ pipeline {
     stage('Trigger CD/Infra') {
       when {
         allOf {
-          // 빈 값이면 CD 호출 금지
-          expression { return (env.TARGET_SERVICES ?: '').trim() != '' }
+          // ✅ targets가 있거나 composeChanged면 트리거
+          expression {
+            def ts = (env.TARGET_SERVICES ?: '').trim()
+            def cc = (env.COMPOSE_CHANGED ?: 'false').trim()
+            return (ts != '') || (cc == 'true')
+          }
 
-          // 안전한 fetch+비교 (fetch 실패하면 false)
+          // 기존 develop-infra HEAD 비교 조건 유지
           expression {
             def rc = sh(
               script: 'git fetch -q origin develop-infra:refs/remotes/origin/develop-infra',
@@ -244,40 +308,47 @@ pipeline {
       steps {
         echo "===== TRIGGER CD/INFRA ====="
         echo "DEPLOY_REF=develop-infra"
+        echo "COMPOSE_CHANGED=${env.COMPOSE_CHANGED}"
         echo "TARGET_SERVICES=${env.TARGET_SERVICES}"
 
         build job: 'CD/Infra',
           parameters: [
             string(name: 'DEPLOY_REF', value: 'develop-infra'),
             string(name: 'PROJECT_NAME', value: 'app'),
-            string(name: 'TARGET_SERVICES', value: "${env.TARGET_SERVICES}")
+            string(name: 'TARGET_SERVICES', value: "${env.TARGET_SERVICES}"),
           ],
           wait: false,
           propagate: false
       }
     }
 
+
     stage('Skip CD (no targets)') {
       when {
-        expression { return (env.TARGET_SERVICES ?: '').trim() == '' }
+        expression {
+          def ts = (env.TARGET_SERVICES ?: '').trim()
+          def cc = (env.COMPOSE_CHANGED ?: 'false').trim()
+          return (ts == '') && (cc != 'true')
+        }
       }
       steps {
         echo "No infra-related targets detected. Skipping CD trigger."
       }
     }
+
   }
 
   post {
     success {
-      echo "SUCCESS"
+      echo "CI(Infra) SUCCESS"
       sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
     }
     failure {
-      echo "FAILURE"
+      echo "CI(Infra) FAILURE"
       sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
     }
     always {
-      echo "DONE"
+      echo "CI(Infra) DONE"
     }
   }
 }
