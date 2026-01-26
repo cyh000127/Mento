@@ -9,7 +9,7 @@ pipeline {
   parameters {
     string(name: 'DEPLOY_REF', defaultValue: 'develop-infra', description: 'deploy ref/branch')
     string(name: 'PROJECT_NAME', defaultValue: 'app', description: 'docker compose project name')
-    string(name: 'TARGET_SERVICES', defaultValue: '', description: '공백 구분 서비스 목록 (비우면 배포 안 함)')
+    string(name: 'TARGET_SERVICES', defaultValue: '', description: '공백 구분 서비스 목록 (비우면 full deploy)')
   }
 
   environment {
@@ -153,12 +153,15 @@ pipeline {
     }
 
     stage('Trigger CD/Final') {
-      when {
-        expression { return (params.TARGET_SERVICES ?: '').trim() != '' }
-      }
       steps {
         script {
           def targetStr = (params.TARGET_SERVICES ?: '').trim()
+
+          // 빈 문자열이면 FULL deploy로 해석
+          if (targetStr == '') {
+            targetStr = 'nginx certbot livekit'   // infra 전체 목록
+            echo "TARGET_SERVICES empty -> FULL deploy: '${targetStr}'"
+          }
 
           echo "===== TRIGGER CD/FINAL ====="
           echo "PROJECT_NAME=${params.PROJECT_NAME}"
@@ -173,16 +176,6 @@ pipeline {
         }
       }
     }
-
-    stage('Skip Final (no targets)') {
-      when {
-        expression { return (params.TARGET_SERVICES ?: '').trim() == '' }
-      }
-      steps {
-        echo "TARGET_SERVICES is empty. Skipping CD/Final."
-      }
-    }
-
   } // stages 닫기
 
   post { // post는 stages 밖
