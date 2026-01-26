@@ -22,17 +22,13 @@ pipeline {
 
   environment {
     // FE 경로
-    FE_DIR = "frontend/mento"
+    FE_DIR         = "frontend/mento"
     FE_PATH_PREFIX = "frontend/mento/"
 
     // Docker Hub repo + 고정 태그
     IMAGE_REPO = "ejjem/s14p11a704"
     IMAGE_TAG  = "develop-fe"
     IMAGE_FULL = "${IMAGE_REPO}:${IMAGE_TAG}"
-
-    // CI가 계산(또는 수동 override)해서 CD/Final에 넘길 값
-    EFFECTIVE_TARGET_SERVICES = ""
-    MANUAL_OVERRIDE = "false"
   }
 
   stages {
@@ -52,8 +48,6 @@ pipeline {
           pwd
           uname -a || true
           git --version || true
-          node -v || true
-          npm -v || true
           docker --version || true
           docker info >/dev/null 2>&1 || true
           docker compose version >/dev/null 2>&1 || true
@@ -73,27 +67,27 @@ pipeline {
       }
     }
 
-    stage('Decide Target Services (manual override first)') {
+    stage('Decide Run Mode (manual vs auto)') {
       steps {
         script {
           def manual = (params.TARGET_SERVICES ?: '').trim()
+          // 공백 구분 + 혹시 모를 콤마 입력도 허용
+          manual = manual.replaceAll(/\s*,\s*/, ' ').trim()
 
-          if (manual != '') {
-            env.MANUAL_OVERRIDE = "true"
-            env.EFFECTIVE_TARGET_SERVICES = manual
-            echo "MANUAL_OVERRIDE=true"
-            echo "EFFECTIVE_TARGET_SERVICES='${env.EFFECTIVE_TARGET_SERVICES}'"
-          } else {
-            env.MANUAL_OVERRIDE = "false"
-            echo "MANUAL_OVERRIDE=false (auto-detect will run)"
-          }
+          def manualFe = (manual != '' && manual.tokenize().contains('fe'))
+
+          writeFile file: 'manual_fe.flag', text: (manualFe ? 'true' : 'false') + "\n"
+          echo "manual='${manual}'"
+          echo "manualFe=${manualFe}"
         }
       }
     }
 
     stage('Detect Changes (merge-only, auto)') {
       when {
-        expression { return (env.MANUAL_OVERRIDE ?: 'false') != 'true' }
+        expression {
+          return fileExists('manual_fe.flag') && readFile('manual_fe.flag').trim() != 'true'
+        }
       }
       steps {
         echo "===== DETECT CHANGES (FE: merge-only) ====="
@@ -105,14 +99,11 @@ pipeline {
           echo "PARENTS_CNT=$PARENTS_CNT"
 
           if [ "$PARENTS_CNT" -lt 2 ]; then
-            echo "MERGE_COMMIT=false" > merge.flag
-            echo "Not a merge commit. Skipping change detection."
+            echo "Not a merge commit. Auto-detect disabled."
             : > changed_files.txt
+            echo "false" > auto_fe.flag
             exit 0
           fi
-
-          echo "MERGE_COMMIT=true" > merge.flag
-          echo "MERGE_COMMIT=true"
 
           # 이전 성공 커밋이 있으면 그 범위부터, 없으면 최근 50개 커밋 범위로
           PREV="${GIT_PREVIOUS_SUCCESSFUL_COMMIT:-}"
@@ -125,21 +116,11 @@ pipeline {
 
           git diff --name-only "$RANGE" > changed_files.txt || true
 
-          echo "----- changed_files.txt -----"
+          echo "----- changed_files.txt (first 200) -----"
           sed -n '1,200p' changed_files.txt || true
         '''
 
         script {
-          def mergeCommit = "false"
-          try {
-            mergeCommit = sh(
-              script: "cat merge.flag | cut -d= -f2 | tr -d '\\n'",
-              returnStdout: true
-            ).trim()
-          } catch (ignored) {
-            mergeCommit = "false"
-          }
-
           def changedLines = []
           try {
             changedLines = readFile('changed_files.txt')
@@ -151,26 +132,52 @@ pipeline {
           }
 
           def feChanged = changedLines.any { it.startsWith(env.FE_PATH_PREFIX) }
+          writeFile file: 'auto_fe.flag', text: (feChanged ? 'true' : 'false') + "\n"
 
-          env.EFFECTIVE_TARGET_SERVICES = (mergeCommit == "true" && feChanged) ? "fe" : ""
-
-          echo "mergeCommit=${mergeCommit}"
           echo "feChanged=${feChanged}"
-          echo "AUTO EFFECTIVE_TARGET_SERVICES='${env.EFFECTIVE_TARGET_SERVICES}'"
         }
+      }
+    }
+
+    stage('Finalize Decision (run_fe.flag)') {
+      steps {
+        script {
+          def manualFe = fileExists('manual_fe.flag') && readFile('manual_fe.flag').trim() == 'true'
+          def autoFe   = fileExists('auto_fe.flag')   && readFile('auto_fe.flag').trim() == 'true'
+          def runFe    = manualFe || autoFe
+
+          writeFile file: 'run_fe.flag', text: (runFe ? 'true' : 'false') + "\n"
+
+          echo "manualFe=${manualFe}"
+          echo "autoFe=${autoFe}"
+          echo "RUN_FE=${runFe}"
+        }
+      }
+    }
+
+    stage('Precheck (node/npm required if RUN_FE=true)') {
+      when {
+        expression { return fileExists('run_fe.flag') && readFile('run_fe.flag').trim() == 'true' }
+      }
+      steps {
+        sh '''
+          set -euo pipefail
+          command -v node >/dev/null 2>&1 || { echo "ERROR: node not found (RUN_FE=true)"; exit 2; }
+          command -v npm  >/dev/null 2>&1 || { echo "ERROR: npm not found (RUN_FE=true)"; exit 2; }
+          node -v
+          npm -v
+        '''
       }
     }
 
     stage('Install deps') {
       when {
-        expression { return (env.EFFECTIVE_TARGET_SERVICES ?: '').split("\\s+").contains("fe") }
+        expression { return fileExists('run_fe.flag') && readFile('run_fe.flag').trim() == 'true' }
       }
       steps {
         dir("${env.FE_DIR}") {
           sh '''
             set -euo pipefail
-            node -v
-            npm -v
 
             if [ -f package-lock.json ]; then
               npm ci
@@ -184,7 +191,7 @@ pipeline {
 
     stage('Lint / Test / Build') {
       when {
-        expression { return (env.EFFECTIVE_TARGET_SERVICES ?: '').split("\\s+").contains("fe") }
+        expression { return fileExists('run_fe.flag') && readFile('run_fe.flag').trim() == 'true' }
       }
       steps {
         dir("${env.FE_DIR}") {
@@ -209,7 +216,7 @@ pipeline {
 
     stage('Docker Build') {
       when {
-        expression { return (env.EFFECTIVE_TARGET_SERVICES ?: '').split("\\s+").contains("fe") }
+        expression { return fileExists('run_fe.flag') && readFile('run_fe.flag').trim() == 'true' }
       }
       steps {
         sh '''
@@ -224,7 +231,7 @@ pipeline {
 
     stage('Docker Hub Login & Push') {
       when {
-        expression { return (env.EFFECTIVE_TARGET_SERVICES ?: '').split("\\s+").contains("fe") }
+        expression { return fileExists('run_fe.flag') && readFile('run_fe.flag').trim() == 'true' }
       }
       steps {
         withCredentials([usernamePassword(
@@ -244,56 +251,58 @@ pipeline {
 
     stage('Trigger CD/Final') {
       when {
-        expression { return (env.EFFECTIVE_TARGET_SERVICES ?: '').trim() != '' }
+        expression { return fileExists('run_fe.flag') && readFile('run_fe.flag').trim() == 'true' }
       }
       steps {
         script {
-          def targetStr = (env.EFFECTIVE_TARGET_SERVICES ?: '').trim()
-
           echo "===== TRIGGER CD/FINAL ====="
           echo "PROJECT_NAME=${params.PROJECT_NAME}"
-          echo "TARGET_SERVICES='${targetStr}'"
+          echo "TARGET_SERVICES='fe'"
 
           build job: 'CD/Final',
             wait: true,
             parameters: [
               string(name: 'PROJECT_NAME', value: params.PROJECT_NAME),
-              string(name: 'TARGET_SERVICES', value: targetStr),
+              string(name: 'TARGET_SERVICES', value: 'fe'),
             ]
         }
       }
     }
 
-    stage('Skip CD (no targets)') {
+    stage('Skip (RUN_FE=false)') {
       when {
-        expression { return (env.EFFECTIVE_TARGET_SERVICES ?: '').trim() == '' }
+        expression { return !(fileExists('run_fe.flag') && readFile('run_fe.flag').trim() == 'true') }
       }
       steps {
-        echo "No FE deploy targets. (manual empty + no detected FE changes) -> skipping."
+        echo "RUN_FE=false -> FE CI/CD 트리거를 수행하지 않습니다."
       }
     }
 
     stage('Smoke') {
       steps {
-        echo "===== CI DONE (FE) ====="
-        echo "IMAGE_FULL=${env.IMAGE_FULL}"
-        echo "MANUAL_OVERRIDE=${env.MANUAL_OVERRIDE}"
-        echo "EFFECTIVE_TARGET_SERVICES=${env.EFFECTIVE_TARGET_SERVICES}"
+        sh '''
+          set -euo pipefail
+          echo "===== CI DONE (FE) ====="
+          echo "IMAGE_FULL=${IMAGE_FULL}"
+          echo -n "manualFe="; (test -f manual_fe.flag && cat manual_fe.flag || echo "false")
+          echo -n "autoFe=";   (test -f auto_fe.flag   && cat auto_fe.flag   || echo "false")
+          echo -n "RUN_FE=";   (test -f run_fe.flag    && cat run_fe.flag    || echo "false")
+        '''
       }
     }
   }
 
   post {
     success {
-      echo "SUCCESS"
+      echo "CI(FE) SUCCESS"
       sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
     }
     failure {
-      echo "FAILURE"
+      echo "CI(FE) FAILURE"
       sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
     }
     always {
-      echo "DONE"
+      echo "CI(FE) DONE"
     }
   }
 }
