@@ -1,9 +1,11 @@
 package com.mready.common.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
 import jakarta.validation.constraints.NotBlank;
 
+@Validated
 @ConfigurationProperties(prefix = "cloudflare.r2")
 public record CloudflareProperties(
 	@NotBlank(message = "Cloudflare R2 엔드포인트는 필수입니다")
