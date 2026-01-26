@@ -7,8 +7,8 @@ export default function AiCarePage() {
   return (
     <>
       <AiCareHero />
-      <AiFeatures />
       <SkinAnalysis />
+      <AiFeatures />
       <AiCareCta />
     </>
   )

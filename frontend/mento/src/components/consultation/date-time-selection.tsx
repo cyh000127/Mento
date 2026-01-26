@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react"
 import { ChevronLeft, ChevronRight, ArrowLeft, ArrowRight, Droplets, Sparkles, Scissors } from "lucide-react"
-import type { ConsultationCategory } from "@/app/consultation/page"
+import type { ConsultationCategory } from "@/types/consultation"
 
 interface DateTimeSelectionProps {
   selectedDate: Date | null
@@ -97,9 +97,18 @@ export function DateTimeSelection({
     }
   }
 
+  const toDateOnly = (date: Date) =>
+    new Date(date.getFullYear(), date.getMonth(), date.getDate())
+
   const isDateDisabled = (date: Date) => {
-    const isPast = date < new Date(today.getFullYear(), today.getMonth(), today.getDate())
-    const isBooked = bookedDates.includes(date.getDate()) && date.getMonth() === currentMonth
+    const todayDate = toDateOnly(new Date())
+    const targetDate = toDateOnly(date)
+  
+    const isPast = targetDate < todayDate
+    const isBooked =
+      bookedDates.includes(date.getDate()) &&
+      date.getMonth() === currentMonth
+  
     return isPast || isBooked
   }
 
@@ -196,19 +205,21 @@ export function DateTimeSelection({
                   type="button"
                   onClick={() => !disabled && onDateSelect(date)}
                   disabled={disabled}
-                  className={`relative flex h-12 flex-col items-center justify-center rounded-lg text-sm transition-all ${
-                    !inCurrentMonth
-                      ? "text-text-secondary/40"
-                      : selected
-                        ? "bg-primary-500 font-semibold text-dark-bg shadow-md"
-                        : disabled
-                          ? "cursor-not-allowed text-text-secondary/40"
-                          : dayOfWeek === 0
-                            ? "text-red-400 hover:bg-muted"
-                            : dayOfWeek === 6
-                              ? "text-blue-400 hover:bg-muted"
-                              : "text-text-primary hover:bg-muted"
-                  }`}
+                  className={`relative flex h-12 flex-col items-center justify-center rounded-lg text-sm transition-all
+                    ${
+                      disabled
+                        ? "cursor-not-allowed bg-transparent text-gray-300"
+                        : selected
+                          ? "bg-primary-500 font-semibold text-dark-bg shadow-md"
+                          : !inCurrentMonth
+                            ? "bg-transparent text-text-secondary/40"
+                            : dayOfWeek === 0
+                              ? "text-red-400 hover:bg-muted"
+                              : dayOfWeek === 6
+                                ? "text-blue-400 hover:bg-muted"
+                                : "text-text-primary hover:bg-muted"
+                    }
+                  `}
                 >
                   <span>{date.getDate()}</span>
                   {todayDate && inCurrentMonth && (

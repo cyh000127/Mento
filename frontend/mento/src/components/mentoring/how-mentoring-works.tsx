@@ -1,4 +1,5 @@
-import { Search, Calendar, MessageCircle, CheckCircle } from "lucide-react"
+import { Search, Calendar, MessageCircle, CheckCircle, ArrowRight } from "lucide-react"
+import { Link } from "react-router-dom"
 
 const steps = [
   {
@@ -66,6 +67,17 @@ export function HowMentoringWorks() {
               </p>
             </div>
           ))}
+        </div>
+
+        {/* CTA Button */}
+        <div className="mt-12 flex justify-center">
+          <Link
+            to="/consultation"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-3.5 font-medium text-dark-bg shadow-lg shadow-primary-500/25 transition-all hover:bg-primary-400 hover:shadow-xl hover:shadow-primary-500/30"
+          >
+            멘토링 예약하기
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </div>
     </section>

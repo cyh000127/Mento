@@ -4,31 +4,34 @@ export default {
   darkMode: "class",
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
+    fontFamily: {
+      sans: ["var(--font-sans)"],
+    },
     extend: {
       colors: {
         /* Brand */
         primary: {
-          500: "var(--primary-500)",
-          400: "var(--primary-400)",
-          300: "var(--primary-300)",
-          200: "var(--primary-200)",
-          100: "var(--primary-100)",
+          500: "#4de2ff",
+          400: "#6ae9ff",
+          300: "#8ff0ff",
+          200: "#b8f6ff",
+          100: "#e6fcff",
           DEFAULT: "var(--primary)",
           foreground: "var(--primary-foreground)",
         },
 
         /* Pastel */
         "pastel-blue": {
-          200: "var(--pastel-blue-200)",
-          100: "var(--pastel-blue-100)",
+          200: "#beeffc",
+          100: "#ccf8ff",
         },
         "pastel-purple": {
-          200: "var(--pastel-purple-200)",
-          100: "var(--pastel-purple-100)",
+          200: "#e6e3fa",
+          100: "#f2f0ff",
         },
         "pastel-green": {
-          200: "var(--pastel-green-200)",
-          100: "var(--pastel-green-100)",
+          200: "#bfeedd",
+          100: "#dffaf0",
         },
 
         /* Semantic */
@@ -38,13 +41,17 @@ export default {
         border: "var(--border)",
         input: "var(--input)",
         ring: "var(--ring)",
-        muted: "var(--muted)",
+        muted: "#f3f4f6",
         accent: "var(--accent)",
         destructive: "var(--destructive)",
 
         /* Text */
         "text-primary": "var(--text-primary)",
         "text-secondary": "var(--text-secondary)",
+
+        /* Background helpers */
+        "bg-main": "var(--bg-main)",
+        "dark-bg": "var(--dark-bg)",
 
         /* Chart */
         chart: {
@@ -53,15 +60,6 @@ export default {
           3: "var(--chart-3)",
           4: "var(--chart-4)",
           5: "var(--chart-5)",
-        },
-
-        /* Sidebar */
-        sidebar: {
-          DEFAULT: "var(--sidebar)",
-          foreground: "var(--sidebar-foreground)",
-          primary: "var(--sidebar-primary)",
-          accent: "var(--sidebar-accent)",
-          border: "var(--sidebar-border)",
         },
       },
 

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { ArrowLeft, Check, Droplets, Sparkles, Scissors } from "lucide-react"
-import type { ConsultationCategory } from "@/app/consultation/page"
+import type { ConsultationCategory } from "@/types/consultation"
 
 interface QuestionnaireProps {
   answers: string[]

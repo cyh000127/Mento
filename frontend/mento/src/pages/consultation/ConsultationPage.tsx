@@ -44,6 +44,16 @@ export default function ConsultationPage() {
     setCurrentStep((prev) => Math.max(prev - 1, 1))
   }
 
+  const [answers, setAnswers] = useState<string[]>([])
+  const handleAnswerChange = (index: number, answer: string) => {
+    setAnswers((prev) => {
+      const next = [...prev]
+      next[index] = answer
+      return next
+    })
+  }
+  
+
   return (
     <div className="min-h-screen bg-background py-12">
       <div className="mx-auto max-w-[1000px] px-6">
@@ -65,17 +75,27 @@ export default function ConsultationPage() {
             <DateTimeSelection
               selectedDate={bookingData.date}
               selectedTime={bookingData.time}
-              onSelect={handleDateTimeSelect}
+              selectedCategory={bookingData.category}
+              onDateSelect={(date) =>
+                setBookingData((prev) => ({ ...prev, date }))
+              }
+              onTimeSelect={(time) =>
+                setBookingData((prev) => ({ ...prev, time }))
+              }
               onNext={handleNext}
-              onBack={handleBack}
+              onPrev={handleBack}
               canProceed={bookingData.date !== null && bookingData.time !== ""}
             />
           )}
 
           {currentStep === 3 && (
             <Questionnaire
+              answers={answers}
+              selectedCategory={bookingData.category}
+              onAnswerChange={handleAnswerChange}
               onNext={handleNext}
-              onBack={handleBack}
+              onPrev={handleBack}
+              canProceed={answers.every((a) => a && a.trim() !== "")}
             />
           )}
 
