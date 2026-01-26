@@ -1,13 +1,7 @@
-import { Outlet } from 'react-router-dom'
+import AppRouter from "@/router"
 
-export default function App() {
-  return (
-    <div>
-      <header>MENTO Header</header>
-
-      <main>
-        <Outlet />
-      </main>
-    </div>
-  )
+function App() {
+  return <AppRouter />
 }
+
+export default App

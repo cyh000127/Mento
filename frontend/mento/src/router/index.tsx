@@ -1,0 +1,45 @@
+import { createBrowserRouter, RouterProvider } from "react-router-dom"
+import Layout from "@/components/layouts/Layout"
+import HomePage from "@/pages/home/HomePage"
+import AiCarePage from "@/pages/ai-care/AiCarePage"
+import ConsultationPage from "@/pages/consultation/ConsultationPage"
+import GuidePage from "@/pages/guide/GuidePage"
+import MentoringPage from "@/pages/mentoring/MentoringPage"
+import RecommendPage from "@/pages/recommend/RecommendPage"
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Layout />,
+    children: [
+      {
+        index: true,
+        element: <HomePage />,
+      },
+      {
+        path: "ai-care",
+        element: <AiCarePage />,
+      },
+      {
+        path: "consultation",
+        element: <ConsultationPage />,
+      },
+      {
+        path: "guide",
+        element: <GuidePage />,
+      },
+      {
+        path: "mentoring",
+        element: <MentoringPage />,
+      },
+      {
+        path: "recommend",
+        element: <RecommendPage />,
+      },
+    ],
+  },
+])
+
+export default function AppRouter() {
+  return <RouterProvider router={router} />
+}
