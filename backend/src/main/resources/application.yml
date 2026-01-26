@@ -31,3 +31,13 @@ cloudflare:
     bucket: ${CLOUDFLARE_BUCKET}
     access-key: ${CLOUDFLARE_ACCESS_KEY}
     secret-key: ${CLOUDFLARE_SECRET_KEY}
+
+jwt:
+  secret: ${JWT_SECRET:LocalDevSecretKeyWhichIsVeryLongAndSecureEnoughForHS256Algorithm}
+  access-token-expiration: 1800000 # 30M
+  refresh-token-expiration: 1209600000 # 14D
+
+livekit:
+  url: ${LIVEKIT_URL}
+  api-key: ${LIVEKIT_API_KEY}
+  secret: ${LIVEKIT_API_SECRET}
