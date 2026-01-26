@@ -11,6 +11,10 @@ spring:
       enabled: on
   jmx:
     enabled: true
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 500MB
 
 springdoc:
   swagger-ui:
@@ -20,3 +24,20 @@ springdoc:
 logging:
   level:
     org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver: ERROR
+
+cloudflare:
+  r2:
+    endpoint: ${CLOUDFLARE_ENDPOINT}
+    bucket: ${CLOUDFLARE_BUCKET}
+    access-key: ${CLOUDFLARE_ACCESS_KEY}
+    secret-key: ${CLOUDFLARE_SECRET_KEY}
+
+jwt:
+  secret: ${JWT_SECRET:LocalDevSecretKeyWhichIsVeryLongAndSecureEnoughForHS256Algorithm}
+  access-token-expiration: 1800000 # 30M
+  refresh-token-expiration: 1209600000 # 14D
+
+livekit:
+  url: ${LIVEKIT_URL}
+  api-key: ${LIVEKIT_API_KEY}
+  secret: ${LIVEKIT_API_SECRET}

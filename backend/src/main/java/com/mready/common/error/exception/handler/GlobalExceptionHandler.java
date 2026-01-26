@@ -20,6 +20,7 @@ import com.mready.common.error.exception.BusinessException;
 import com.mready.common.response.BaseResponse;
 import com.mready.common.response.ErrorResponse;
 import com.mready.common.util.LoggingUtils;
+import com.mready.domain.file.exception.FileStorageException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -146,4 +147,13 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(BaseResponse.fail(response));
 	}
 
+	@ExceptionHandler(FileStorageException.class)
+	public ResponseEntity<BaseResponse<ErrorResponse>> handleFileStorageException(
+		FileStorageException ex,
+		HttpServletRequest request
+	) {
+		LoggingUtils.logException("FileStorageException 발생", ex, request);
+		ErrorResponse response = ErrorResponse.of(ErrorCode.NOT_FOUND, request);
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(BaseResponse.fail(response));
+	}
 }
