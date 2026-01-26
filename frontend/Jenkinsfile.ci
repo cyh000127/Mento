@@ -6,7 +6,7 @@ pipeline {
     disableConcurrentBuilds()
   }
 
-  // 파라미터 "형태"는 CD/Final과 통일
+  // CD/Final과 형태 통일 + 수동 실행 지원
   parameters {
     string(
       name: 'PROJECT_NAME',
@@ -16,24 +16,23 @@ pipeline {
     string(
       name: 'TARGET_SERVICES',
       defaultValue: '',
-      description: '[auto] CI decides target services and passes to CD/Final (do not set manually)'
+      description: '(optional) Manual override. e.g. "fe" (empty = auto detect from changes)'
     )
   }
 
   environment {
+    // FE 경로
     FE_DIR = "frontend/mento"
-
-    // 변경 감지 기준(monorepo)
     FE_PATH_PREFIX = "frontend/mento/"
 
-    // Docker Hub repo + 고정 태그 (BE와 동일한 방식)
+    // Docker Hub repo + 고정 태그
     IMAGE_REPO = "ejjem/s14p11a704"
     IMAGE_TAG  = "develop-fe"
     IMAGE_FULL = "${IMAGE_REPO}:${IMAGE_TAG}"
 
-    // Node 설정
-    //NODE_ENV = "production"
-    //CI       = "true"
+    // CI가 계산(또는 수동 override)해서 CD/Final에 넘길 값
+    EFFECTIVE_TARGET_SERVICES = ""
+    MANUAL_OVERRIDE = "false"
   }
 
   stages {
@@ -48,13 +47,16 @@ pipeline {
           echo "BUILD_NUMBER=$BUILD_NUMBER"
           echo "BUILD_URL=$BUILD_URL"
           echo "BRANCH_NAME=${BRANCH_NAME:-}"
+          echo "PROJECT_NAME=${PROJECT_NAME}"
+          echo "PARAM_TARGET_SERVICES=${TARGET_SERVICES}"
           pwd
           uname -a || true
           git --version || true
           node -v || true
           npm -v || true
           docker --version || true
-          docker info >/dev/null || true
+          docker info >/dev/null 2>&1 || true
+          docker compose version >/dev/null 2>&1 || true
         '''
       }
     }
@@ -71,45 +73,93 @@ pipeline {
       }
     }
 
-    stage('Detect Changes') {
+    stage('Decide Target Services (manual override first)') {
       steps {
+        script {
+          def manual = (params.TARGET_SERVICES ?: '').trim()
+
+          if (manual != '') {
+            env.MANUAL_OVERRIDE = "true"
+            env.EFFECTIVE_TARGET_SERVICES = manual
+            echo "MANUAL_OVERRIDE=true"
+            echo "EFFECTIVE_TARGET_SERVICES='${env.EFFECTIVE_TARGET_SERVICES}'"
+          } else {
+            env.MANUAL_OVERRIDE = "false"
+            echo "MANUAL_OVERRIDE=false (auto-detect will run)"
+          }
+        }
+      }
+    }
+
+    stage('Detect Changes (merge-only, auto)') {
+      when {
+        expression { return (env.MANUAL_OVERRIDE ?: 'false') != 'true' }
+      }
+      steps {
+        echo "===== DETECT CHANGES (FE: merge-only) ====="
         sh '''
           set -euo pipefail
-          echo "===== DETECT CHANGES (BE/FE: merge-only) ====="
 
-          PARENTS="$(git show -s --pretty=%P HEAD | wc -w | tr -d ' ')"
-          echo "PARENTS=$PARENTS"
-          if [ "$PARENTS" -lt 2 ]; then
+          # merge commit인지 확인: parent가 2개 이상이면 merge commit
+          PARENTS_CNT="$(git show -s --pretty=%P HEAD | wc -w | tr -d ' ')"
+          echo "PARENTS_CNT=$PARENTS_CNT"
+
+          if [ "$PARENTS_CNT" -lt 2 ]; then
             echo "MERGE_COMMIT=false" > merge.flag
-          else
-            echo "MERGE_COMMIT=true" > merge.flag
-          fi
-
-          MERGE_COMMIT="$(cut -d= -f2 merge.flag)"
-          if [ "$MERGE_COMMIT" != "true" ]; then
             echo "Not a merge commit. Skipping change detection."
             : > changed_files.txt
             exit 0
           fi
 
+          echo "MERGE_COMMIT=true" > merge.flag
+          echo "MERGE_COMMIT=true"
+
+          # 이전 성공 커밋이 있으면 그 범위부터, 없으면 최근 50개 커밋 범위로
           PREV="${GIT_PREVIOUS_SUCCESSFUL_COMMIT:-}"
-          if [ -n "$PREV" ]; then RANGE="$PREV..HEAD"; else RANGE="HEAD~50..HEAD"; fi
+          if [ -n "$PREV" ]; then
+            RANGE="$PREV..HEAD"
+          else
+            RANGE="HEAD~50..HEAD"
+          fi
           echo "RANGE=$RANGE"
 
-          git diff --name-only "$RANGE" | tee changed_files.txt || true
+          git diff --name-only "$RANGE" > changed_files.txt || true
+
+          echo "----- changed_files.txt -----"
+          sed -n '1,200p' changed_files.txt || true
         '''
 
         script {
-          def changed = readFile('changed_files.txt').readLines()
-          def beChanged = changed.any { it.startsWith('frontend/mento/') }
+          def mergeCommit = "false"
+          try {
+            mergeCommit = sh(
+              script: "cat merge.flag | cut -d= -f2 | tr -d '\\n'",
+              returnStdout: true
+            ).trim()
+          } catch (ignored) {
+            mergeCommit = "false"
+          }
 
-          def mergeCommit = sh(script: "cut -d= -f2 merge.flag", returnStdout: true).trim()
-          env.EFFECTIVE_TARGET_SERVICES = (mergeCommit == "true" && beChanged) ? "be" : ""
-          echo "EFFECTIVE_TARGET_SERVICES=${env.EFFECTIVE_TARGET_SERVICES}"
+          def changedLines = []
+          try {
+            changedLines = readFile('changed_files.txt')
+              .readLines()
+              .collect { it.trim() }
+              .findAll { it }
+          } catch (ignored) {
+            changedLines = []
+          }
+
+          def feChanged = changedLines.any { it.startsWith(env.FE_PATH_PREFIX) }
+
+          env.EFFECTIVE_TARGET_SERVICES = (mergeCommit == "true" && feChanged) ? "fe" : ""
+
+          echo "mergeCommit=${mergeCommit}"
+          echo "feChanged=${feChanged}"
+          echo "AUTO EFFECTIVE_TARGET_SERVICES='${env.EFFECTIVE_TARGET_SERVICES}'"
         }
       }
     }
-
 
     stage('Install deps') {
       when {
@@ -144,7 +194,6 @@ pipeline {
             run_if_exists () {
               local script="$1"
               node -e "const p=require('./package.json'); process.exit((p.scripts&&p.scripts[script])?0:1)" \
-                -- "$script" \
                 && npm run "$script" \
                 || echo "skip: npm run $script (no script)"
             }
@@ -193,7 +242,6 @@ pipeline {
       }
     }
 
-    // 파라미터 전달 형태로 CD/Final 호출
     stage('Trigger CD/Final') {
       when {
         expression { return (env.EFFECTIVE_TARGET_SERVICES ?: '').trim() != '' }
@@ -204,7 +252,7 @@ pipeline {
 
           echo "===== TRIGGER CD/FINAL ====="
           echo "PROJECT_NAME=${params.PROJECT_NAME}"
-          echo "TARGET_SERVICES=${targetStr}"
+          echo "TARGET_SERVICES='${targetStr}'"
 
           build job: 'CD/Final',
             wait: true,
@@ -216,11 +264,21 @@ pipeline {
       }
     }
 
+    stage('Skip CD (no targets)') {
+      when {
+        expression { return (env.EFFECTIVE_TARGET_SERVICES ?: '').trim() == '' }
+      }
+      steps {
+        echo "No FE deploy targets. (manual empty + no detected FE changes) -> skipping."
+      }
+    }
+
     stage('Smoke') {
       steps {
         echo "===== CI DONE (FE) ====="
-        echo "Pushed: ${env.IMAGE_FULL}"
-        echo "Triggered CD/Final: ${(env.EFFECTIVE_TARGET_SERVICES ?: '').trim() != ''}"
+        echo "IMAGE_FULL=${env.IMAGE_FULL}"
+        echo "MANUAL_OVERRIDE=${env.MANUAL_OVERRIDE}"
+        echo "EFFECTIVE_TARGET_SERVICES=${env.EFFECTIVE_TARGET_SERVICES}"
       }
     }
   }
