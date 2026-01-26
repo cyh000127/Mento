@@ -1,7 +1,7 @@
 package com.mready.common.auth.principal;
 
 import com.mready.common.auth.constant.AuthConstant;
-import com.mready.domain.member.entity.Member;
+import com.mready.domain.user.entity.User;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -19,11 +19,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CustomOAuth2User implements OAuth2User {
 
-	private final Member member;
+	private final User user;
 	private Map<String, Object> attributes;
 
-	public CustomOAuth2User(Member member, Map<String, Object> attributes) {
-		this.member = member;
+	public CustomOAuth2User(User user, Map<String, Object> attributes) {
+		this.user = user;
 		this.attributes = attributes;
 	}
 
@@ -39,10 +39,10 @@ public class CustomOAuth2User implements OAuth2User {
 
 	@Override
 	public String getName() {
-		return member.getName();
+		return user.getName();
 	}
 	
 	public Long getId() {
-		return member.getId();
+		return user.getId();
 	}
 }

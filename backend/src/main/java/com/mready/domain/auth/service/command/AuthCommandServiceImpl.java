@@ -11,7 +11,7 @@ import com.mready.common.error.ErrorCode;
 import com.mready.common.error.exception.AuthException;
 import com.mready.common.error.exception.BusinessException;
 import com.mready.common.util.CookieUtil;
-import com.mready.domain.member.entity.Member;
+import com.mready.domain.user.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -42,8 +42,8 @@ public class AuthCommandServiceImpl implements AuthCommandService {
 
         if (refreshToken != null) {
             try {
-                String memberId = jwtTokenProvider.getClaims(refreshToken).getSubject();
-                refreshTokenRepository.deleteById(memberId);
+                String userId = jwtTokenProvider.getClaims(refreshToken).getSubject();
+                refreshTokenRepository.deleteById(userId);
             } catch (Exception e) {
                 log.info("리프레시 토큰에서 사용자 ID 추출 실패: {} | 예외 발생 지점 [{} {}]", e.getMessage(), request.getMethod(),
                         request.getRequestURI());
@@ -64,16 +64,16 @@ public class AuthCommandServiceImpl implements AuthCommandService {
             throw new AuthException(ErrorCode.TOKEN_BLACKLISTED_EXCEPTION);
         }
 
-        // Member 조회
-        Member member = jwtTokenProvider.getMember(refreshToken)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        // User 조회
+        User user = jwtTokenProvider.getUser(refreshToken)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        if (member.getDeletedAt() != null) {
+        if (user.getDeletedAt() != null) {
             throw new BusinessException(ErrorCode.ALREADY_WITHDRAWN);
         }
 
         // DB 저장된 RT 확인
-        RefreshToken savedToken = refreshTokenRepository.findById(String.valueOf(member.getId()))
+        RefreshToken savedToken = refreshTokenRepository.findById(String.valueOf(user.getId()))
                 .orElseThrow(() -> new AuthException(ErrorCode.TOKEN_NOT_FOUND));
 
         // 토큰 일치 여부
@@ -82,9 +82,9 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         }
 
         // DB 업데이트
-        Token newToken = jwtTokenProvider.createToken(member);
+        Token newToken = jwtTokenProvider.createToken(user);
         RefreshToken newRefreshToken = RefreshToken.builder()
-                .id(String.valueOf(member.getId()))
+                .id(String.valueOf(user.getId()))
                 .token(newToken.refreshToken())
                 .expirationTime(jwtProperties.refreshTokenExpiration() / 1000)
                 .build();

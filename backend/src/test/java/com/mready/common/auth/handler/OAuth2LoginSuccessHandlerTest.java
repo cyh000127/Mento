@@ -2,13 +2,13 @@ package com.mready.common.auth.handler;
 
 import com.mready.common.auth.constant.AuthConstant;
 import com.mready.common.auth.dto.Token;
-import com.mready.common.auth.redis.RefreshToken;
 import com.mready.common.auth.jwt.JwtProperties;
 import com.mready.common.auth.jwt.JwtTokenProvider;
 import com.mready.common.auth.principal.CustomOAuth2User;
+import com.mready.common.auth.redis.RefreshToken;
 import com.mready.common.auth.redis.repository.RefreshTokenRepository;
 import com.mready.common.constant.FrontDomain;
-import com.mready.domain.member.entity.Member;
+import com.mready.domain.user.entity.User;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,7 +48,7 @@ class OAuth2LoginSuccessHandlerTest {
     CustomOAuth2User customOAuth2User;
 
     @Mock
-    Member member;
+    User user;
 
     @DisplayName("RefreshToken_AccessToken_발급_확인")
     @Test
@@ -58,11 +58,11 @@ class OAuth2LoginSuccessHandlerTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         given(authentication.getPrincipal()).willReturn(customOAuth2User);
-        given(customOAuth2User.getMember()).willReturn(member);
-        given(member.getId()).willReturn(1L);
+        given(customOAuth2User.getUser()).willReturn(user);
+        given(user.getId()).willReturn(1L);
 
         Token token = new Token("access-token", "refresh-token");
-        given(jwtTokenProvider.createToken(any(Member.class))).willReturn(token);
+        given(jwtTokenProvider.createToken(any(User.class))).willReturn(token);
 
         given(jwtProperties.refreshTokenExpiration()).willReturn(1209600000L); // 14일 (밀리초)
 

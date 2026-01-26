@@ -6,8 +6,8 @@ import com.mready.common.auth.redis.BlackList;
 import com.mready.common.auth.redis.repository.BlackListRepository;
 import com.mready.common.error.ErrorCode;
 import com.mready.common.error.exception.AuthException;
-import com.mready.domain.member.entity.Member;
-import com.mready.domain.member.repository.MemberRepository;
+import com.mready.domain.user.entity.User;
+import com.mready.domain.user.repository.UserRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
@@ -42,12 +42,12 @@ public class JwtTokenProvider {
 
 	private final JwtProperties jwtProperties;
 	private final BlackListRepository blackListRepository;
-	private final MemberRepository memberRepository;
+	private final UserRepository userRepository;
 
-	public Token createToken(final Member member) {
+	public Token createToken(final User user) {
 		return new Token(
-			generateAccessToken(member),
-			generateRefreshToken(member)
+			generateAccessToken(user),
+			generateRefreshToken(user)
 		);
 	}
 
@@ -55,21 +55,21 @@ public class JwtTokenProvider {
 		return Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
 	}
 
-	private String generateAccessToken(final Member member) {
-		return generateToken(member, ACCESS_TOKEN, jwtProperties.accessTokenExpiration());
+	private String generateAccessToken(final User user) {
+		return generateToken(user, ACCESS_TOKEN, jwtProperties.accessTokenExpiration());
 	}
 
-	private String generateRefreshToken(final Member member) {
-		return generateToken(member, REFRESH_TOKEN, jwtProperties.refreshTokenExpiration());
+	private String generateRefreshToken(final User user) {
+		return generateToken(user, REFRESH_TOKEN, jwtProperties.refreshTokenExpiration());
 	}
 
-	private String generateToken(final Member member, final String tokenType, final Long expiration) {
+	private String generateToken(final User user, final String tokenType, final Long expiration) {
 		Claims claims = Jwts.claims()
-			.subject(String.valueOf(member.getId()))
+			.subject(String.valueOf(user.getId()))
 			.add(TYPE, tokenType)
-			.add(KEY_ID, member.getId())
-			.add(KEY_EMAIL, member.getEmail())
-			.add(KEY_ROLE, member.getRole())
+			.add(KEY_ID, user.getId())
+			.add(KEY_EMAIL, user.getEmail())
+			.add(KEY_ROLE, user.getRole())
 			.issuedAt(new Date())
 			.expiration(new Date(System.currentTimeMillis() + expiration))
 			.build();
@@ -121,10 +121,10 @@ public class JwtTokenProvider {
 		}
 	}
 
-	public Optional<Member> getMember(String token) {
+	public Optional<User> getUser(String token) {
 		Claims claims = getClaims(token);
 		final String id = claims.getSubject();
-		return memberRepository.findById(Long.valueOf(id));
+		return userRepository.findById(Long.valueOf(id));
 	}
 	
 	public void setBlackList(final String token) {

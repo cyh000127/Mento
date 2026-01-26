@@ -2,17 +2,19 @@ package com.mready.common.auth;
 
 import com.mready.common.auth.constant.AuthConstant;
 import com.mready.common.auth.dto.OAuth2Attribute;
-import com.mready.domain.member.dto.response.MemberResDto;
-import com.mready.common.auth.redis.RefreshToken;
 import com.mready.common.auth.handler.OAuth2LoginSuccessHandler;
 import com.mready.common.auth.principal.CustomOAuth2User;
+import com.mready.common.auth.redis.RefreshToken;
 import com.mready.common.auth.redis.repository.RefreshTokenRepository;
 import com.mready.common.auth.service.CustomOAuth2UserService;
-import com.mready.domain.member.entity.Member;
-import com.mready.domain.member.repository.MemberRepository;
+import com.mready.domain.user.dto.response.UserResDto;
+import com.mready.domain.user.entity.User;
+import com.mready.domain.user.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -21,10 +23,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -48,7 +48,7 @@ class OAuth2FlowIntegrationTest {
     private CustomOAuth2UserService customOAuth2UserService;
 
     @Autowired
-    private MemberRepository memberRepository;
+    private UserRepository userRepository;
 
     @Autowired
     private OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
@@ -75,25 +75,25 @@ class OAuth2FlowIntegrationTest {
         OAuth2Attribute oAuth2Attribute = OAuth2Attribute.of(OAuth2Attribute.KAKAO, attributes);
 
         // 신규 회원 가입
-        MemberResDto memberResDto = customOAuth2UserService.loginOrRegister(oAuth2Attribute);
+        UserResDto userResDto = customOAuth2UserService.loginOrRegister(oAuth2Attribute);
 
         // 회원 생성 검증
-        assertThat(memberResDto).isNotNull();
-        assertThat(memberResDto.email()).isEqualTo("flowtest@example.com");
+        assertThat(userResDto).isNotNull();
+        assertThat(userResDto.email()).isEqualTo("flowtest@example.com");
 
-        Optional<Member> memberOptional = memberRepository.findByEmail("flowtest@example.com");
-        assertThat(memberOptional).isPresent();
-        Member member = memberOptional.get();
-        assertThat(member.getKakaoId()).isEqualTo("kakao_123456789");
-        assertThat(member.getBirthDate()).isEqualTo(LocalDate.of(1990, 12, 25));
+        Optional<User> userOptional = userRepository.findByEmail("flowtest@example.com");
+        assertThat(userOptional).isPresent();
+        User user = userOptional.get();
+        assertThat(user.getKakaoId()).isEqualTo("kakao_123456789");
+        assertThat(user.getBirthDate()).isEqualTo(LocalDate.of(1990, 12, 25));
 
         // CustomOAuth2User 생성
-        CustomOAuth2User customOAuth2User = new CustomOAuth2User(member, attributes);
+        CustomOAuth2User customOAuth2User = new CustomOAuth2User(user, attributes);
         
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 customOAuth2User,
                 null,
-                Collections.singleton(new SimpleGrantedAuthority(member.getRole().name()))
+                Collections.singleton(new SimpleGrantedAuthority(user.getRole().name()))
         );
 
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -114,7 +114,7 @@ class OAuth2FlowIntegrationTest {
         Mockito.verify(refreshTokenRepository, Mockito.atLeastOnce()).save(captor.capture());
         
         RefreshToken savedToken = captor.getAllValues().get(0);
-        assertThat(savedToken.getId()).isEqualTo(String.valueOf(member.getId()));
+        assertThat(savedToken.getId()).isEqualTo(String.valueOf(user.getId()));
         assertThat(savedToken.getToken()).isEqualTo(refreshTokenValue);
 
         // Access Token (헤더)
@@ -126,14 +126,14 @@ class OAuth2FlowIntegrationTest {
         // 토큰 중복 방지를 위한 1초 대기
         Thread.sleep(1000);
 
-        // 이전 호출 기록 초기화 (중요)
+        // 이전 호출 기록 초기화
         Mockito.clearInvocations(refreshTokenRepository);
 
         // 재로그인
-        MemberResDto loginMemberResDto = customOAuth2UserService.loginOrRegister(oAuth2Attribute);
+        UserResDto loginUserResDto = customOAuth2UserService.loginOrRegister(oAuth2Attribute);
         
-        // Member ID 동일 여부 확인
-        assertThat(loginMemberResDto.id()).isEqualTo(member.getId());
+        // User ID 동일 여부 확인
+        assertThat(loginUserResDto.id()).isEqualTo(user.getId());
 
         // 핸들러 동작 재시뮬
         MockHttpServletResponse response2 = new MockHttpServletResponse();
@@ -144,7 +144,7 @@ class OAuth2FlowIntegrationTest {
         assertThat(newRefreshTokenCookie).isNotNull();
         String newRefreshTokenValue = newRefreshTokenCookie.getValue();
         
-        // 새로운 토큰으로 다시 저장되었는지 검증 (초기화했으므로 1번만 호출되어야 함)
+        // 새로운 토큰으로 다시 저장되었는지 검증
         ArgumentCaptor<RefreshToken> newCaptor = ArgumentCaptor.forClass(RefreshToken.class);
         Mockito.verify(refreshTokenRepository, Mockito.times(1)).save(newCaptor.capture());
         

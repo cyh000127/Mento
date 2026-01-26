@@ -26,11 +26,11 @@ public enum ErrorCode {
 	DATA_INTEGRITY_VIOLATION(HttpStatus.CONFLICT, "C-010", "데이터 무결성 위반입니다."),
 
 	/**
-	 * Member Error (M-xxx)
+	 * User Error (U-xxx)
 	 */
-	MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "M-001", "회원을 찾을 수 없습니다."),
-	MEMBER_EMAIL_DUPLICATE(HttpStatus.CONFLICT, "M-002", "이미 존재하는 이메일입니다."),
-	ALREADY_WITHDRAWN(HttpStatus.CONFLICT, "M-003", "이미 탈퇴한 회원입니다."),
+	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U-001", "회원을 찾을 수 없습니다."),
+	USER_EMAIL_DUPLICATE(HttpStatus.CONFLICT, "U-002", "이미 존재하는 이메일입니다."),
+	ALREADY_WITHDRAWN(HttpStatus.CONFLICT, "U-003", "이미 탈퇴한 회원입니다."),
 
 	/**
 	 * Auth Error (A-xxx)

@@ -7,7 +7,7 @@ import com.mready.common.auth.jwt.JwtTokenProvider;
 import com.mready.common.auth.redis.RefreshToken;
 import com.mready.common.auth.redis.repository.BlackListRepository;
 import com.mready.common.auth.redis.repository.RefreshTokenRepository;
-import com.mready.domain.member.entity.Member;
+import com.mready.domain.user.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.http.Cookie;
@@ -20,11 +20,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AuthCommandServiceImplTest {
@@ -77,14 +77,14 @@ class AuthCommandServiceImplTest {
         when(request.getCookies()).thenReturn(new Cookie[]{cookie});
         when(blackListRepository.existsById(validRefreshToken)).thenReturn(false);
 
-        Member member = Member.builder().id(1L).build();
-        when(jwtTokenProvider.getMember(validRefreshToken)).thenReturn(Optional.of(member));
+        User user = User.builder().id(1L).build();
+        when(jwtTokenProvider.getUser(validRefreshToken)).thenReturn(Optional.of(user));
 
         RefreshToken savedToken = RefreshToken.builder().id("1").token(validRefreshToken).build();
         when(refreshTokenRepository.findById("1")).thenReturn(Optional.of(savedToken));
 
         Token newToken = new Token("newAccess", "newRefresh");
-        when(jwtTokenProvider.createToken(member)).thenReturn(newToken);
+        when(jwtTokenProvider.createToken(user)).thenReturn(newToken);
         when(jwtProperties.refreshTokenExpiration()).thenReturn(1000L);
 
         // When

@@ -6,8 +6,8 @@ import com.mready.common.auth.principal.AuthenticatedUser;
 import com.mready.common.auth.redis.repository.BlackListRepository;
 import com.mready.common.error.ErrorCode;
 import com.mready.common.error.exception.AuthException;
-import com.mready.domain.member.entity.Member;
-import com.mready.domain.member.repository.MemberRepository;
+import com.mready.domain.user.entity.User;
+import com.mready.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,15 +29,22 @@ class JwtTokenProviderTest {
     @Mock
     private BlackListRepository blackListRepository;
     @Mock
-    private MemberRepository memberRepository;
+    private UserRepository userRepository;
 
-    private Member member;
+    @Mock
+    private Clock clock;
+
+    private User user;
     private final String secretKey = "testSecretKeytestSecretKeytestSecretKeytestSecretKey";
 
     @BeforeEach
     void setUp() {
-        jwtTokenProvider = new JwtTokenProvider(jwtProperties, blackListRepository, memberRepository);
-        member = Member.builder()
+        when(clock.millis()).thenReturn(System.currentTimeMillis());
+        when(clock.instant()).thenReturn(java.time.Instant.now());
+        when(clock.getZone()).thenReturn(java.time.ZoneId.systemDefault());
+
+        jwtTokenProvider = new JwtTokenProvider(jwtProperties, blackListRepository, userRepository, clock);
+        user = User.builder()
                 .id(1L)
                 .email("test@example.com")
                 .name("Test User")
@@ -51,7 +58,7 @@ class JwtTokenProviderTest {
     @Test
     @DisplayName("토큰 생성 성공")
     void createToken() {
-        Token token = jwtTokenProvider.createToken(member);
+        Token token = jwtTokenProvider.createToken(user);
 
         assertThat(token.accessToken()).isNotNull();
         assertThat(token.refreshToken()).isNotNull();
@@ -60,14 +67,14 @@ class JwtTokenProviderTest {
     @Test
     @DisplayName("토큰 검증 성공")
     void validateToken() {
-        Token token = jwtTokenProvider.createToken(member);
+        Token token = jwtTokenProvider.createToken(user);
         jwtTokenProvider.validateToken(token.accessToken());
     }
 
     @Test
     @DisplayName("블랙리스트 토큰 검증 실패")
     void validateToken_BlackListed() {
-        Token token = jwtTokenProvider.createToken(member);
+        Token token = jwtTokenProvider.createToken(user);
         String accessToken = token.accessToken();
         when(blackListRepository.existsById(accessToken)).thenReturn(true);
 
@@ -79,11 +86,11 @@ class JwtTokenProviderTest {
     @Test
     @DisplayName("Authentication 객체 조회 성공")
     void getAuthenticatedUser() {
-        Token token = jwtTokenProvider.createToken(member);
-        AuthenticatedUser user = jwtTokenProvider.getAuthenticatedUser(token.accessToken());
+        Token token = jwtTokenProvider.createToken(user);
+        AuthenticatedUser authenticatedUser = jwtTokenProvider.getAuthenticatedUser(token.accessToken());
 
-        assertThat(user.getId()).isEqualTo(1L);
-        assertThat(user.getEmail()).isEqualTo("test@example.com");
-        assertThat(user.getRole()).isEqualTo("USER");
+        assertThat(authenticatedUser.getId()).isEqualTo(1L);
+        assertThat(authenticatedUser.getEmail()).isEqualTo("test@example.com");
+        assertThat(authenticatedUser.getRole()).isEqualTo("USER");
     }
 }

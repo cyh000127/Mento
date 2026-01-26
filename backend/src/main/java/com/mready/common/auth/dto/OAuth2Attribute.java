@@ -8,7 +8,6 @@ import lombok.Getter;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Date;
 import java.util.Map;
 
 @Getter
@@ -62,5 +61,4 @@ public class OAuth2Attribute {
 			.build();
 	}
 
-	//todo : Member toEntity
 }
