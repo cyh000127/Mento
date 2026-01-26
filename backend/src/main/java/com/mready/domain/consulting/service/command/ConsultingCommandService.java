@@ -1,21 +1,22 @@
 package com.mready.domain.consulting.service.command;
 
 import com.mready.common.auth.principal.AuthenticatedUser;
+import com.mready.common.error.ErrorCode;
+import com.mready.common.error.exception.ConsultingException;
 import com.mready.common.livekit.LiveKitManager;
 import com.mready.domain.consulting.converter.ConsultingConverter;
 import com.mready.domain.consulting.dto.LiveKitSessionResponse;
-import com.mready.domain.reservation.repository.ReservationRepository;
 import com.mready.domain.reservation.entity.Reservation;
-import com.mready.domain.timetable.repository.TimetableRepository;
+import com.mready.domain.reservation.repository.ReservationRepository;
 import com.mready.domain.timetable.entity.Timetable;
-import com.mready.common.error.exception.ConsultingException;
-import com.mready.common.error.ErrorCode;
-import java.time.Duration;
-import java.time.LocalDateTime;
+import com.mready.domain.timetable.repository.TimetableRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -46,14 +47,14 @@ public class ConsultingCommandService {
         Reservation reservation = reservationRepository.findByTimetableId(timetableId)
                 .orElseThrow(() -> new ConsultingException(ErrorCode.NOT_AUTHORIZED));
 
-        boolean isConsultant = user.getId().equals(reservation.getConsultantId());
+        boolean isMento = user.getId().equals(reservation.getMentoId());
         boolean isUser = user.getId().equals(reservation.getUserId());
 
-        if (!isConsultant && !isUser) {
+        if (!isMento && !isUser) {
             throw new ConsultingException(ErrorCode.NOT_AUTHORIZED);
         }
 
-        String role = isConsultant ? "MENTO" : "USER";
+        String role = isMento ? "MENTO" : "USER";
 
         long ttlSeconds = Duration.between(now, endTime).getSeconds();
         if (ttlSeconds <= 0) {
@@ -67,7 +68,7 @@ public class ConsultingCommandService {
                 user.getEmail(),
                 roomName,
                 role,
-                isConsultant,
+                isMento,
                 ttlSeconds
         );
 

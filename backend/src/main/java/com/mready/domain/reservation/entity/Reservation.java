@@ -24,8 +24,8 @@ public class Reservation extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "consultant_id", nullable = false)
-    private Long consultantId;
+    @Column(name = "mento_id", nullable = false)
+    private Long mentoId;
 
     @Column(name = "timetable_id", nullable = false)
     private Long timetableId;

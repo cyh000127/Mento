@@ -31,19 +31,12 @@ class JwtTokenProviderTest {
     @Mock
     private UserRepository userRepository;
 
-    @Mock
-    private Clock clock;
-
     private User user;
     private final String secretKey = "testSecretKeytestSecretKeytestSecretKeytestSecretKey";
 
     @BeforeEach
     void setUp() {
-        when(clock.millis()).thenReturn(System.currentTimeMillis());
-        when(clock.instant()).thenReturn(java.time.Instant.now());
-        when(clock.getZone()).thenReturn(java.time.ZoneId.systemDefault());
-
-        jwtTokenProvider = new JwtTokenProvider(jwtProperties, blackListRepository, userRepository, clock);
+        jwtTokenProvider = new JwtTokenProvider(jwtProperties, blackListRepository, userRepository);
         user = User.builder()
                 .id(1L)
                 .email("test@example.com")
