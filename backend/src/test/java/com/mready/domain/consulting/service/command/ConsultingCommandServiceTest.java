@@ -47,10 +47,10 @@ class ConsultingCommandServiceTest {
     void 상담_세션_멘토_입장() {
         // Given
         Long timetableId = 1L;
-        Long consultantId = 100L;
+        Long mentoId = 100L;
         Long userId = 200L;
         AuthenticatedUser authenticatedUser = AuthenticatedUser.builder()
-                .id(consultantId)
+                .id(mentoId)
                 .email("mento@test.com")
                 .role(Role.MENTO.name())
                 .build();
@@ -63,7 +63,7 @@ class ConsultingCommandServiceTest {
 
         Reservation reservation = Reservation.builder()
                 .userId(userId)
-                .consultantId(consultantId)
+                .mentoId(mentoId)
                 .timetableId(timetableId)
                 .build();
 
@@ -86,7 +86,7 @@ class ConsultingCommandServiceTest {
     void 상담_세션_유저_입장() {
         // Given
         Long timetableId = 1L;
-        Long consultantId = 100L;
+        Long mentoId = 100L;
         Long userId = 200L;
         AuthenticatedUser authenticatedUser = AuthenticatedUser.builder()
                 .id(userId)
@@ -101,7 +101,7 @@ class ConsultingCommandServiceTest {
 
         Reservation reservation = Reservation.builder()
                 .userId(userId)
-                .consultantId(consultantId)
+                .mentoId(mentoId)
                 .timetableId(timetableId)
                 .build();
 
@@ -177,7 +177,7 @@ class ConsultingCommandServiceTest {
     void createSession_Fail_NotAuthorized() {
         // Given
         Long timetableId = 1L;
-        Long consultantId = 100L;
+        Long mentoId = 100L;
         Long userId = 200L;
 
         AuthenticatedUser otherUser = AuthenticatedUser.builder().id(300L).role("USER").build(); 
@@ -189,7 +189,7 @@ class ConsultingCommandServiceTest {
 
         Reservation reservation = Reservation.builder()
                 .userId(userId)
-                .consultantId(consultantId)
+                .mentoId(mentoId)
                 .build();
 
         given(timetableRepository.findById(timetableId)).willReturn(Optional.of(timetable));

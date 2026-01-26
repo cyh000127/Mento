@@ -49,7 +49,7 @@ class ConsultingCommandControllerTest {
                 .roomToken("livekit_token_abc123")
                 .roomName("room_456")
                 .livekitUrl("wss://livekit.example.com")
-                .participantRole("CONSULTANT")
+                .participantRole("MENTO")
                 .enteredAt(LocalDateTime.of(2026, 1, 25, 14, 0, 0))
                 .build();
 
@@ -66,8 +66,7 @@ class ConsultingCommandControllerTest {
                 .andExpect(jsonPath("$.data.roomToken").value("livekit_token_abc123"))
                 .andExpect(jsonPath("$.data.roomName").value("room_456"))
                 .andExpect(jsonPath("$.data.livekitUrl").value("wss://livekit.example.com"))
-                .andExpect(jsonPath("$.data.participantRole").value("CONSULTANT"))
-                // Timestamp format verification
+                .andExpect(jsonPath("$.data.participantRole").value("MENTO"))
                 .andExpect(jsonPath("$.data.enteredAt").exists())
                 .andExpect(jsonPath("$.error").isEmpty());
     }
