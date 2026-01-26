@@ -1,10 +1,9 @@
 package com.mready.common.error;
 
-import org.springframework.http.HttpStatus;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
@@ -25,10 +24,33 @@ public enum ErrorCode {
 	DATA_INTEGRITY_VIOLATION(HttpStatus.CONFLICT, "C-010", "데이터 무결성 위반입니다."),
 
 	/**
-	 * Member Error (M-xxx)
+	 * User Error (U-xxx)
 	 */
-	MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "M-001", "회원을 찾을 수 없습니다."),
-	MEMBER_EMAIL_DUPLICATE(HttpStatus.CONFLICT, "M-002", "이미 존재하는 이메일입니다.");
+	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U-001", "회원을 찾을 수 없습니다."),
+	USER_EMAIL_DUPLICATE(HttpStatus.CONFLICT, "U-002", "이미 존재하는 이메일입니다."),
+	ALREADY_WITHDRAWN(HttpStatus.CONFLICT, "U-003", "이미 탈퇴한 회원입니다."),
+
+	/**
+	 * Auth Error (A-xxx)
+	 */
+	TOKEN_EXPIRED_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-001", "토큰이 만료되었습니다."),
+	INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A-002", "유효하지 않은 토큰입니다."),
+	INVALID_TOKEN_SIGNATURE(HttpStatus.UNAUTHORIZED, "A-003", "토큰 서명이 유효하지 않습니다."),
+	INVALID_TOKEN_TYPE(HttpStatus.UNAUTHORIZED, "A-004", "토큰 타입이 유효하지 않습니다."),
+	TOKEN_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "A-005", "토큰 처리 중 오류가 발생했습니다."),
+	TOKEN_BLACKLISTED_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-006", "블랙리스트에 등록된 토큰입니다."),
+	MALFORMED_TOKEN_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-007", "토큰 형식이 올바르지 않습니다."),
+	AUTHENTICATION_PRINCIPAL_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "A-008", "인증 주체 정보를 찾을 수 없습니다."),
+	TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "A-009", "토큰을 찾을 수 없습니다."),
+	
+	/**
+	 * Consulting Error (CS-xxx)
+	 */
+	TIMETABLE_NOT_FOUND(HttpStatus.NOT_FOUND, "CS-001", "타임테이블을 찾을 수 없습니다."),
+	NOT_STARTED_YET(HttpStatus.CONFLICT, "CS-002", "상담 시작 시간이 아닙니다."),
+	CONSULTING_ENDED(HttpStatus.GONE, "CS-003", "이미 종료된 상담입니다."),
+	NOT_AUTHORIZED(HttpStatus.FORBIDDEN, "CS-004", "해당 상담에 참여 권한이 없습니다."),
+	;
 
 	private final HttpStatus httpStatus;
 	private final String code;
