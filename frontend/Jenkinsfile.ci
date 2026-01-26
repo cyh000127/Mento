@@ -1,0 +1,241 @@
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+  }
+
+  // 파라미터 "형태"는 CD/Final과 통일
+  parameters {
+    string(
+      name: 'PROJECT_NAME',
+      defaultValue: 'app',
+      description: 'docker compose project name (passed to CD/Final)'
+    )
+    string(
+      name: 'TARGET_SERVICES',
+      defaultValue: '',
+      description: '[auto] CI decides target services and passes to CD/Final (do not set manually)'
+    )
+  }
+
+  environment {
+    FE_DIR = "frontend/mento"
+
+    // 변경 감지 기준(monorepo)
+    FE_PATH_PREFIX = "frontend/mento/"
+
+    // Docker Hub repo + 고정 태그 (BE와 동일한 방식)
+    IMAGE_REPO = "ejjem/s14p11a704"
+    IMAGE_TAG  = "develop-fe"
+    IMAGE_FULL = "${IMAGE_REPO}:${IMAGE_TAG}"
+
+    // Node 설정
+    //NODE_ENV = "production"
+    //CI       = "true"
+  }
+
+  stages {
+
+    stage('Context') {
+      steps {
+        echo "===== CI CONTEXT (FE) ====="
+        sh '''
+          set -euo pipefail
+          date "+%Y-%m-%d %H:%M:%S %Z"
+          echo "JOB_NAME=$JOB_NAME"
+          echo "BUILD_NUMBER=$BUILD_NUMBER"
+          echo "BUILD_URL=$BUILD_URL"
+          echo "BRANCH_NAME=$BRANCH_NAME"
+          pwd
+          uname -a || true
+          git --version || true
+          node -v || true
+          npm -v || true
+          docker --version || true
+          docker info >/dev/null || true
+        '''
+      }
+    }
+
+    stage('Git info') {
+      steps {
+        echo "===== GIT INFO ====="
+        sh '''
+          set -euo pipefail
+          git rev-parse --abbrev-ref HEAD || true
+          git rev-parse HEAD || true
+          git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso || true
+        '''
+      }
+    }
+
+    stage('Detect Changes') {
+      steps {
+        sh '''
+          set -euo pipefail
+          echo "===== DETECT CHANGES (BE/FE: merge-only) ====="
+
+          PARENTS="$(git show -s --pretty=%P HEAD | wc -w | tr -d ' ')"
+          echo "PARENTS=$PARENTS"
+          if [ "$PARENTS" -lt 2 ]; then
+            echo "MERGE_COMMIT=false" > merge.flag
+          else
+            echo "MERGE_COMMIT=true" > merge.flag
+          fi
+
+          MERGE_COMMIT="$(cut -d= -f2 merge.flag)"
+          if [ "$MERGE_COMMIT" != "true" ]; then
+            echo "Not a merge commit. Skipping change detection."
+            : > changed_files.txt
+            exit 0
+          fi
+
+          PREV="${GIT_PREVIOUS_SUCCESSFUL_COMMIT:-}"
+          if [ -n "$PREV" ]; then RANGE="$PREV..HEAD"; else RANGE="HEAD~50..HEAD"; fi
+          echo "RANGE=$RANGE"
+
+          git diff --name-only "$RANGE" | tee changed_files.txt || true
+        '''
+
+        script {
+          def changed = readFile('changed_files.txt').readLines()
+          def beChanged = changed.any { it.startsWith('frontend/mento/') }
+
+          def mergeCommit = sh(script: "cut -d= -f2 merge.flag", returnStdout: true).trim()
+          env.EFFECTIVE_TARGET_SERVICES = (mergeCommit == "true" && beChanged) ? "be" : ""
+          echo "EFFECTIVE_TARGET_SERVICES=${env.EFFECTIVE_TARGET_SERVICES}"
+        }
+      }
+    }
+
+
+    stage('Install deps') {
+      when {
+        expression { return (env.EFFECTIVE_TARGET_SERVICES ?: '').split("\\s+").contains("fe") }
+      }
+      steps {
+        dir("${env.FE_DIR}") {
+          sh '''
+            set -euo pipefail
+            node -v
+            npm -v
+
+            if [ -f package-lock.json ]; then
+              npm ci
+            else
+              npm install
+            fi
+          '''
+        }
+      }
+    }
+
+    stage('Lint / Test / Build') {
+      when {
+        expression { return (env.EFFECTIVE_TARGET_SERVICES ?: '').split("\\s+").contains("fe") }
+      }
+      steps {
+        dir("${env.FE_DIR}") {
+          sh '''
+            set -euo pipefail
+
+            run_if_exists () {
+              local script="$1"
+              node -e "const p=require('./package.json'); process.exit((p.scripts&&p.scripts[script])?0:1)" \
+                -- "$script" \
+                && npm run "$script" \
+                || echo "skip: npm run $script (no script)"
+            }
+
+            run_if_exists lint
+            run_if_exists test
+
+            npm run build
+          '''
+        }
+      }
+    }
+
+    stage('Docker Build') {
+      when {
+        expression { return (env.EFFECTIVE_TARGET_SERVICES ?: '').split("\\s+").contains("fe") }
+      }
+      steps {
+        sh '''
+          set -euo pipefail
+          test -f "${FE_DIR}/Dockerfile"
+
+          echo "Building image: ${IMAGE_FULL}"
+          docker build -t "${IMAGE_FULL}" "${FE_DIR}"
+        '''
+      }
+    }
+
+    stage('Docker Hub Login & Push') {
+      when {
+        expression { return (env.EFFECTIVE_TARGET_SERVICES ?: '').split("\\s+").contains("fe") }
+      }
+      steps {
+        withCredentials([usernamePassword(
+          credentialsId: 'DockerHub_Token',
+          usernameVariable: 'DH_USER',
+          passwordVariable: 'DH_PASS'
+        )]) {
+          sh '''
+            set -euo pipefail
+            docker logout || true
+            echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
+            docker push "${IMAGE_FULL}"
+          '''
+        }
+      }
+    }
+
+    // 파라미터 전달 형태로 CD/Final 호출
+    stage('Trigger CD/Final') {
+      when {
+        expression { return (env.EFFECTIVE_TARGET_SERVICES ?: '').trim() != '' }
+      }
+      steps {
+        script {
+          def targetStr = (env.EFFECTIVE_TARGET_SERVICES ?: '').trim()
+
+          echo "===== TRIGGER CD/FINAL ====="
+          echo "PROJECT_NAME=${params.PROJECT_NAME}"
+          echo "TARGET_SERVICES=${targetStr}"
+
+          build job: 'CD/Final',
+            wait: true,
+            parameters: [
+              string(name: 'PROJECT_NAME', value: params.PROJECT_NAME),
+              string(name: 'TARGET_SERVICES', value: targetStr),
+            ]
+        }
+      }
+    }
+
+    stage('Smoke') {
+      steps {
+        echo "===== CI DONE (FE) ====="
+        echo "Pushed: ${env.IMAGE_FULL}"
+        echo "Triggered CD/Final: ${(env.EFFECTIVE_TARGET_SERVICES ?: '').trim() != ''}"
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "SUCCESS"
+      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
+    }
+    failure {
+      echo "FAILURE"
+      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
+    }
+    always {
+      echo "DONE"
+    }
+  }
+}
