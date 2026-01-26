@@ -14,8 +14,8 @@ pipeline {
   }
 
   environment {
-    FE_REPO_DIR = "/home/ubuntu/frontend/front-repo"
-    FE_APP_DIR  = "/home/ubuntu/frontend/front-repo/frontend/mento"
+    FE_REPO_DIR = "/home/ubuntu/app/frontend/front-repo"
+    FE_APP_DIR  = "/home/ubuntu/app/frontend/front-repo/frontend/mento"
     GIT_URL     = "https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git"
   }
 
