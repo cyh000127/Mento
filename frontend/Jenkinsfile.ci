@@ -1,0 +1,308 @@
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+  }
+
+  // CD/Final과 형태 통일 + 수동 실행 지원
+  parameters {
+    string(
+      name: 'PROJECT_NAME',
+      defaultValue: 'app',
+      description: 'docker compose project name (passed to CD/Final)'
+    )
+    string(
+      name: 'TARGET_SERVICES',
+      defaultValue: '',
+      description: '(optional) Manual override. e.g. "fe" (empty = auto detect from changes)'
+    )
+  }
+
+  environment {
+    // FE 경로
+    FE_DIR         = "frontend/mento"
+    FE_PATH_PREFIX = "frontend/mento/"
+
+    // Docker Hub repo + 고정 태그
+    IMAGE_REPO = "ejjem/s14p11a704"
+    IMAGE_TAG  = "develop-fe"
+    IMAGE_FULL = "${IMAGE_REPO}:${IMAGE_TAG}"
+  }
+
+  stages {
+
+    stage('Context') {
+      steps {
+        echo "===== CI CONTEXT (FE) ====="
+        sh '''
+          set -euo pipefail
+          date "+%Y-%m-%d %H:%M:%S %Z"
+          echo "JOB_NAME=$JOB_NAME"
+          echo "BUILD_NUMBER=$BUILD_NUMBER"
+          echo "BUILD_URL=$BUILD_URL"
+          echo "BRANCH_NAME=${BRANCH_NAME:-}"
+          echo "PROJECT_NAME=${PROJECT_NAME}"
+          echo "PARAM_TARGET_SERVICES=${TARGET_SERVICES}"
+          pwd
+          uname -a || true
+          git --version || true
+          docker --version || true
+          docker info >/dev/null 2>&1 || true
+          docker compose version >/dev/null 2>&1 || true
+        '''
+      }
+    }
+
+    stage('Git info') {
+      steps {
+        echo "===== GIT INFO ====="
+        sh '''
+          set -euo pipefail
+          git rev-parse --abbrev-ref HEAD || true
+          git rev-parse HEAD || true
+          git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso || true
+        '''
+      }
+    }
+
+    stage('Decide Run Mode (manual vs auto)') {
+      steps {
+        script {
+          def manual = (params.TARGET_SERVICES ?: '').trim()
+          // 공백 구분 + 혹시 모를 콤마 입력도 허용
+          manual = manual.replaceAll(/\s*,\s*/, ' ').trim()
+
+          def manualFe = (manual != '' && manual.tokenize().contains('fe'))
+
+          writeFile file: 'manual_fe.flag', text: (manualFe ? 'true' : 'false') + "\n"
+          echo "manual='${manual}'"
+          echo "manualFe=${manualFe}"
+        }
+      }
+    }
+
+    stage('Detect Changes (merge-only, auto)') {
+      when {
+        expression {
+          return fileExists('manual_fe.flag') && readFile('manual_fe.flag').trim() != 'true'
+        }
+      }
+      steps {
+        echo "===== DETECT CHANGES (FE: merge-only) ====="
+        sh '''
+          set -euo pipefail
+
+          # merge commit인지 확인: parent가 2개 이상이면 merge commit
+          PARENTS_CNT="$(git show -s --pretty=%P HEAD | wc -w | tr -d ' ')"
+          echo "PARENTS_CNT=$PARENTS_CNT"
+
+          if [ "$PARENTS_CNT" -lt 2 ]; then
+            echo "Not a merge commit. Auto-detect disabled."
+            : > changed_files.txt
+            echo "false" > auto_fe.flag
+            exit 0
+          fi
+
+          # 이전 성공 커밋이 있으면 그 범위부터, 없으면 최근 50개 커밋 범위로
+          PREV="${GIT_PREVIOUS_SUCCESSFUL_COMMIT:-}"
+          if [ -n "$PREV" ]; then
+            RANGE="$PREV..HEAD"
+          else
+            RANGE="HEAD~50..HEAD"
+          fi
+          echo "RANGE=$RANGE"
+
+          git diff --name-only "$RANGE" > changed_files.txt || true
+
+          echo "----- changed_files.txt (first 200) -----"
+          sed -n '1,200p' changed_files.txt || true
+        '''
+
+        script {
+          def changedLines = []
+          try {
+            changedLines = readFile('changed_files.txt')
+              .readLines()
+              .collect { it.trim() }
+              .findAll { it }
+          } catch (ignored) {
+            changedLines = []
+          }
+
+          def feChanged = changedLines.any { it.startsWith(env.FE_PATH_PREFIX) }
+          writeFile file: 'auto_fe.flag', text: (feChanged ? 'true' : 'false') + "\n"
+
+          echo "feChanged=${feChanged}"
+        }
+      }
+    }
+
+    stage('Finalize Decision (run_fe.flag)') {
+      steps {
+        script {
+          def manualFe = fileExists('manual_fe.flag') && readFile('manual_fe.flag').trim() == 'true'
+          def autoFe   = fileExists('auto_fe.flag')   && readFile('auto_fe.flag').trim() == 'true'
+          def runFe    = manualFe || autoFe
+
+          writeFile file: 'run_fe.flag', text: (runFe ? 'true' : 'false') + "\n"
+
+          echo "manualFe=${manualFe}"
+          echo "autoFe=${autoFe}"
+          echo "RUN_FE=${runFe}"
+        }
+      }
+    }
+
+    stage('Precheck (node/npm required if RUN_FE=true)') {
+      when {
+        expression { return fileExists('run_fe.flag') && readFile('run_fe.flag').trim() == 'true' }
+      }
+      steps {
+        sh '''
+          set -euo pipefail
+          command -v node >/dev/null 2>&1 || { echo "ERROR: node not found (RUN_FE=true)"; exit 2; }
+          command -v npm  >/dev/null 2>&1 || { echo "ERROR: npm not found (RUN_FE=true)"; exit 2; }
+          node -v
+          npm -v
+        '''
+      }
+    }
+
+    stage('Install deps') {
+      when {
+        expression { return fileExists('run_fe.flag') && readFile('run_fe.flag').trim() == 'true' }
+      }
+      steps {
+        dir("${env.FE_DIR}") {
+          sh '''
+            set -euo pipefail
+
+            if [ -f package-lock.json ]; then
+              npm ci
+            else
+              npm install
+            fi
+          '''
+        }
+      }
+    }
+
+    stage('Lint / Test / Build') {
+      when {
+        expression { return fileExists('run_fe.flag') && readFile('run_fe.flag').trim() == 'true' }
+      }
+      steps {
+        dir("${env.FE_DIR}") {
+          sh '''
+            set -euo pipefail
+
+            run_if_exists () {
+              local script="$1"
+              node -e "const p=require('./package.json'); process.exit((p.scripts&&p.scripts[script])?0:1)" \
+                && npm run "$script" \
+                || echo "skip: npm run $script (no script)"
+            }
+
+            run_if_exists lint
+            run_if_exists test
+
+            npm run build
+          '''
+        }
+      }
+    }
+
+    stage('Docker Build') {
+      when {
+        expression { return fileExists('run_fe.flag') && readFile('run_fe.flag').trim() == 'true' }
+      }
+      steps {
+        sh '''
+          set -euo pipefail
+          test -f "${FE_DIR}/Dockerfile"
+
+          echo "Building image: ${IMAGE_FULL}"
+          docker build -t "${IMAGE_FULL}" "${FE_DIR}"
+        '''
+      }
+    }
+
+    stage('Docker Hub Login & Push') {
+      when {
+        expression { return fileExists('run_fe.flag') && readFile('run_fe.flag').trim() == 'true' }
+      }
+      steps {
+        withCredentials([usernamePassword(
+          credentialsId: 'DockerHub_Token',
+          usernameVariable: 'DH_USER',
+          passwordVariable: 'DH_PASS'
+        )]) {
+          sh '''
+            set -euo pipefail
+            docker logout || true
+            echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
+            docker push "${IMAGE_FULL}"
+          '''
+        }
+      }
+    }
+
+    stage('Trigger CD/Final') {
+      when {
+        expression { return fileExists('run_fe.flag') && readFile('run_fe.flag').trim() == 'true' }
+      }
+      steps {
+        script {
+          echo "===== TRIGGER CD/FINAL ====="
+          echo "PROJECT_NAME=${params.PROJECT_NAME}"
+          echo "TARGET_SERVICES='fe'"
+
+          build job: 'CD/Final',
+            wait: true,
+            parameters: [
+              string(name: 'PROJECT_NAME', value: params.PROJECT_NAME),
+              string(name: 'TARGET_SERVICES', value: 'fe'),
+            ]
+        }
+      }
+    }
+
+    stage('Skip (RUN_FE=false)') {
+      when {
+        expression { return !(fileExists('run_fe.flag') && readFile('run_fe.flag').trim() == 'true') }
+      }
+      steps {
+        echo "RUN_FE=false -> FE CI/CD 트리거를 수행하지 않습니다."
+      }
+    }
+
+    stage('Smoke') {
+      steps {
+        sh '''
+          set -euo pipefail
+          echo "===== CI DONE (FE) ====="
+          echo "IMAGE_FULL=${IMAGE_FULL}"
+          echo -n "manualFe="; (test -f manual_fe.flag && cat manual_fe.flag || echo "false")
+          echo -n "autoFe=";   (test -f auto_fe.flag   && cat auto_fe.flag   || echo "false")
+          echo -n "RUN_FE=";   (test -f run_fe.flag    && cat run_fe.flag    || echo "false")
+        '''
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "CI(FE) SUCCESS"
+      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
+    }
+    failure {
+      echo "CI(FE) FAILURE"
+      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
+    }
+    always {
+      echo "CI(FE) DONE"
+    }
+  }
+}
