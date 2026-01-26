@@ -1,7 +1,5 @@
 package com.mready.common.error;
 
-import org.springframework.http.HttpStatus;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
