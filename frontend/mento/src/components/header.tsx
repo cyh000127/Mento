@@ -48,13 +48,13 @@ export function Header() {
             >
               <Bell className="h-5 w-5" />
             </button>
-            <button
-              type="button"
+            <Link
+              to="/inventory"
               className="hidden rounded-full p-2 text-dark-bg/80 transition-colors hover:bg-dark-bg/10 hover:text-dark-bg md:block"
               aria-label="인벤토리"
             >
               <Package className="h-5 w-5" />
-            </button>
+            </Link>
             <button
               type="button"
               onClick={() => setIsLoginOpen(true)}
@@ -102,13 +102,14 @@ export function Header() {
                   >
                     <Bell className="h-5 w-5" />
                   </button>
-                  <button
-                    type="button"
+                  <Link
+                    to="/inventory"
+                    onClick={() => setIsMobileMenuOpen(false)}
                     className="rounded-full p-2 text-dark-bg/80 transition-colors hover:bg-dark-bg/10 hover:text-dark-bg"
                     aria-label="인벤토리"
                   >
                     <Package className="h-5 w-5" />
-                  </button>
+                  </Link>
                   <button
                     type="button"
                     onClick={() => {
