@@ -1,1 +1,19 @@
-services: {}
+services:
+  fe:
+    # ENV 없이도 돌아가게 default 값 제공
+    image: ${FE_IMAGE:-ejjem/s14p11a704:develop-fe}
+    container_name: fe
+    restart: unless-stopped
+
+    # Nginx가 reverse proxy
+    expose:
+      - "80"
+
+    # 선택: FE 컨테이너 내부에서 health check 가능하면 유지
+    # (이미지에 curl/wget 없으면 실패할 수 있으니, 없으면 주석 처리 권장)
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s

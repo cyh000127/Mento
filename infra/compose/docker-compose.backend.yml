@@ -1,6 +1,6 @@
 services:
   be:
-    image: ${BE_IMAGE}
+    image: ${BE_IMAGE:-ejjem/s14p11a704:develop-be}
     container_name: be
     restart: unless-stopped
 
