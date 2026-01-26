@@ -13,9 +13,14 @@ pipeline {
   }
 
   environment {
+    // 1. 기본 경로
     APP_DIR      = "/home/ubuntu/app/infra"
     REPO_DIR     = "${APP_DIR}/infra-repo"
     RUNTIME_DIR  = "${APP_DIR}/infra-runtime"
+
+    // 2. 운영 경로 (Docker Volume Mount Target)
+    NGINX_HOST_DIR   = "${APP_DIR}/nginx"
+    LIVEKIT_HOST_DIR = "${APP_DIR}/livekit"
 
     REPO_URL     = "https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git"
     GIT_CRED_ID  = "Gitlab_PAT"
@@ -31,18 +36,10 @@ pipeline {
       steps {
         sh '''
           set -euxo pipefail
-          TARGET_SERVICES="${TARGET_SERVICES:-}"
           echo "===== CD/INFRA CONTEXT ====="
           date "+%Y-%m-%d %H:%M:%S %Z"
           echo "APP_DIR=${APP_DIR}"
-          echo "REPO_DIR=${REPO_DIR}"
-          echo "RUNTIME_DIR=${RUNTIME_DIR}"
-          echo "DEPLOY_REF=${DEPLOY_REF}"
-          echo "PROJECT_NAME=${PROJECT_NAME}"
           echo "TARGET_SERVICES=${TARGET_SERVICES}"
-          echo "COMPOSE_NGINX=${COMPOSE_NGINX}"
-          echo "COMPOSE_CERTBOT=${COMPOSE_CERTBOT}"
-          echo "COMPOSE_LIVEKIT=${COMPOSE_LIVEKIT}"
         '''
       }
     }
@@ -53,24 +50,22 @@ pipeline {
           set -euxo pipefail
           command -v git >/dev/null
           command -v docker >/dev/null
-          docker info >/dev/null
-          docker compose version >/dev/null
         '''
       }
     }
 
-    stage('Check runtime dirs (create if missing)') {
+    stage('Check runtime dirs') {
       steps {
         sh '''
           set -euxo pipefail
-
           mkdir -p "${RUNTIME_DIR}/certbot/www"
           mkdir -p "${RUNTIME_DIR}/certbot/conf"
 
-          chmod -R 0755 "${RUNTIME_DIR}" || true
+          # 운영 설정 폴더 생성
+          mkdir -p "${NGINX_HOST_DIR}/conf.d"
+          mkdir -p "${LIVEKIT_HOST_DIR}"
 
-          echo "Runtime dirs ready"
-          ls -al "${RUNTIME_DIR}" || true
+          chmod -R 0755 "${RUNTIME_DIR}" || true
         '''
       }
     }
@@ -91,29 +86,71 @@ pipeline {
               credentialsId: "${env.GIT_CRED_ID}"
             ]]
           ])
-
-          sh '''
-            set -euxo pipefail
-            echo "Checked out commit:"
-            git rev-parse HEAD
-            git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso
-          '''
         }
       }
     }
 
+    // 변경된 대상만 골라서 동기화
+    stage('Sync Configs (Conditional)') {
+      steps {
+        script {
+          // Groovy 변수를 Shell 환경 변수로 넘김
+          env.SYNC_TARGETS = (params.TARGET_SERVICES ?: '').trim()
+        }
+        sh '''
+          set -euxo pipefail
+          echo "===== SYNC CONFIGURATIONS ====="
+          echo "Targets: '${SYNC_TARGETS}' (Empty means ALL)"
 
-    stage('Validate compose (infra only)') {
+          # -------------------------------------------------------
+          # 1. Nginx Sync Logic
+          # -------------------------------------------------------
+          # 타겟이 비어있거나(전체), 'nginx' 문자열을 포함하고 있으면 실행
+          if [ -z "$SYNC_TARGETS" ] || echo "$SYNC_TARGETS" | grep -q "nginx"; then
+            echo "[Sync] Processing Nginx Configs..."
+
+            SRC_NGINX="${REPO_DIR}/infra/nginx/conf.d"
+            if [ -d "$SRC_NGINX" ]; then
+              # 기존 설정 삭제 후 덮어쓰기
+              rm -rf "${NGINX_HOST_DIR}/conf.d"/*
+              cp -r "$SRC_NGINX"/. "${NGINX_HOST_DIR}/conf.d/"
+              ls -al "${NGINX_HOST_DIR}/conf.d/"
+            else
+               echo "WARNING: Nginx source dir not found: $SRC_NGINX"
+            fi
+          else
+            echo "[Skip] Nginx sync skipped (Not in target)."
+          fi
+
+          # -------------------------------------------------------
+          # 2. LiveKit Sync Logic
+          # -------------------------------------------------------
+          # 타겟이 비어있거나(전체), 'livekit' 문자열을 포함하고 있으면 실행
+          if [ -z "$SYNC_TARGETS" ] || echo "$SYNC_TARGETS" | grep -q "livekit"; then
+            echo "[Sync] Processing LiveKit Config..."
+
+            SRC_LK="${REPO_DIR}/infra/livekit/config.yml"
+            if [ -f "$SRC_LK" ]; then
+               cp "$SRC_LK" "${LIVEKIT_HOST_DIR}/config.yml"
+               ls -al "${LIVEKIT_HOST_DIR}/config.yml"
+            else
+               echo "WARNING: LiveKit config not found: $SRC_LK"
+            fi
+          else
+            echo "[Skip] LiveKit sync skipped (Not in target)."
+          fi
+
+          echo "Sync Logic Complete."
+        '''
+      }
+    }
+
+    stage('Validate compose') {
       steps {
         sh '''
           set -euxo pipefail
-          test -f "${COMPOSE_NGINX}"
-          test -f "${COMPOSE_CERTBOT}"
-          test -f "${COMPOSE_LIVEKIT}"
-
           DC="docker compose -p ${PROJECT_NAME} -f ${COMPOSE_NGINX} -f ${COMPOSE_CERTBOT} -f ${COMPOSE_LIVEKIT}"
           $DC config > /dev/null
-
           echo "compose config OK"
         '''
       }
@@ -123,16 +160,12 @@ pipeline {
       steps {
         script {
           def targetStr = (params.TARGET_SERVICES ?: '').trim()
-
-          // 빈 문자열이면 FULL deploy로 해석
+          // CD/Final에게 넘길 때는 빈 문자열이면 전체 배포 목록을 채워주는 것이 명확함
           if (targetStr == '') {
-            targetStr = 'nginx certbot livekit'   // infra 전체 목록
-            echo "TARGET_SERVICES empty -> FULL deploy: '${targetStr}'"
+            targetStr = 'nginx certbot livekit'
           }
 
-          echo "===== TRIGGER CD/FINAL ====="
-          echo "PROJECT_NAME=${params.PROJECT_NAME}"
-          echo "TARGET_SERVICES='${targetStr}'"
+          echo "Triggering Final Deploy with: $targetStr"
 
           build job: 'CD/Final',
             wait: true,
@@ -143,15 +176,11 @@ pipeline {
         }
       }
     }
-  } // stages 닫기
-
-  post { // post는 stages 밖
-    always {
-      sh '''
-        set +e
-        echo "===== CD/INFRA DONE (Final handles deploy) ====="
-      '''
-    }
   }
 
-} // pipeline 닫기
+  post {
+    always {
+      sh 'echo "CD/INFRA Pipeline Finished."'
+    }
+  }
+}
