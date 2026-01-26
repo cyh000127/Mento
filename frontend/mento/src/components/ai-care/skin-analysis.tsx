@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Upload, Camera, Sparkles, ChevronRight } from "lucide-react"
 
 export function SkinAnalysis() {
-  const [step, setStep] = useState(1)
+  const [, setStep] = useState(1)
   const [analysisComplete, setAnalysisComplete] = useState(false)
 
   const handleStartAnalysis = () => {

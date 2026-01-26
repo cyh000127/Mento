@@ -1,5 +1,3 @@
-import { Check } from "lucide-react"
-
 interface Step {
   id: number
   label: string
@@ -9,9 +7,6 @@ interface StepIndicatorProps {
   steps: Step[]
   currentStep: number
 }
-
-
-const stepLabels = ["분야 선택", "일정 선택", "사전 설문"]
 
 export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
   return (
