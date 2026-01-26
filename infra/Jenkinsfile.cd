@@ -10,7 +10,6 @@ pipeline {
     string(name: 'DEPLOY_REF', defaultValue: 'develop-infra', description: 'deploy ref/branch')
     string(name: 'PROJECT_NAME', defaultValue: 'app', description: 'docker compose project name')
     string(name: 'TARGET_SERVICES', defaultValue: '', description: '공백 구분 서비스 목록 (비우면 배포 안 함)')
-
   }
 
   environment {
@@ -64,11 +63,9 @@ pipeline {
         sh '''
           set -euxo pipefail
 
-          # 없으면 생성(실행 실패 방지)
           mkdir -p "${RUNTIME_DIR}/certbot/www"
           mkdir -p "${RUNTIME_DIR}/certbot/conf"
 
-          # 권한은 환경 따라 실패할 수 있어 best-effort
           chmod -R 0755 "${RUNTIME_DIR}" || true
 
           echo "Runtime dirs ready"
@@ -139,7 +136,6 @@ pipeline {
       }
     }
 
-
     stage('Validate compose (infra only)') {
       steps {
         sh '''
@@ -178,7 +174,6 @@ pipeline {
       }
     }
 
-
     stage('Skip Final (no targets)') {
       when {
         expression { return (params.TARGET_SERVICES ?: '').trim() == '' }
@@ -188,8 +183,9 @@ pipeline {
       }
     }
 
+  } // stages 닫기
 
-  post {
+  post { // post는 stages 밖
     always {
       sh '''
         set +e
@@ -197,4 +193,5 @@ pipeline {
       '''
     }
   }
-}
+
+} // pipeline 닫기
