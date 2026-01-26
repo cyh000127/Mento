@@ -6,6 +6,7 @@ import ConsultationPage from "@/pages/consultation/ConsultationPage"
 import GuidePage from "@/pages/guide/GuidePage"
 import MentoringPage from "@/pages/mentoring/MentoringPage"
 import RecommendPage from "@/pages/recommend/RecommendPage"
+import InventoryPage from "@/pages/inventory/InventoryPage"
 
 const router = createBrowserRouter([
   {
@@ -35,6 +36,10 @@ const router = createBrowserRouter([
       {
         path: "recommend",
         element: <RecommendPage />,
+      },
+      {
+        path: "inventory",
+        element: <InventoryPage />,
       },
     ],
   },

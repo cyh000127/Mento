@@ -41,7 +41,10 @@ export default {
         border: "var(--border)",
         input: "var(--input)",
         ring: "var(--ring)",
-        muted: "#f3f4f6",
+        muted: {
+          DEFAULT: "#f3f4f6",
+          foreground: "#6b7280",
+        },
         accent: "var(--accent)",
         destructive: "var(--destructive)",
 
