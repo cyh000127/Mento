@@ -7,8 +7,8 @@ export default function MentoringPage() {
   return (
     <>
       <MentoringHero />
-      <HowMentoringWorks />
       <MentorGrid />
+      <HowMentoringWorks />
       <MentoringFaq />
     </>
   )
