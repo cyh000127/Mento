@@ -31,6 +31,7 @@ pipeline {
       steps {
         sh '''
           set -euxo pipefail
+          TARGET_SERVICES="${TARGET_SERVICES:-}"
           echo "===== CD/INFRA CONTEXT ====="
           date "+%Y-%m-%d %H:%M:%S %Z"
           echo "APP_DIR=${APP_DIR}"
