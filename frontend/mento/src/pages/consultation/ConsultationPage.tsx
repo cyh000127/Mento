@@ -4,11 +4,8 @@ import { DateTimeSelection } from "@/components/consultation/date-time-selection
 import { Questionnaire } from "@/components/consultation/questionnaire"
 import { SurveyComplete } from "@/components/consultation/survey-complete"
 import { Payment } from "@/components/consultation/payment"
-import { SurveyComplete } from "@/components/consultation/survey-complete"
-import { Payment } from "@/components/consultation/payment"
 import { BookingComplete } from "@/components/consultation/booking-complete"
 import { StepIndicator } from "@/components/consultation/step-indicator"
-import type { ConsultationCategory } from "@/types/consultation"
 import type { ConsultationCategory } from "@/types/consultation"
 
 interface BookingData {
@@ -36,7 +33,7 @@ export default function ConsultationPage() {
     time: "",
   })
 
-  const handleCategorySelect = (category: ConsultationCategory | null | null) => {
+  const handleCategorySelect = (category: ConsultationCategory | null) => {
     setBookingData((prev) => ({ ...prev, category }))
   }
 
