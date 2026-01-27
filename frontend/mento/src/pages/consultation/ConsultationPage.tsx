@@ -25,8 +25,6 @@ const steps = [
 export default function ConsultationPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [showSurveyComplete, setShowSurveyComplete] = useState(false)
-  const [paymentComplete, setPaymentComplete] = useState(false)
-  const [showSurveyComplete, setShowSurveyComplete] = useState(false)
   const [bookingData, setBookingData] = useState<BookingData>({
     category: null,
     date: null,
@@ -119,7 +117,7 @@ export default function ConsultationPage() {
             />
           )}
 
-          {currentStep === 3 && !showSurveyComplete && !showSurveyComplete && (
+          {currentStep === 3 && !showSurveyComplete && (
             <Questionnaire
               answers={answers}
               selectedCategory={bookingData.category}
@@ -134,11 +132,7 @@ export default function ConsultationPage() {
             <SurveyComplete onNext={handleSurveyCompleteNext} />
           )}
 
-          {currentStep === 3 && showSurveyComplete && (
-            <SurveyComplete onNext={handleSurveyCompleteNext} />
-          )}
-
-          {currentStep === 4 && !paymentComplete && (
+          {currentStep === 4 && (
             <Payment
               bookingData={bookingData}
               onPrev={handleBackFromPayment}
@@ -146,7 +140,7 @@ export default function ConsultationPage() {
             />
           )}
 
-          {currentStep === 4 && paymentComplete && (
+          {currentStep === 5 && (
             <BookingComplete bookingData={bookingData} />
           )}
         </div>
