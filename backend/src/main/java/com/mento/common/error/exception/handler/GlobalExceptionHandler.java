@@ -21,6 +21,7 @@ import com.mento.common.response.BaseResponse;
 import com.mento.common.response.ErrorResponse;
 import com.mento.common.util.LoggingUtils;
 import com.mento.domain.file.exception.FileStorageException;
+import com.mento.domain.reservation.exception.ReservationException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -153,6 +154,16 @@ public class GlobalExceptionHandler {
 		HttpServletRequest request
 	) {
 		LoggingUtils.logException("FileStorageException 발생", ex, request);
+		ErrorResponse response = ErrorResponse.of(ErrorCode.NOT_FOUND, request);
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(BaseResponse.fail(response));
+	}
+
+	@ExceptionHandler(ReservationException.class)
+	public ResponseEntity<BaseResponse<ErrorResponse>> handleReservationException(
+		ReservationException ex,
+		HttpServletRequest request
+	) {
+		LoggingUtils.logException("ReservationException 발생", ex, request);
 		ErrorResponse response = ErrorResponse.of(ErrorCode.NOT_FOUND, request);
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(BaseResponse.fail(response));
 	}
