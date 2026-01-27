@@ -7,7 +7,6 @@ import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Component;
 
-import com.mento.common.util.TimeUtils;
 import com.mento.domain.timetable.entity.Timetable;
 import com.mento.domain.timetable.entity.TimetableStatus;
 
@@ -26,7 +25,7 @@ public class TimetableFactory {
 	public Timetable createTimetable(final LocalDate scheduledDate, final LocalTime scheduledTime) {
 		return Timetable.builder()
 			.scheduledDate(scheduledDate)
-			.scheduledTime(TimeUtils.toKoreanLocalTime(scheduledTime))
+			.scheduledTime(scheduledTime)
 			.status(TimetableStatus.ACTIVE)
 			.maxCapacity(DEFAULT_MAX_CAPACITY)
 			.currentCapacity(DEFAULT_CURRENT_CAPACITY)
