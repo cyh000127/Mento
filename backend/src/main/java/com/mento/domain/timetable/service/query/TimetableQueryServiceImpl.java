@@ -1,0 +1,53 @@
+package com.mento.domain.timetable.service.query;
+
+import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.mento.common.error.ErrorCode;
+import com.mento.domain.timetable.entity.Timetable;
+import com.mento.domain.timetable.exceptioon.TimetableException;
+import com.mento.domain.timetable.repository.TimetableRepository;
+
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Service
+@Transactional(readOnly = true)
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
+public class TimetableQueryServiceImpl implements TimetableQueryService {
+	private final TimetableRepository timetableRepository;
+
+	@Override
+	public Timetable findByReservationId(final Long timetableId) {
+		Timetable timetable = timetableRepository.findByTimetableId(timetableId)
+			.orElseThrow(() -> new TimetableException(ErrorCode.TIMETABLE_NOT_FOUND));
+		log.info("[Timetable] 시간표 조회 완료 {timetableId: {}}", timetable.getId());
+		return timetable;
+	}
+
+	@Override
+	public List<Timetable> findAllExpiredTimetables(final LocalDate now) {
+		List<Timetable> timetables = timetableRepository.findAllByScheduledDateBefore(now);
+		log.info("[Timetable] 만료된 시간표 조회 완료 size : {}", timetables.size());
+		return timetables;
+	}
+
+	@Override
+	public Set<LocalDate> findExistingDatesInRange(final LocalDate startDate, final LocalDate endDate) {
+		List<LocalDate> localDates = timetableRepository.findDistinctDatesBetween(startDate, endDate);
+		log.info("[TimeTable] 시간표가 생성되지 않은 일자 조회 완료 size : {}", localDates);
+		return new HashSet<>(localDates);
+	}
+
+	@Override
+	public boolean existsByScheduledDate(final LocalDate scheduledDate) {
+		return timetableRepository.existsByScheduledDate(scheduledDate);
+	}
+}
