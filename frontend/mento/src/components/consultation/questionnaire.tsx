@@ -4,7 +4,7 @@ import type { ConsultationCategory } from "@/types/consultation"
 
 interface QuestionnaireProps {
   answers: string[]
-  selectedCategory: ConsultationCategory
+  selectedCategory: ConsultationCategory | null
   onAnswerChange: (index: number, answer: string) => void
   onNext: () => void
   onPrev: () => void

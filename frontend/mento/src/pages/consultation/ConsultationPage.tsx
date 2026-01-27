@@ -2,13 +2,14 @@ import { useState } from "react"
 import { CategorySelection } from "@/components/consultation/category-selection"
 import { DateTimeSelection } from "@/components/consultation/date-time-selection"
 import { Questionnaire } from "@/components/consultation/questionnaire"
+import { SurveyComplete } from "@/components/consultation/survey-complete"
+import { Payment } from "@/components/consultation/payment"
 import { BookingComplete } from "@/components/consultation/booking-complete"
 import { StepIndicator } from "@/components/consultation/step-indicator"
-
-type ConsultationCategory = "skincare" | "beauty" | "hair" | null
+import type { ConsultationCategory } from "@/types/consultation"
 
 interface BookingData {
-  category: ConsultationCategory
+  category: ConsultationCategory | null
   date: Date | null
   time: string
 }
@@ -17,18 +18,20 @@ const steps = [
   { id: 1, label: "분야 선택" },
   { id: 2, label: "일정 선택" },
   { id: 3, label: "설문 작성" },
-  { id: 4, label: "예약 완료" },
+  { id: 4, label: "결제" },
 ]
 
 export default function ConsultationPage() {
   const [currentStep, setCurrentStep] = useState(1)
+  const [showSurveyComplete, setShowSurveyComplete] = useState(false)
+  const [paymentComplete, setPaymentComplete] = useState(false)
   const [bookingData, setBookingData] = useState<BookingData>({
     category: null,
     date: null,
     time: "",
   })
 
-  const handleCategorySelect = (category: ConsultationCategory) => {
+  const handleCategorySelect = (category: ConsultationCategory | null) => {
     setBookingData((prev) => ({ ...prev, category }))
   }
 
@@ -44,6 +47,24 @@ export default function ConsultationPage() {
 
   const handleBack = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1))
+  }
+
+  const handleQuestionnaireComplete = () => {
+    setShowSurveyComplete(true)
+  }
+
+  const handleSurveyCompleteNext = () => {
+    setShowSurveyComplete(false)
+    handleNext()
+  }
+
+  const handleBackFromPayment = () => {
+    setShowSurveyComplete(true)
+    handleBack()
+  }
+
+  const handlePaymentComplete = () => {
+    setPaymentComplete(true)
   }
 
   const [answers, setAnswers] = useState<string[]>([])
@@ -90,18 +111,30 @@ export default function ConsultationPage() {
             />
           )}
 
-          {currentStep === 3 && (
+          {currentStep === 3 && !showSurveyComplete && (
             <Questionnaire
               answers={answers}
               selectedCategory={bookingData.category}
               onAnswerChange={handleAnswerChange}
-              onNext={handleNext}
+              onNext={handleQuestionnaireComplete}
               onPrev={handleBack}
               canProceed={answers.every((a) => a && a.trim() !== "")}
             />
           )}
 
-          {currentStep === 4 && (
+          {currentStep === 3 && showSurveyComplete && (
+            <SurveyComplete onNext={handleSurveyCompleteNext} />
+          )}
+
+          {currentStep === 4 && !paymentComplete && (
+            <Payment
+              bookingData={bookingData}
+              onPrev={handleBackFromPayment}
+              onPaymentComplete={handlePaymentComplete}
+            />
+          )}
+
+          {currentStep === 4 && paymentComplete && (
             <BookingComplete bookingData={bookingData} />
           )}
         </div>

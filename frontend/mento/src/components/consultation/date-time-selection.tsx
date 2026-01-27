@@ -5,7 +5,7 @@ import type { ConsultationCategory } from "@/types/consultation"
 interface DateTimeSelectionProps {
   selectedDate: Date | null
   selectedTime: string | null
-  selectedCategory: ConsultationCategory
+  selectedCategory: ConsultationCategory | null
   onDateSelect: (date: Date) => void
   onTimeSelect: (time: string) => void
   onNext: () => void
