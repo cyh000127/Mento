@@ -12,7 +12,6 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.external-url=https://i14a704.p.ssafy.io/prometheus/'
-      - '--web.route-prefix=/'
     networks:
       - monitoring-network
 
