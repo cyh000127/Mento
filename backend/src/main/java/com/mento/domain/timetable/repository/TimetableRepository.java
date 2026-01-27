@@ -28,5 +28,11 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
 
 	List<Timetable> findAllByScheduledDateBefore(LocalDate scheduledDateBefore);
 
-	boolean existsByScheduledDate(LocalDate scheduledDate);
+	@Query("""
+		SELECT t
+		FROM Timetable t
+		WHERE t.scheduledDate BETWEEN :startDate AND :endDate
+		ORDER BY t.scheduledDate, t.scheduledTime
+		""")
+	List<Timetable> findAllByScheduledDateBetween(LocalDate startDate, LocalDate endDate);
 }

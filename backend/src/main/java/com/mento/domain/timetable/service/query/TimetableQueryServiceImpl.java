@@ -12,6 +12,7 @@ import com.mento.common.error.ErrorCode;
 import com.mento.domain.timetable.entity.Timetable;
 import com.mento.domain.timetable.exceptioon.TimetableException;
 import com.mento.domain.timetable.repository.TimetableRepository;
+import com.mento.domain.timetable.vo.DateRange;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,7 @@ public class TimetableQueryServiceImpl implements TimetableQueryService {
 	public Timetable findByReservationId(final Long timetableId) {
 		Timetable timetable = timetableRepository.findByTimetableId(timetableId)
 			.orElseThrow(() -> new TimetableException(ErrorCode.TIMETABLE_NOT_FOUND));
-		log.info("[Timetable] 시간표 조회 완료 {timetableId: {}}", timetable.getId());
+		log.info("[Timetable] 시간표 조회 완료 {id: {}}", timetable.getId());
 		return timetable;
 	}
 
@@ -47,7 +48,16 @@ public class TimetableQueryServiceImpl implements TimetableQueryService {
 	}
 
 	@Override
-	public boolean existsByScheduledDate(final LocalDate scheduledDate) {
-		return timetableRepository.existsByScheduledDate(scheduledDate);
+	public List<Timetable> findAllByDateRange(final DateRange dateRange) {
+		List<Timetable> timetables = timetableRepository.findAllByScheduledDateBetween(
+			dateRange.getStartDate(),
+			dateRange.getEndDate()
+		);
+		log.info("[Timetable] 기간별 시간표 조회 완료 {startDate: {}, endDate: {}, size: {}}",
+			dateRange.getStartDate(),
+			dateRange.getEndDate(),
+			timetables.size()
+		);
+		return timetables;
 	}
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.mento.domain.timetable.entity.Timetable;
+import com.mento.domain.timetable.vo.DateRange;
 
 public interface TimetableQueryService {
 	Timetable findByReservationId(final Long id);
@@ -13,5 +14,5 @@ public interface TimetableQueryService {
 
 	Set<LocalDate> findExistingDatesInRange(final LocalDate startDate, final LocalDate endDate);
 
-	boolean existsByScheduledDate(LocalDate scheduledDate);
+	List<Timetable> findAllByDateRange(final DateRange dateRange);
 }
