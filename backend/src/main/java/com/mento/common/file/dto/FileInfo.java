@@ -1,4 +1,4 @@
-package com.mento.domain.file.dto.common;
+package com.mento.common.file.dto;
 
 import lombok.Builder;
 

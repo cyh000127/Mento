@@ -1,4 +1,4 @@
-package com.mento.common.util;
+package com.mento.common.file.util;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.mento.common.config.properties.CloudflareProperties;
 import com.mento.common.error.ErrorCode;
-import com.mento.domain.file.exception.FileStorageException;
+import com.mento.common.error.exception.FileStorageException;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

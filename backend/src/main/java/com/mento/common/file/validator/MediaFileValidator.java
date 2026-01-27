@@ -1,4 +1,4 @@
-package com.mento.domain.file.validator;
+package com.mento.common.file.validator;
 
 import java.util.Set;
 
@@ -6,13 +6,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.mento.common.error.ErrorCode;
-import com.mento.domain.file.exception.FileStorageException;
+import com.mento.common.error.exception.FileStorageException;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-public class FileValidator {
+public class MediaFileValidator {
 
 	private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of(
 		"image/jpeg",
