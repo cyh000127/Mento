@@ -2,6 +2,7 @@ import { useState } from "react"
 import { ProductGrid } from "@/components/inventory/product-grid"
 import { ProductDetail } from "@/components/inventory/product-detail"
 import { InventoryFilters } from "@/components/inventory/inventory-filters"
+import { InventoryRegisterModal } from "@/components/inventory/inventory-register-modal"
 import type { Product, ProductCategory, ProductStatus, SortOption } from "@/types/inventory"
 
 // Mock data
@@ -93,6 +94,7 @@ export default function InventoryPage() {
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | "all">("all")
   const [sortOption, setSortOption] = useState<SortOption>("recent")
   const [selectedStatus, setSelectedStatus] = useState<ProductStatus | "all">("all")
+  const [registerModalOpen, setRegisterModalOpen] = useState(false)
 
   // Filter and sort products
   const filteredProducts = products
@@ -133,8 +135,14 @@ export default function InventoryPage() {
   }
 
   const handleAddProduct = () => {
-    // In real app, this would open a modal or navigate to add product page
-    console.log("Add new product")
+    setRegisterModalOpen(true)
+  }
+
+  const handleProductsAdded = (selectedProducts: Product[]) => {
+    // In real app, this would call API to add products to inventory
+    console.log("Products added to inventory:", selectedProducts)
+    // TODO: Implement API call and state update
+    // Example: mutate() or refetch() to refresh the product list
   }
 
   return (
@@ -175,6 +183,13 @@ export default function InventoryPage() {
           </div>
         </div>
       </div>
+
+      {/* Inventory Register Modal */}
+      <InventoryRegisterModal
+        open={registerModalOpen}
+        onOpenChange={setRegisterModalOpen}
+        onConfirm={handleProductsAdded}
+      />
     </div>
   )
 }
