@@ -14,8 +14,8 @@ pipeline {
   }
 
   environment {
-    FE_REPO_DIR = "/home/ubuntu/frontend/front-repo"
-    FE_APP_DIR  = "/home/ubuntu/frontend/front-repo/frontend/mento"
+    FE_REPO_DIR = "/home/ubuntu/app/frontend/front-repo"
+    FE_APP_DIR  = "/home/ubuntu/app/frontend/front-repo/frontend/mento"
     GIT_URL     = "https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git"
   }
 
@@ -35,59 +35,53 @@ pipeline {
       }
     }
 
-    stage('Sync FE repo on EC2') {
-          steps {
-            // [수정] 인증 정보 주입 (Gitlab_PAT ID 확인 필요!)
-            withCredentials([usernamePassword(
-              credentialsId: 'Gitlab_PAT',  // <-- 여기에 본인의 GitLab 인증 Credential ID 입력
-              usernameVariable: 'GIT_USER',
-              passwordVariable: 'GIT_PASS'
-            )]) {
-              sh '''
-                set -euo pipefail
+   stage('Sync FE repo on EC2') {
+         steps {
+           withCredentials([usernamePassword(
+             credentialsId: 'Gitlab_PAT',
+             usernameVariable: 'GIT_USER',
+             passwordVariable: 'GIT_PASS'
+           )]) {
+             sh '''
+               set -euo pipefail
 
-                # 1. 인증 정보가 포함된 URL 생성
-                # GIT_URL에서 "https://" 제거 후 ID:PW@ 결합
-                RAW_URL="${GIT_URL#https://}"
-                AUTH_URL="https://${GIT_USER}:${GIT_PASS}@${RAW_URL}"
+               # [해결] "dubious ownership" 에러 방지
+               # Root(Jenkins)가 Ubuntu 소유의 폴더를 다룰 수 있도록 안전한 경로로 등록
+               git config --global --add safe.directory "${FE_REPO_DIR}"
 
-                # 2. 디렉토리 생성
-                if [ ! -d "$(dirname "${FE_REPO_DIR}")" ]; then
-                  echo "Creating parent directory..."
-                  mkdir -p "$(dirname "${FE_REPO_DIR}")"
-                fi
+               # URL에 인증 정보 결합
+               RAW_URL="${GIT_URL#https://}"
+               AUTH_URL="https://${GIT_USER}:${GIT_PASS}@${RAW_URL}"
 
-                # 3. Git 작업 (AUTH_URL 사용)
-                if [ ! -d "${FE_REPO_DIR}/.git" ]; then
-                  echo "[FE] First time: Cloning branch ${FE_BRANCH}..."
-                  rm -rf "${FE_REPO_DIR}" || true
+               # 1. 디렉토리 생성
+               if [ ! -d "$(dirname "${FE_REPO_DIR}")" ]; then
+                 echo "Creating parent directory..."
+                 mkdir -p "$(dirname "${FE_REPO_DIR}")"
+               fi
 
-                  # 인증된 URL로 Clone
-                  git clone -b "${FE_BRANCH}" --single-branch "${AUTH_URL}" "${FE_REPO_DIR}"
-                else
-                  echo "[FE] Update: Switching to ${FE_BRANCH} and syncing..."
-                  cd "${FE_REPO_DIR}"
+               # 2. Git Clone / Update
+               if [ ! -d "${FE_REPO_DIR}/.git" ]; then
+                 echo "[FE] First time: Cloning branch ${FE_BRANCH}..."
+                 rm -rf "${FE_REPO_DIR}" || true
+                 git clone -b "${FE_BRANCH}" --single-branch "${AUTH_URL}" "${FE_REPO_DIR}"
+               else
+                 echo "[FE] Update: Switching to ${FE_BRANCH} and syncing..."
+                 cd "${FE_REPO_DIR}"
+                 git fetch "${AUTH_URL}" "${FE_BRANCH}"
+                 git checkout -B "${FE_BRANCH}" FETCH_HEAD
+                 git clean -fd
+               fi
 
-                  # Remote URL을 인증된 URL로 잠시 업데이트 (또는 직접 fetch)
-                  git fetch "${AUTH_URL}" "${FE_BRANCH}"
+               echo "Fixing ownership to UID 1000 (ubuntu)..."
+               chown -R 1000:1000 "$(dirname "${FE_REPO_DIR}")"
 
-                  # FETCH_HEAD로 강제 리셋 (가장 깔끔함)
-                  git checkout -B "${FE_BRANCH}" FETCH_HEAD
-                  git clean -fd
-                fi
-
-                # 4. 소유권 변경 (Jenkins(Root) -> Ubuntu)
-                echo "Fixing ownership to ubuntu:ubuntu..."
-                chown -R ubuntu:ubuntu "$(dirname "${FE_REPO_DIR}")"
-
-                echo "[FE] Current Commit Info:"
-                cd "${FE_REPO_DIR}"
-                git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso
-              '''
-            }
-          }
-        }
-
+               echo "[FE] Current Commit Info:"
+               cd "${FE_REPO_DIR}"
+               git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso
+             '''
+           }
+         }
+       }
     stage('Trigger CD/Final') {
       steps {
         script {
