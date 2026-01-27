@@ -1,0 +1,168 @@
+// CI/Monitor Jenkinsfile.monitor
+/*
+1. 변경 사항을 추적해서, 해당 서비스들만 업데이트가 되도록 한다.
+2. MANUAL_MODE가 꺼져있을 때 TARGET_SERVICES가 공백이면 변경 사항이 없는 것으로 간주, CD/Infra를 호출 X
+3. MANUAL_MODE가 켜져있을 때 TARGET_SERVICES가 공백이면 모든 것을 변경하는 것으로 간주
+(CD/Infra에 빈 값으로 주면 모든 게 변경)
+
+- 로깅/진단 과정에서는 변수 별로 기본값을 설정해서 파이프라인이 실패하지 않도록 설정.
+*/
+
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+        string(name: 'TARGET_SERVICES', defaultValue: '', description: '수정/배포할 모니터링 서비스 (쉼표 구분)')
+        booleanParam(name: 'MANUAL_MODE', defaultValue: false, description: 'true = 변경 감지 스킵, TARGET_SERVICES 직접 지정')
+    }
+
+    environment {
+        COMPOSE_PATH_PREFIX = "infra/compose/"
+        CD_JOB_NAME = "CD/Monitor-Final" // 모니터링 전용 CD 잡 이름
+
+        // 모니터링 서비스별 경로 설정 (추후 Lint나 검증 단계 추가 시 사용)
+        PROMETHEUS_REL_PATH = "infra/prometheus"
+        GRAFANA_REL_PATH     = "infra/grafana"
+
+        EC2_PROJECT_PATH = "/home/ubuntu/app/infra/infra-repo"
+    }
+
+    stages {
+        stage('Setup') {
+            steps {
+                sh '''
+                echo "--- 🖥️ Monitoring CI Setup ---"
+                git rev-parse --short HEAD || echo "no-git-repo"
+                '''
+            }
+        }
+
+        stage('Detect Changes') {
+            steps {
+                script {
+                    if (params.MANUAL_MODE) {
+                        echo "⚠️ MANUAL_MODE is ON. Skipping [Detect Changes]"
+                        sh "> changed_files.txt" // 수동 모드에선 파일 목록이 비어있어도 무방
+                    } else {
+                        // 기존의 정교한 Git Diff 로직 사용 (간략화 버전)
+                        sh '''#!/usr/bin/env bash
+                        set -euo pipefail
+                        # 이전 성공 빌드 대비 변경 사항 확인
+                        BASE="${GIT_PREVIOUS_SUCCESSFUL_COMMIT:-HEAD~1}"
+                        git diff --name-only $BASE HEAD > changed_files.txt || echo "" > changed_files.txt
+                        echo "📁 Changed files detected:"
+                        cat changed_files.txt
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Compute Monitoring Targets') {
+            steps {
+                script {
+                    env.RUN_CD = 'false'
+                    env.EFFECTIVE_TARGET_SERVICES = ''
+                    env.COMPOSE_CHANGED = 'false'
+
+                    def targets = []
+                    // 모니터링 서비스 화이트리스트
+                    def monitorAllowed = ['grafana', 'node-exporter', 'prometheus']
+                    def manualInput = (params.TARGET_SERVICES ?: '').trim()
+
+                    // [원칙 3] MANUAL_MODE ON 처리
+                    if (params.MANUAL_MODE) {
+                        env.RUN_CD = 'true'
+                        env.COMPOSE_CHANGED = 'true'
+                        if (manualInput == '') {
+                            env.EFFECTIVE_TARGET_SERVICES = '' // CD에서 전체(monitorAllowed) 처리
+                            echo "📢 [원칙3] MANUAL_MODE ON + Empty: FULL Monitoring Stack Deployment"
+                        } else {
+                            env.EFFECTIVE_TARGET_SERVICES = manualInput.replace(',', ' ')
+                            echo "🎯 [원칙3] MANUAL_MODE ON: Targeting: ${env.EFFECTIVE_TARGET_SERVICES}"
+                        }
+                        return
+                    }
+
+                    // [원칙 1 & 2] MANUAL_MODE OFF (자동 감지)
+                    if (manualInput != '') {
+                        env.RUN_CD = 'true'
+                        env.EFFECTIVE_TARGET_SERVICES = manualInput.replace(',', ' ')
+                        return
+                    }
+
+                    // 파일 변경 분석
+                    def changedLines = []
+                    if (fileExists('changed_files.txt')) {
+                        changedLines = readFile('changed_files.txt').readLines().collect { it.trim() }.findAll { it }
+                    }
+
+                    if (changedLines.isEmpty()) {
+                        echo "📢 [원칙2] No changes detected. Skipping CD call."
+                        return
+                    }
+
+                    changedLines.each { line ->
+                        // 1. Compose 파일 변경 확인 (예: infra/compose/monitor.prometheus.yml)
+                        if (line.startsWith(env.COMPOSE_PATH_PREFIX)) {
+                            monitorAllowed.each { svc ->
+                                if (line.contains(svc)) {
+                                    env.COMPOSE_CHANGED = 'true'
+                                    targets << svc
+                                }
+                            }
+                        }
+                        // 2. 개별 설정 디렉토리 변경 확인 (예: infra/prometheus/prometheus.yml)
+                        monitorAllowed.each { svc ->
+                            if (line.startsWith("infra/${svc}/")) {
+                                targets << svc
+                            }
+                        }
+                    }
+
+                    def filteredTargets = targets.unique().findAll { it in monitorAllowed }
+
+                    if (!filteredTargets.isEmpty()) {
+                        env.RUN_CD = 'true'
+                        env.EFFECTIVE_TARGET_SERVICES = filteredTargets.join(' ')
+                        echo "🚀 [원칙1] Monitoring targets identified: ${env.EFFECTIVE_TARGET_SERVICES}"
+                    }
+                }
+            }
+        }
+
+        stage('Sync Monitoring Configs') {
+            when { expression { return env.RUN_CD == 'true' } }
+            steps {
+                script {
+                    // Compose 동기화
+                    if (env.COMPOSE_CHANGED == 'true') {
+                        sh "rsync -avz --delete ./infra/compose/ ${env.EC2_PROJECT_PATH}/infra/compose/"
+                    }
+
+                    // 서비스별 설정 파일 동기화
+                    def targetList = (env.EFFECTIVE_TARGET_SERVICES ?: 'grafana node-exporter prometheus').tokenize()
+                    targetList.each { service ->
+                        sh "if [ -d './infra/${service}' ]; then rsync -avz --delete ./infra/${service}/ ${env.EC2_PROJECT_PATH}/infra/${service}/; fi"
+                    }
+                }
+            }
+        }
+
+        stage('Trigger CD/Monitor-Final') {
+            when { expression { return env.RUN_CD == 'true' } }
+            steps {
+                build job: env.CD_JOB_NAME,
+                    wait: true,
+                    parameters: [
+                        string(name: 'TARGET_SERVICES', value: env.EFFECTIVE_TARGET_SERVICES)
+                    ]
+            }
+        }
+    }
+}
