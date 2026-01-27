@@ -17,10 +17,10 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.BusinessException;
+import com.mento.common.error.exception.FileStorageException;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.response.ErrorResponse;
 import com.mento.common.util.LoggingUtils;
-import com.mento.domain.file.exception.FileStorageException;
 import com.mento.domain.reservation.exception.ReservationException;
 
 import jakarta.servlet.http.HttpServletRequest;
