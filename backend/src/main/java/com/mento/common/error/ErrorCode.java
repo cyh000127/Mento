@@ -39,6 +39,7 @@ public enum ErrorCode {
 	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U-001", "회원을 찾을 수 없습니다."),
 	USER_EMAIL_DUPLICATE(HttpStatus.CONFLICT, "U-002", "이미 존재하는 이메일입니다."),
 	ALREADY_WITHDRAWN(HttpStatus.CONFLICT, "U-003", "이미 탈퇴한 회원입니다."),
+	INVALID_USER_ROLE(HttpStatus.BAD_REQUEST, "U-004", "유효하지 않은 사용자 역할입니다."),
 
 	/**
 	 * Auth Error (A-xxx)
@@ -59,7 +60,12 @@ public enum ErrorCode {
 	TIMETABLE_NOT_FOUND(HttpStatus.NOT_FOUND, "CS-001", "타임테이블을 찾을 수 없습니다."),
 	NOT_STARTED_YET(HttpStatus.CONFLICT, "CS-002", "상담 시작 시간이 아닙니다."),
 	CONSULTING_ENDED(HttpStatus.GONE, "CS-003", "이미 종료된 상담입니다."),
-	NOT_AUTHORIZED(HttpStatus.FORBIDDEN, "CS-004", "해당 상담에 참여 권한이 없습니다.");
+	NOT_AUTHORIZED(HttpStatus.FORBIDDEN, "CS-004", "해당 상담에 참여 권한이 없습니다."),
+
+	/**
+	 * RESERVATION Error (R-xxx)
+	 */
+	RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "R-001", "예약 정보를 찾을 수 없습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;
