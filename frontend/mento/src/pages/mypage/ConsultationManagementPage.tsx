@@ -85,7 +85,7 @@ export default function ConsultationManagementPage() {
   const [endMonth, setEndMonth] = useState("1")
   const [endDay, setEndDay] = useState("20")
   const [selectedCategory, setSelectedCategory] = useState<ConsultationCategory | "all">("all")
-  const [isSearched, setIsSearched] = useState(false)
+  const [isSearched, setIsSearched] = useState(true)
 
   // Data state
   const [consultations] = useState<Consultation[]>(mockConsultations)
@@ -210,8 +210,8 @@ export default function ConsultationManagementPage() {
         <div className="flex-1">
           <div className="mx-auto max-w-7xl px-6 py-8">
           {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-foreground border-b border-border pb-3">
+          <div className="pl-1">
+            <h1 className="text-2xl font-bold text-foreground pb-3">
               상담 관리
             </h1>
           </div>

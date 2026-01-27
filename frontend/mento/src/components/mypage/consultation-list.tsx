@@ -32,7 +32,7 @@ export function ConsultationList({
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       {/* Table Header */}
-      <div className="grid grid-cols-12 gap-4 bg-muted px-6 py-4 text-sm font-semibold text-foreground border-b border-border">
+      <div className="text-center grid grid-cols-12 gap-4 bg-muted px-6 py-4 text-sm font-semibold text-foreground border-b border-border">
         <div className="col-span-3">상담 일자</div>
         <div className="col-span-2">유형</div>
         <div className="col-span-3">예약 사전 정보 확인</div>
@@ -47,19 +47,19 @@ export function ConsultationList({
             className="grid grid-cols-12 gap-4 px-6 py-5 hover:bg-muted/30 transition-colors"
           >
             {/* Date Time */}
-            <div className="col-span-3 flex items-center text-sm text-foreground">
+            <div className="col-span-3 flex items-center text-sm text-foreground justify-center">
               {formatDateTime(consultation.scheduledDate, consultation.scheduledTime)}
             </div>
 
             {/* Category */}
-            <div className="col-span-2 flex items-center">
+            <div className="col-span-2 flex items-center justify-center">
               <span className="text-sm text-foreground">
                 {consultation.category ? categoryLabels[consultation.category] : "-"}
               </span>
             </div>
 
             {/* Pre-consultation Info Link */}
-            <div className="col-span-3 flex items-center">
+            <div className="col-span-3 flex items-center justify-center">
               <button
                 onClick={() => onViewDetail(consultation)}
                 className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -70,7 +70,7 @@ export function ConsultationList({
             </div>
 
             {/* Status Buttons */}
-            <div className="col-span-4 flex items-center gap-2">
+            <div className="col-span-4 flex items-center gap-2 justify-center">
               {consultation.status === "scheduled" && (
                 <>
                   <Button

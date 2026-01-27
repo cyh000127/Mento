@@ -23,22 +23,23 @@ export function ConsultationDetail({
 
   return (
     <div className="bg-background py-8">
-      <div className="mx-auto max-w-3xl px-6">
-        {/* Back Button */}
-        <Button
-          onClick={onBack}
-          variant="ghost"
-          className="mb-6 text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          목록으로
-        </Button>
-
+      <div className="mx-auto px-6">
         {/* Main Card */}
         <div className="space-y-6">
-          <h1 className="text-2xl font-bold text-foreground border-b border-border pb-3">
-            상담 관리
-          </h1>
+          {/* Header with Back Button */}
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <h1 className="text-2xl font-bold text-foreground">
+              상담 관리
+            </h1>
+            <Button
+              onClick={onBack}
+              variant="ghost"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              목록으로
+            </Button>
+          </div>
 
           {/* Consultation Info */}
           <div className="space-y-4">
@@ -64,7 +65,7 @@ export function ConsultationDetail({
                 <span className="text-sm font-medium text-foreground min-w-[80px]">사전정보</span>
                 <div className="flex-1 space-y-4">
                   {consultation.preConsultationQA.map((qa, index) => (
-                    <div key={index} className="bg-muted rounded-lg p-4 space-y-2">
+                    <div key={index} className="bg-primary-100 rounded-lg p-4 space-y-2">
                       <div>
                         <p className="text-sm font-medium text-foreground mb-1">질문</p>
                         <p className="text-sm text-muted-foreground">{qa.question}</p>

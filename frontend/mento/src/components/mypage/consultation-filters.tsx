@@ -80,7 +80,7 @@ export function ConsultationFilters({
       </div>
 
       {/* Date Range Picker */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 pl-9">
         {/* Start Date */}
         <div className="flex items-center gap-2">
           <Select value={startYear} onValueChange={onStartYearChange}>
