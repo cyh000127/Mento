@@ -35,6 +35,7 @@ import jakarta.servlet.http.Cookie;
 class AuthIntegrationTest {
 
 	private final String secret = "testSecretKeytestSecretKeytestSecretKeytestSecretKey";
+	private final Map<String, BlackList> blackListMap = new HashMap<>();
 	@Mock
 	private UserRepository userRepository;
 	@Mock
@@ -44,7 +45,6 @@ class AuthIntegrationTest {
 	private JwtTokenProvider jwtTokenProvider;
 	private AuthCommandServiceImpl authCommandService;
 	private AuthCommandController authCommandController;
-	private final Map<String, BlackList> blackListMap = new HashMap<>();
 	private User user;
 	private Token token;
 

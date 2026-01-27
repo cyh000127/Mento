@@ -1,13 +1,12 @@
 package com.mento.common.auth.dto;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 @DisplayName("OAuth2Attribute 단위 테스트")
 class OAuth2AttributeTest {
@@ -23,7 +22,7 @@ class OAuth2AttributeTest {
 		attributes.put("id", 123456789L);
 
 		kakaoAccount.put("email", "gildong@example.com");
-		
+
 		profile.put("nickname", "홍길동");
 		kakaoAccount.put("profile", profile);
 
@@ -64,7 +63,7 @@ class OAuth2AttributeTest {
 		attributes.put("id", 123456789L);
 		kakaoAccount.put("email", "test@example.com");
 		// profile or nickname missing
-		kakaoAccount.put("profile", null); 
+		kakaoAccount.put("profile", null);
 
 		attributes.put("kakao_account", kakaoAccount);
 

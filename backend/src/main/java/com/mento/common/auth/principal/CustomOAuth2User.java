@@ -1,15 +1,17 @@
 package com.mento.common.auth.principal;
 
-import com.mento.domain.user.entity.User;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
+import com.mento.domain.user.entity.User;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 카카오 로그인
