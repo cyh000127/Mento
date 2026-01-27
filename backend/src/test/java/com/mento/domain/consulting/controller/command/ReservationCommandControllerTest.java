@@ -18,42 +18,43 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.mento.domain.consulting.dto.LiveKitSessionResponse;
-import com.mento.domain.consulting.service.ConsultingFacadeService;
+import com.mento.domain.reservation.controller.command.ReservationCommandController;
+import com.mento.domain.reservation.service.ReservationFacadeService;
 
 @ExtendWith(MockitoExtension.class)
-class ConsultingCommandControllerTest {
+class ReservationCommandControllerTest {
 
 	private MockMvc mockMvc;
 
 	@Mock
-	private ConsultingFacadeService consultingFacadeService;
+	private ReservationFacadeService reservationFacadeService;
 
 	@InjectMocks
-	private ConsultingCommandController consultingCommandController;
+	private ReservationCommandController reservationCommandController;
 
 	@BeforeEach
 	void setUp() {
-		mockMvc = MockMvcBuilders.standaloneSetup(consultingCommandController).build();
+		mockMvc = MockMvcBuilders.standaloneSetup(reservationCommandController).build();
 	}
 
 	@Test
 	@DisplayName("상담_세션_생성_응답_검증")
 	void 상담_세션_생성_응답_검증() throws Exception {
 		// Given
-		Long timetableId = 456L;
+		Long id = 456L;
 		LiveKitSessionResponse response = LiveKitSessionResponse.of(
-			timetableId,
+			id,
 			"livekit_token_abc123",
 			"room_456",
 			"wss://livekit.example.com",
 			"MENTOR"
 		);
 
-		given(consultingFacadeService.createSession(eq(timetableId), any()))
+		given(reservationFacadeService.createSession(eq(id), any()))
 			.willReturn(response);
 
 		// When & Then
-		mockMvc.perform(post("/api/v1/timetables/{timetableId}/sessions", timetableId)
+		mockMvc.perform(post("/api/v1/reservations/{id}/sessions", id)
 				.contentType(MediaType.APPLICATION_JSON))
 			.andDo(print())
 			.andExpect(status().isOk())
