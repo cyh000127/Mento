@@ -1,4 +1,4 @@
-package com.mento.domain.consulting.controller.command;
+package com.mento.domain.reservation.controller.command;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -11,27 +11,27 @@ import com.mento.common.auth.principal.AuthenticatedUser;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.util.ResponseUtils;
 import com.mento.domain.consulting.dto.LiveKitSessionResponse;
-import com.mento.domain.consulting.service.ConsultingFacadeService;
+import com.mento.domain.reservation.service.ReservationFacadeService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "Consulting", description = "컨설팅 관리 API")
+@Tag(name = "Reservation", description = "예약 관리 API")
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/reservations")
 @RequiredArgsConstructor
-public class ConsultingCommandController {
+public class ReservationCommandController {
 
-	private final ConsultingFacadeService consultingFacadeService;
+	private final ReservationFacadeService reservationFacadeService;
 
 	@Operation(summary = "상담 세션 생성", description = "타임테이블 ID를 기반으로 LiveKit 상담 세션을 생성하고 토큰을 발급합니다.")
-	@PostMapping("/timetables/{timetableId}/sessions")
+	@PostMapping("/{id}/sessions")
 	public ResponseEntity<BaseResponse<LiveKitSessionResponse>> createSession(
-		@PathVariable Long timetableId,
-		@AuthenticationPrincipal AuthenticatedUser user
+		@PathVariable final Long id,
+		@AuthenticationPrincipal final AuthenticatedUser user
 	) {
-		LiveKitSessionResponse response = consultingFacadeService.createSession(timetableId, user);
+		LiveKitSessionResponse response = reservationFacadeService.createSession(id, user);
 		return ResponseUtils.ok(response);
 	}
 }

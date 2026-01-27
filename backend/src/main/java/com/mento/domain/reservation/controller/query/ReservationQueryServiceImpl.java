@@ -3,6 +3,9 @@ package com.mento.domain.reservation.controller.query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mento.common.error.ErrorCode;
+import com.mento.domain.reservation.entity.Reservation;
+import com.mento.domain.reservation.exception.ReservationException;
 import com.mento.domain.reservation.repository.ReservationRepository;
 
 import lombok.AccessLevel;
@@ -19,8 +22,16 @@ public class ReservationQueryServiceImpl implements ReservationQueryService {
 	@Override
 	public boolean existById(final Long id) {
 		boolean exists = reservationRepository.existsById(id);
-		log.debug("예약 존재 여부 조회 결과 - id: {}, exists: {}", id, exists);
+		log.info("[Reservation] 예약 존재 여부 조회 결과 - id: {}, exists: {}", id, exists);
 		return exists;
+	}
+
+	@Override
+	public Reservation findById(final Long id) {
+		Reservation reservation = reservationRepository.findById(id)
+			.orElseThrow(() -> new ReservationException(ErrorCode.RESERVATION_NOT_FOUND));
+		log.info("[Reservation] 예약 조회 완료 - id: {}, reservation: {}", id, reservation);
+		return reservation;
 	}
 
 }

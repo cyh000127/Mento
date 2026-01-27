@@ -5,8 +5,8 @@ import com.mento.common.error.ErrorCode;
 import lombok.Getter;
 
 @Getter
-public class ConsultingException extends BusinessException {
-	public ConsultingException(ErrorCode errorCode) {
+public class ReservationException extends BusinessException {
+	public ReservationException(ErrorCode errorCode) {
 		super(errorCode);
 	}
 }

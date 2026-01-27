@@ -39,6 +39,7 @@ public enum ErrorCode {
 	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U-001", "회원을 찾을 수 없습니다."),
 	USER_EMAIL_DUPLICATE(HttpStatus.CONFLICT, "U-002", "이미 존재하는 이메일입니다."),
 	ALREADY_WITHDRAWN(HttpStatus.CONFLICT, "U-003", "이미 탈퇴한 회원입니다."),
+	INVALID_USER_ROLE(HttpStatus.BAD_REQUEST, "U-004", "유효하지 않은 사용자 역할입니다."),
 
 	/**
 	 * Auth Error (A-xxx)

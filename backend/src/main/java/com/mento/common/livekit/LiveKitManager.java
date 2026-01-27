@@ -2,6 +2,8 @@ package com.mento.common.livekit;
 
 import org.springframework.stereotype.Component;
 
+import com.mento.domain.user.entity.Role;
+
 import io.livekit.server.AccessToken;
 import io.livekit.server.RoomAdmin;
 import io.livekit.server.RoomJoin;
@@ -20,18 +22,18 @@ public class LiveKitManager {
 		String userId,
 		String name,
 		String roomName,
-		String role,
-		boolean isAdmin,
+		Role role,
 		long ttlSeconds
 	) {
-		log.info("[Consulting] LiveKit 토큰 생성, userId={}, roomName={}, role={}, isAdmin={}, ttlSeconds={}", userId,
-			roomName, role, isAdmin, ttlSeconds);
+		log.info("[Reservation] LiveKit 토큰 생성, userId={}, roomName={}, role={}, ttlSeconds={}", userId,
+			roomName, role, ttlSeconds);
 
 		AccessToken token = new AccessToken(liveKitProperties.getApiKey(), liveKitProperties.getSecret());
+
 		token.setName(name);
 		token.setIdentity(userId);
-
 		token.setTtl(ttlSeconds * 1000);
+		token.setMetadata(role.getDescription());
 
 		RoomJoin roomJoin = new RoomJoin(true);
 		token.addGrants(roomJoin);
@@ -39,14 +41,16 @@ public class LiveKitManager {
 		RoomName roomNameGrant = new RoomName(roomName);
 		token.addGrants(roomNameGrant);
 
-		if (isAdmin) {
+		grantRoomAdmin(role, token);
+
+		return token.toJwt();
+	}
+
+	private void grantRoomAdmin(final Role role, final AccessToken token) {
+		if (role == Role.MENTOR) {
 			RoomAdmin roomAdmin = new RoomAdmin(true);
 			token.addGrants(roomAdmin);
 		}
-
-		token.setMetadata(role);
-
-		return token.toJwt();
 	}
 
 	public String getUrl() {
