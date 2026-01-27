@@ -44,28 +44,34 @@ export default function ConsultationPage() {
   // }
 
   const handleNext = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
     setCurrentStep((prev) => Math.min(prev + 1, steps.length))
   }
 
   const handleBack = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
     setCurrentStep((prev) => Math.max(prev - 1, 1))
   }
 
   const handleQuestionnaireComplete = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
     setShowSurveyComplete(true)
   }
 
   const handleSurveyCompleteNext = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
     setShowSurveyComplete(false)
     handleNext()
   }
 
   const handleBackFromPayment = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
     setShowSurveyComplete(true)
     handleBack()
   }
 
   const handlePaymentComplete = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
     handleNext() // Step 5 (예약 완료)로 이동
   }
 

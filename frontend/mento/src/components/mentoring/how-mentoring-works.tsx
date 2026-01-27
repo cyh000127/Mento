@@ -73,6 +73,7 @@ export function HowMentoringWorks() {
         <div className="mt-12 flex justify-center">
           <Link
             to="/consultation"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-3.5 font-medium text-dark-bg shadow-lg shadow-primary-500/25 transition-all hover:bg-primary-400 hover:shadow-xl hover:shadow-primary-500/30"
           >
             멘토링 예약하기
