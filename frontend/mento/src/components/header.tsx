@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { Bell, Package, Menu, X } from "lucide-react"
 import { LoginModal } from "./login-modal"
+import { NotificationModal, type Notification } from "./notification-modal"
 
 const navItems = [
   { label: "추천", href: "/recommend" },
@@ -10,9 +11,31 @@ const navItems = [
   { label: "AI CARE", href: "/ai-care" },
 ]
 
+// 목 데이터 (실제 서비스에서는 API로부터 가져옴)
+const mockNotifications: Notification[] = [
+  {
+    id: "1",
+    type: "expiration",
+    message: "사용 중인 제품이 유통기한에 가까워지고 있습니다.",
+    timestamp: new Date(Date.now() - 1000 * 60 * 15), // 15분 전
+  },
+  {
+    id: "2",
+    type: "consultation",
+    message: "30분 후 상담이 시작됩니다.",
+    timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5분 전
+  },
+]
+
 export function Header() {
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false)
+  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications)
+
+  const handleRemoveNotification = (id: string) => {
+    setNotifications((prev) => prev.filter((notification) => notification.id !== id))
+  }
 
   return (
     <>
@@ -41,13 +64,27 @@ export function Header() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              className="hidden rounded-full p-2 text-dark-bg/80 transition-colors hover:bg-dark-bg/10 hover:text-dark-bg md:block"
-              aria-label="알림"
-            >
-              <Bell className="h-5 w-5" />
-            </button>
+            <div className="relative hidden md:block">
+              <button
+                type="button"
+                onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                className="rounded-full p-2 text-dark-bg/80 transition-colors hover:bg-dark-bg/10 hover:text-dark-bg"
+                aria-label="알림"
+              >
+                <Bell className="h-5 w-5" />
+                {notifications.length > 0 && (
+                  <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                    {notifications.length}
+                  </span>
+                )}
+              </button>
+              <NotificationModal
+                isOpen={isNotificationOpen}
+                onClose={() => setIsNotificationOpen(false)}
+                notifications={notifications}
+                onRemoveNotification={handleRemoveNotification}
+              />
+            </div>
             <Link
               to="/inventory"
               className="hidden rounded-full p-2 text-dark-bg/80 transition-colors hover:bg-dark-bg/10 hover:text-dark-bg md:block"
@@ -95,13 +132,24 @@ export function Header() {
                   </Link>
                 ))}
                 <div className="flex items-center gap-2 border-t border-dark-bg/10 pt-3">
-                  <button
-                    type="button"
-                    className="rounded-full p-2 text-dark-bg/80 transition-colors hover:bg-dark-bg/10 hover:text-dark-bg"
-                    aria-label="알림"
-                  >
-                    <Bell className="h-5 w-5" />
-                  </button>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsNotificationOpen(!isNotificationOpen)
+                        setIsMobileMenuOpen(false)
+                      }}
+                      className="rounded-full p-2 text-dark-bg/80 transition-colors hover:bg-dark-bg/10 hover:text-dark-bg"
+                      aria-label="알림"
+                    >
+                      <Bell className="h-5 w-5" />
+                      {notifications.length > 0 && (
+                        <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                          {notifications.length}
+                        </span>
+                      )}
+                    </button>
+                  </div>
                   <Link
                     to="/inventory"
                     onClick={() => setIsMobileMenuOpen(false)}
