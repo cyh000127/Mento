@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Environment
+
+**IMPORTANT: This project runs on Windows 10/11**
+- OS: Windows 10/11
+- Shell: Git Bash (MINGW64)
+- All commands should use Windows-style paths and commands
+- Use `gradlew.bat` or `gradlew` (NOT `./gradlew`)
+- Use `mkdir` instead of `mkdir -p`
+- Use Windows path separators when needed
+
 ## Project Overview
 
 **MReady** - Spring Boot 4.0.1 백엔드 애플리케이션
@@ -12,6 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build and Run Commands
 
+**Windows 환경 (기본):**
 ```bash
 # 빌드
 gradlew build
@@ -29,13 +40,19 @@ gradlew bootRun --args="--spring.profiles.active=local"
 
 # Checkstyle 검사
 gradlew checkstyleMain
+
+# 디렉토리 생성
+mkdir .mr-drafts
+
+# 파일 존재 확인
+if exist filename (echo exists) else (echo not found)
 ```
 
 **프로파일:**
 - `local`: H2 in-memory database
 - `live`: MySQL 운영 환경
 
-Linux/Mac: `gradlew` 대신 `./gradlew` 사용
+**중요:** Windows에서는 `gradlew` 또는 `gradlew.bat` 사용 (NOT `./gradlew`)
 
 ## Architecture
 
@@ -60,30 +77,50 @@ Entity (도메인 모델)
 - Command Service는 `@Transactional`
 - 응답은 `ResponseUtils.ok()`, `ResponseUtils.created()` 사용
 
+**Service 구현 패턴:**
+- 인터페이스+구현체 패턴 또는 구현체만 사용 가능
+- 인터페이스 사용 시: `XxxService` (인터페이스) + `XxxServiceImpl` (구현체)
+- 구현체만 사용 시: `XxxService` (구현체)
+- 도메인별로 패턴이 다를 수 있음 (일관성 유지 권장)
+
+**특수 Service 레이어:**
+- 도메인 내 특수 목적 서비스는 별도 패키지로 분리 가능
+- 예: `service/schedule/`, `service/strategy/` 등
+- FacadeService에서 이러한 특수 서비스들을 조율
+
 ### 패키지 구조
 
 ```
 com.mento
 ├── common/
-│   ├── config/          # Security, CORS, Swagger, JwtConfig
+│   ├── auth/            # JWT, OAuth2, Redis BlackList
+│   ├── config/          # Security, CORS, Swagger, JwtConfig, CloudflareConfig
+│   ├── constant/        # BackDomain, FrontDomain
 │   ├── entity/          # BaseEntity (createdAt, updatedAt)
 │   ├── error/           # ErrorCode, BusinessException, GlobalExceptionHandler
+│   ├── file/            # FileService, CloudflareStorageUtil, MediaFileValidator
+│   ├── livekit/         # LiveKitManager, LiveKitProperties
 │   ├── response/        # BaseResponse, ErrorResponse, PageResponse
-│   └── util/            # ResponseUtils, LoggingUtils
+│   └── util/            # ResponseUtils, LoggingUtils, CookieUtil, TimeUtils
 └── domain/{domain}/
     ├── controller/
     │   ├── command/{Domain}CommandController.java
     │   └── query/{Domain}QueryController.java
     ├── service/
     │   ├── {Domain}FacadeService.java
-    │   ├── command/{Domain}CommandService.java
-    │   └── query/{Domain}QueryService.java
+    │   ├── command/{Domain}CommandService.java (또는 인터페이스+Impl)
+    │   ├── query/{Domain}QueryService.java (또는 인터페이스+Impl)
+    │   └── schedule/ (선택: 스케줄링 서비스)
     ├── dto/
     │   ├── request/*ReqDto.java
-    │   └── response/*ResDto.java
+    │   ├── response/*ResDto.java
+    │   └── response/common/ (선택: 공통 응답 DTO)
     ├── converter/{Domain}Converter.java
     ├── repository/{Domain}Repository.java
-    └── entity/{Domain}.java
+    ├── entity/{Domain}.java
+    ├── vo/ (선택: Value Object)
+    ├── factory/ (선택: Entity 생성 팩토리)
+    └── exception/ (선택: 도메인별 예외)
 ```
 
 ## Code Conventions
@@ -110,6 +147,11 @@ public record UserCreateReqDto(
     String email
 ) {}
 ```
+
+**중첩 응답 DTO 구조:**
+- 복잡한 응답은 여러 DTO로 계층화하여 가독성 향상
+- 공통으로 재사용되는 DTO는 `dto/response/common/` 패키지에 배치
+- 예: `MonthlyTimetableResDto` → `DailyTimetableResDto` → `TimetableInfoDto`
 
 ### Converter
 - **@UtilityClass** (Lombok)
@@ -267,6 +309,22 @@ log.info("[User] 생성 완료 {id: {}, email: {}}", user.getId(), user.getEmail
 - **복잡한 쿼리**: `@Query` 어노테이션 (QueryDSL 사용 안 함)
 - **페이징**: `Page<T>` 또는 `Slice<T>` → `PageResponse<T>`로 변환
 
+### Common 모듈 주요 컴포넌트
+
+**파일 관리:**
+- `FileService`: 파일 업로드/다운로드 추상화
+- `CloudflareStorageUtil`: Cloudflare R2 연동
+- `MediaFileValidator`: 파일 크기/타입 검증
+
+**인증/인가:**
+- `JwtTokenProvider`: JWT 토큰 생성/검증
+- `JwtAuthenticationFilter`, `JwtExceptionFilter`: JWT 필터 체인
+- `CustomOAuth2UserService`: OAuth2 사용자 정보 처리
+- `BlackListRepository`: Redis 기반 토큰 블랙리스트
+
+**화상 상담:**
+- `LiveKitManager`: LiveKit 토큰 생성 및 룸 관리
+
 ## Security Configuration
 
 **현재 상태:**
@@ -301,18 +359,32 @@ log.info("[User] 생성 완료 {id: {}, email: {}}", user.getId(), user.getEmail
 - **Consulting**: 화상 상담 (LiveKit)
 - **File**: 파일 업로드 (Cloudflare R2)
 - **Reservation**: 예약 관리
-- **Timetable**: 시간표 관리
+- **Timetable**: 시간표 관리 (스케줄링, 31일 범위 조회 API)
+
+### Timetable 도메인 특징
+- **VO (Value Object)**: `DateRange` - 날짜 범위 객체로 비즈니스 로직 캡슐화
+- **Factory 패턴**: `TimetableFactory` - 일별 타임테이블(9~17시) 생성
+- **Strategy 패턴**: `TimetableGenerationStrategy` - 누락된 날짜만 타임테이블 생성
+- **Scheduling Service**: `TimetableSchedulingService` - 타임테이블 자동 생성/삭제 스케줄링
+- **월별 조회 API**: 네이버 예약 방식으로 31일치 데이터를 한 번에 반환 (페이지네이션 없음)
 
 ## 새 도메인 추가 체크리스트
 
-1. Entity (BaseEntity 상속, @Builder, final 매개변수)
-2. Repository (JpaRepository 상속)
-3. DTO (record + @Builder + Validation)
-4. Converter (@UtilityClass)
-5. Service (Command/Query 분리, Facade 조합)
-6. Controller (Command/Query 분리, ResponseUtils 사용)
-7. Exception (BusinessException 상속, ErrorCode)
-8. Test (Given-When-Then, 한글 메서드명)
+### 필수 컴포넌트
+1. **Entity** - BaseEntity 상속, @Builder, final 매개변수
+2. **Repository** - JpaRepository 상속, 복잡한 쿼리는 @Query 사용
+3. **DTO** - record + @Builder + Validation, 중첩 구조는 계층화
+4. **Converter** - @UtilityClass, 비 static 메서드
+5. **Service** - Command/Query 분리, Facade 조합, 인터페이스+Impl 패턴 선택
+6. **Controller** - Command/Query 분리, ResponseUtils 사용
+7. **Test** - Given-When-Then, 한글 메서드명, Mockito 단위 테스트
+
+### 선택 컴포넌트
+- **Exception** - BusinessException 상속, ErrorCode (도메인별 prefix)
+- **VO** - 불변 객체, 비즈니스 로직 캡슐화 (예: DateRange)
+- **Factory** - 복잡한 Entity 생성 로직 분리
+- **Strategy** - 알고리즘 패턴 분리
+- **Scheduling Service** - 스케줄링 작업 분리
 
 ## Additional Notes
 
