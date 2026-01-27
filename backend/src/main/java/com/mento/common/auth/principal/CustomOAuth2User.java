@@ -1,18 +1,15 @@
 package com.mento.common.auth.principal;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-
+import com.mento.domain.user.entity.User;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-import com.mento.common.auth.constant.AuthConstant;
-import com.mento.domain.user.entity.User;
-
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * 카카오 로그인
@@ -36,7 +33,7 @@ public class CustomOAuth2User implements OAuth2User {
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		return Collections.singletonList(new SimpleGrantedAuthority(AuthConstant.ROLE_USER));
+		return Collections.singletonList(new SimpleGrantedAuthority(user.getRole().name()));
 	}
 
 	@Override
