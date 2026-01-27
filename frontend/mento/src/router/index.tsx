@@ -8,6 +8,8 @@ import GuidePage from "@/pages/guide/GuidePage"
 import MentoringPage from "@/pages/mentoring/MentoringPage"
 import RecommendPage from "@/pages/recommend/RecommendPage"
 import InventoryPage from "@/pages/inventory/InventoryPage"
+import ConsultationManagementPage from "@/pages/mypage/ConsultationManagementPage"
+
 
 const router = createBrowserRouter([
   {
@@ -42,6 +44,10 @@ const router = createBrowserRouter([
         path: "inventory",
         element: <InventoryPage />,
       },
+      {
+        path: "/mypage/consultations",
+        element: <ConsultationManagementPage />,
+      }
     ],
   },
   {
