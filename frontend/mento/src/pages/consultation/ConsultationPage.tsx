@@ -19,12 +19,12 @@ const steps = [
   { id: 2, label: "일정 선택" },
   { id: 3, label: "설문 작성" },
   { id: 4, label: "결제" },
+  { id: 5, label: "예약 완료" },
 ]
 
 export default function ConsultationPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [showSurveyComplete, setShowSurveyComplete] = useState(false)
-  const [paymentComplete, setPaymentComplete] = useState(false)
   const [bookingData, setBookingData] = useState<BookingData>({
     category: null,
     date: null,
@@ -64,7 +64,7 @@ export default function ConsultationPage() {
   }
 
   const handlePaymentComplete = () => {
-    setPaymentComplete(true)
+    handleNext() // Step 5 (예약 완료)로 이동
   }
 
   const [answers, setAnswers] = useState<string[]>([])
@@ -126,7 +126,7 @@ export default function ConsultationPage() {
             <SurveyComplete onNext={handleSurveyCompleteNext} />
           )}
 
-          {currentStep === 4 && !paymentComplete && (
+          {currentStep === 4 && (
             <Payment
               bookingData={bookingData}
               onPrev={handleBackFromPayment}
@@ -134,7 +134,7 @@ export default function ConsultationPage() {
             />
           )}
 
-          {currentStep === 4 && paymentComplete && (
+          {currentStep === 5 && (
             <BookingComplete bookingData={bookingData} />
           )}
         </div>
