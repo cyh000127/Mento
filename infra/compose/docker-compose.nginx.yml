@@ -5,7 +5,9 @@ services:
     ports:
       - "80:80"
       - "443:443"
-
+    networks:
+      - default
+      - monitoring-network
     volumes:
       # (1) 레포에서 관리되는 nginx 설정(conf.d)
       - /home/ubuntu/app/infra/infra-repo/infra/nginx/conf.d:/etc/nginx/conf.d:ro
@@ -17,3 +19,7 @@ services:
       - /home/ubuntu/app/infra/infra-runtime/certbot/conf:/etc/letsencrypt:ro
 
     restart: unless-stopped
+
+networks:
+    monitoring-network:
+      external: true

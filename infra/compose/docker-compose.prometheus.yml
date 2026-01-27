@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.external-url=https://i14a704.p.ssafy.io/prometheus/'
+      - '--web.route-prefix=/'
+    networks:
+      - monitoring-network
+
+volumes:
+  prometheus-data:
+
+networks:
+  monitoring-network:
+    external: true

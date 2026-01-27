@@ -1,8 +1,9 @@
-// CI/Infra Jenkinsfile.ci
+// CI/Infra Jenkinsfile
 /*
 1. 변경 사항을 추적해서, 해당 서비스들만 업데이트가 되도록 한다.
-2. CI/Infra 단계에서는 서비스에 대한 검증만 한다(테스트, 문법 검사 등)
-3. TARGEt_SERVICES가 공백이면 변경 사항이 없는 것으로 간주, CD/Infra를 호출 X
+2. MANUAL_MODE가 꺼져있을 때 TARGET_SERVICES가 공백이면 변경 사항이 없는 것으로 간주, CD/Infra를 호출 X
+3. MANUAL_MODE가 켜져있을 때 TARGET_SERVICES가 공백이면 모든 것을 변경하는 것으로 간주
+(CD/Infra에 빈 값으로 주면 모든 게 변경)
 
 - 로깅/진단 과정에서는 변수 별로 기본값을 설정해서 파이프라인이 실패하지 않도록 설정.
 */
@@ -23,7 +24,6 @@ pipeline {
     }
     // 파라미터
     parameters {
-        string(name: 'PROJECT_NAME', defaultValue: 'app', description: 'docker compose project 이름')
         string(name: 'TARGET_SERVICES', defaultValue: '', description: '수정/배포할 서비스')
         booleanParam(name: 'MANUAL_MODE', defaultValue: false, description: 'true = 변경 감지 스킵, TARGET_SERVICES 직접 지정')
     }
@@ -68,45 +68,78 @@ pipeline {
             steps {
                 script {
                     if (params.MANUAL_MODE) {
-                        echo "MANUAL_MODE is ON. Skipping [Detect Changes] stage"
-                        echo "Target Services: ${params.TARGET_SERVICES}"
+                        echo "⚠️ MANUAL_MODE is ON. Skipping [Detect Changes] stage"
+                        echo "🎯 Target Services: ${params.TARGET_SERVICES}"
 
-                        // 입력한 서비스(TARGET_SERVICES)를 기반으로 가상의 changed_files.txt를 생성하여 후속 단계와 호환성 유지
                         sh """
-                        echo "--- Manual Selection Mode ---"
+                        echo "--- 🛠️ Manual Selection Mode ---"
                         > changed_files.txt
                         for service in \$(echo "${params.TARGET_SERVICES}" | tr ',' ' '); do
                             echo "infra/\$service/manual_trigger" >> changed_files.txt
                         done
-                        echo "Created manual changed_files.txt:"
+                        echo "📄 Created manual changed_files.txt:"
                         cat changed_files.txt
                         """
                     } else {
-                        // 기존의 자동 감지 로직 실행
+                        // 자동 감지 로직 (GitLab 변수 대응 + 방어적 로직)
                         sh '''#!/usr/bin/env bash
                         set -euo pipefail
 
                         HEAD_SHA="$(git rev-parse HEAD)"
-                        BASE="${GIT_PREVIOUS_SUCCESSFUL_COMMIT:-}"
 
-                        if [ -n "$BASE" ] && ! git cat-file -e "$BASE" 2>/dev/null; then
-                            echo "WARN: Previous successful commit $BASE not found. Falling back."
-                            BASE=""
+                        # 1. Shallow Clone 체크 (인프라 배포 누락의 주범)
+                        if [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then
+                            echo "⚠️ [WARN] Shallow repository detected. 히스토리가 부족하여 변경 감지가 누락될 수 있습니다."
                         fi
 
-                        if [ -z "$BASE" ] || [ "$BASE" = "$HEAD_SHA" ]; then
-                            RANGE="HEAD~10..HEAD"
+                        # 2. Base 커밋 결정 (우선순위: GitLab MR 변수 -> 이전 성공 커밋 -> Fallback 100개)
+                        BASE=""
+
+                        # GitLab 환경변수 확인 (있을 경우 1순위)
+                        if [ -n "${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}" ] && git cat-file -e "${CI_MERGE_REQUEST_DIFF_BASE_SHA}" 2>/dev/null; then
+                            BASE="${CI_MERGE_REQUEST_DIFF_BASE_SHA}"
+                            echo "🔄 [LOG] GitLab MR Diff Base 사용: $BASE"
+                        # 이전 성공 빌드 커밋 확인 (2순위)
+                        elif [ -n "${GIT_PREVIOUS_SUCCESSFUL_COMMIT:-}" ] && git cat-file -e "${GIT_PREVIOUS_SUCCESSFUL_COMMIT}" 2>/dev/null; then
+                            BASE="${GIT_PREVIOUS_SUCCESSFUL_COMMIT}"
+                            echo "🔄 [LOG] 이전 성공 빌드 커밋 사용: $BASE"
+                        fi
+
+                        # 3. RANGE 설정
+                        if [ -n "$BASE" ]; then
+                            if [ "$BASE" = "$HEAD_SHA" ]; then
+                                echo "ℹ️ [LOG] BASE == HEAD. 새로운 커밋이 없습니다."
+                                RANGE="" # 혹은 증분이 없음을 명시
+                            else
+                                RANGE="$BASE..HEAD"
+                            fi
                         else
-                            RANGE="$BASE..HEAD"
+                            # 4. Fallback: 최대 100개까지 확인
+                            echo "⚠️ [WARN] 적절한 BASE 커밋을 찾지 못했습니다. Fallback 모드(최대 100개)로 진입합니다."
+                            TOTAL_COMMITS=$(git rev-list --count HEAD)
+                            if [ "$TOTAL_COMMITS" -gt 100 ]; then
+                                RANGE="HEAD~100..HEAD"
+                                echo "📡 [LOG] 최근 100개의 커밋을 대조합니다."
+                            else
+                                # 루트가 여러 개일 경우 대비 tail -n 1 처리
+                                ROOT_SHA="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
+                                RANGE="${ROOT_SHA}..HEAD"
+                                echo "📂 [LOG] 전체 히스토리($TOTAL_COMMITS개)를 대조합니다."
+                            fi
                         fi
 
-                        echo "Comparing range: $RANGE"
-                        git diff --name-only "$RANGE" > changed_files.txt
+                        # 5. Diff 실행
+                        if [ -n "$RANGE" ]; then
+                            echo "🔍 Comparing range: $RANGE"
+                            git diff --name-only "$RANGE" > changed_files.txt
+                        else
+                            > changed_files.txt
+                        fi
 
                         if [ ! -s changed_files.txt ]; then
-                            echo "No changes detected."
+                            echo "📢 No changes detected."
                         else
-                            echo "Detected $(wc -l < changed_files.txt) changed files."
+                            echo "📁 Detected $(wc -l < changed_files.txt) changed files."
                             head -n 20 changed_files.txt
                         fi
                         '''
@@ -120,10 +153,26 @@ pipeline {
                 script {
                     env.RUN_CD = 'false'
                     env.EFFECTIVE_TARGET_SERVICES = ''
+                    env.COMPOSE_CHANGED = 'false'
                     def targets = []
-
+                    def appAllowed = ['ai', 'backend', 'backend.dev', 'certbot', 'frontend', 'frontend.dev', 'livekit', 'nginx']
                     // 1) 수동 override
                     def manual = (params.TARGET_SERVICES ?: '').trim()
+                    if (params.MANUAL_MODE) {
+                        env.RUN_CD = 'true'
+                        env.COMPOSE_CHANGED = 'true'
+                        if (manual == '') {
+                            // TARGET_SERVICES가 공백이면 CD에 빈 값을 전달 (CD에서 전체 변경 처리)
+                            env.EFFECTIVE_TARGET_SERVICES = ''
+                            echo "📢 MANUAL_MODE ON + Empty Target: Requesting FULL deployment to CD."
+                        } else {
+                            // 값이 있으면 해당 서비스만 전달
+                            env.EFFECTIVE_TARGET_SERVICES = manual.replace(',', ' ')
+                            echo "🎯 MANUAL_MODE ON: Targeting specific services: ${env.EFFECTIVE_TARGET_SERVICES}"
+                        }
+                        return
+                    }
+
                     if (manual != '') {
                         env.RUN_CD = 'true'
                         env.EFFECTIVE_TARGET_SERVICES = manual.replace(',', ' ')
@@ -168,11 +217,22 @@ pipeline {
                     }
 
                     // 5) 결과 정리
-                    targets = targets.unique()
-                    if (!targets.isEmpty()) {
+                    // 중복 제거 후 화이트리스트(appAllowed)에 있는 것만 추출
+                    def filteredAppTargets = targets.unique().findAll { it in appAllowed }
+
+                    // 제외된 서비스(모니터링 등)가 있다면 로그 출력
+                    def ignored = targets.unique().findAll { !(it in appAllowed) }
+                    if (!ignored.isEmpty()) {
+                        echo "🛡️ CI/Infra Defense: Ignoring non-app services: 🚫 ${ignored}"
+                    }
+
+                    // 필터링된 결과가 있을 때만 배포 진행
+                    if (!filteredAppTargets.isEmpty()) {
                         env.RUN_CD = 'true'
-                        env.EFFECTIVE_TARGET_SERVICES = targets.join(' ')
-                        echo "Final compute targets: ${env.EFFECTIVE_TARGET_SERVICES}"
+                        env.EFFECTIVE_TARGET_SERVICES = filteredAppTargets.join(' ')
+                        echo "🚀 Final compute targets: ✅ ${env.EFFECTIVE_TARGET_SERVICES}"
+                    } else {
+                        echo "⚠️ No app-related changes detected after filtering."
                     }
                 }
             }
