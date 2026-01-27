@@ -19,12 +19,12 @@ import com.mento.common.auth.principal.AuthenticatedUser;
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.ReservationException;
 import com.mento.common.livekit.LiveKitManager;
-import com.mento.domain.consulting.dto.LiveKitSessionResponse;
+import com.mento.common.livekit.dto.LiveKitSessionResponse;
 import com.mento.domain.reservation.controller.query.ReservationQueryService;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.entity.ReservationStatus;
 import com.mento.domain.timetable.entity.Timetable;
-import com.mento.domain.timetable.service.query.TimetableQueryServiceImpl;
+import com.mento.domain.timetable.service.query.TimeTableQueryServiceImpl;
 import com.mento.domain.user.entity.Role;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,7 +37,7 @@ class ReservationFacadeServiceTest {
 	private ReservationQueryService reservationQueryService;
 
 	@Mock
-	private TimetableQueryServiceImpl timeTableQueryService;
+	private TimeTableQueryServiceImpl timeTableQueryService;
 
 	@Mock
 	private LiveKitManager liveKitManager;
@@ -248,6 +248,7 @@ class ReservationFacadeServiceTest {
 			.isInstanceOf(ReservationException.class)
 			.hasFieldOrPropertyWithValue("errorCode", ErrorCode.CONSULTING_ENDED);
 	}
+
 
 	@Test
 	@DisplayName("토큰 Ttl이 0 이하면 예외가 발생한다")

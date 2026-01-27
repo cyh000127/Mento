@@ -1,23 +1,11 @@
 package com.mento.domain.user.entity;
 
+import com.mento.common.entity.BaseEntity;
+import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-
-import com.mento.common.entity.BaseEntity;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
@@ -61,6 +49,10 @@ public class User extends BaseEntity {
 
 	public void updateEmail(final String email) {
 		this.email = email;
+	}
+
+	public void updateBirthDate(final LocalDate birthDate) {
+		this.birthDate = birthDate;
 	}
 
 	public void withdraw() {
