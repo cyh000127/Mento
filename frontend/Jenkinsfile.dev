@@ -1,0 +1,101 @@
+// CI/FE_Dev
+
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+  }
+
+  parameters {
+    string(name: 'PROJECT_NAME', defaultValue: 'app', description: 'docker compose project name')
+    string(name: 'TARGET_SERVICES', defaultValue: '', description: '(optional) Manual override. (empty = frontend.dev)')
+    string(name: 'FE_BRANCH', defaultValue: 'develop-fe', description: 'FE branch to sync on EC2')
+  }
+
+  environment {
+    FE_REPO_DIR = "/home/ubuntu/app/frontend/front-repo"
+    FE_APP_DIR  = "/home/ubuntu/app/frontend/front-repo/frontend/mento"
+    GIT_URL     = "https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git"
+  }
+
+  stages {
+    stage('Context') {
+      steps {
+        sh '''
+          set -euo pipefail
+          date "+%Y-%m-%d %H:%M:%S %Z"
+          echo "JOB_NAME=$JOB_NAME"
+          echo "FE_BRANCH=${FE_BRANCH}"
+          # [해결] set -u 에러 방지
+          echo "PARAM_TARGET_SERVICES=${TARGET_SERVICES:-}"
+          whoami
+        '''
+      }
+    }
+
+    stage('Sync FE repo on EC2') {
+      steps {
+        withCredentials([usernamePassword(
+          credentialsId: 'Gitlab_PAT',
+          usernameVariable: 'GIT_USER',
+          passwordVariable: 'GIT_PASS'
+        )]) {
+          sh '''#!/usr/bin/env bash
+            set -euo pipefail
+
+            # [수정] safe.directory 설정 제거 (권한 정리가 완료됨)
+
+            RAW_URL="${GIT_URL#https://}"
+            AUTH_URL="https://${GIT_USER}:${GIT_PASS}@${RAW_URL}"
+
+            if [ ! -d "${FE_REPO_DIR}/.git" ]; then
+              echo "[FE] First time: Cloning branch ${FE_BRANCH}..."
+              mkdir -p "$(dirname "${FE_REPO_DIR}")"
+              git clone -b "${FE_BRANCH}" --single-branch "${AUTH_URL}" "${FE_REPO_DIR}"
+            else
+              echo "[FE] Update: Switching to ${FE_BRANCH} and syncing..."
+              cd "${FE_REPO_DIR}"
+              git fetch "${AUTH_URL}" "${FE_BRANCH}"
+              git checkout -B "${FE_BRANCH}" FETCH_HEAD
+              git clean -fd
+            fi
+
+            # 소유권 복구 (ubuntu 유저)
+            chown -R 1000:1000 "$(dirname "${FE_REPO_DIR}")"
+          '''
+        }
+      }
+    }
+
+    stage('Trigger CD/Final') {
+      steps {
+        script {
+          // [수정] 기본값을 'frontend.dev'로 변경
+          def target = (params.TARGET_SERVICES ?: '').trim()
+          if (target == '') {
+            target = 'frontend.dev'
+          }
+
+          echo "===== TRIGGER CD/FINAL ====="
+          echo "PROJECT_NAME=${params.PROJECT_NAME}"
+          echo "TARGET_SERVICES=${target}"
+
+          build job: 'CD/Final',
+            wait: true,
+            parameters: [
+              string(name: 'PROJECT_NAME', value: params.PROJECT_NAME),
+              string(name: 'TARGET_SERVICES', value: target),
+            ]
+        }
+      }
+    }
+
+    stage('Done') {
+      steps {
+        echo "===== FE DEV CI DONE ====="
+      }
+    }
+  }
+}

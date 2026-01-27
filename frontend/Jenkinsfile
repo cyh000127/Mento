@@ -1,3 +1,5 @@
+// CI/FE
+
 pipeline {
   agent any
 
@@ -263,7 +265,7 @@ pipeline {
             wait: true,
             parameters: [
               string(name: 'PROJECT_NAME', value: params.PROJECT_NAME),
-              string(name: 'TARGET_SERVICES', value: 'fe'),
+              string(name: 'TARGET_SERVICES', value: 'frontend'),
             ]
         }
       }
