@@ -4,11 +4,15 @@ import { DateTimeSelection } from "@/components/consultation/date-time-selection
 import { Questionnaire } from "@/components/consultation/questionnaire"
 import { SurveyComplete } from "@/components/consultation/survey-complete"
 import { Payment } from "@/components/consultation/payment"
+import { SurveyComplete } from "@/components/consultation/survey-complete"
+import { Payment } from "@/components/consultation/payment"
 import { BookingComplete } from "@/components/consultation/booking-complete"
 import { StepIndicator } from "@/components/consultation/step-indicator"
 import type { ConsultationCategory } from "@/types/consultation"
+import type { ConsultationCategory } from "@/types/consultation"
 
 interface BookingData {
+  category: ConsultationCategory | null
   category: ConsultationCategory | null
   date: Date | null
   time: string
@@ -31,6 +35,7 @@ export default function ConsultationPage() {
     time: "",
   })
 
+  const handleCategorySelect = (category: ConsultationCategory | null) => {
   const handleCategorySelect = (category: ConsultationCategory | null) => {
     setBookingData((prev) => ({ ...prev, category }))
   }
@@ -116,6 +121,7 @@ export default function ConsultationPage() {
               answers={answers}
               selectedCategory={bookingData.category}
               onAnswerChange={handleAnswerChange}
+              onNext={handleQuestionnaireComplete}
               onNext={handleQuestionnaireComplete}
               onPrev={handleBack}
               canProceed={answers.every((a) => a && a.trim() !== "")}
