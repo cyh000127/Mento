@@ -60,6 +60,7 @@ export function CategorySelection({
         </div>
         <Link
           to="/mypage/consultations"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-muted hover:text-text-primary"
         >
           <CalendarCheck className="h-4 w-4" />
