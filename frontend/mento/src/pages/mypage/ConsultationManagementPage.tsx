@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react"
 import { MyPageSidebar } from "@/components/mypage/mypage-sidebar"
-import { ConsultationFilters } from "@/components/mypage/consultation-filters"
+import { PeriodDateFilters } from "@/components/mypage/consultation-filters"
 import { ConsultationCategoryFilter } from "@/components/mypage/consultation-category-filter"
 import { ConsultationList } from "@/components/mypage/consultation-list"
 import { ConsultationEmpty } from "@/components/mypage/consultation-empty"
@@ -218,7 +218,7 @@ export default function ConsultationManagementPage() {
 
           {/* Filters */}
           <div className="mb-6 rounded-xl border border-border bg-card p-6 shadow-sm">
-            <ConsultationFilters
+            <PeriodDateFilters
               selectedPeriod={selectedPeriod}
               onPeriodChange={handlePeriodChange}
               startYear={startYear}

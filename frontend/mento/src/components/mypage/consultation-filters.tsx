@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/select"
 import type { PeriodFilter } from "@/types/consultation"
 
-interface ConsultationFiltersProps {
+interface PeriodDateFiltersProps {
   selectedPeriod: PeriodFilter
   onPeriodChange: (period: PeriodFilter) => void
   startYear: string
@@ -40,7 +40,7 @@ const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString())
 // Generate days (1-31)
 const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString())
 
-export function ConsultationFilters({
+export function PeriodDateFilters({
   selectedPeriod,
   onPeriodChange,
   startYear,
@@ -56,7 +56,7 @@ export function ConsultationFilters({
   endDay,
   onEndDayChange,
   onSearch,
-}: ConsultationFiltersProps) {
+}: PeriodDateFiltersProps) {
   return (
     <div className="space-y-4">
       {/* Period Filter */}

@@ -4,7 +4,7 @@ import type { ConsultationCategory } from "@/types/consultation"
 
 interface QuestionnaireProps {
   answers: string[]
-  selectedCategory: ConsultationCategory
+  selectedCategory: ConsultationCategory | null
   onAnswerChange: (index: number, answer: string) => void
   onNext: () => void
   onPrev: () => void
@@ -66,6 +66,10 @@ export function Questionnaire({
 
   const isLastQuestion = currentQuestion === totalQuestions - 1
   const currentAnswer = answers[currentQuestion] || ""
+
+  if (!selectedCategory) {
+    return null; // 또는 placeholder UI
+  }
 
   return (
     <div className="flex flex-col">

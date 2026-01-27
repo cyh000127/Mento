@@ -9,6 +9,7 @@ import MentoringPage from "@/pages/mentoring/MentoringPage"
 import RecommendPage from "@/pages/recommend/RecommendPage"
 import InventoryPage from "@/pages/inventory/InventoryPage"
 import ConsultationManagementPage from "@/pages/mypage/ConsultationManagementPage"
+import AiSkincareHistoryPage from "@/pages/mypage/AiSkincareHistoryPage"
 
 
 const router = createBrowserRouter([
@@ -47,6 +48,10 @@ const router = createBrowserRouter([
       {
         path: "/mypage/consultations",
         element: <ConsultationManagementPage />,
+      },
+      {
+        path: "/mypage/ai-skincare",
+        element: <AiSkincareHistoryPage />,
       }
     ],
   },
