@@ -4,8 +4,11 @@ import { DateTimeSelection } from "@/components/consultation/date-time-selection
 import { Questionnaire } from "@/components/consultation/questionnaire"
 import { SurveyComplete } from "@/components/consultation/survey-complete"
 import { Payment } from "@/components/consultation/payment"
+import { SurveyComplete } from "@/components/consultation/survey-complete"
+import { Payment } from "@/components/consultation/payment"
 import { BookingComplete } from "@/components/consultation/booking-complete"
 import { StepIndicator } from "@/components/consultation/step-indicator"
+import type { ConsultationCategory } from "@/types/consultation"
 import type { ConsultationCategory } from "@/types/consultation"
 
 interface BookingData {
@@ -25,13 +28,15 @@ const steps = [
 export default function ConsultationPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [showSurveyComplete, setShowSurveyComplete] = useState(false)
+  const [paymentComplete, setPaymentComplete] = useState(false)
+  const [showSurveyComplete, setShowSurveyComplete] = useState(false)
   const [bookingData, setBookingData] = useState<BookingData>({
     category: null,
     date: null,
     time: "",
   })
 
-  const handleCategorySelect = (category: ConsultationCategory | null) => {
+  const handleCategorySelect = (category: ConsultationCategory | null | null) => {
     setBookingData((prev) => ({ ...prev, category }))
   }
 
@@ -111,7 +116,7 @@ export default function ConsultationPage() {
             />
           )}
 
-          {currentStep === 3 && !showSurveyComplete && (
+          {currentStep === 3 && !showSurveyComplete && !showSurveyComplete && (
             <Questionnaire
               answers={answers}
               selectedCategory={bookingData.category}
@@ -126,7 +131,11 @@ export default function ConsultationPage() {
             <SurveyComplete onNext={handleSurveyCompleteNext} />
           )}
 
-          {currentStep === 4 && (
+          {currentStep === 3 && showSurveyComplete && (
+            <SurveyComplete onNext={handleSurveyCompleteNext} />
+          )}
+
+          {currentStep === 4 && !paymentComplete && (
             <Payment
               bookingData={bookingData}
               onPrev={handleBackFromPayment}
@@ -134,7 +143,7 @@ export default function ConsultationPage() {
             />
           )}
 
-          {currentStep === 5 && (
+          {currentStep === 4 && paymentComplete && (
             <BookingComplete bookingData={bookingData} />
           )}
         </div>
