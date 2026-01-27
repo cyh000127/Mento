@@ -1,0 +1,311 @@
+// CI/Infra Jenkinsfile.ci
+/*
+1. 변경 사항을 추적해서, 해당 서비스들만 업데이트가 되도록 한다.
+2. CI/Infra 단계에서는 서비스에 대한 검증만 한다(테스트, 문법 검사 등)
+3. TARGEt_SERVICES가 공백이면 변경 사항이 없는 것으로 간주, CD/Infra를 호출 X
+
+- 로깅/진단 과정에서는 변수 별로 기본값을 설정해서 파이프라인이 실패하지 않도록 설정.
+*/
+
+pipeline {
+    // 어떤 노드(실행 환경)에서도 돌 수 있도록.
+    agent any
+
+    // 설정
+    options {
+        // 로그에 시간 추가, Jenkins를 KTC로 설정해둠.
+        timestamps()
+        // 같은 Job 동시 실행 방지(배포/도커 관련 충돌 예방)
+        disableConcurrentBuilds()
+        // Declarative 기본 Checkout을 끄고, 직접 checkout scm를 원하는 시점에 실행
+        // 권한 정리해서 제거
+        //skipDefaultCheckout()
+    }
+    // 파라미터
+    parameters {
+        string(name: 'PROJECT_NAME', defaultValue: 'app', description: 'docker compose project 이름')
+        string(name: 'TARGET_SERVICES', defaultValue: '', description: '수정/배포할 서비스')
+        booleanParam(name: 'MANUAL_MODE', defaultValue: false, description: 'true = 변경 감지 스킵, TARGET_SERVICES 직접 지정')
+    }
+    // 환경설정
+    environment {
+        COMPOSE_PATH_PREFIX = "infra/compose/"
+        CD_JOB_NAME = "CD/Final"
+
+        NGINX_REL_PATH   = "infra/nginx/conf.d"
+        NGINX_IMAGE      = "nginx:1.27-alpine"
+
+        LIVEKIT_REL_PATH = "infra/livekit/config.yml"
+        LIVEKIT_IMAGE    = "livekit/livekit-server:latest"
+
+        EC2_PROJECT_PATH = "/home/ubuntu/app/infra/infra-repo"
+    }
+
+    stages {
+        // 기본 정보 확인(USER, PWD, GIT_SHA)
+        stage('Setup') {
+            steps {
+                sh '''
+                USER_VAL="$(whoami 2>/dev/null || echo 'unknown-user')"
+                PWD_VAL="$(pwd 2>/dev/null || echo 'unknown-pwd')"
+
+                if command -v git >/dev/null 2>&1; then
+                    # git은 있는데 레포가 아닐 수 있으니 단계별 fallback
+                    GIT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo 'no-git-repo')"
+                else
+                    GIT_SHA="no-git"
+                fi
+
+                echo "USER=${USER_VAL}"
+                echo "PWD=${PWD_VAL}"
+                echo "GIT_SHA=${GIT_SHA}"
+                '''
+            }
+        }
+
+        // 변경 사항 감지
+        stage('Detect Changes') {
+            steps {
+                script {
+                    if (params.MANUAL_MODE) {
+                        echo "MANUAL_MODE is ON. Skipping [Detect Changes] stage"
+                        echo "Target Services: ${params.TARGET_SERVICES}"
+
+                        // 입력한 서비스(TARGET_SERVICES)를 기반으로 가상의 changed_files.txt를 생성하여 후속 단계와 호환성 유지
+                        sh """
+                        echo "--- Manual Selection Mode ---"
+                        > changed_files.txt
+                        for service in \$(echo "${params.TARGET_SERVICES}" | tr ',' ' '); do
+                            echo "infra/\$service/manual_trigger" >> changed_files.txt
+                        done
+                        echo "Created manual changed_files.txt:"
+                        cat changed_files.txt
+                        """
+                    } else {
+                        // 기존의 자동 감지 로직 실행
+                        sh '''#!/usr/bin/env bash
+                        set -euo pipefail
+
+                        HEAD_SHA="$(git rev-parse HEAD)"
+                        BASE="${GIT_PREVIOUS_SUCCESSFUL_COMMIT:-}"
+
+                        if [ -n "$BASE" ] && ! git cat-file -e "$BASE" 2>/dev/null; then
+                            echo "WARN: Previous successful commit $BASE not found. Falling back."
+                            BASE=""
+                        fi
+
+                        if [ -z "$BASE" ] || [ "$BASE" = "$HEAD_SHA" ]; then
+                            RANGE="HEAD~10..HEAD"
+                        else
+                            RANGE="$BASE..HEAD"
+                        fi
+
+                        echo "Comparing range: $RANGE"
+                        git diff --name-only "$RANGE" > changed_files.txt
+
+                        if [ ! -s changed_files.txt ]; then
+                            echo "No changes detected."
+                        else
+                            echo "Detected $(wc -l < changed_files.txt) changed files."
+                            head -n 20 changed_files.txt
+                        fi
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Compute Targets (env-safe)') {
+            steps {
+                script {
+                    env.RUN_CD = 'false'
+                    env.EFFECTIVE_TARGET_SERVICES = ''
+                    def targets = []
+
+                    // 1) 수동 override
+                    def manual = (params.TARGET_SERVICES ?: '').trim()
+                    if (manual != '') {
+                        env.RUN_CD = 'true'
+                        env.EFFECTIVE_TARGET_SERVICES = manual.replace(',', ' ')
+                        echo "Manual override -> Targets: ${env.EFFECTIVE_TARGET_SERVICES}"
+                        return
+                    }
+
+                    // 2) 변경 파일 목록 읽기
+                    def changedLines = []
+                    try {
+                        if (fileExists('changed_files.txt')) {
+                            changedLines = readFile('changed_files.txt').readLines().collect { it.trim() }.findAll { it }
+                        }
+                    } catch (ignored) { }
+
+                    if (changedLines.isEmpty()) {
+                        echo "No changes detected."
+                        return
+                    }
+
+                    // 3) Compose 파일 변경 감지 -> 서비스명 추출
+                    changedLines.each { line ->
+                        if (line.startsWith(env.COMPOSE_PATH_PREFIX) && (line.endsWith(".yml") || line.endsWith(".yaml"))) {
+                            env.COMPOSE_CHANGED = 'true'
+                            def fileName = line.split('/').last()
+                            def parts = fileName.split('\\.')
+                            if (parts.size() >= 3) {
+                                def serviceIdentifier = parts[1..-2].join('.')
+                                targets << serviceIdentifier
+                            }
+                        }
+                    }
+
+                    // 4) 관련 설정(conf 등) 변경 시 타겟 추가
+                    if (changedLines.any { it.startsWith("infra/nginx/") }) targets << 'nginx'
+                    if (changedLines.any { it.startsWith("infra/certbot/") }) {
+                        targets << 'certbot'
+                        targets << 'nginx' // 의존성 반영
+                    }
+                    if (changedLines.any { it.startsWith("infra/livekit/") || it.contains("livekit") }) {
+                        targets << 'livekit'
+                    }
+
+                    // 5) 결과 정리
+                    targets = targets.unique()
+                    if (!targets.isEmpty()) {
+                        env.RUN_CD = 'true'
+                        env.EFFECTIVE_TARGET_SERVICES = targets.join(' ')
+                        echo "Final compute targets: ${env.EFFECTIVE_TARGET_SERVICES}"
+                    }
+                }
+            }
+        }
+
+
+        stage('Nginx Lint (conf.d)') {
+            when {
+                expression {
+                    if (env.RUN_CD != 'true') return false
+                    def ts = (env.EFFECTIVE_TARGET_SERVICES ?: '').trim()
+                    return ts.tokenize().contains('nginx')
+                }
+            }
+            steps {
+                echo "===== NGINX CONFIG LINT ====="
+                sh '''
+                set -euo pipefail
+
+                # [수정] 위에서 정의한 변수(NGINX_REL_PATH) 사용
+                ABS_CONFD="$(pwd)/${NGINX_REL_PATH}"
+
+                if [ ! -d "$ABS_CONFD" ]; then
+                    echo "ERROR: nginx conf.d dir not found: $ABS_CONFD"
+                    ls -al "$(pwd)/infra/nginx" || true
+                    exit 1
+                fi
+
+                if ! command -v docker >/dev/null 2>&1; then
+                    echo "ERROR: docker not available."
+                    exit 1
+                fi
+
+                ls -al "$ABS_CONFD"
+
+                docker run --rm \
+                    -v "$ABS_CONFD":/etc/nginx/conf.d:ro \
+                    "${NGINX_IMAGE}" \
+                    nginx -t
+                '''
+            }
+        }
+
+        stage('LiveKit Config Check') {
+            when {
+                expression {
+                    if (env.RUN_CD != 'true') return false
+                    def ts = (env.EFFECTIVE_TARGET_SERVICES ?: '').trim()
+                    return ts.tokenize().contains('livekit')
+                }
+            }
+            environment {
+                // 빌드 번호를 섞어 고유한 컨테이너 이름 생성
+                TEST_CONTAINER = "ci-test-livekit-${env.BUILD_NUMBER}"
+            }
+            steps {
+                echo "===== LIVEKIT CONFIG CHECK ====="
+                sh '''
+                set -euo pipefail
+                ABS_CONFIG="$(pwd)/${LIVEKIT_REL_PATH}"
+
+                if [ ! -f "$ABS_CONFIG" ]; then
+                    echo "ERROR: LiveKit config not found: $ABS_CONFIG"
+                    exit 1
+                fi
+
+                # 컨테이너 실행
+                docker run -d --name "${TEST_CONTAINER}" \
+                    -v "$ABS_CONFIG":/etc/livekit/config.yml:ro \
+                    "${LIVEKIT_IMAGE}" \
+                    --config /etc/livekit/config.yml
+
+                sleep 5  # 조금 더 여유 있게 대기
+
+                # 상태 확인
+                if ! docker ps --format '{{.Names}}' | grep -q "^${TEST_CONTAINER}$"; then
+                    echo "LiveKit died. Logs:"
+                    docker logs "${TEST_CONTAINER}"
+                    exit 1
+                fi
+                echo "LiveKit check passed."
+                '''
+            }
+            // 성공하든 실패하든 실행되어 컨테이너를 정리함
+            post {
+                always {
+                    script {
+                        sh "docker rm -f ${env.TEST_CONTAINER} >/dev/null 2>&1 || true"
+                    }
+                }
+            }
+        }
+
+        stage('Sync Focused Files') {
+            when { expression { return env.RUN_CD == 'true' } }
+            steps {
+                script {
+                    // Compose 파일들 동기화
+                    if (env.COMPOSE_CHANGED == 'true') {
+                        echo "Syncing: ./infra/compose/ -> ${env.EC2_PROJECT_PATH}/infra/compose/"
+                        sh "rsync -avz --delete ./infra/compose/ ${env.EC2_PROJECT_PATH}/infra/compose/"
+                    }
+
+                    // 서비스별 설정 파일 동기화
+                    def targetList = (env.EFFECTIVE_TARGET_SERVICES ?: '').tokenize()
+                    targetList.each { service ->
+                        echo "Syncing config for: ${service}"
+                        sh """
+                        if [ -d "./infra/${service}" ]; then
+                            rsync -avz --delete ./infra/${service}/ ${env.EC2_PROJECT_PATH}/infra/${service}/
+                        else
+                            echo "Directory ./infra/${service} not found. Skipping."
+                        fi
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Trigger CD/Final') {
+            when { expression { return (env.RUN_CD ?: 'false') == 'true' } }
+            steps {
+                script {
+                    echo "===== TRIGGERING CD/Final JOB ====="
+
+                    // 다운스트림 CD 잡을 호출 (파라미터 전달)
+                    build job: 'CD/Final',
+                        wait: true,
+                        parameters: [
+                            string(name: 'TARGET_SERVICES', value: env.EFFECTIVE_TARGET_SERVICES)
+                        ]
+                }
+            }
+        }
+    }
+}
