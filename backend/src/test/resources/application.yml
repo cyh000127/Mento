@@ -22,6 +22,23 @@ spring:
   jmx:
     enabled: false
 
+cloudflare:
+  r2:
+    endpoint: ${CLOUDFLARE_ENDPOINT}
+    bucket: ${CLOUDFLARE_BUCKET}
+    access-key: ${CLOUDFLARE_ACCESS_KEY}
+    secret-key: ${CLOUDFLARE_SECRET_KEY}
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION} # 14D
+
+livekit:
+  url: ${LIVEKIT_URL}
+  api-key: ${LIVEKIT_API_KEY}
+  secret: ${LIVEKIT_API_SECRET}
+
 logging:
   level:
     root: WARN
