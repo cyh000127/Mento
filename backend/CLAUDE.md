@@ -63,7 +63,7 @@ Entity (도메인 모델)
 ### 패키지 구조
 
 ```
-com.mready
+com.mento
 ├── common/
 │   ├── config/          # Security, CORS, Swagger, JwtConfig
 │   ├── entity/          # BaseEntity (createdAt, updatedAt)

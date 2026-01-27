@@ -11,6 +11,7 @@ spring:
     redis:
       host: localhost
       port: 6379
+      password: 0000
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -21,8 +22,43 @@ spring:
     open-in-view: false
   jmx:
     enabled: false
-
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: test-client-id
+            client-secret: test-client-secret
+            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
+            authorization-grant-type: authorization_code
+            client-authentication-method: client_secret_post
+            scope: profile_nickname, account_email
+            client-name: Kakao
+            provider: kakao
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
 logging:
   level:
     root: WARN
     com.mready: INFO
+
+livekit:
+  url: https://test.livekit.io
+  api-key: test-api-key
+  secret: test-secret-key
+
+cloudflare:
+  r2:
+    endpoint: https://test.r2.cloudflarestorage.com
+    bucket: test-bucket
+    access-key: test-access-key
+    secret-key: test-secret-key
+
+jwt:
+  secret: testSecretKeytestSecretKeytestSecretKeytestSecretKey
+  access-token-expiration: 3600000
+  refresh-token-expiration: 1209600000

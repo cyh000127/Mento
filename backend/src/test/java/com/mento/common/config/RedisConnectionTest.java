@@ -1,0 +1,40 @@
+package com.mento.common.config;
+
+import static org.assertj.core.api.Assertions.*;
+
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.test.context.ActiveProfiles;
+
+@SpringBootTest
+@ActiveProfiles("test")
+class RedisConnectionTest {
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Test
+    @DisplayName("Redis 연결 및 읽기/쓰기 테스트")
+    void redisConnectionTest() {
+        // Given
+        String key = "test:connection";
+        String value = "connected";
+        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+
+        // When
+        valueOperations.set(key, value, 10, TimeUnit.SECONDS);
+        String storedValue = valueOperations.get(key);
+
+        // Then
+        assertThat(storedValue).isEqualTo(value);
+        
+        // Cleanup
+        stringRedisTemplate.delete(key);
+    }
+}
