@@ -5,7 +5,7 @@ import type { ConsultationCategory } from "@/types/consultation"
 interface DateTimeSelectionProps {
   selectedDate: Date | null
   selectedTime: string | null
-  selectedCategory: ConsultationCategory
+  selectedCategory: ConsultationCategory | null
   onDateSelect: (date: Date) => void
   onTimeSelect: (time: string) => void
   onNext: () => void
@@ -127,6 +127,10 @@ export function DateTimeSelection({
 
   const isCurrentMonth = (date: Date) => {
     return date.getMonth() === currentMonth
+  }
+
+  if (!selectedCategory) {
+    return null; // 또는 placeholder UI
   }
 
   return (
