@@ -1,6 +1,7 @@
 package com.mento.domain.timetable.entity;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import com.mento.common.entity.BaseEntity;
@@ -21,8 +22,8 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "timetables")
 @Builder
+@Table(name = "timetables")
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Timetable extends BaseEntity {
@@ -38,13 +39,24 @@ public class Timetable extends BaseEntity {
 	@Column(name = "scheduled_time", nullable = false)
 	private LocalTime scheduledTime;
 
+	@Builder.Default
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false)
-	private TimetableStatus status = TimetableStatus.ACTIVE; // [ACTIVE, INACTIVE, FULL]
+	private TimetableStatus status = TimetableStatus.ACTIVE;
 
+	@Builder.Default
 	@Column(name = "max_capacity", nullable = false)
 	private Integer maxCapacity = 15;
 
+	@Builder.Default
 	@Column(name = "current_capacity", nullable = false)
 	private Integer currentCapacity = 0;
+
+	@Column(name = "deleted_at")
+	private LocalDateTime deletedAt;
+
+	public void withdraw() {
+		this.deletedAt = LocalDateTime.now();
+	}
 }
+
