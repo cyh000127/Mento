@@ -43,7 +43,7 @@ public class TimetableQueryServiceImpl implements TimetableQueryService {
 	@Override
 	public Set<LocalDate> findExistingDatesInRange(final LocalDate startDate, final LocalDate endDate) {
 		List<LocalDate> localDates = timetableRepository.findDistinctDatesBetween(startDate, endDate);
-		log.info("[TimeTable] 시간표가 생성되지 않은 일자 조회 완료 size : {}", localDates);
+		log.info("[Timetable] 시간표가 생성되지 않은 일자 조회 완료 size : {}", localDates);
 		return new HashSet<>(localDates);
 	}
 
