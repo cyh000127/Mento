@@ -63,6 +63,11 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             {/* Kakao Login */}
             <button
               type="button"
+              onClick={() => {
+                onClose()
+                window.location.href =
+                  `${import.meta.env.VITE_API_BASE_URL}/oauth2/authorization/kakao`
+              }}
               className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#FEE500] px-4 py-3.5 font-medium text-[#191919] transition-all hover:brightness-95"
             >
               <svg

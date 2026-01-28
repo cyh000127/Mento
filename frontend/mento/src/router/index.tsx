@@ -10,6 +10,7 @@ import RecommendPage from "@/pages/recommend/RecommendPage"
 import InventoryPage from "@/pages/inventory/InventoryPage"
 import ConsultationManagementPage from "@/pages/mypage/ConsultationManagementPage"
 import AiSkincareHistoryPage from "@/pages/mypage/AiSkincareHistoryPage"
+import KakaoCallback from "@/pages/auth/KakaoCallback"
 
 
 const router = createBrowserRouter([
@@ -52,7 +53,11 @@ const router = createBrowserRouter([
       {
         path: "/mypage/ai-skincare",
         element: <AiSkincareHistoryPage />,
-      }
+      },
+      {
+        path: "/login/oauth2/callback",
+        element: <KakaoCallback />,
+      },
     ],
   },
   {
