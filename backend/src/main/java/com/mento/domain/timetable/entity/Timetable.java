@@ -8,8 +8,6 @@ import com.mento.common.entity.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -39,24 +37,15 @@ public class Timetable extends BaseEntity {
 	@Column(name = "scheduled_time", nullable = false)
 	private LocalTime scheduledTime;
 
-	@Builder.Default
-	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false)
-	private TimetableStatus status = TimetableStatus.ACTIVE;
-
-	@Builder.Default
-	@Column(name = "max_capacity", nullable = false)
-	private Integer maxCapacity = 15;
-
-	@Builder.Default
-	@Column(name = "current_capacity", nullable = false)
-	private Integer currentCapacity = 0;
-
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
 
 	public void withdraw() {
 		this.deletedAt = LocalDateTime.now();
+	}
+
+	public boolean isDeleted() {
+		return deletedAt != null;
 	}
 }
 
