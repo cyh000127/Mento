@@ -15,8 +15,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.mento.domain.timetable.entity.Timetable;
-import com.mento.domain.timetable.entity.TimetableStatus;
 import com.mento.domain.timetable.repository.TimetableRepository;
+import com.mento.domain.timetable.service.query.impl.TimetableQueryServiceImpl;
 import com.mento.domain.timetable.vo.DateRange;
 
 @ExtendWith(MockitoExtension.class)
@@ -110,9 +110,6 @@ class TimetableQueryServiceImplTest {
 			.id(id)
 			.scheduledDate(date)
 			.scheduledTime(time)
-			.status(TimetableStatus.ACTIVE)
-			.maxCapacity(15)
-			.currentCapacity(0)
 			.build();
 	}
 

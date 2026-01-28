@@ -20,11 +20,11 @@ import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.ReservationException;
 import com.mento.common.livekit.LiveKitManager;
 import com.mento.common.livekit.dto.LiveKitSessionResponse;
-import com.mento.domain.reservation.controller.query.ReservationQueryService;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.entity.ReservationStatus;
+import com.mento.domain.reservation.service.query.ReservationQueryService;
 import com.mento.domain.timetable.entity.Timetable;
-import com.mento.domain.timetable.service.query.TimetableQueryServiceImpl;
+import com.mento.domain.timetable.service.query.impl.TimetableQueryServiceImpl;
 import com.mento.domain.user.entity.Role;
 
 @ExtendWith(MockitoExtension.class)
@@ -228,16 +228,19 @@ class ReservationFacadeServiceTest {
 			.role(Role.MENTOR.name())
 			.build();
 
+		// ReservationStatus와 관계없이 시간 기준으로만 검증
 		Reservation reservation = Reservation.builder()
 			.userId(userId)
 			.mentoId(mentoId)
 			.timetableId(timetableId)
-			.status(ReservationStatus.COMPLETED)
+			.status(ReservationStatus.CONFIRMED)
 			.build();
 
+		// 상담 종료 시간(시작 + 10분)이 지난 타임테이블
+		// END_MINUTES = 10분이므로, 어제 날짜로 설정하면 확실히 종료됨
 		Timetable timetable = Timetable.builder()
 			.scheduledDate(LocalDate.now().minusDays(1)) // 어제
-			.scheduledTime(LocalTime.now())
+			.scheduledTime(LocalTime.of(14, 0))
 			.build();
 
 		given(reservationQueryService.findById(reservationId)).willReturn(reservation);
@@ -271,10 +274,10 @@ class ReservationFacadeServiceTest {
 			.status(ReservationStatus.CONFIRMED)
 			.build();
 
-		// 시작 시간 + 10분(END_MINUTES)보다 이전 = TTL이 0 이하
+		// 시작 시간 + 10분(END_MINUTES)이 지난 타임테이블 = TTL이 0 이하
 		Timetable timetable = Timetable.builder()
-			.scheduledDate(LocalDate.now())
-			.scheduledTime(LocalTime.now().minusMinutes(15))
+			.scheduledDate(LocalDate.now().minusDays(1)) // 어제
+			.scheduledTime(LocalTime.of(14, 0))
 			.build();
 
 		given(reservationQueryService.findById(reservationId)).willReturn(reservation);

@@ -10,7 +10,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.mento.domain.timetable.entity.Timetable;
-import com.mento.domain.timetable.entity.TimetableStatus;
 
 @DisplayName("TimetableFactory 테스트")
 class TimetableFactoryTest {
@@ -30,9 +29,7 @@ class TimetableFactoryTest {
 		// then
 		assertThat(timetable.getScheduledDate()).isEqualTo(date);
 		assertThat(timetable.getScheduledTime()).isEqualTo(LocalTime.of(10, 0));
-		assertThat(timetable.getStatus()).isEqualTo(TimetableStatus.ACTIVE);
-		assertThat(timetable.getMaxCapacity()).isEqualTo(15);
-		assertThat(timetable.getCurrentCapacity()).isZero();
+		assertThat(timetable.isDeleted()).isFalse();
 	}
 
 	@Test
@@ -58,7 +55,6 @@ class TimetableFactoryTest {
 		List<Timetable> timetables = factory.createDailyTimetables(date);
 
 		// then
-		// 9시~17시 입력 → 18시~2시(다음날) 저장 (UTC+9 offset 적용)
 		List<Integer> expectedHours = List.of(9, 10, 11, 12, 13, 14, 15, 16, 17);
 
 		assertThat(timetables)
@@ -70,8 +66,8 @@ class TimetableFactoryTest {
 	}
 
 	@Test
-	@DisplayName("일일 타임테이블 Active 상태 검증")
-	void 일일_타임테이블_Active_상태_검증() {
+	@DisplayName("일일 타임테이블 삭제되지 않은 상태 검증")
+	void 일일_타임테이블_삭제되지_않은_상태_검증() {
 		// given
 		LocalDate date = LocalDate.of(2025, 1, 27);
 
@@ -80,9 +76,7 @@ class TimetableFactoryTest {
 
 		// then
 		assertThat(timetables).isNotEmpty()
-			.allMatch(t -> t.getStatus() == TimetableStatus.ACTIVE)
-			.allMatch(t -> t.getMaxCapacity() == 15)
-			.allMatch(t -> t.getCurrentCapacity() == 0)
+			.allMatch(t -> !t.isDeleted())
 			.allMatch(t -> t.getScheduledDate().equals(date));
 	}
 
