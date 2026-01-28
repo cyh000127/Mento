@@ -1,14 +1,9 @@
 port: 7880
 
-logging:
-  json: false
-  level: info
-
 rtc:
   tcp_port: 7881
-  # [Scalability] 단일 포트 대신 범위를 지정하여 대규모 접속에 대비합니다. (방화벽 1024~65535 허용됨)
   port_range_start: 50000
-  port_range_end: 60000
+  port_range_end: 50010
   use_external_ip: true
   node_ip: 3.35.141.61
 

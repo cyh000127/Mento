@@ -14,4 +14,4 @@ services:
       # WebRTC TCP fallback
       - "7881:7881"
       # WebRTC media (UDP Range) - 대규모 접속 대응
-      - "50000-60000:50000-60000/udp"
+      - "50000-50010:50000-50010/udp"
