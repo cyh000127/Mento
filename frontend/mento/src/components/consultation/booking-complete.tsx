@@ -92,6 +92,7 @@ export function BookingComplete({ bookingData }: BookingCompleteProps) {
       {/* CTA Button */}
       <Link
         to="/mypage/consultations"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         className="mt-10 flex items-center gap-2 rounded-xl bg-primary-500 px-10 py-4 text-lg font-semibold text-dark-bg shadow-lg shadow-primary-500/30 transition-all hover:bg-primary-400"
       >
         나의 상담 예약 내역으로 가기
@@ -109,6 +110,7 @@ export function BookingComplete({ bookingData }: BookingCompleteProps) {
       {/* Secondary Link */}
       <Link
         to="/"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         className="mt-4 text-sm text-text-secondary transition-colors hover:text-text-primary"
       >
         홈으로 돌아가기

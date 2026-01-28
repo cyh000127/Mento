@@ -2,13 +2,14 @@ import { useState } from "react"
 import { CategorySelection } from "@/components/consultation/category-selection"
 import { DateTimeSelection } from "@/components/consultation/date-time-selection"
 import { Questionnaire } from "@/components/consultation/questionnaire"
+import { SurveyComplete } from "@/components/consultation/survey-complete"
+import { Payment } from "@/components/consultation/payment"
 import { BookingComplete } from "@/components/consultation/booking-complete"
 import { StepIndicator } from "@/components/consultation/step-indicator"
-
-type ConsultationCategory = "skincare" | "beauty" | "hair" | null
+import type { ConsultationCategory } from "@/types/consultation"
 
 interface BookingData {
-  category: ConsultationCategory
+  category: ConsultationCategory | null
   date: Date | null
   time: string
 }
@@ -17,18 +18,20 @@ const steps = [
   { id: 1, label: "분야 선택" },
   { id: 2, label: "일정 선택" },
   { id: 3, label: "설문 작성" },
-  { id: 4, label: "예약 완료" },
+  { id: 4, label: "결제" },
+  { id: 5, label: "예약 완료" },
 ]
 
 export default function ConsultationPage() {
   const [currentStep, setCurrentStep] = useState(1)
+  const [showSurveyComplete, setShowSurveyComplete] = useState(false)
   const [bookingData, setBookingData] = useState<BookingData>({
     category: null,
     date: null,
     time: "",
   })
 
-  const handleCategorySelect = (category: ConsultationCategory) => {
+  const handleCategorySelect = (category: ConsultationCategory | null) => {
     setBookingData((prev) => ({ ...prev, category }))
   }
 
@@ -39,11 +42,35 @@ export default function ConsultationPage() {
   // }
 
   const handleNext = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
     setCurrentStep((prev) => Math.min(prev + 1, steps.length))
   }
 
   const handleBack = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
     setCurrentStep((prev) => Math.max(prev - 1, 1))
+  }
+
+  const handleQuestionnaireComplete = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
+    setShowSurveyComplete(true)
+  }
+
+  const handleSurveyCompleteNext = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
+    setShowSurveyComplete(false)
+    handleNext()
+  }
+
+  const handleBackFromPayment = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
+    setShowSurveyComplete(true)
+    handleBack()
+  }
+
+  const handlePaymentComplete = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
+    handleNext() // Step 5 (예약 완료)로 이동
   }
 
   const [answers, setAnswers] = useState<string[]>([])
@@ -90,18 +117,30 @@ export default function ConsultationPage() {
             />
           )}
 
-          {currentStep === 3 && (
+          {currentStep === 3 && !showSurveyComplete && (
             <Questionnaire
               answers={answers}
               selectedCategory={bookingData.category}
               onAnswerChange={handleAnswerChange}
-              onNext={handleNext}
+              onNext={handleQuestionnaireComplete}
               onPrev={handleBack}
               canProceed={answers.every((a) => a && a.trim() !== "")}
             />
           )}
 
+          {currentStep === 3 && showSurveyComplete && (
+            <SurveyComplete onNext={handleSurveyCompleteNext} />
+          )}
+
           {currentStep === 4 && (
+            <Payment
+              bookingData={bookingData}
+              onPrev={handleBackFromPayment}
+              onPaymentComplete={handlePaymentComplete}
+            />
+          )}
+
+          {currentStep === 5 && (
             <BookingComplete bookingData={bookingData} />
           )}
         </div>

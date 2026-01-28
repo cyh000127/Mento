@@ -1,4 +1,4 @@
-import { Check, CreditCard } from "lucide-react"
+import { Check, CreditCard, CheckCircle2 } from "lucide-react"
 
 interface SurveyCompleteProps {
   onNext: () => void
@@ -8,10 +8,8 @@ export function SurveyComplete({ onNext }: SurveyCompleteProps) {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center">
       {/* Success Icon */}
-      <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-primary-100 to-primary-200 shadow-lg shadow-primary-500/20">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-500">
-          <Check className="h-10 w-10 text-dark-bg" strokeWidth={3} />
-        </div>
+      <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-pastel-purple-100 to-pastel-purple-200 shadow-lg shadow-[#e6e3fa]/20">
+        <CheckCircle2 className="h-16 w-16 text-[#8B7CF5]" strokeWidth={2} />
       </div>
 
       {/* Message */}

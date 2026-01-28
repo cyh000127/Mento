@@ -52,11 +52,13 @@ export function Questionnaire({
 
   const handleNextQuestion = () => {
     if (currentQuestion < totalQuestions - 1) {
+      window.scrollTo({ top: 0, behavior: "smooth" })
       setCurrentQuestion((prev) => prev + 1)
     }
   }
 
   const handlePrevQuestion = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
     if (currentQuestion > 0) {
       setCurrentQuestion((prev) => prev - 1)
     } else {
