@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '4.0.1'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'checkstyle'
+    id 'com.google.cloud.tools.jib' version '3.4.0'
 }
 
 group = 'com'
@@ -100,4 +101,44 @@ checkstyleMain {
 
 checkstyleTest {
     source = 'src/test/java'
+}
+
+jib {
+    from {
+        image = 'eclipse-temurin:25-jre'
+    }
+    to {
+        image = "${System.env.DOCKERHUB_REPO}"
+        tags = [System.getenv('BUILD_NUMBER') ?: 'local', 'latest']
+    }
+    container {
+        creationTime = 'USE_CURRENT_TIMESTAMP'
+        jvmFlags = [
+            '-XX:+UseContainerSupport',
+            '-XX:InitialRAMPercentage=60.0',
+            '-XX:MaxRAMPercentage=70.0',
+            '-XX:+UseG1GC',
+            '-XX:MaxGCPauseMillis=100',
+            '-XX:+UseStringDeduplication',
+            '-Djdk.virtualThreadScheduler.parallelism=2',
+            '-Djdk.virtualThreadScheduler.maxPoolSize=128',
+            '-XX:MetaspaceSize=128M',
+            '-XX:MaxMetaspaceSize=256M',
+            '-Xlog:gc*:file=/app/logs/gc.log:time,level,tags:filecount=3,filesize=5M',
+            '-XX:+HeapDumpOnOutOfMemoryError',
+            '-XX:HeapDumpPath=/app/logs/heapdump.hprof',
+            '-XX:+ExitOnOutOfMemoryError',
+            '-Djava.security.egd=file:/dev/./urandom',
+            '-Duser.timezone=UTC'
+        ]
+    }
+
+    extraDirectories {
+        paths {
+            path {
+                from = file('build/logs') // 로컬에 빈 디렉토리가 있어야 함
+                into = '/app/logs'
+            }
+        }
+    }
 }

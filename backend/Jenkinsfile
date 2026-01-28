@@ -1,68 +1,75 @@
+//CI/BE Jenkinsfile
+
 pipeline {
-  agent any
+    agent any
 
-  options {
-    timestamps()
-    disableConcurrentBuilds()
-  }
+    environment {
+        DOCKERHUB_REPO = "ejjem/mento-backend"
+        DOCKER_CREDENTIAL_ID = "DockerHub_Token"
+    }
 
-  stages {
-    stage('Context') {
-      steps {
-        echo "===== CI TEST CONTEXT ====="
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Backend Test') {
+            steps {
+                echo "===== STARTING TESTS ====="
+                sh './gradlew test'
+            }
+        }
+
+        stage('Backend Build') {
+            steps {
+                echo "===== BUILDING JAR ====="
+                sh './gradlew clean build -x test'
+            }
+        }
+
+        stage('Docker Build & Push') {
+            steps {
+                echo "===== DOCKERIZING ====="
+                script {
+                    sh "mkdir -p build/logs"
+                    
+                    withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIAL_ID}", usernameVariable: 'DJIB_USER', passwordVariable: 'DJIB_AUTH')]) {
+                         sh "./gradlew jib -Djib.to.auth.username=${DJIB_USER} -Djib.to.auth.password=${DJIB_AUTH} -Djib.to.image=${DOCKERHUB_REPO}"
+                    }
+                }
+            }
+        }
+
+        stage('Trigger CD') {
+            steps {
+                script {
+                  echo "===== TRIGGER CD/FINAL ====="
+                  echo "TARGET_SERVICES='backend'"
+
+                  build job: 'CD/Final',
+                    wait: true,
+                    parameters: [
+                      string(name: 'TARGET_SERVICES', value: 'backend'),
+                    ]
+                }
+            }
+        }
+    }
+
+    post {
+      success {
+        echo "CI(BE) SUCCESS"
         sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
-        echo "JOB_NAME=${env.JOB_NAME}"
-        echo "BUILD_NUMBER=${env.BUILD_NUMBER}"
-        echo "BUILD_URL=${env.BUILD_URL}"
-        echo "BRANCH_NAME=${env.BRANCH_NAME}"
-        sh 'pwd'
-        sh 'uname -a || true'
-        sh 'git --version || true'
+      }
+      failure {
+        echo "CI(BE) FAILURE"
+        sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
+      }
+      always {
+        echo "CI(BE) DONE"
       }
     }
 
-    stage('Git info') {
-      steps {
-        echo "===== GIT INFO ====="
-        sh 'git rev-parse --abbrev-ref HEAD || true'
-        sh 'git rev-parse HEAD || true'
-        sh 'git log -1 --pretty=format:"%h | %an | %ad | %s" --date=iso || true'
-      }
-    }
-
-    stage('What changed?') {
-      steps {
-        echo "===== CHANGED FILES (last commit) ====="
-        sh '''
-          set +e
-          git show --name-status --pretty=format:"" -1
-          echo ""
-          echo "===== LAST 20 FILES IN REPO ROOT ====="
-          ls -al | head -n 20
-          exit 0
-        '''
-      }
-    }
-
-    stage('Smoke') {
-      steps {
-        echo "===== SMOKE TEST ====="
-        echo "Webhook/SCM trigger CI test pipeline executed."
-      }
-    }
-  }
-
-  post {
-    success {
-      echo "SUCCESS"
-      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
-    }
-    failure {
-      echo "FAILURE"
-      sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
-    }
-    always {
-      echo "DONE"
-    }
-  }
 }
