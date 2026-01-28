@@ -1,10 +1,11 @@
 package com.mento.domain.user.service.command;
 
-import com.mento.common.error.ErrorCode;
-import com.mento.domain.user.dto.request.UserUpdateReqDto;
-import com.mento.domain.user.entity.User;
-import com.mento.domain.user.exception.UserException;
-import com.mento.domain.user.repository.UserRepository;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.BDDMockito.*;
+
+import java.time.LocalDate;
+import java.util.Optional;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,12 +13,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.*;
+import com.mento.common.error.ErrorCode;
+import com.mento.domain.user.dto.request.UserUpdateReqDto;
+import com.mento.domain.user.entity.User;
+import com.mento.domain.user.exception.UserException;
+import com.mento.domain.user.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserCommandService 단위 테스트")
@@ -96,7 +96,7 @@ class UserCommandServiceTest {
 			.email("update@example.com")
 			.build();
 		UserUpdateReqDto reqDto = new UserUpdateReqDto(LocalDate.of(2000, 1, 1));
-		
+
 		given(userRepository.findById(userId)).willReturn(Optional.of(user));
 
 		// when
