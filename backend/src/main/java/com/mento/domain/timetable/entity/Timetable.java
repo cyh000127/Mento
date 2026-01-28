@@ -42,6 +42,7 @@ public class Timetable extends BaseEntity {
 
 	public void withdraw() {
 		this.deletedAt = LocalDateTime.now();
+		this.status = TimetableStatus.INACTIVE;
 	}
 
 	public boolean isDeleted() {
