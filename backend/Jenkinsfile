@@ -9,54 +9,62 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
+            stage('Checkout') {
+                steps {
+                    checkout scm
+                }
             }
-        }
 
-        stage('Backend Test') {
-            steps {
-                echo "===== STARTING TESTS ====="
-                sh './gradlew test'
+            stage('Backend Test') {
+                steps {
+                    dir('backend') { // 디렉토리 이동
+                        echo "===== STARTING TESTS ====="
+                        sh 'chmod +x gradlew' // 실행 권한 부여
+                        sh './gradlew test'
+                    }
+                }
             }
-        }
 
-        stage('Backend Build') {
-            steps {
-                echo "===== BUILDING JAR ====="
-                sh './gradlew clean build -x test'
+            stage('Backend Build') {
+                steps {
+                    dir('backend') { // 디렉토리 이동
+                        echo "===== BUILDING JAR ====="
+                        sh 'chmod +x gradlew'
+                        sh './gradlew clean build -x test'
+                    }
+                }
             }
-        }
 
-        stage('Docker Build & Push') {
-            steps {
-                echo "===== DOCKERIZING ====="
-                script {
-                    sh "mkdir -p build/logs"
-                    
-                    withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIAL_ID}", usernameVariable: 'DJIB_USER', passwordVariable: 'DJIB_AUTH')]) {
-                         sh "./gradlew jib -Djib.to.auth.username=${DJIB_USER} -Djib.to.auth.password=${DJIB_AUTH} -Djib.to.image=${DOCKERHUB_REPO}"
+            stage('Docker Build & Push') {
+                steps {
+                    echo "===== DOCKERIZING ====="
+                    script {
+                        dir('backend') { // 디렉토리 이동
+                            sh "mkdir -p build/logs"
+
+                            withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIAL_ID}", usernameVariable: 'DJIB_USER', passwordVariable: 'DJIB_AUTH')]) {
+                                 // Jib 실행 시에도 backend 폴더 내의 gradlew 사용
+                                 sh "./gradlew jib -Djib.to.auth.username=${DJIB_USER} -Djib.to.auth.password=${DJIB_AUTH} -Djib.to.image=${DOCKERHUB_REPO}"
+                            }
+                        }
+                    }
+                }
+            }
+
+            stage('Trigger CD') {
+                steps {
+                    script {
+                      echo "===== TRIGGER CD/FINAL ====="
+                      // CD 트리거는 디렉토리와 상관없이 수행
+                      build job: 'CD/Final',
+                        wait: true,
+                        parameters: [
+                          string(name: 'TARGET_SERVICES', value: 'backend'),
+                        ]
                     }
                 }
             }
         }
-
-        stage('Trigger CD') {
-            steps {
-                script {
-                  echo "===== TRIGGER CD/FINAL ====="
-                  echo "TARGET_SERVICES='backend'"
-
-                  build job: 'CD/Final',
-                    wait: true,
-                    parameters: [
-                      string(name: 'TARGET_SERVICES', value: 'backend'),
-                    ]
-                }
-            }
-        }
-    }
 
     post {
       success {
