@@ -57,8 +57,8 @@ services:
       timeout: 5s
       retries: 5
 
-  mento-backend:
-    container_name: mento-backend
+  backend:
+    container_name: backend
     image: ${BE_IMAGE:-ejjem/s14p11a704:backend}
     restart: unless-stopped
     expose:

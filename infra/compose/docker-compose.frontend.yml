@@ -1,12 +1,13 @@
 services:
-  fe:
+  frontend:
     # ENV 없이도 돌아가게 default 값 제공
     image: ${FE_IMAGE:-ejjem/s14p11a704:develop-fe}
-    container_name: fe
+    container_name: frontend
     restart: unless-stopped
 
     # Nginx가 reverse proxy
     expose:
+      # 나중에 배포 시 5173 포트로 접근
       - "80"
 
     # 선택: FE 컨테이너 내부에서 health check 가능하면 유지
