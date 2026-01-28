@@ -30,8 +30,8 @@ pipeline {
                 steps {
                     dir('backend') { // 디렉토리 이동
                         echo "===== BUILDING JAR ====="
-                        sh 'chmod +x gradlew'
-                        sh './gradlew clean build -x test'
+                        //sh 'chmod +x gradlew'
+                        //sh './gradlew clean build -x test'
                     }
                 }
             }
