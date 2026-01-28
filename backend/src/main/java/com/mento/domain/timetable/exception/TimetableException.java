@@ -1,4 +1,4 @@
-package com.mento.domain.timetable.exceptioon;
+package com.mento.domain.timetable.exception;
 
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.BusinessException;

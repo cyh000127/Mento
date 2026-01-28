@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.timetable.entity.Timetable;
-import com.mento.domain.timetable.exceptioon.TimetableException;
+import com.mento.domain.timetable.exception.TimetableException;
 import com.mento.domain.timetable.repository.TimetableRepository;
 import com.mento.domain.timetable.service.query.TimetableQueryService;
 import com.mento.domain.timetable.vo.DateRange;

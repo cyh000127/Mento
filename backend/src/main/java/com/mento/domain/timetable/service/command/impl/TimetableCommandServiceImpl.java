@@ -1,4 +1,4 @@
-package com.mento.domain.timetable.service.command;
+package com.mento.domain.timetable.service.command.impl;
 
 import java.util.List;
 
@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.mento.domain.timetable.entity.Timetable;
 import com.mento.domain.timetable.repository.TimetableRepository;
+import com.mento.domain.timetable.service.command.TimetableCommandService;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
