@@ -7,7 +7,7 @@ services:
     command: ["--config", "/etc/livekit/config.yml"]
 
     volumes:
-      - ../livekit/config.yml:/etc/livekit/config.yml:ro
+      - /home/ubuntu/app/infra/infra-repo/infra/livekit/config.yml:/etc/livekit/config.yml:ro
 
     ports:
       # signaling (ws/wss)
