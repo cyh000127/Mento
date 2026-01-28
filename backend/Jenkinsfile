@@ -4,7 +4,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_REPO = "ejjem/mento-backend"
+        DOCKERHUB_REPO = "ejjem/s14p11a704:backend"
         DOCKER_CREDENTIAL_ID = "DockerHub_Token"
     }
 
