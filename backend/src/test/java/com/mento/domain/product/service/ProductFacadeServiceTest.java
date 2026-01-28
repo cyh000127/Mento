@@ -25,6 +25,7 @@ import com.mento.domain.product.dto.request.ProductCreateReqDto;
 import com.mento.domain.product.dto.request.ProductSearchCondition;
 import com.mento.domain.product.dto.response.ProductResDto;
 import com.mento.domain.product.entity.Product;
+import com.mento.domain.product.exception.ProductException;
 import com.mento.domain.product.service.command.ProductCommandService;
 import com.mento.domain.product.service.query.ProductQueryService;
 
@@ -99,12 +100,31 @@ class ProductFacadeServiceTest {
 	}
 
 	@Test
-	@DisplayName("상품_단건_조회_성공")
+	@DisplayName("상품_단건_조회_성공_상세_필드_검증")
 	void 상품_단건_조회_성공() {
 		// given
 		Long productId = 1L;
-		Brand brand = Brand.builder().id(1L).brandName("Brand").build();
-		Product product = Product.builder().id(productId).brand(brand).name("Product").build();
+		Brand brand = Brand.builder().id(1L).brandName("이니스프리").build();
+		List<String> skinTypes = List.of("지성", "복합성");
+		List<String> benefits = List.of("진정", "수분");
+
+		Product product = Product.builder()
+			.id(productId)
+			.brand(brand)
+			.name("그린티 씨드 세럼")
+			.price(30000)
+			.categoryMedium("스킨케어")
+			.categorySmall("에센스/세럼")
+			.oliveyoungGoodsNo("A001")
+			.volume("80ml")
+			.description("수분 가득")
+			.ingredients("정제수, 녹차추출물")
+			.imageUrl("http://image.url")
+			.productUrl("http://product.url")
+			.skinTypes(skinTypes)
+			.benefits(benefits)
+			.defaultUsageDays(60)
+			.build();
 
 		given(productQueryService.findById(productId)).willReturn(product);
 
@@ -113,7 +133,30 @@ class ProductFacadeServiceTest {
 
 		// then
 		assertThat(result.id()).isEqualTo(productId);
-		assertThat(result.name()).isEqualTo("Product");
+		assertThat(result.brandName()).isEqualTo("이니스프리");
+		assertThat(result.name()).isEqualTo("그린티 씨드 세럼");
+		assertThat(result.price()).isEqualTo(30000);
+		assertThat(result.categoryMedium()).isEqualTo("스킨케어");
+		assertThat(result.skinTypes()).containsExactly("지성", "복합성");
+		assertThat(result.benefits()).containsExactly("진정", "수분");
+		assertThat(result.ingredients()).isEqualTo("정제수, 녹차추출물");
+		
+		then(productQueryService).should(times(1)).findById(productId);
+	}
+
+	@Test
+	@DisplayName("상품_단건_조회_실패_존재하지_않음")
+	void 상품_단건_조회_실패_존재하지_않음() {
+		// given
+		Long productId = 999L;
+		given(productQueryService.findById(productId))
+			.willThrow(new ProductException(ErrorCode.PRODUCT_NOT_FOUND));
+
+		// when & then
+		assertThatThrownBy(() -> productFacadeService.getProduct(productId))
+			.isInstanceOf(ProductException.class)
+			.hasMessageContaining(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
+
 		then(productQueryService).should(times(1)).findById(productId);
 	}
 
