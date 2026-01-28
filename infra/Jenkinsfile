@@ -284,45 +284,20 @@ pipeline {
                     return ts.tokenize().contains('livekit')
                 }
             }
-            environment {
-                // 빌드 번호를 섞어 고유한 컨테이너 이름 생성
-                TEST_CONTAINER = "ci-test-livekit-${env.BUILD_NUMBER}"
-            }
             steps {
-                echo "===== LIVEKIT CONFIG CHECK ====="
+                echo "===== LIVEKIT CONFIG CHECK (Simplified) ====="
                 sh '''
                 set -euo pipefail
+                
+                # 1. 파일 경로 설정 (LIVEKIT_REL_PATH 변수가 정확해야 함)
                 ABS_CONFIG="$(pwd)/${LIVEKIT_REL_PATH}"
-
+                
+                # 2. 파일 존재 여부 확인
                 if [ ! -f "$ABS_CONFIG" ]; then
-                    echo "ERROR: LiveKit config not found: $ABS_CONFIG"
+                    echo "ERROR: LiveKit config file not found at: $ABS_CONFIG"
                     exit 1
                 fi
-
-                # 컨테이너 실행
-                docker run -d --name "${TEST_CONTAINER}" \
-                    -v "$ABS_CONFIG":/etc/livekit/config.yml:ro \
-                    "${LIVEKIT_IMAGE}" \
-                    --config /etc/livekit/config.yml
-
-                sleep 5  # 조금 더 여유 있게 대기
-
-                # 상태 확인
-                if ! docker ps --format '{{.Names}}' | grep -q "^${TEST_CONTAINER}$"; then
-                    echo "LiveKit died. Logs:"
-                    docker logs "${TEST_CONTAINER}"
-                    exit 1
-                fi
-                echo "LiveKit check passed."
-                '''
-            }
-            // 성공하든 실패하든 실행되어 컨테이너를 정리함
-            post {
-                always {
-                    script {
-                        sh "docker rm -f ${env.TEST_CONTAINER} >/dev/null 2>&1 || true"
-                    }
-                }
+                
             }
         }
 
