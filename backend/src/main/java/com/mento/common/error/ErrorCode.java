@@ -70,7 +70,17 @@ public enum ErrorCode {
 	/**
 	 * MENTOR Error (M-xxx)
 	 */
-	MENTOR_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND, "M-001", "멘토 유형을 찾을 수 없습니다.");
+	MENTOR_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND, "M-001", "멘토 유형을 찾을 수 없습니다."),
+
+	/**
+	 * Product Error (P-xxx)
+	 */
+	PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "P-001", "상품을 찾을 수 없습니다."),
+
+	/**
+	 * Brand Error (B-xxx)
+	 */
+	BRAND_NOT_FOUND(HttpStatus.NOT_FOUND, "B-001", "브랜드를 찾을 수 없습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;
