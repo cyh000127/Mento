@@ -1,7 +1,15 @@
 package com.mento.common.error.exception.handler;
 
-import java.nio.file.AccessDeniedException;
-
+import com.mento.common.error.ErrorCode;
+import com.mento.common.error.exception.BusinessException;
+import com.mento.common.error.exception.FileStorageException;
+import com.mento.common.response.BaseResponse;
+import com.mento.common.response.ErrorResponse;
+import com.mento.common.util.LoggingUtils;
+import com.mento.domain.reservation.exception.ReservationException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -10,22 +18,13 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.messaging.handler.annotation.support.MethodArgumentTypeMismatchException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import com.mento.common.error.ErrorCode;
-import com.mento.common.error.exception.BusinessException;
-import com.mento.common.error.exception.FileStorageException;
-import com.mento.common.response.BaseResponse;
-import com.mento.common.response.ErrorResponse;
-import com.mento.common.util.LoggingUtils;
-import com.mento.domain.reservation.exception.ReservationException;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolationException;
-import lombok.extern.slf4j.Slf4j;
+import java.nio.file.AccessDeniedException;
 
 @Slf4j
 @RestControllerAdvice
@@ -166,5 +165,15 @@ public class GlobalExceptionHandler {
 		LoggingUtils.logException("ReservationException 발생", ex, request);
 		ErrorResponse response = ErrorResponse.of(ErrorCode.NOT_FOUND, request);
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(BaseResponse.fail(response));
+	}
+
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<BaseResponse<ErrorResponse>> handleMethodArgumentNotValidException(
+		MethodArgumentNotValidException ex,
+		HttpServletRequest request
+	) {
+		LoggingUtils.logException("MethodArgumentNotValidException 발생", ex, request);
+		ErrorResponse response = ErrorResponse.of(ErrorCode.INVALID_INPUT, request);
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(BaseResponse.fail(response));
 	}
 }

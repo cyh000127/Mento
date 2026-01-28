@@ -1,12 +1,16 @@
 package com.mento.domain.reservation.service;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.BDDMockito.*;
-
-import java.time.LocalDate;
-import java.time.LocalTime;
-
+import com.mento.common.auth.principal.AuthenticatedUser;
+import com.mento.common.error.ErrorCode;
+import com.mento.common.error.exception.ReservationException;
+import com.mento.common.livekit.LiveKitManager;
+import com.mento.common.livekit.dto.LiveKitSessionResponse;
+import com.mento.domain.reservation.controller.query.ReservationQueryService;
+import com.mento.domain.reservation.entity.Reservation;
+import com.mento.domain.reservation.entity.ReservationStatus;
+import com.mento.domain.timetable.entity.Timetable;
+import com.mento.domain.timetable.service.query.TimetableQueryServiceImpl;
+import com.mento.domain.user.entity.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,17 +19,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.mento.common.auth.principal.AuthenticatedUser;
-import com.mento.common.error.ErrorCode;
-import com.mento.common.error.exception.ReservationException;
-import com.mento.common.livekit.LiveKitManager;
-import com.mento.domain.consulting.dto.LiveKitSessionResponse;
-import com.mento.domain.reservation.controller.query.ReservationQueryService;
-import com.mento.domain.reservation.entity.Reservation;
-import com.mento.domain.reservation.entity.ReservationStatus;
-import com.mento.domain.timetable.entity.Timetable;
-import com.mento.domain.timetable.service.query.TimetableQueryServiceImpl;
-import com.mento.domain.user.entity.Role;
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ReservationFacadeServiceTest {
@@ -248,6 +248,7 @@ class ReservationFacadeServiceTest {
 			.isInstanceOf(ReservationException.class)
 			.hasFieldOrPropertyWithValue("errorCode", ErrorCode.CONSULTING_ENDED);
 	}
+
 
 	@Test
 	@DisplayName("토큰 Ttl이 0 이하면 예외가 발생한다")

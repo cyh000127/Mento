@@ -1,10 +1,10 @@
 package com.mento.domain.user.service.command;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
-
-import java.util.Optional;
-
+import com.mento.common.error.ErrorCode;
+import com.mento.domain.user.dto.request.UserUpdateReqDto;
+import com.mento.domain.user.entity.User;
+import com.mento.domain.user.exception.UserException;
+import com.mento.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,10 +12,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.mento.common.error.ErrorCode;
-import com.mento.domain.user.entity.User;
-import com.mento.domain.user.exception.UserException;
-import com.mento.domain.user.repository.UserRepository;
+import java.time.LocalDate;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserCommandService 단위 테스트")
@@ -81,5 +83,27 @@ class UserCommandServiceTest {
 		assertThatThrownBy(() -> userCommandService.withdraw(userId))
 			.isInstanceOf(UserException.class)
 			.hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
+	}
+
+	@Test
+	@DisplayName("회원_정보_수정_성공_테스트")
+	void 회원_정보_수정_성공_테스트() {
+		// given
+		Long userId = 1L;
+		User user = User.builder()
+			.id(userId)
+			.name("수정전")
+			.email("update@example.com")
+			.build();
+		UserUpdateReqDto reqDto = new UserUpdateReqDto(LocalDate.of(2000, 1, 1));
+		
+		given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+		// when
+		User result = userCommandService.update(userId, reqDto);
+
+		// then
+		assertThat(result.getBirthDate()).isEqualTo(LocalDate.of(2000, 1, 1));
+		then(userRepository).should(times(1)).findById(userId);
 	}
 }

@@ -1,4 +1,4 @@
-package com.mento.domain.consulting.dto;
+package com.mento.common.livekit.dto;
 
 import java.time.LocalDateTime;
 

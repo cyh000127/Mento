@@ -1,13 +1,12 @@
 package com.mento.domain.user.dto.response;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.mento.domain.user.entity.Role;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Builder
 public record UserResDto(
@@ -21,6 +20,7 @@ public record UserResDto(
 	String email,
 
 	@Schema(description = "생년월일", example = "1990-01-01")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
 	LocalDate birthDate,
 
 	@Schema(description = "권한", example = "USER")
