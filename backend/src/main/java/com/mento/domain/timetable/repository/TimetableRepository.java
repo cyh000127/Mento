@@ -1,6 +1,7 @@
 package com.mento.domain.timetable.repository;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,4 +45,6 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
 		ORDER BY t.scheduledDate, t.scheduledTime
 		""")
 	List<Timetable> findAllByScheduledDateBetween(LocalDate startDate, LocalDate endDate);
+
+	List<Timetable> findByScheduledDateAndScheduledTime(LocalDate scheduledDate, LocalTime scheduledTime);
 }

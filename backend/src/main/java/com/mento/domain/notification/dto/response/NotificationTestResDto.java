@@ -7,12 +7,11 @@ import com.mento.domain.notification.entity.NotificationType;
 import lombok.Builder;
 
 @Builder
-public record NotificationResDto(
-	Long id,
+public record NotificationTestResDto(
+	Long notificationId,
+	Long targetMemberId,
 	NotificationType type,
-	String url,
-	String title,
-	String content,
-	LocalDateTime createdAt
+	String status,
+	LocalDateTime sentAt
 ) {
 }

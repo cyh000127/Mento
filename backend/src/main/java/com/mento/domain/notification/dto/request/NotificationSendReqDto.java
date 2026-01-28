@@ -9,7 +9,7 @@ import lombok.Builder;
 @Builder
 public record NotificationSendReqDto(
 	@NotNull(message = "사용자 ID는 필수입니다")
-	Long userId,
+	Long targetMemberId,
 
 	@NotNull(message = "알림 유형은 필수입니다")
 	NotificationType type,
@@ -20,6 +20,6 @@ public record NotificationSendReqDto(
 	@NotBlank(message = "제목은 필수입니다")
 	String title,
 
-	String content
+	String message
 ) {
 }

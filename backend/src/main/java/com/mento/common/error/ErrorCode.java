@@ -121,7 +121,8 @@ public enum ErrorCode {
 	/**
 	 * Notification Error (N-xxx)
 	 */
-	NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "N-001", "알림을 찾을 수 없습니다.");
+	NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "N-001", "알림을 찾을 수 없습니다."),
+	SCHEDULER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "N-002", "스케줄러 실행 중 오류가 발생했습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;
