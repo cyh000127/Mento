@@ -6,12 +6,17 @@ import { CtaSection } from "@/components/home/cta-section"
 
 export default function HomePage() {
   return (
-    <>
+    <div className="scroll-smooth">
+      {/* Hero with 3 scenes */}
       <HeroSection />
-      <FeaturesSection />
-      <ServicesSection />
-      <HowItWorksSection />
-      <CtaSection />
-    </>
+      
+      {/* Additional sections */}
+      <div className="relative z-10 bg-background">
+        <FeaturesSection />
+        <ServicesSection />
+        <HowItWorksSection />
+        <CtaSection />
+      </div>
+    </div>
   )
 }
