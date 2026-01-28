@@ -1,18 +1,25 @@
 package com.mento.domain.product.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.brand.entity.Brand;
 import com.mento.domain.brand.exception.BrandException;
 import com.mento.domain.brand.repository.BrandRepository;
 import com.mento.domain.product.converter.ProductConverter;
 import com.mento.domain.product.dto.request.ProductCreateReqDto;
+import com.mento.domain.product.dto.request.ProductSearchCondition;
 import com.mento.domain.product.dto.response.ProductResDto;
 import com.mento.domain.product.entity.Product;
 import com.mento.domain.product.service.command.ProductCommandService;
 import com.mento.domain.product.service.query.ProductQueryService;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
@@ -23,21 +30,38 @@ public class ProductFacadeService {
 	private final BrandRepository brandRepository;
 
 	public ProductResDto createProduct(final ProductCreateReqDto reqDto) {
-		Product product = ProductConverter.toEntity(reqDto);
+		Brand brand = brandRepository.findById(reqDto.brandId())
+			.orElseThrow(() -> new BrandException(ErrorCode.BRAND_NOT_FOUND));
+		Product product = ProductConverter.toEntity(reqDto, brand);
 		Product savedProduct = productCommandService.create(product);
-		String brandName = getBrandName(savedProduct.getBrandId());
-		return ProductConverter.toProductResDto(savedProduct, brandName);
+		return ProductConverter.toProductResDto(savedProduct);
 	}
 
 	public ProductResDto getProduct(final Long id) {
 		Product product = productQueryService.findById(id);
-		String brandName = getBrandName(product.getBrandId());
-		return ProductConverter.toProductResDto(product, brandName);
+		return ProductConverter.toProductResDto(product);
 	}
 
-	private String getBrandName(final Long brandId) {
-		return brandRepository.findById(brandId)
-			.map(Brand::getName)
-			.orElseThrow(() -> new BrandException(ErrorCode.BRAND_NOT_FOUND));
+	public Page<ProductResDto> getProducts(final ProductSearchCondition condition, final int page, final int size) {
+		Sort sort = createSort(condition.sortKey(), condition.order());
+		Pageable pageable = PageRequest.of(page, size, sort);
+		Page<Product> products = productQueryService.getProducts(condition, pageable);
+		return products.map(ProductConverter::toProductResDto);
+	}
+
+	private Sort createSort(String sortKey, String order) {
+		String property = "name";
+		if ("price".equals(sortKey)) {
+			property = "price";
+		} else if ("createdAt".equals(sortKey)) {
+			property = "createdAt";
+		}
+
+		Sort.Direction direction = Sort.Direction.ASC;
+		if ("desc".equalsIgnoreCase(order)) {
+			direction = Sort.Direction.DESC;
+		}
+
+		return Sort.by(direction, property);
 	}
 }

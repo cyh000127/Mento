@@ -1,11 +1,11 @@
 package com.mento.domain.product.dto.request;
 
+import java.util.List;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
-
-import java.util.List;
 
 @Builder
 public record ProductCreateReqDto(

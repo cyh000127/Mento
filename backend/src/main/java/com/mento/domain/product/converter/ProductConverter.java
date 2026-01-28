@@ -1,16 +1,18 @@
 package com.mento.domain.product.converter;
 
+import com.mento.domain.brand.entity.Brand;
 import com.mento.domain.product.dto.request.ProductCreateReqDto;
 import com.mento.domain.product.dto.response.ProductResDto;
 import com.mento.domain.product.entity.Product;
+
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class ProductConverter {
 
-	public Product toEntity(final ProductCreateReqDto dto) {
+	public Product toEntity(final ProductCreateReqDto dto, final Brand brand) {
 		return Product.builder()
-			.brandId(dto.brandId())
+			.brand(brand)
 			.oliveyoungGoodsNo(dto.oliveyoungGoodsNo())
 			.categoryMedium(dto.categoryMedium())
 			.categorySmall(dto.categorySmall())
@@ -28,11 +30,11 @@ public class ProductConverter {
 			.build();
 	}
 
-	public ProductResDto toProductResDto(final Product entity, final String brandName) {
+	public ProductResDto toProductResDto(final Product entity) {
 		return ProductResDto.builder()
 			.id(entity.getId())
-			.brandId(entity.getBrandId())
-			.brandName(brandName)
+			.brandId(entity.getBrand().getId())
+			.brandName(entity.getBrand().getBrandName())
 			.oliveyoungGoodsNo(entity.getOliveyoungGoodsNo())
 			.categoryMedium(entity.getCategoryMedium())
 			.categorySmall(entity.getCategorySmall())

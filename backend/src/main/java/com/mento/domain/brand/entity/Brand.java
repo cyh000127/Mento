@@ -1,6 +1,7 @@
 package com.mento.domain.brand.entity;
 
 import com.mento.common.entity.BaseEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -26,6 +27,6 @@ public class Brand extends BaseEntity {
 	@Column(name = "brand_id")
 	private Long id;
 
-	@Column(nullable = false, length = 100)
-	private String name;
+	@Column(name = "name", nullable = false, length = 100)
+	private String brandName;
 }
