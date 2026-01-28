@@ -116,7 +116,12 @@ public enum ErrorCode {
 	 */
 	MISSING_ITEM(HttpStatus.BAD_REQUEST, "UI-001", "유저 아이템 정보가 누락되었습니다."),
 	ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "UI-002", "유저 아이템을 찾을 수 없습니다."),
-	ITEM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "UI-003", "아이템에 접근할 권한이 없습니다.");
+	ITEM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "UI-003", "아이템에 접근할 권한이 없습니다."),
+
+	/**
+	 * Notification Error (N-xxx)
+	 */
+	NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "N-001", "알림을 찾을 수 없습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;
