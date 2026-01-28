@@ -1,137 +1,387 @@
 import { Link } from "react-router-dom"
-import { ArrowRight, Sparkles, Shield, Users } from "lucide-react"
+import { ArrowRight, ChevronDown } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { LoadingIntro } from "./loading-intro"
+
+// Import grooming images
+import curology1 from "@/assets/images/curology-iKoH1gNON70-unsplash.jpg"
+import curology2 from "@/assets/images/curology-WYU8DzFNaLo-unsplash.jpg"
+import andrea from "@/assets/images/andrea-donato-2LEqbbP5OZI-unsplash.jpg"
+import kadarius from "@/assets/images/kadarius-seegars-Mxy5gokl8mE-unsplash.jpg"
+import luis from "@/assets/images/luis-eduardo-25R-R4NwrLw-unsplash.jpg"
+import michela from "@/assets/images/michela-ampolo-7tDGb3HrITg-unsplash.jpg"
+import mike1 from "@/assets/images/mike-mgc-4vifU_h3VmY-unsplash.jpg"
+import mike2 from "@/assets/images/mike-mgc-dh8_9YhLs4s-unsplash.jpg"
+import mostafa from "@/assets/images/mostafa-meraji-z2qyry-n-PA-unsplash.jpg"
+import nataliya1 from "@/assets/images/nataliya-melnychuk-dFBhXJHKNeo-unsplash.jpg"
+import nataliya2 from "@/assets/images/nataliya-melnychuk-I-6Ap7JXHq8-unsplash.jpg"
+import pexels from "@/assets/images/pexels-cup-of-couple-6633786.jpg"
+import sunny from "@/assets/images/sunny-ng-KVIlNRoGwxk-unsplash.jpg"
+import tarah from "@/assets/images/tarah-dane-4JsvuH-pRzo-unsplash.jpg"
+import nix1 from "@/assets/images/the-nix-company-3_KYuMVl1Q8-unsplash.jpg"
+import nix2 from "@/assets/images/the-nix-company-QanhCEMlSdk-unsplash.jpg"
+
+// Left film strip images - grooming process shots
+const LEFT_IMAGES = [
+  curology1,      // skincare products
+  andrea,         // grooming close-up
+  mike1,          // skincare application
+  nataliya1,      // product texture
+  luis,           // male grooming
+  sunny,          // skincare routine
+  michela,        // grooming tools
+  curology2,      // skincare products
+]
+
+// Right film strip images - lifestyle and results
+const RIGHT_IMAGES = [
+  kadarius,       // confident portrait
+  nix1,           // grooming lifestyle
+  mostafa,        // male skincare
+  nataliya2,      // product close-up
+  mike2,          // grooming moment
+  pexels,         // grooming couple
+  tarah,          // skincare application
+  nix2,           // lifestyle grooming
+]
 
 export function HeroSection() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [currentScene, setCurrentScene] = useState(0)
+  const [showIntro, setShowIntro] = useState(true)
+  const [imagesLoaded, setImagesLoaded] = useState(false)
+
+  // Preload images
+  useEffect(() => {
+    const allImages = [...LEFT_IMAGES, ...RIGHT_IMAGES]
+    let loadedCount = 0
+
+    const preloadImage = (src: string) => {
+      return new Promise((resolve) => {
+        const img = new Image()
+        img.onload = () => {
+          loadedCount++
+          if (loadedCount === allImages.length) {
+            setImagesLoaded(true)
+          }
+          resolve(true)
+        }
+        img.onerror = () => {
+          loadedCount++
+          if (loadedCount === allImages.length) {
+            setImagesLoaded(true)
+          }
+          resolve(false)
+        }
+        img.src = src
+      })
+    }
+
+    Promise.all(allImages.map(preloadImage))
+  }, [])
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!containerRef.current) return
+
+      const container = containerRef.current
+      const scrollTop = window.scrollY
+      const containerTop = container.offsetTop
+      const containerHeight = container.offsetHeight
+      const windowHeight = window.innerHeight
+
+      // Calculate progress through the hero section
+      const progress = Math.min(
+        Math.max((scrollTop - containerTop) / (containerHeight - windowHeight), 0),
+        1
+      )
+
+      // Determine current scene (0, 1, or 2)
+      if (progress < 0.33) {
+        setCurrentScene(0)
+      } else if (progress < 0.66) {
+        setCurrentScene(1)
+      } else {
+        setCurrentScene(2)
+      }
+    }
+
+    window.addEventListener("scroll", handleScroll)
+    handleScroll() // Initial check
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
+  useEffect(() => {
+    if (videoRef.current && currentScene === 2) {
+      videoRef.current.play().catch((error) => {
+        console.log("Video autoplay failed:", error)
+      })
+    }
+  }, [currentScene])
+
+  useEffect(() => {
+    // Check if user has seen intro before (using sessionStorage)
+    const hasSeenIntro = sessionStorage.getItem("hasSeenIntro")
+    if (hasSeenIntro) {
+      setShowIntro(false)
+    }
+  }, [])
+
+  const handleIntroComplete = () => {
+    sessionStorage.setItem("hasSeenIntro", "true")
+    setShowIntro(false)
+  }
+
+  if (showIntro) {
+    return <LoadingIntro onComplete={handleIntroComplete} />
+  }
+
+  // Show loading overlay if images are not ready
+  if (!imagesLoaded) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" />
+          <p className="text-sm text-text-secondary">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <section className="relative overflow-hidden bg-background">
-      {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary-100/50 via-background to-pastel-blue-100/30" />
-      
-      <div className="relative mx-auto max-w-[1200px] px-6 py-20 md:py-32">
-        <div className="grid items-center gap-12 md:grid-cols-2">
-          {/* Left Content */}
-          <div className="flex flex-col items-start">
-            {/* Badge */}
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary-100 px-4 py-1.5">
-              <Sparkles className="h-4 w-4 text-primary-500" />
-              <span className="text-sm font-medium text-text-primary">
-                AI 기반 스킨케어 관리
-              </span>
-            </div>
+    <div
+      ref={containerRef}
+      className="relative h-[300vh] w-full bg-background animate-fade-in"
+    >
+      {/* Progress indicator */}
+      <div className="fixed right-8 top-1/2 z-50 flex -translate-y-1/2 flex-col gap-3">
+        {[0, 1, 2].map((index) => (
+          <button
+            key={index}
+            onClick={() => {
+              const targetScroll = containerRef.current!.offsetTop + (index * containerRef.current!.offsetHeight / 3)
+              window.scrollTo({ top: targetScroll, behavior: 'smooth' })
+            }}
+            className="group relative"
+            aria-label={`Scene ${index + 1}`}
+          >
+            <span
+              className={`block h-3 w-3 rounded-full border-2 transition-all duration-300 ${
+                currentScene === index
+                  ? "border-primary-500 bg-primary-500 scale-125"
+                  : "border-primary-500/30 bg-transparent hover:border-primary-500/60"
+              }`}
+            />
+            {currentScene === index && (
+              <span className="absolute inset-0 animate-ping rounded-full bg-primary-500 opacity-20" />
+            )}
+          </button>
+        ))}
+      </div>
 
-            {/* Headline */}
-            <h1 className="mb-6 text-balance text-4xl font-bold leading-tight tracking-tight text-text-primary md:text-5xl lg:text-6xl">
-              당신만을 위한
-              <br />
-              <span className="text-primary-500">그루밍 파트너</span>
-            </h1>
-
-            {/* Description */}
-            <p className="mb-8 max-w-lg text-pretty text-base leading-relaxed text-text-secondary md:text-lg">
-              개인 뷰티 인벤토리 관리부터 AI 스킨케어 분석, 전문가 멘토링까지.
-              MENTO와 함께 체계적인 그루밍 루틴을 시작하세요.
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-wrap items-center gap-4">
-              <Link
-                to="/recommend"
-                className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-6 py-3 font-medium text-dark-bg shadow-lg shadow-primary-500/25 transition-all hover:bg-primary-400 hover:shadow-xl hover:shadow-primary-500/30"
-              >
-                시작하기
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                to="/guide"
-                className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-6 py-3 font-medium text-text-primary transition-all hover:bg-muted"
-              >
-                서비스 소개
-              </Link>
-            </div>
-
-            {/* Trust Badges */}
-            <div className="mt-12 flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pastel-green-100">
-                  <Shield className="h-5 w-5 text-text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-text-primary">안전한 데이터</p>
-                  <p className="text-xs text-text-secondary">개인정보 보호</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pastel-purple-100">
-                  <Users className="h-5 w-5 text-text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-text-primary">10,000+</p>
-                  <p className="text-xs text-text-secondary">활성 사용자</p>
-                </div>
+      {/* Sticky container for scenes */}
+      <div className="sticky top-0 h-screen w-full overflow-hidden">
+        {/* Scene 1: Film Strip Intro */}
+        <div
+          className={`absolute inset-0 transition-opacity duration-1000 ${
+            currentScene === 0 ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="flex h-full w-full">
+            {/* Left Film Strip */}
+            <div className="w-[20%] overflow-hidden border-r border-border/30 bg-black">
+              <div className="animate-scroll-up flex flex-col">
+                {[...LEFT_IMAGES, ...LEFT_IMAGES].map((img, index) => (
+                  <div key={index} className="relative h-[300px] w-full flex-shrink-0 border-b border-border/20">
+                    <div className="absolute inset-0 bg-black/40 z-10" />
+                    <img
+                      src={img}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
 
-          {/* Right Visual */}
-          <div className="relative flex items-center justify-center">
-            {/* Background decoration */}
-            <div className="absolute h-80 w-80 rounded-full bg-gradient-to-br from-primary-300/40 to-primary-500/20 blur-3xl" />
-            
-            {/* Main Card */}
-            <div className="relative w-full max-w-sm rounded-2xl bg-background p-6 shadow-2xl shadow-primary-500/10">
-              {/* Card Header */}
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-text-secondary">오늘의 스킨 컨디션</p>
-                  <p className="text-2xl font-bold text-text-primary">87점</p>
+            {/* Center Content */}
+            <div className="relative flex w-[60%] flex-col items-center justify-center bg-background px-8">
+              <div className="text-center">
+                <div className="animate-fade-in-up mb-6 inline-flex items-center gap-2 rounded-full border border-primary-500/20 bg-primary-100/50 px-6 py-3 shadow-lg shadow-primary-500/10">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-primary-500" />
+                  <span className="text-sm font-medium text-primary-500">
+                    남성 뷰티의 새로운 기준
+                  </span>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-500">
-                  <Sparkles className="h-6 w-6 text-dark-bg" />
-                </div>
-              </div>
 
-              {/* Progress Bars */}
-              <div className="space-y-4">
-                <div>
-                  <div className="mb-1.5 flex items-center justify-between text-sm">
-                    <span className="text-text-secondary">수분</span>
-                    <span className="font-medium text-text-primary">92%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full w-[92%] rounded-full bg-gradient-to-r from-primary-400 to-primary-500" />
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-1.5 flex items-center justify-between text-sm">
-                    <span className="text-text-secondary">유분</span>
-                    <span className="font-medium text-text-primary">78%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full w-[78%] rounded-full bg-gradient-to-r from-pastel-green-200 to-pastel-green-100" />
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-1.5 flex items-center justify-between text-sm">
-                    <span className="text-text-secondary">탄력</span>
-                    <span className="font-medium text-text-primary">85%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full w-[85%] rounded-full bg-gradient-to-r from-pastel-purple-200 to-pastel-purple-100" />
-                  </div>
-                </div>
-              </div>
+                <h1 className="animate-scale-in mb-6 text-balance text-5xl font-bold leading-tight tracking-tight text-text-primary md:text-6xl lg:text-7xl" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
+                  당신만을 위한
+                  <br />
+                  <span className="bg-gradient-to-r from-primary-500 to-primary-300 bg-clip-text text-transparent">
+                    뷰티 파트너
+                  </span>
+                </h1>
 
-              {/* Card Footer */}
-              <div className="mt-6 rounded-xl bg-primary-100/50 p-4">
-                <p className="text-sm font-medium text-text-primary">AI 추천</p>
-                <p className="mt-1 text-xs text-text-secondary">
-                  오늘은 보습 집중 케어가 필요해요. 세라마이드 성분의 앰플을 추천드립니다.
+                <p className="animate-fade-in-up mx-auto mb-10 max-w-2xl text-pretty text-base leading-relaxed text-text-secondary md:text-lg lg:text-xl" style={{ animationDelay: '0.4s', animationFillMode: 'backwards' }}>
+                  체계적인 관리부터 전문가 멘토링까지
+                  <br />
+                  MENTO와 함께 새로운 루틴을 시작하세요
                 </p>
+
+                <div className="animate-fade-in-up" style={{ animationDelay: '0.6s', animationFillMode: 'backwards' }}>
+                  <div className="animate-bounce">
+                    <ChevronDown className="mx-auto h-8 w-8 text-primary-500" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Film Strip */}
+            <div className="w-[20%] overflow-hidden border-l border-border/30 bg-black">
+              <div className="animate-scroll-down flex flex-col">
+                {[...RIGHT_IMAGES, ...RIGHT_IMAGES].map((img, index) => (
+                  <div key={index} className="relative h-[300px] w-full flex-shrink-0 border-b border-border/20">
+                    <div className="absolute inset-0 bg-black/40 z-10" />
+                    <img
+                      src={img}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Scene 2: Film Strip Climax */}
+        <div
+          className={`absolute inset-0 transition-opacity duration-1000 ${
+            currentScene === 1 ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="flex h-full w-full">
+            {/* Left Film Strip */}
+            <div className="w-[20%] overflow-hidden border-r border-border/30 bg-black">
+              <div className="animate-scroll-up flex flex-col">
+                {[...LEFT_IMAGES, ...LEFT_IMAGES].map((img, index) => (
+                  <div key={index} className="relative h-[300px] w-full flex-shrink-0 border-b border-border/20">
+                    <div className="absolute inset-0 bg-black/40 z-10" />
+                    <img
+                      src={img}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Center Content */}
+            <div className="relative flex w-[60%] flex-col items-center justify-center bg-background px-8">
+              <div className="text-center">
+                <h2 className="animate-scale-in mb-6 text-balance text-4xl font-bold text-text-primary md:text-5xl lg:text-6xl">
+                  AI 기반
+                  <br />
+                  <span className="bg-gradient-to-r from-primary-500 to-primary-300 bg-clip-text text-transparent">
+                    스마트 스킨케어
+                  </span>
+                </h2>
+
+                <p className="animate-fade-in-up mx-auto max-w-2xl text-pretty text-lg leading-relaxed text-text-secondary md:text-xl" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
+                  개인 맞춤 분석과 데이터 기반 추천으로
+                  <br />
+                  더 나은 당신을 만들어갑니다
+                </p>
+              </div>
+            </div>
+
+            {/* Right Film Strip */}
+            <div className="w-[20%] overflow-hidden border-l border-border/30 bg-black">
+              <div className="animate-scroll-down flex flex-col">
+                {[...RIGHT_IMAGES, ...RIGHT_IMAGES].map((img, index) => (
+                  <div key={index} className="relative h-[300px] w-full flex-shrink-0 border-b border-border/20">
+                    <div className="absolute inset-0 bg-black/40 z-10" />
+                    <img
+                      src={img}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scene 3: Video Hero */}
+        <div
+          className={`absolute inset-0 transition-opacity duration-1000 ${
+            currentScene === 2 ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="relative h-full w-full">
+            {/* Video Background */}
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 h-full w-full object-cover"
+            >
+              <source src="/videos/hero-grooming.mp4" type="video/mp4" />
+            </video>
+
+            {/* Video placeholder overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-muted/60 to-background/60" />
+
+            {/* Content Overlay */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-background/40 via-background/20 to-background/40 px-8 text-center">
+              <div>
+                <h2 className="animate-scale-in mb-6 text-balance text-5xl font-bold text-text-primary drop-shadow-lg md:text-6xl lg:text-7xl">
+                  완성된
+                  <br />
+                  <span className="text-primary-500">
+                    뷰티 루틴
+                  </span>
+                </h2>
+
+                <p className="animate-fade-in-up mx-auto mb-10 max-w-2xl text-pretty text-lg leading-relaxed text-text-primary/90 drop-shadow md:text-xl" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
+                  개인 뷰티 인벤토리 관리부터 AI 스킨케어 분석, 전문가 멘토링까지
+                  <br />
+                  MENTO와 함께 체계적인 뷰티 루틴을 시작하세요
+                </p>
+
+                {/* CTA Buttons */}
+                <div className="animate-fade-in-up flex flex-wrap items-center justify-center gap-4" style={{ animationDelay: '0.4s', animationFillMode: 'backwards' }}>
+                  <Link
+                    to="/recommend"
+                    className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-4 text-base font-semibold text-dark-bg shadow-lg shadow-primary-500/25 transition-all hover:bg-primary-400 hover:shadow-xl hover:shadow-primary-500/40 hover:scale-105"
+                  >
+                    시작하기
+                    <ArrowRight className="h-5 w-5" />
+                  </Link>
+                  <Link
+                    to="/guide"
+                    className="inline-flex items-center gap-2 rounded-xl border-2 border-white/50 bg-white/20 backdrop-blur-md px-8 py-4 text-base font-semibold text-text-primary transition-all hover:bg-white/30 hover:border-white/70"
+                  >
+                    서비스 소개
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Video placeholder text */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center">
+              <p className="text-sm text-text-secondary/80">
+                Video: /public/videos/hero-grooming.mp4
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-    </section>
+    </div>
   )
 }
