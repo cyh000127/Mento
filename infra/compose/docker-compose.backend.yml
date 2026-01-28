@@ -56,8 +56,8 @@ services:
       timeout: 5s
       retries: 5
 
-  be:
-    container_name: be
+  backend:
+    container_name: backend
     image: ${BE_IMAGE:-ejjem/s14p11a704:backend}
     restart: unless-stopped
     expose:
