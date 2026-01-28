@@ -42,7 +42,7 @@ pipeline {
                     script {
                         dir('backend') { // 디렉토리 이동
                             sh "mkdir -p build/logs"
-
+                            sh "chmod +x gradlew"
                             withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIAL_ID}", usernameVariable: 'DJIB_USER', passwordVariable: 'DJIB_AUTH')]) {
                                  // Jib 실행 시에도 backend 폴더 내의 gradlew 사용
                                  sh "./gradlew jib -Djib.to.auth.username=${DJIB_USER} -Djib.to.auth.password=${DJIB_AUTH} -Djib.to.image=${DOCKERHUB_REPO}"
