@@ -65,7 +65,12 @@ public enum ErrorCode {
 	/**
 	 * RESERVATION Error (R-xxx)
 	 */
-	RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "R-001", "예약 정보를 찾을 수 없습니다.");
+	RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "R-001", "예약 정보를 찾을 수 없습니다."),
+
+	/**
+	 * MENTOR Error (M-xxx)
+	 */
+	MENTOR_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND, "M-001", "멘토 유형을 찾을 수 없습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;
