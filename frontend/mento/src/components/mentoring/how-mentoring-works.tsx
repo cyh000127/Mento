@@ -4,23 +4,23 @@ import { Link } from "react-router-dom";
 const steps = [
   {
     icon: Search,
-    title: "멘토 탐색",
-    description: "전문 분야와 리뷰를 확인하고 나에게 맞는 멘토를 선택하세요.",
+    title: "유형 선택",
+    description: "피부, 뷰티, 헤어 중 상담이 필요한 유형을 선택하고 나에게 맞는 멘토링 분야를 정합니다.",
   },
   {
     icon: Calendar,
     title: "일정 예약",
-    description: "멘토의 가능한 시간을 확인하고 원하는 일정을 예약합니다.",
+    description: "원하는 날짜와 시간을 선택하여 멘토링 일정을 간편하게 예약합니다.",
   },
   {
     icon: MessageCircle,
     title: "1:1 상담",
-    description: "화상 또는 채팅으로 멘토와 깊이 있는 상담을 진행합니다.",
+    description: "화상으로 멘토와 깊이 있는 1:1 멘토링을 진행합니다.",
   },
   {
     icon: CheckCircle,
     title: "루틴 완성",
-    description: "상담 결과를 바탕으로 맞춤형 그루밍 루틴을 완성하세요.",
+    description: "상담 결과를 바탕으로 나만의 맞춤형 루틴을 완성하세요.",
   },
 ];
 
