@@ -4,7 +4,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_REPO = "ejjem/mento-backend"
+        DOCKERHUB_REPO = "ejjem/s14p11a704"
         DOCKER_CREDENTIAL_ID = "DockerHub_Token"
     }
 
@@ -41,12 +41,18 @@ pipeline {
                     echo "===== DOCKERIZING ====="
                     script {
                         dir('backend') { // 디렉토리 이동
-                            sh "mkdir -p build/logs"
-                            sh "chmod +x gradlew"
-                            withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIAL_ID}", usernameVariable: 'DJIB_USER', passwordVariable: 'DJIB_AUTH')]) {
-                                 // Jib 실행 시에도 backend 폴더 내의 gradlew 사용
-                                 sh "./gradlew jib -Djib.to.auth.username=${DJIB_USER} -Djib.to.auth.password=${DJIB_AUTH} -Djib.to.image=${DOCKERHUB_REPO}"
+                            // Docker Build
+                            // 태그: backend (고정 태그 사용)
+                            sh "docker build -t ${DOCKERHUB_REPO}:backend ."
+                            
+                            // Docker Login & Push
+                            withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIAL_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                                sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+                                sh "docker push ${DOCKERHUB_REPO}:backend"
                             }
+                            
+                            // Clean up local images
+                            sh "docker rmi ${DOCKERHUB_REPO}:backend"
                         }
                     }
                 }
