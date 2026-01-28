@@ -20,7 +20,7 @@ import com.mento.domain.reservation.dto.response.MediaUploadResDto;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.service.query.ReservationQueryService;
 import com.mento.domain.timetable.entity.Timetable;
-import com.mento.domain.timetable.service.query.TimetableQueryServiceImpl;
+import com.mento.domain.timetable.service.query.impl.TimetableQueryServiceImpl;
 import com.mento.domain.user.entity.Role;
 
 import lombok.AccessLevel;
