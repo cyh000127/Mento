@@ -289,18 +289,26 @@ pipeline {
                 sh '''
                 set -euo pipefail
                 
-                # 1. 파일 경로 설정 (LIVEKIT_REL_PATH 변수가 정확해야 함)
+                # 1. 파일 경로 설정
                 ABS_CONFIG="$(pwd)/${LIVEKIT_REL_PATH}"
                 
-                # 2. 파일 존재 여부 확인
+                # 2. [방어 로직] 혹시 이전 빌드 실패로 인해 '디렉토리'가 생성되어 있다면 삭제
+                if [ -d "$ABS_CONFIG" ]; then
+                    echo "⚠️ Found directory instead of file at $ABS_CONFIG. Removing it..."
+                    rm -rf "$ABS_CONFIG"
+                fi
+                
+                # 3. 파일 존재 여부 확인
                 if [ ! -f "$ABS_CONFIG" ]; then
-                    echo "ERROR: LiveKit config file not found at: $ABS_CONFIG"
+                    echo "❌ ERROR: LiveKit config file not found at: $ABS_CONFIG"
                     exit 1
                 fi
                 
+                echo "✅ LiveKit config existence check passed."
+                '''
             }
         }
-
+        
         stage('Sync Focused Files') {
             when { expression { return env.RUN_CD == 'true' } }
             steps {
