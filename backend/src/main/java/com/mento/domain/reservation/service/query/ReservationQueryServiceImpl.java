@@ -1,4 +1,4 @@
-package com.mento.domain.reservation.controller.query;
+package com.mento.domain.reservation.service.query;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
