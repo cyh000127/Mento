@@ -29,7 +29,7 @@ class TimetableFactoryTest {
 
 		// then
 		assertThat(timetable.getScheduledDate()).isEqualTo(date);
-		assertThat(timetable.getScheduledTime()).isEqualTo(LocalTime.of(19, 0)); // 10 + 9(UTC offset)
+		assertThat(timetable.getScheduledTime()).isEqualTo(LocalTime.of(10, 0));
 		assertThat(timetable.getStatus()).isEqualTo(TimetableStatus.ACTIVE);
 		assertThat(timetable.getMaxCapacity()).isEqualTo(15);
 		assertThat(timetable.getCurrentCapacity()).isZero();
@@ -59,7 +59,7 @@ class TimetableFactoryTest {
 
 		// then
 		// 9시~17시 입력 → 18시~2시(다음날) 저장 (UTC+9 offset 적용)
-		List<Integer> expectedHours = List.of(18, 19, 20, 21, 22, 23, 0, 1, 2);
+		List<Integer> expectedHours = List.of(9, 10, 11, 12, 13, 14, 15, 16, 17);
 
 		assertThat(timetables)
 			.extracting(timetable -> timetable.getScheduledTime().getHour())

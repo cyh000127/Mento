@@ -1,11 +1,5 @@
 package com.mento.common.config;
 
-import com.mento.common.auth.handler.OAuth2LoginSuccessHandler;
-import com.mento.common.auth.jwt.JwtAuthenticationFilter;
-import com.mento.common.auth.jwt.JwtExceptionFilter;
-import com.mento.common.auth.service.CustomOAuth2UserService;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
 import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +11,14 @@ import org.springframework.security.config.annotation.web.configurers.SessionMan
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.mento.common.auth.handler.OAuth2LoginSuccessHandler;
+import com.mento.common.auth.jwt.JwtAuthenticationFilter;
+import com.mento.common.auth.jwt.JwtExceptionFilter;
+import com.mento.common.auth.service.CustomOAuth2UserService;
+
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
@@ -37,15 +39,14 @@ public class SecurityConfig {
 		"/api/v1/test/**"
 	};
 	private final CorsConfig corsFilter;
-
-	private static void createSessionPolicy(SessionManagementConfigurer<HttpSecurity> session) {
-		session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-	}
-
 	private final CustomOAuth2UserService customOAuth2UserService;
 	private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 	private final JwtExceptionFilter jwtExceptionFilter;
+
+	private static void createSessionPolicy(SessionManagementConfigurer<HttpSecurity> session) {
+		session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+	}
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) {

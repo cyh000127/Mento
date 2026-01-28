@@ -1,5 +1,7 @@
 package com.mento.domain.user.service;
 
+import org.springframework.stereotype.Service;
+
 import com.mento.common.auth.constant.AuthConstant;
 import com.mento.common.auth.principal.AuthenticatedUser;
 import com.mento.common.error.ErrorCode;
@@ -10,9 +12,9 @@ import com.mento.domain.user.dto.response.UserResDto;
 import com.mento.domain.user.entity.User;
 import com.mento.domain.user.service.command.UserCommandService;
 import com.mento.domain.user.service.query.UserQueryService;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)

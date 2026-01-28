@@ -1,11 +1,8 @@
 package com.mento.domain.user.service;
 
-import com.mento.common.auth.principal.AuthenticatedUser;
-import com.mento.common.error.ErrorCode;
-import com.mento.common.error.exception.BusinessException;
-import com.mento.domain.user.dto.response.UserResDto;
-import com.mento.domain.user.entity.User;
-import com.mento.domain.user.service.query.UserQueryService;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.BDDMockito.*;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,9 +10,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
+import com.mento.common.auth.principal.AuthenticatedUser;
+import com.mento.common.error.ErrorCode;
+import com.mento.common.error.exception.BusinessException;
+import com.mento.domain.user.dto.response.UserResDto;
+import com.mento.domain.user.entity.User;
+import com.mento.domain.user.service.query.UserQueryService;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserFacadeService 단위 테스트")

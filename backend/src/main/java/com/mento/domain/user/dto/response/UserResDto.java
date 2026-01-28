@@ -1,12 +1,13 @@
 package com.mento.domain.user.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.mento.domain.user.entity.Role;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Builder;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.mento.domain.user.entity.Role;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 
 @Builder
 public record UserResDto(

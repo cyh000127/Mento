@@ -1,11 +1,12 @@
 package com.mento.domain.user.controller.command;
 
-import com.mento.common.auth.principal.AuthenticatedUser;
-import com.mento.common.error.exception.handler.GlobalExceptionHandler;
-import com.mento.domain.user.dto.request.UserUpdateReqDto;
-import com.mento.domain.user.dto.response.UserResDto;
-import com.mento.domain.user.entity.Role;
-import com.mento.domain.user.service.UserFacadeService;
+import static org.mockito.BDDMockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import java.time.LocalDate;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,14 +23,12 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-import java.time.LocalDate;
-
-import static org.mockito.BDDMockito.any;
-import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.mento.common.auth.principal.AuthenticatedUser;
+import com.mento.common.error.exception.handler.GlobalExceptionHandler;
+import com.mento.domain.user.dto.request.UserUpdateReqDto;
+import com.mento.domain.user.dto.response.UserResDto;
+import com.mento.domain.user.entity.Role;
+import com.mento.domain.user.service.UserFacadeService;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserCommandController 단위 테스트")
@@ -54,8 +53,10 @@ class UserCommandControllerTest {
 				}
 
 				@Override
-				public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
-					NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+				public Object resolveArgument(
+					MethodParameter parameter, ModelAndViewContainer mavContainer,
+					NativeWebRequest webRequest, WebDataBinderFactory binderFactory
+				) {
 					return AuthenticatedUser.builder()
 						.id(1L)
 						.email("test@example.com")

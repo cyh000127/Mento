@@ -32,7 +32,7 @@ public class OAuth2Attribute {
 	private static OAuth2Attribute ofKakao(Map<String, Object> attributes) {
 		log.info("Kakao Attributes: {}", attributes);
 		Map<String, Object> kakaoAccount = (Map<String, Object>)attributes.get("kakao_account");
-		
+
 		if (kakaoAccount == null) {
 			throw new BusinessException(ErrorCode.INVALID_INPUT);
 		}

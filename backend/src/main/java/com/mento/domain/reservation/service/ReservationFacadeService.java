@@ -1,5 +1,13 @@
 package com.mento.domain.reservation.service;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.mento.common.auth.principal.AuthenticatedUser;
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.ReservationException;
@@ -14,27 +22,20 @@ import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.timetable.entity.Timetable;
 import com.mento.domain.timetable.service.query.TimetableQueryServiceImpl;
 import com.mento.domain.user.entity.Role;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class ReservationFacadeService {
 
+	public static final String ROOM_NAME_PREFIX = "room_";
 	private static final String RESERVATION_DIRECTORY = "reservations/";
 	private static final int EARLY_ENTRY_MINUTES = 10;
 	private static final int END_MINUTES = 10;
-	public static final String ROOM_NAME_PREFIX = "room_";
-
 	private final ReservationQueryService reservationQueryService;
 	private final TimetableQueryServiceImpl timeTableQueryService;
 	private final FileService fileService;
