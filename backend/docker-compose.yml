@@ -53,6 +53,9 @@ services:
 
   mento-backend:
     container_name: mento-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile 
     image: mento-backend:latest
     restart: unless-stopped
     ports:
