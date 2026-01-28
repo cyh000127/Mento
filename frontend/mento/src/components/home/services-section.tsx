@@ -16,7 +16,7 @@ const services = [
     id: "mentoring",
     title: "전문가 멘토링",
     subtitle: "Expert Guidance",
-    description: "그루밍 전문가와 1:1 상담을 통해 나만의 루틴을 설계하세요. 피부 관리부터 헤어 스타일링까지 전문적인 조언을 받을 수 있습니다.",
+    description: "뷰티 전문가와 1:1 상담을 통해 나만의 루틴을 설계하세요. 피부 관리부터 헤어 스타일링까지 전문적인 조언을 받을 수 있습니다.",
     icon: Users,
     href: "/mentoring",
     gradient: "from-pastel-purple-200 to-pastel-purple-100",
@@ -26,7 +26,7 @@ const services = [
     id: "guide",
     title: "사용 가이드",
     subtitle: "How to Guide",
-    description: "그루밍 입문자를 위한 체계적인 가이드를 제공합니다. 기초부터 심화까지, 단계별로 학습하세요.",
+    description: "뷰티 입문자를 위한 체계적인 가이드를 제공합니다. 기초부터 심화까지, 단계별로 학습하세요.",
     icon: BookOpen,
     href: "/guide",
     gradient: "from-pastel-green-200 to-pastel-green-100",
@@ -46,61 +46,70 @@ const services = [
 
 export function ServicesSection() {
   return (
-    <section className="bg-muted/30 py-20 md:py-28">
+    <section className="relative bg-muted/30 py-24 md:py-32">
       <div className="mx-auto max-w-[1200px] px-6">
         {/* Section Header */}
-        <div className="mb-16 text-center">
-          <p className="mb-3 text-sm font-medium uppercase tracking-wider text-primary-500">
-            Services
-          </p>
-          <h2 className="mb-4 text-balance text-3xl font-bold text-text-primary md:text-4xl">
+        <div className="mb-20 text-center">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary-500/20 bg-primary-100/50 px-4 py-2">
+            <span className="h-2 w-2 rounded-full bg-primary-500" />
+            <p className="text-sm font-medium text-primary-500">
+              Services
+            </p>
+          </div>
+          <h2 className="mb-6 text-balance text-4xl font-bold text-text-primary md:text-5xl">
             핵심 서비스
           </h2>
-          <p className="mx-auto max-w-2xl text-pretty text-text-secondary">
+          <p className="mx-auto max-w-2xl text-pretty text-lg text-text-secondary">
             MENTO의 주요 서비스를 살펴보세요.
             <br className="hidden md:block" />
-            각 서비스는 남성 그루밍의 특성을 고려하여 설계되었습니다.
+            각 서비스는 남성 뷰티의 특성을 고려하여 설계되었습니다.
           </p>
         </div>
 
         {/* Services Grid */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {services.map((service) => (
+        <div className="grid gap-8 md:grid-cols-2">
+          {services.map((service, index) => (
             <Link
               key={service.id}
               to={service.href}
-              className={`group relative overflow-hidden rounded-2xl ${service.bgColor} p-8 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary-500/5`}
+              className={`group relative overflow-hidden rounded-3xl border border-border/50 ${service.bgColor} p-10 transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary-500/10 hover:border-primary-500/30`}
+              style={{
+                animationDelay: `${index * 150}ms`,
+              }}
             >
               {/* Background decoration */}
               <div
-                className={`absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br ${service.gradient} opacity-20 blur-3xl transition-all group-hover:opacity-30`}
+                className={`absolute -right-16 -top-16 h-64 w-64 rounded-full bg-gradient-to-br ${service.gradient} opacity-10 blur-3xl transition-all duration-500 group-hover:opacity-30 group-hover:scale-110`}
               />
 
               <div className="relative">
                 {/* Icon */}
                 <div
-                  className={`mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${service.gradient}`}
+                  className={`mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${service.gradient} shadow-lg transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}
                 >
-                  <service.icon className="h-7 w-7 text-dark-bg" />
+                  <service.icon className="h-8 w-8 text-dark-bg" />
                 </div>
 
                 {/* Content */}
-                <p className="mb-1 text-xs font-medium uppercase tracking-wider text-text-secondary">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-text-secondary/80">
                   {service.subtitle}
                 </p>
-                <h3 className="mb-3 text-xl font-bold text-text-primary">
+                <h3 className="mb-4 text-2xl font-bold text-text-primary transition-colors group-hover:text-primary-500">
                   {service.title}
                 </h3>
-                <p className="mb-6 text-sm leading-relaxed text-text-secondary">
+                <p className="mb-8 text-base leading-relaxed text-text-secondary">
                   {service.description}
                 </p>
 
                 {/* Link */}
-                <span className="inline-flex items-center gap-2 text-sm font-medium text-primary-500 transition-colors group-hover:text-primary-400">
+                <div className="inline-flex items-center gap-2 text-base font-semibold text-primary-500 transition-all group-hover:gap-3">
                   자세히 보기
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </span>
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </div>
               </div>
+
+              {/* Hover border effect */}
+              <div className="absolute inset-0 rounded-3xl opacity-0 ring-2 ring-inset ring-primary-500/50 transition-opacity duration-300 group-hover:opacity-100" />
             </Link>
           ))}
         </div>
