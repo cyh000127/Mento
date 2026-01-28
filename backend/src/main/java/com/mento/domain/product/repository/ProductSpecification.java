@@ -6,6 +6,7 @@ import org.springframework.util.StringUtils;
 import com.mento.domain.product.dto.request.ProductSearchCondition;
 import com.mento.domain.product.entity.Product;
 
+import jakarta.persistence.criteria.JoinType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -15,7 +16,7 @@ public class ProductSpecification {
 	public static Specification<Product> search(ProductSearchCondition condition) {
 		return (root, query, builder) -> {
 			if (Long.class != query.getResultType()) {
-				root.fetch("brand", jakarta.persistence.criteria.JoinType.INNER);
+				root.fetch("brand", JoinType.INNER);
 			}
 
 			Specification<Product> spec = (_, _, _) -> null;
