@@ -9,23 +9,25 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD} # root 비번도 동일하게 설정
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       TZ: Asia/Seoul
     expose:
       - "3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ../script/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
       - --max_connections=200
+      - --slow-query-log=1
+      - --slow-query-log-file=/var/lib/mysql/slow.log
+      - --long-query-time=0.5
     deploy:
       resources:
         limits:
           cpus: '0.5'
-          memory: 3G
-    networks:
-      - mento-network
+          memory: 2G # 3G에서 약간 조정 (인스턴스 사양에 맞춤)
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$${DB_PASSWORD}"]
       interval: 10s
@@ -36,22 +38,19 @@ services:
     container_name: redis
     image: redis:7-alpine
     restart: unless-stopped
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
     expose:
       - "6379"
     volumes:
       - redis_data:/data
-    # 비밀번호 설정을 command에 추가
+    # 보안 강화를 위해 비밀번호 필수 설정
     command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 1gb --maxmemory-policy allkeys-lru
     deploy:
       resources:
         limits:
           cpus: '0.5'
           memory: 1G
-    networks:
-      - mento-network
     healthcheck:
+      # Redis 비밀번호 인증 포함
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
@@ -73,11 +72,11 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD} # 누락된 항목 추가
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
-      JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION} # 추가
-      JWT_REFRESH_TOKEN_EXPIRATION: ${JWT_REFRESH_TOKEN_EXPIRATION} # 추가
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS} # 추가
+      JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION}
+      JWT_REFRESH_TOKEN_EXPIRATION: ${JWT_REFRESH_TOKEN_EXPIRATION}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
       CLOUDFLARE_ENDPOINT: ${CLOUDFLARE_ENDPOINT}
       CLOUDFLARE_BUCKET: ${CLOUDFLARE_BUCKET}
       CLOUDFLARE_ACCESS_KEY: ${CLOUDFLARE_ACCESS_KEY}
@@ -93,28 +92,22 @@ services:
         limits:
           cpus: '3.5'
           memory: 8G
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "5"
-    networks:
-      - mento-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
-
-networks:
-  mento-network:
-    driver: bridge
 
 volumes:
   mysql_data:
