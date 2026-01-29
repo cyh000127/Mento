@@ -4,7 +4,7 @@ services:
     image: mysql:8.4
     restart: unless-stopped
     env_file:
-      - .env
+      - .env.backend
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USERNAME}
@@ -44,14 +44,17 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    env_file:
+      - .env.backend
+    command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD}
     cpus: '0.5'
     mem_limit: 1g
     mem_reservation: 512m
     networks:
       - mento-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -64,7 +67,7 @@ services:
     image: mento-backend:latest
     restart: unless-stopped
     env_file:
-      - .env
+      - .env.backend
     ports:
       - "8080:8080"
     cpus: '3.5'
