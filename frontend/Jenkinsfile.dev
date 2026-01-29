@@ -69,6 +69,15 @@ pipeline {
       }
     }
 
+    // 의존성 설치 단계
+    stage('FE Dependencies (npm ci)') {
+        steps {
+            dir("${FE_APP_DIR}") {
+                sh "npm ci"
+            }
+        }
+    }
+
     stage('Trigger CD/Final') {
       steps {
         script {
