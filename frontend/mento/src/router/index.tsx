@@ -1,17 +1,17 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom"
-import Layout from "@/components/layouts/Layout"
-import HomePage from "@/pages/home/HomePage"
-import AiCarePage from "@/pages/ai-care/AiCarePage"
-import ConsultationPage from "@/pages/consultation/ConsultationPage"
-import { ConsultationRoomPage } from "@/pages/consultation/ConsultationRoomPage"
-import GuidePage from "@/pages/guide/GuidePage"
-import MentoringPage from "@/pages/mentoring/MentoringPage"
-import RecommendPage from "@/pages/recommend/RecommendPage"
-import InventoryPage from "@/pages/inventory/InventoryPage"
-import ConsultationManagementPage from "@/pages/mypage/ConsultationManagementPage"
-import AiSkincareHistoryPage from "@/pages/mypage/AiSkincareHistoryPage"
-import KakaoCallback from "@/pages/auth/KakaoCallback"
-
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import Layout from "@/components/layouts/Layout";
+import HomePage from "@/pages/home/HomePage";
+import AiCarePage from "@/pages/ai-care/AiCarePage";
+import ConsultationPage from "@/pages/consultation/ConsultationPage";
+import { ConsultationRoomPage } from "@/pages/consultation/ConsultationRoomPage";
+import { LivekitTestPage } from "@/pages/consultation/LivekitTestPage";
+import GuidePage from "@/pages/guide/GuidePage";
+import MentoringPage from "@/pages/mentoring/MentoringPage";
+import RecommendPage from "@/pages/recommend/RecommendPage";
+import InventoryPage from "@/pages/inventory/InventoryPage";
+import ConsultationManagementPage from "@/pages/mypage/ConsultationManagementPage";
+import AiSkincareHistoryPage from "@/pages/mypage/AiSkincareHistoryPage";
+import KakaoCallback from "@/pages/auth/KakaoCallback";
 
 const router = createBrowserRouter([
   {
@@ -61,11 +61,15 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: "/consultation-room",
+    path: "/consultation-room/:reservationId",
     element: <ConsultationRoomPage />,
   },
-])
+  {
+    path: "/livekit-test",
+    element: <LivekitTestPage />,
+  },
+]);
 
 export default function AppRouter() {
-  return <RouterProvider router={router} />
+  return <RouterProvider router={router} />;
 }
