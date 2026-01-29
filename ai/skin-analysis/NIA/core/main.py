@@ -13,17 +13,17 @@ os.chdir(workspace_path)
 
 sys.stderr = open(sys.stderr.fileno(), mode="w", buffering=1)
 
-from utils import load_checkpoint, fix_seed
+from core.utils import load_checkpoint, fix_seed
 import torch
 import shutil
 import numpy as np
 
-from logger import setup_logger
-from tool.data_loader import CustomDataset
+from core.logger import setup_logger
+from core.data_loader import CustomDataset
 import argparse
 from torch.utils.data import WeightedRandomSampler
 
-from tool.model import Model
+from core.model import Model
 from torchvision import models
 import wandb
 import timm

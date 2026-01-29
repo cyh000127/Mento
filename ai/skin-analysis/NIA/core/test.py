@@ -15,11 +15,11 @@ os.chdir(workspace_path)
 sys.stderr = open(sys.stderr.fileno(), mode="w", buffering=1)
 
 from torch.utils.data import DataLoader
-from tool.utils import resume_checkpoint, fix_seed
-from tool.data_loader import CustomDataset
-from tool.logger import setup_logger
-from tool.model import Model_test
-from tool.model import Model_test
+from core.utils import resume_checkpoint, fix_seed
+from core.data_loader import CustomDataset
+from core.logger import setup_logger
+from core.model import Model_test
+from core.model import Model_test
 from torchvision import models
 import wandb
 import timm
