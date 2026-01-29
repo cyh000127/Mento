@@ -10,7 +10,7 @@ keys:
   devkeys: secret_itsjusttestkeyiwilllchangethisassoonaspossible
 
 redis:
-  address: localhost:6379
+  address: localhost:6380
 turn:
   enabled: true
   udp_port: 8002

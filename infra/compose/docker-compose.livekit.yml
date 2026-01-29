@@ -4,7 +4,7 @@ services:
     image: redis:7
     restart: unless-stopped
     ports:
-      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:6380:6379"
   livekit:
     image: livekit/livekit-server:latest
     container_name: livekit
