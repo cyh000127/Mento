@@ -17,7 +17,7 @@ services:
       - '--storage.tsdb.path=/prometheus'
       # - '--web.external-url=https://i14a704.p.ssafy.io/8889'
       - '--web.external-url=https://i14a704.p.ssafy.io/prometheus/'
-      - '--web.route-prefix=/'
+      - '--web.route-prefix=/prometheus'
     networks:
       - monitoring-network
 
