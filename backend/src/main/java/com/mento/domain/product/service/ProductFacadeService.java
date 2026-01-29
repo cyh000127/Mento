@@ -6,10 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.mento.common.error.ErrorCode;
 import com.mento.domain.brand.entity.Brand;
-import com.mento.domain.brand.exception.BrandException;
-import com.mento.domain.brand.repository.BrandRepository;
+import com.mento.domain.brand.service.query.BrandQueryService;
 import com.mento.domain.product.converter.ProductConverter;
 import com.mento.domain.product.dto.request.ProductCreateReqDto;
 import com.mento.domain.product.dto.request.ProductSearchCondition;
@@ -27,11 +25,10 @@ public class ProductFacadeService {
 
 	private final ProductCommandService productCommandService;
 	private final ProductQueryService productQueryService;
-	private final BrandRepository brandRepository;
+	private final BrandQueryService brandQueryService;
 
 	public ProductResDto createProduct(final ProductCreateReqDto reqDto) {
-		Brand brand = brandRepository.findById(reqDto.brandId())
-			.orElseThrow(() -> new BrandException(ErrorCode.BRAND_NOT_FOUND));
+		Brand brand = brandQueryService.getBrand(reqDto.brandId());
 		Product product = ProductConverter.toEntity(reqDto, brand);
 		Product savedProduct = productCommandService.create(product);
 		return ProductConverter.toProductResDto(savedProduct);
@@ -49,7 +46,7 @@ public class ProductFacadeService {
 		return products.map(ProductConverter::toProductResDto);
 	}
 
-	private Sort createSort(String sortKey, String order) {
+	private Sort createSort(final String sortKey, final String order) {
 		String property = "name";
 		if ("price".equals(sortKey)) {
 			property = "price";
