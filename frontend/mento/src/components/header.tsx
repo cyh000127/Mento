@@ -31,7 +31,7 @@ const mockNotifications: Notification[] = [
 
 export function Header() {
   const navigate = useNavigate();
-  const { isLoggedIn, user, logout } = useAuthStore();
+  const { isLoggedIn, user } = useAuthStore();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -43,13 +43,12 @@ export function Header() {
 
   const handleLogout = async () => {
     try {
+      // authApi.logout()에서 이미 로컬 상태 초기화를 처리함
       await authApi.logout();
-      logout();
       navigate("/");
     } catch (error) {
       console.error("로그아웃 실패:", error);
-      // 에러가 발생해도 로컬 상태는 초기화
-      logout();
+      // authApi.logout()에서 실패해도 로컬 상태는 이미 초기화됨
       navigate("/");
     }
   };

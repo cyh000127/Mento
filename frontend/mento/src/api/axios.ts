@@ -5,10 +5,10 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL
 
 export const api = axios.create({
   baseURL: `${API_BASE}/api/v1`,
-  withCredentials: true, //  refreshToken 쿠키를 위해 필수
+  withCredentials: true, // refreshToken 쿠키를 위해 필수
 })
 
-//  요청마다 accessToken 붙이기
+// 요청마다 accessToken 붙이기 (메모리에서 가져옴)
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken
   if (token) {
@@ -17,26 +17,40 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-//  401이면 reissue 후 재시도
+// 401이면 reissue 후 재시도
 api.interceptors.response.use(
   (res) => {
-    // (선택) 백엔드가 Authorization 헤더로 새 토큰 내려줄 때 자동 반영
+    // 백엔드가 Authorization 헤더로 새 accessToken을 내려줄 때 자동 반영
     const authHeader = res.headers["authorization"]
     if (authHeader?.startsWith("Bearer ")) {
-      useAuthStore.getState().setAccessToken(authHeader.replace("Bearer ", ""))
+      const newAccessToken = authHeader.replace("Bearer ", "")
+      useAuthStore.getState().setAccessToken(newAccessToken)
     }
     return res
   },
   async (error) => {
     const original = error.config
 
+    // 401 에러이고 재시도하지 않은 요청인 경우
     if (error.response?.status === 401 && !original?._retry) {
       original._retry = true
       try {
-        await api.post("/auth/reissue") //  refreshToken 쿠키 기반
+        // refreshToken 쿠키를 사용하여 토큰 재발급
+        const response = await api.post("/auth/reissue")
+        
+        // 새로운 accessToken을 헤더에서 추출하여 저장
+        const authHeader = response.headers["authorization"]
+        if (authHeader?.startsWith("Bearer ")) {
+          const newAccessToken = authHeader.replace("Bearer ", "")
+          useAuthStore.getState().setAccessToken(newAccessToken)
+        }
+        
+        // 원래 요청 재시도
         return api(original)
-      } catch {
+      } catch (reissueError) {
+        // 토큰 재발급 실패 시 로그아웃
         useAuthStore.getState().logout()
+        return Promise.reject(reissueError)
       }
     }
 
