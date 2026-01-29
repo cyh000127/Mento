@@ -94,6 +94,10 @@ services:
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
       KAKAO_REDIRECT_URI: ${KAKAO_REDIRECT_URI}
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: prometheus,health,info
+      MANAGEMENT_ENDPOINT_METRICS_ENABLED: "true"
+      MANAGEMENT_ENDPOINT_PROMETHEUS_ENABLED: "true"
+      MANAGEMENT_PROMETHEUS_METRICS_EXPORT_ENABLED: "true"
     deploy:
       resources:
         limits:
@@ -115,7 +119,13 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    networks:
+      - monitoring-network
 
 volumes:
   mysql_data:
   redis_data:
+
+networks:
+  monitoring-network:
+    external: true

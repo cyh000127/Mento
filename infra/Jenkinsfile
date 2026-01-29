@@ -87,7 +87,7 @@ pipeline {
 
                         HEAD_SHA="$(git rev-parse HEAD)"
 
-                        # 1. Shallow Clone 체크 (인프라 배포 누락의 주범)
+                        # 1. Shallow Clone 체크
                         if [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then
                             echo "⚠️ [WARN] Shallow repository detected. 히스토리가 부족하여 변경 감지가 누락될 수 있습니다."
                         fi
@@ -155,7 +155,7 @@ pipeline {
                     env.EFFECTIVE_TARGET_SERVICES = ''
                     env.COMPOSE_CHANGED = 'false'
                     def targets = []
-                    def appAllowed = ['ai', 'backend', 'backend.dev', 'certbot', 'frontend', 'frontend.dev', 'livekit', 'nginx']
+                    def appAllowed = ['ai', 'certbot', 'livekit', 'nginx', 'backend']
                     // 1) 수동 override
                     def manual = (params.TARGET_SERVICES ?: '').trim()
                     if (params.MANUAL_MODE) {
