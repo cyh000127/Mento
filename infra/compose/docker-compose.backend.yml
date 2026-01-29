@@ -46,7 +46,7 @@ services:
       - redis_data:/data
       - ../conf/redis.conf:/usr/local/etc/redis/redis.conf
     env_file:
-      - .env.backend
+      - .env
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD} --maxmemory 1gb --maxmemory-policy allkeys-lru
@@ -68,7 +68,7 @@ services:
     expose:
       - "8080"
     env_file:
-      - .env.backend
+      - .env
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0 -Dfile.encoding=UTF-8"

@@ -8,4 +8,4 @@ rtc:
   node_ip: 3.35.141.61
 
 keys:
-  devkey: devsecret
+  ${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}
