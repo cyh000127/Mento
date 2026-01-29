@@ -40,7 +40,12 @@ out/
 .env
 .env.local
 .env.live
+.env.backend
 
 ### GitHub Actions ###
 .github/
+
+
+### Test for Infra ##
+docker-compose.test.yml
 
