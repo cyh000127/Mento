@@ -22,7 +22,7 @@ public class NotificationQueryServiceImpl implements NotificationQueryService {
 
 	@Override
 	public Slice<NotificationResDto> getNotifications(final Long userId, final Pageable pageable) {
-		return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
+		return notificationRepository.findAllByUserId(userId, pageable)
 			.map(NotificationConverter::toNotificationResDto);
 	}
 }

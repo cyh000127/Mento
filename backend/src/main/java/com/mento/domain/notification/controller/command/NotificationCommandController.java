@@ -15,9 +15,7 @@ import com.mento.common.response.BaseResponse;
 import com.mento.common.util.ResponseUtils;
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.dto.response.NotificationTestResDto;
-import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.service.NotificationFacadeService;
-import com.mento.domain.notification.service.command.NotificationCommandService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,7 +30,6 @@ import lombok.RequiredArgsConstructor;
 public class NotificationCommandController {
 
 	private final NotificationFacadeService notificationFacadeService;
-	private final NotificationCommandService notificationCommandService;
 
 	@Operation(summary = "알림 발송 (테스트용)", description = "알림을 생성하고 발송합니다.")
 	@PreAuthorize("hasRole('ADMIN')")
@@ -40,16 +37,7 @@ public class NotificationCommandController {
 	public ResponseEntity<BaseResponse<NotificationTestResDto>> sendNotification(
 		@RequestBody @Valid NotificationSendReqDto reqDto
 	) {
-		Notification notification = notificationFacadeService.sendNotification(reqDto);
-		
-		NotificationTestResDto resDto = NotificationTestResDto.builder()
-			.notificationId(notification.getId())
-			.targetMemberId(notification.getUserId())
-			.type(notification.getType())
-			.status("SENT")
-			.sentAt(notification.getCreatedAt())
-			.build();
-
+		NotificationTestResDto resDto = notificationFacadeService.sendNotification(reqDto);
 		return ResponseUtils.ok(resDto);
 	}
 
@@ -59,7 +47,7 @@ public class NotificationCommandController {
 		@AuthenticationPrincipal AuthenticatedUser user,
 		@PathVariable Long id
 	) {
-		notificationCommandService.delete(id, user.getId());
+		notificationFacadeService.deleteNotification(user.getId(), id);
 		return ResponseUtils.ok(null);
 	}
 }

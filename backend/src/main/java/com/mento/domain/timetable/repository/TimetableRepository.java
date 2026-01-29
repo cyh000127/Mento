@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.mento.domain.timetable.entity.Timetable;
 
@@ -46,5 +47,16 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
 		""")
 	List<Timetable> findAllByScheduledDateBetween(LocalDate startDate, LocalDate endDate);
 
-	List<Timetable> findByScheduledDateAndScheduledTime(LocalDate scheduledDate, LocalTime scheduledTime);
+	@Query("""
+		SELECT t
+		FROM Timetable t
+		WHERE t.scheduledDate = :scheduledDate
+			AND t.scheduledTime BETWEEN :startTime AND :endTime
+			AND t.deletedAt IS NULL
+		""")
+	List<Timetable> findTimetablesInTimeRange(
+		@Param("scheduledDate") LocalDate scheduledDate,
+		@Param("startTime") LocalTime startTime,
+		@Param("endTime") LocalTime endTime
+	);
 }

@@ -2,6 +2,7 @@ package com.mento.domain.notification.service;
 
 import java.io.IOException;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.stereotype.Service;
@@ -25,24 +26,22 @@ public class RedisSubscriber implements MessageListener {
 	private final SseEmitterRepository sseEmitterRepository;
 
 	@Override
-	public void onMessage(final Message message, final byte[] pattern) {
+	public void onMessage(final @NonNull Message message, final byte[] pattern) {
 		try {
-
 			String body = new String(message.getBody());
 			Notification notification = objectMapper.readValue(body, Notification.class);
 
 			Long userId = notification.getUserId();
 			NotificationResDto resDto = NotificationConverter.toNotificationResDto(notification);
 
-
 			sseEmitterRepository.findById(userId).ifPresent(emitter -> {
 				try {
 					emitter.send(SseEmitter.event()
 						.name("notification")
 						.data(resDto));
-					log.info("[onMessage] 알림 전송 성공 {userId: {}, notificationId: {}}", userId, resDto.id());
-				} catch (IOException e) {
-					log.error("[onMessage] SSE 알림 전송 실패 {userId: {}}", userId, e);
+					log.info("[onMessage] 알림 전송 성공 {userId: {}, notificationId: {}}", userId, resDto.notificationId());
+				} catch (IOException _) {
+					log.error("[onMessage] SSE 알림 전송 실패 {userId: {}}", userId);
 					sseEmitterRepository.deleteById(userId);
 				}
 			});
