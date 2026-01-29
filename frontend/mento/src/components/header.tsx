@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Bell, Package, Menu, X } from "lucide-react";
 import { LoginModal } from "./login-modal";
+import { LogoutConfirmModal } from "./logout-confirm-modal";
 import { NotificationModal, type Notification } from "./notification-modal";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { authApi } from "@/api/auth";
@@ -33,6 +34,7 @@ export function Header() {
   const navigate = useNavigate();
   const { isLoggedIn, user } = useAuthStore();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
@@ -91,8 +93,14 @@ export function Header() {
 
             {isLoggedIn ? (
               <div className="hidden items-center gap-3 md:flex">
-                {user && <span className="text-sm font-medium text-dark-bg/90">{user.name}님</span>}
-                <button onClick={handleLogout} className="rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500">
+                {user && (
+                  <Link to="/mypage/consultations">
+                    <span className="text-sm font-medium text-dark-bg/90">
+                      {user.name}님
+                    </span>
+                  </Link>
+                  )}
+                <button onClick={() => setIsLogoutConfirmOpen(true)} className="rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500">
                   로그아웃
                 </button>
               </div>
@@ -141,7 +149,7 @@ export function Header() {
                     {user && <span className="text-sm font-medium text-dark-bg/90">{user.name}님</span>}
                     <button
                       onClick={() => {
-                        handleLogout();
+                        setIsLogoutConfirmOpen(true);
                         setIsMobileMenuOpen(false);
                       }}
                       className="rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500"
@@ -167,6 +175,11 @@ export function Header() {
       )}
 
       <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      <LogoutConfirmModal
+        isOpen={isLogoutConfirmOpen}
+        onClose={() => setIsLogoutConfirmOpen(false)}
+        onConfirm={handleLogout}
+      />
     </>
   );
 }
