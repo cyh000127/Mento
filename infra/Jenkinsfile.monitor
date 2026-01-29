@@ -72,7 +72,7 @@ pipeline {
 
                     def targets = []
                     // 모니터링 서비스 화이트리스트
-                    def monitorAllowed = ['grafana', 'node-exporter', 'prometheus']
+                    def monitorAllowed = ['grafana', 'node-exporter', 'prometheus' ,'cadvisor']
                     def manualInput = (params.TARGET_SERVICES ?: '').trim()
 
                     // [원칙 3] MANUAL_MODE ON 처리
@@ -81,15 +81,15 @@ pipeline {
                         env.COMPOSE_CHANGED = 'true'
                         if (manualInput == '') {
                             env.EFFECTIVE_TARGET_SERVICES = '' // CD에서 전체(monitorAllowed) 처리
-                            echo "📢 [원칙3] MANUAL_MODE ON + Empty: FULL Monitoring Stack Deployment"
+                            echo "📢 MANUAL_MODE ON + Empty: FULL Monitoring Stack Deployment"
                         } else {
                             env.EFFECTIVE_TARGET_SERVICES = manualInput.replace(',', ' ')
-                            echo "🎯 [원칙3] MANUAL_MODE ON: Targeting: ${env.EFFECTIVE_TARGET_SERVICES}"
+                            echo "🎯 MANUAL_MODE ON: Targeting: ${env.EFFECTIVE_TARGET_SERVICES}"
                         }
                         return
                     }
 
-                    // [원칙 1 & 2] MANUAL_MODE OFF (자동 감지)
+                    // MANUAL_MODE OFF (자동 감지)
                     if (manualInput != '') {
                         env.RUN_CD = 'true'
                         env.EFFECTIVE_TARGET_SERVICES = manualInput.replace(',', ' ')
@@ -103,12 +103,12 @@ pipeline {
                     }
 
                     if (changedLines.isEmpty()) {
-                        echo "📢 [원칙2] No changes detected. Skipping CD call."
+                        echo "📢 No changes detected. Skipping CD call."
                         return
                     }
 
                     changedLines.each { line ->
-                        // 1. Compose 파일 변경 확인 (예: infra/compose/monitor.prometheus.yml)
+                        // 1. Compose 파일 변경 확인
                         if (line.startsWith(env.COMPOSE_PATH_PREFIX)) {
                             monitorAllowed.each { svc ->
                                 if (line.contains(svc)) {
@@ -117,7 +117,7 @@ pipeline {
                                 }
                             }
                         }
-                        // 2. 개별 설정 디렉토리 변경 확인 (예: infra/prometheus/prometheus.yml)
+                        // 2. 개별 설정 디렉토리 변경 확인
                         monitorAllowed.each { svc ->
                             if (line.startsWith("infra/${svc}/")) {
                                 targets << svc
@@ -130,7 +130,7 @@ pipeline {
                     if (!filteredTargets.isEmpty()) {
                         env.RUN_CD = 'true'
                         env.EFFECTIVE_TARGET_SERVICES = filteredTargets.join(' ')
-                        echo "🚀 [원칙1] Monitoring targets identified: ${env.EFFECTIVE_TARGET_SERVICES}"
+                        echo "🚀 Monitoring targets identified: ${env.EFFECTIVE_TARGET_SERVICES}"
                     }
                 }
             }
@@ -146,7 +146,7 @@ pipeline {
                     }
 
                     // 서비스별 설정 파일 동기화
-                    def targetList = (env.EFFECTIVE_TARGET_SERVICES ?: 'grafana node-exporter prometheus').tokenize()
+                    def targetList = (env.EFFECTIVE_TARGET_SERVICES ?: 'grafana node-exporter prometheus cadvisor').tokenize()
                     targetList.each { service ->
                         sh "if [ -d './infra/${service}' ]; then rsync -avz --delete ./infra/${service}/ ${env.EC2_PROJECT_PATH}/infra/${service}/; fi"
                     }
