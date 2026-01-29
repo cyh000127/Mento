@@ -87,7 +87,7 @@ services:
     container_name: mysql-exporter
     restart: unless-stopped
     environment:
-      - DATA_SOURCE_NAME=${DB_USERNAME}:${DB_PASSWORD}@(mysql:3306)/
+      DATA_SOURCE_NAME: "${DB_USERNAME}:${DB_PASSWORD}@(mysql:3306)/"
     networks:
       - monitoring-network
 
