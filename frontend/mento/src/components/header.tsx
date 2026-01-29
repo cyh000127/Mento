@@ -93,7 +93,13 @@ export function Header() {
 
             {isLoggedIn ? (
               <div className="hidden items-center gap-3 md:flex">
-                {user && <span className="text-sm font-medium text-dark-bg/90">{user.name}님</span>}
+                {user && (
+                  <Link to="/mypage/consultations">
+                    <span className="text-sm font-medium text-dark-bg/90">
+                      {user.name}님
+                    </span>
+                  </Link>
+                  )}
                 <button onClick={() => setIsLogoutConfirmOpen(true)} className="rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500">
                   로그아웃
                 </button>
