@@ -49,8 +49,23 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           {/* Social Login Buttons */}
           <div className="flex flex-col gap-3">
             {/* Kakao Login */}
-            <button type="button" className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#FEE500] px-4 py-3.5 font-medium text-[#191919] transition-all hover:brightness-95">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <button
+              type="button"
+              onClick={() => {
+                onClose()
+                window.location.href =
+                  `${import.meta.env.VITE_API_BASE_URL}/oauth2/authorization/kakao`
+              }}
+              className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#FEE500] px-4 py-3.5 font-medium text-[#191919] transition-all hover:brightness-95"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"

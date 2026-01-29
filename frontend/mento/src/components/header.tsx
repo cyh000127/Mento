@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Bell, Package, Menu, X } from "lucide-react";
 import { LoginModal } from "./login-modal";
 import { NotificationModal, type Notification } from "./notification-modal";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { authApi } from "@/api/auth";
 
 const navItems = [
   // { label: "추천", href: "/recommend" }, // 260128 kjm 아직 구현 여부가 결정되지 않아서 주석 처리
@@ -28,6 +30,8 @@ const mockNotifications: Notification[] = [
 ];
 
 export function Header() {
+  const navigate = useNavigate();
+  const { isLoggedIn, user } = useAuthStore();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -35,6 +39,18 @@ export function Header() {
 
   const handleRemoveNotification = (id: string) => {
     setNotifications((prev) => prev.filter((notification) => notification.id !== id));
+  };
+
+  const handleLogout = async () => {
+    try {
+      // authApi.logout()에서 이미 로컬 상태 초기화를 처리함
+      await authApi.logout();
+      navigate("/");
+    } catch (error) {
+      console.error("로그아웃 실패:", error);
+      // authApi.logout()에서 실패해도 로컬 상태는 이미 초기화됨
+      navigate("/");
+    }
   };
 
   return (
@@ -73,9 +89,18 @@ export function Header() {
               <Package className="h-5 w-5" />
             </Link>
 
-            <button onClick={() => setIsLoginOpen(true)} className="hidden rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500 md:block">
-              로그인
-            </button>
+            {isLoggedIn ? (
+              <div className="hidden items-center gap-3 md:flex">
+                {user && <span className="text-sm font-medium text-dark-bg/90">{user.name}님</span>}
+                <button onClick={handleLogout} className="rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500">
+                  로그아웃
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setIsLoginOpen(true)} className="hidden rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500 md:block">
+                로그인
+              </button>
+            )}
 
             {/* Mobile Toggle */}
             <button onClick={() => setIsMobileMenuOpen((v) => !v)} className="rounded-full p-2 text-dark-bg/80 hover:bg-dark-bg/10 md:hidden">
@@ -111,15 +136,30 @@ export function Header() {
                   <Package className="h-5 w-5" />
                 </Link>
 
-                <button
-                  onClick={() => {
-                    setIsLoginOpen(true);
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="ml-auto rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500"
-                >
-                  로그인
-                </button>
+                {isLoggedIn ? (
+                  <div className="ml-auto flex items-center gap-2">
+                    {user && <span className="text-sm font-medium text-dark-bg/90">{user.name}님</span>}
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500"
+                    >
+                      로그아웃
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setIsLoginOpen(true);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="ml-auto rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500"
+                  >
+                    로그인
+                  </button>
+                )}
               </div>
             </div>
           </nav>
