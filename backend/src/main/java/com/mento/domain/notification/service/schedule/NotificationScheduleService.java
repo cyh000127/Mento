@@ -38,9 +38,6 @@ public class NotificationScheduleService {
 
 	/**
 	 * 5분 단위의 스케줄러가 상담 시작 전 알림을 발송합니다.
-	 * 60분 전 (40분 ~ 60분 ): 만료시간 = 시작시간 - 30분
-	 * 30분 전 (19분 ~ 30분 ): 만료시간 = 시작시간 - 10분
-	 * 10분 전 (5분 ~ 15분 후 시작): 만료시간 = 시작시간 + 10분
 	 */
 	@Scheduled(cron = "0 0/5 * * * *")
 	@Transactional
@@ -49,11 +46,10 @@ public class NotificationScheduleService {
 
 		int minute = now.getMinute();
 		LocalTime nextHour = now.toLocalTime().plusHours(1).truncatedTo(ChronoUnit.HOURS);
-		LocalTime currentHour = now.toLocalTime().truncatedTo(ChronoUnit.HOURS);
 
 		if (minute <= 25) {
 			checkAndSendReminders(now.toLocalDate(), nextHour, 
-				"상담 시작이 60분도 안 남았어요!", NotificationType.RESERVATION_REMINDER, -30);
+				"상담 시작 60분 전입니다.", NotificationType.RESERVATION_REMINDER, -30);
 		}
 
 		if (minute >= 30 && minute <= 45) {
@@ -63,12 +59,7 @@ public class NotificationScheduleService {
 
 		if (minute >= 50) {
 			checkAndSendReminders(now.toLocalDate(), nextHour, 
-				"지금부터 상담 입장이 가능합니다. 미리 입장해주세요!", NotificationType.CONSULTING_STARTED, 10);
-		}
-
-		if (minute <= 10) {
-			checkAndSendReminders(now.toLocalDate(), currentHour, 
-				"상담이 시작되었습니다. 얼른 입장해주세요!", NotificationType.CONSULTING_STARTED, 10);
+				"상담 입장이 가능합니다.", NotificationType.CONSULTING_STARTED, 10);
 		}
 	}
 

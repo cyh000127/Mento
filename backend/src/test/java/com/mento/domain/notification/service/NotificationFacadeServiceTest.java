@@ -1,0 +1,139 @@
+package com.mento.domain.notification.service;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.BDDMockito.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import com.mento.domain.notification.dto.request.NotificationSendReqDto;
+import com.mento.domain.notification.dto.response.NotificationResDto;
+import com.mento.domain.notification.dto.response.NotificationTestResDto;
+import com.mento.domain.notification.entity.Notification;
+import com.mento.domain.notification.entity.NotificationType;
+import com.mento.domain.notification.event.NotificationEvent;
+import com.mento.domain.notification.repository.NotificationRepository;
+import com.mento.domain.notification.repository.SseEmitterRepository;
+import com.mento.domain.notification.service.command.NotificationCommandService;
+import com.mento.domain.notification.service.query.NotificationQueryService;
+
+@ExtendWith(MockitoExtension.class)
+class NotificationFacadeServiceTest {
+
+	@InjectMocks
+	private NotificationFacadeService notificationFacadeService;
+
+	@Mock
+	private NotificationCommandService notificationCommandService;
+
+	@Mock
+	private NotificationQueryService notificationQueryService;
+
+	@Mock
+	private NotificationRepository notificationRepository;
+
+	@Mock
+	private SseEmitterRepository sseEmitterRepository;
+
+	@Mock
+	private ApplicationEventPublisher eventPublisher;
+
+	@Test
+	@DisplayName("SSE 구독을 성공하고 미확인 알림을 전송한다")
+	void subscribe_Success() {
+		// given
+		Long userId = 1L;
+
+		Notification notification = Notification.builder()
+			.id(1L)
+			.userId(userId)
+			.type(NotificationType.RESERVATION_REMINDER)
+			.title("Title")
+			.content("Content")
+			.url("/url")
+			.build();
+
+		Slice<Notification> unreadNotifications = new SliceImpl<>(List.of(notification));
+
+		given(notificationRepository.findActiveNotifications(eq(userId), any(LocalDateTime.class), any(Pageable.class)))
+			.willReturn(unreadNotifications);
+
+		// when
+		SseEmitter result = notificationFacadeService.subscribe(userId);
+
+		// then
+		assertThat(result).isNotNull();
+		verify(sseEmitterRepository).save(eq(userId), any(SseEmitter.class));
+	}
+
+	@Test
+	@DisplayName("알림을 발송하고 이벤트를 발행한다")
+	void sendNotification_Success() {
+		// given
+		NotificationSendReqDto reqDto = new NotificationSendReqDto(
+			1L, NotificationType.RESERVATION_REMINDER, "T", "M", "U", null
+		);
+
+		Notification notification = Notification.builder()
+			.id(1L)
+			.userId(1L)
+			.type(NotificationType.RESERVATION_REMINDER)
+			.build();
+
+		given(notificationCommandService.send(reqDto)).willReturn(notification);
+
+		// when
+		NotificationTestResDto result = notificationFacadeService.sendNotification(reqDto);
+
+		// then
+		assertThat(result).isNotNull();
+		assertThat(result.targetMemberId()).isEqualTo(1L);
+		verify(notificationCommandService).send(reqDto);
+		verify(eventPublisher).publishEvent(any(NotificationEvent.class));
+	}
+
+	@Test
+	@DisplayName("알림 목록 조회를 위임한다")
+	void getNotifications_Success() {
+		// given
+		Long userId = 1L;
+		Pageable pageable = Pageable.ofSize(10);
+		Slice<NotificationResDto> expectedResponse = new SliceImpl<>(List.of());
+
+		given(notificationQueryService.getNotifications(userId, pageable)).willReturn(expectedResponse);
+
+		// when
+		Slice<NotificationResDto> result = notificationFacadeService.getNotifications(userId, pageable);
+
+		// then
+		assertThat(result).isEqualTo(expectedResponse);
+		verify(notificationQueryService).getNotifications(userId, pageable);
+	}
+
+	@Test
+	@DisplayName("알림 삭제를 위임한다")
+	void deleteNotification_Success() {
+		// given
+		Long userId = 1L;
+		Long notificationId = 100L;
+
+		// when
+		notificationFacadeService.deleteNotification(userId, notificationId);
+
+		// then
+		verify(notificationCommandService).delete(notificationId, userId);
+	}
+}
