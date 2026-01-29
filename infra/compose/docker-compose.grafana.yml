@@ -10,7 +10,8 @@ services:
     #ports:
     #  - "8888:3000"
     environment:
-      - GF_SERVER_ROOT_URL=http://i14a704.p.ssafy.io:8888
+      - GF_SERVER_ROOT_URL=https://i14a704.p.ssafy.io/grafana/
+      # - GF_SERVER_ROOT_URL=http://i14a704.p.ssafy.io:8888
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     volumes:
       - grafana-data:/var/lib/grafana
