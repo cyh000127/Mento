@@ -51,7 +51,7 @@ pipeline {
                             }
                             
                             // Clean up local images
-                            sh "docker rmi ${DOCKERHUB_REPO}:backend"
+                            sh 'docker rmi ejjem/s14p11a704:backend || true'
                         }
                     }
                 }
