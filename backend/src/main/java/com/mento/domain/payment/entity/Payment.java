@@ -2,6 +2,9 @@ package com.mento.domain.payment.entity;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.github.f4b6a3.tsid.TsidCreator;
 import com.mento.common.converter.AesConverter;
 import com.mento.common.entity.BaseEntity;
 
@@ -27,7 +30,9 @@ import lombok.NoArgsConstructor;
 public class Payment extends BaseEntity {
 	@Id
 	@Column(name = "payment_id")
-	private Long id;
+	@Builder.Default
+	@JsonSerialize(using = ToStringSerializer.class)
+	private Long paymentId = TsidCreator.getTsid().toLong();
 
 	@Column(name = "reservation_id", nullable = false)
 	private Long reservationId;
@@ -53,8 +58,7 @@ public class Payment extends BaseEntity {
 	@Column(name = "refunded_at")
 	private LocalDateTime refundedAt;
 
-	public void approve(String kakaoTid, LocalDateTime paidAt) {
-		this.kakaoTid = kakaoTid;
+	public void approve(LocalDateTime paidAt) {
 		this.paidAt = paidAt;
 		this.status = PaymentStatus.PAID;
 	}
