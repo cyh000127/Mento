@@ -17,8 +17,11 @@ public class CookieUtil {
 		Cookie cookie = new Cookie(name, value);
 		cookie.setPath(PATH);
 		cookie.setHttpOnly(true);
-		// cookie.setSecure(true); // 로컬 테스트용
-		cookie.setAttribute("SameSite", "None");
+
+		// http 환경
+		cookie.setSecure(false);
+		cookie.setAttribute("SameSite", "Lax");
+
 		cookie.setMaxAge(maxAge);
 		response.addCookie(cookie);
 	}

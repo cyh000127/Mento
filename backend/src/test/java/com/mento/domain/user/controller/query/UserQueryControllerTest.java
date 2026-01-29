@@ -55,10 +55,8 @@ class UserQueryControllerTest {
 				}
 
 				@Override
-				public Object resolveArgument(
-					MethodParameter parameter, ModelAndViewContainer mavContainer,
-					NativeWebRequest webRequest, WebDataBinderFactory binderFactory
-				) {
+				public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+					NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
 					String userIdParams = webRequest.getParameter("authUserId");
 					Long authUserId = userIdParams != null ? Long.valueOf(userIdParams) : 1L;
 
