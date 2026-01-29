@@ -1,11 +1,11 @@
 port: 7880
 
 rtc:
-  tcp_port: 7881
-  port_range_start: 20000
-  port_range_end: 30000
-  use_external_ip: true
-  node_ip: 3.35.141.61
+  tcp_port: 8000
+  port_range_start: 16384
+  port_range_end: 32768
+  # use_external_ip: true
+  use_external_ip: false
+  node_ip: 127.0.0.1
+  # node_ip: 3.35.141.61
 
-keys:
-  ${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}
