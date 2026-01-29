@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuthStore } from "@/stores/useAuthStore"
+import { userApi } from "@/api/user"
 
 export default function KakaoCallback() {
   const navigate = useNavigate()
-  const setAccessToken = useAuthStore((s) => s.setAccessToken)
+  const { setAccessToken, setUser } = useAuthStore()
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -37,6 +38,15 @@ export default function KakaoCallback() {
         // accessToken 저장
         setAccessToken(accessToken)
 
+        // 사용자 정보 가져오기
+        try {
+          const userData = await userApi.getCurrentUser()
+          setUser(userData)
+        } catch (userError) {
+          console.error("사용자 정보 조회 실패:", userError)
+          // 사용자 정보 조회 실패해도 로그인은 유지
+        }
+
         // URL에서 토큰 제거
         window.history.replaceState({}, "", "/")
 
@@ -52,7 +62,7 @@ export default function KakaoCallback() {
     }
 
     handleCallback()
-  }, [navigate, setAccessToken])
+  }, [navigate, setAccessToken, setUser])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
