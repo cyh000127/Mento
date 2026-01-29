@@ -35,7 +35,8 @@ export default function KakaoCallback() {
           return
         }
 
-        // accessToken 저장
+        // accessToken을 메모리에 저장 (localStorage 사용 안 함)
+        // refreshToken은 이미 쿠키로 설정되어 있음
         setAccessToken(accessToken)
 
         // 사용자 정보 가져오기
@@ -47,7 +48,7 @@ export default function KakaoCallback() {
           // 사용자 정보 조회 실패해도 로그인은 유지
         }
 
-        // URL에서 토큰 제거
+        // URL에서 토큰 제거 (보안을 위해)
         window.history.replaceState({}, "", "/")
 
         // 홈으로 리다이렉트
