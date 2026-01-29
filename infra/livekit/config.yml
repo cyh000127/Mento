@@ -2,17 +2,15 @@ port: 8000 # Signaling 포트
 
 rtc:
   tcp_port: 8001
-  port_range_start: 16384
-  port_range_end: 32768
+  port_range_start: 20000
+  port_range_end: 21000
   use_external_ip: true
-  node_ip: 3.35.141.61
 
 keys:
-  ${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}
+  devkeys: secret_itsjusttestkeyiwilllchangethisassoonaspossible
 
 redis:
-  address: redis_livekit:6379 # 서비스 이름으로 수정 완료
-
+  address: localhost:6379
 turn:
   enabled: true
-  udp_port: 3478 # 이미지 가이드의 TURN(UDP) 포트와 일치
+  udp_port: 8002

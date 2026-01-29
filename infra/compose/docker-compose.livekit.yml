@@ -1,27 +1,17 @@
 services:
+  redis_livekit:
+    container_name: redis_livekit
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
   livekit:
     image: livekit/livekit-server:latest
     container_name: livekit
     restart: unless-stopped
-    ports:
-      # HTTP Signaling (TCP 8000-8999 범위 준수)
-      - "8000:8000/tcp"
-      # RTC TCP (TCP 8000-8999 범위 준수)
-      - "8001:8001/tcp"
-      # WebRTC Media (UDP 16384-32768 범위 준수)
-      - "16384-32768:16384-32768/udp"
-      # STUN/TURN (이미지 가이드 포트 준수)
-      - "3478:3478/udp"
+    network_mode: "host"
     command: ["--config", "/etc/livekit/config.yml"]
     volumes:
       - ../livekit/config.yml:/etc/livekit/config.yml:ro
     depends_on:
       - redis_livekit
-    environment:
-      - LIVEKIT_API_KEY=${LIVEKIT_API_KEY}
-      - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET}
-
-  redis_livekit:
-    container_name: redis_livekit
-    image: redis:7
-    restart: unless-stopped

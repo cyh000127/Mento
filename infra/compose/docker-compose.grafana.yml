@@ -5,8 +5,10 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     restart: unless-stopped
-    ports:
-      - "8888:3000"
+    expose:
+        - "3000"
+    #ports:
+    #  - "8888:3000"
     environment:
       - GF_SERVER_ROOT_URL=http://i14a704.p.ssafy.io:8888
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
