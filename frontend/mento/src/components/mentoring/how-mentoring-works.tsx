@@ -1,5 +1,4 @@
-import { Search, Calendar, MessageCircle, CheckCircle, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Search, Calendar, MessageCircle, CheckCircle } from "lucide-react";
 
 const steps = [
   {

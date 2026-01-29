@@ -4,7 +4,7 @@ import HomePage from "@/pages/home/HomePage";
 import AiCarePage from "@/pages/ai-care/AiCarePage";
 import ConsultationPage from "@/pages/consultation/ConsultationPage";
 import { ConsultationRoomPage } from "@/pages/consultation/ConsultationRoomPage";
-import { LivekitTestPage } from "@/pages/consultation/LivekitTestPage";
+import { LivekitTestPage } from "@/pages/consultation/LiveKitTestPage";
 import GuidePage from "@/pages/guide/GuidePage";
 import MentoringPage from "@/pages/mentoring/MentoringPage";
 import RecommendPage from "@/pages/recommend/RecommendPage";

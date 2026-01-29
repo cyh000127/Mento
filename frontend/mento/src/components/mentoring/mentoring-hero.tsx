@@ -1,4 +1,4 @@
-import { Users, MessageCircle, Award, ArrowRight } from "lucide-react";
+import { Users, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 export function MentoringHero() {
   return (
