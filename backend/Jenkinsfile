@@ -19,9 +19,8 @@ pipeline {
                 steps {
                     dir('backend') { // 디렉토리 이동
                         echo "===== STARTING TESTS ====="
-                        //sh 'chmod +x gradlew' // 실행 권한 부여
-                        //sh './gradlew test'
-                        //sh './gradlew test || echo "Test failed but continuing..." '
+                        sh 'chmod +x gradlew' // 실행 권한 부여
+                        sh './gradlew test || echo "Test failed but continuing..." '
                     }
                 }
             }
@@ -30,8 +29,8 @@ pipeline {
                 steps {
                     dir('backend') { // 디렉토리 이동
                         echo "===== BUILDING JAR ====="
-                        //sh 'chmod +x gradlew'
-                        //sh './gradlew clean build -x test'
+                        sh 'chmod +x gradlew'
+                        sh './gradlew clean build -x test'
                     }
                 }
             }
