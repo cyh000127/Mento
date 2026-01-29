@@ -1,7 +1,5 @@
 package com.mento.domain.timetable.controller.query;
 
-import java.time.LocalDate;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,15 +26,15 @@ public class TimetableQueryController {
 	private final TimetableFacadeService timetableFacadeService;
 
 	@Operation(
-		summary = "타임테이블 목록 조회",
-		description = "31일 기준으로 타임테이블을 조회합니다. 각 날짜별로 9개의 타임테이블 정보(9~17시)를 반환합니다."
+		summary = "멘토 유형별 타임테이블 목록 조회",
+		description = "31일 기준으로 특정 멘토 유형의 타임테이블 슬롯을 조회합니다. 각 날짜별로 9개의 슬롯 정보(9~17시)를 반환합니다."
 	)
 	@GetMapping
 	public ResponseEntity<BaseResponse<MonthlyTimetableResDto>> getMonthlyTimetables(
-		@Parameter(description = "조회 시작 날짜 (기본값: 오늘)", example = "2026-01-28")
-		@RequestParam(required = false) final LocalDate baseDate
+		@Parameter(description = "멘토 유형 ID (필수)", example = "1", required = true)
+		@RequestParam final Long typeId
 	) {
-		MonthlyTimetableResDto response = timetableFacadeService.getMonthlyTimetables(baseDate);
+		MonthlyTimetableResDto response = timetableFacadeService.getMonthlyTimetables(typeId);
 		return ResponseUtils.ok(response);
 	}
 }

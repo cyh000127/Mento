@@ -1,8 +1,4 @@
-package com.mento.domain.timetable.entity;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+package com.mento.domain.mentor.entity;
 
 import com.mento.common.entity.BaseEntity;
 
@@ -20,32 +16,23 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
+@Table(name = "mentor_types")
 @Builder
-@Table(name = "timetables")
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Timetable extends BaseEntity {
+public class MentorType extends BaseEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "timetable_id")
+	@Column(name = "type_id")
 	private Long id;
 
-	@Column(name = "scheduled_date", nullable = false)
-	private LocalDate scheduledDate;
+	@Column(name = "type_name", nullable = false, length = 50)
+	private String typeName;
 
-	@Column(name = "scheduled_time", nullable = false)
-	private LocalTime scheduledTime;
+	@Column(name = "price", nullable = false)
+	private Integer price;
 
-	@Column(name = "deleted_at")
-	private LocalDateTime deletedAt;
-
-	public void withdraw() {
-		this.deletedAt = LocalDateTime.now();
-	}
-
-	public boolean isDeleted() {
-		return deletedAt != null;
-	}
+	@Column(name = "description")
+	private String description;
 }
-

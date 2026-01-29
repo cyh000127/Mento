@@ -4,25 +4,52 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.mento.common.error.ErrorCode;
+import com.mento.common.error.exception.BusinessException;
+import com.mento.domain.mentor.entity.MentorType;
+import com.mento.domain.mentor.repository.MentorTypeRepository;
 import com.mento.domain.timetable.converter.TimetableConverter;
 import com.mento.domain.timetable.dto.response.MonthlyTimetableResDto;
 import com.mento.domain.timetable.entity.Timetable;
+import com.mento.domain.timetable.entity.TimetableSlot;
 import com.mento.domain.timetable.service.query.TimetableQueryService;
+import com.mento.domain.timetable.service.query.TimetableSlotQueryService;
 import com.mento.domain.timetable.vo.DateRange;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class TimetableFacadeService {
-	private final TimetableQueryService timetableQueryService;
 
-	public MonthlyTimetableResDto getMonthlyTimetables(final LocalDate baseDate) {
-		LocalDate searchDate = baseDate != null ? baseDate : LocalDate.now();
-		DateRange dateRange = DateRange.of(searchDate, searchDate.plusDays(30));
+	private final TimetableQueryService timetableQueryService;
+	private final TimetableSlotQueryService timetableSlotQueryService;
+	private final MentorTypeRepository mentorTypeRepository;
+
+	public MonthlyTimetableResDto getMonthlyTimetables(final Long typeId) {
+		DateRange dateRange = DateRange.ofOneMonthFromToday(LocalDate.now());
+
+		MentorType mentorType = mentorTypeRepository.findById(typeId)
+			.orElseThrow(() -> new BusinessException(ErrorCode.MENTOR_TYPE_NOT_FOUND));
+
 		List<Timetable> timetables = timetableQueryService.findAllByDateRange(dateRange);
-		return TimetableConverter.toMonthlyTimetableResDto(dateRange, timetables);
+		List<TimetableSlot> slots = findSlotsByTimetablesAndType(timetables, typeId);
+
+		return TimetableConverter.toMonthlyTimetableResDto(dateRange, mentorType, slots);
+	}
+
+	private List<TimetableSlot> findSlotsByTimetablesAndType(final List<Timetable> timetables, final Long typeId) {
+		List<Long> timetableIds = extractTimetableIds(timetables);
+		return timetableSlotQueryService.findAllByTimetableIdsAndTypeId(timetableIds, typeId);
+	}
+
+	private List<Long> extractTimetableIds(final List<Timetable> timetables) {
+		return timetables.stream()
+			.map(Timetable::getId)
+			.toList();
 	}
 }

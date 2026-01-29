@@ -17,10 +17,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.mento.domain.timetable.entity.Timetable;
-import com.mento.domain.timetable.entity.TimetableStatus;
 import com.mento.domain.timetable.factory.TimetableFactory;
 import com.mento.domain.timetable.service.query.TimetableQueryService;
+import com.mento.domain.timetable.strategy.TimetableGenerationStrategy;
 import com.mento.domain.timetable.vo.DateRange;
+import com.mento.domain.timetable.vo.TimetableGenerationResult;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("TimetableGenerationStrategy 테스트")
@@ -53,10 +54,10 @@ class TimetableGenerationStrategyTest {
 			.thenReturn(mockTimetables);
 
 		// when
-		List<Timetable> result = generationStrategy.generateForMissingDates(dateRange);
+		TimetableGenerationResult result = generationStrategy.generateForMissingDates(dateRange);
 
 		// then
-		assertThat(result).isNotEmpty();
+		assertThat(result.getTimetables()).isNotEmpty();
 		verify(queryService, times(1)).findExistingDatesInRange(startDate, endDate);
 		verify(timetableFactory, times(2)).createDailyTimetables(any(LocalDate.class));
 	}
@@ -79,10 +80,10 @@ class TimetableGenerationStrategyTest {
 			.thenReturn(existingDates);
 
 		// when
-		List<Timetable> result = generationStrategy.generateForMissingDates(dateRange);
+		TimetableGenerationResult result = generationStrategy.generateForMissingDates(dateRange);
 
 		// then
-		assertThat(result).isEmpty();
+		assertThat(result.isEmpty()).isTrue();
 		verify(timetableFactory, never()).createDailyTimetables(any(LocalDate.class));
 	}
 
@@ -104,10 +105,10 @@ class TimetableGenerationStrategyTest {
 			.thenReturn(mockTimetables);
 
 		// when
-		List<Timetable> result = generationStrategy.generateForMissingDates(dateRange);
+		TimetableGenerationResult result = generationStrategy.generateForMissingDates(dateRange);
 
 		// then
-		assertThat(result).isNotEmpty();
+		assertThat(result.getTimetables()).isNotEmpty();
 		verify(timetableFactory, times(2)).createDailyTimetables(any(LocalDate.class));
 	}
 
@@ -123,9 +124,6 @@ class TimetableGenerationStrategyTest {
 		return Timetable.builder()
 			.scheduledDate(date)
 			.scheduledTime(LocalTime.of(hour, 0))
-			.status(TimetableStatus.ACTIVE)
-			.maxCapacity(15)
-			.currentCapacity(0)
 			.build();
 	}
 }

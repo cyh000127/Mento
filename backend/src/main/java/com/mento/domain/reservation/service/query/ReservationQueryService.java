@@ -1,4 +1,4 @@
-package com.mento.domain.reservation.controller.query;
+package com.mento.domain.reservation.service.query;
 
 import com.mento.domain.reservation.entity.Reservation;
 
