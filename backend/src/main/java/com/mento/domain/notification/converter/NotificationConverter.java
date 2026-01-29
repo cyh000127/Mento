@@ -1,12 +1,9 @@
 package com.mento.domain.notification.converter;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
-import com.mento.domain.notification.dto.response.NotificationItemResDto;
-import com.mento.domain.notification.dto.response.NotificationListResDto;
 import com.mento.domain.notification.dto.response.NotificationResDto;
 import com.mento.domain.notification.dto.response.NotificationTestResDto;
 import com.mento.domain.notification.entity.Notification;
@@ -43,27 +40,6 @@ public class NotificationConverter {
 			.url(entity.getUrl())
 			.title(entity.getTitle())
 			.content(entity.getContent())
-			.createdAt(entity.getCreatedAt())
-			.build();
-	}
-
-	public NotificationListResDto toNotificationListResDto(List<Notification> notifications) {
-		List<NotificationItemResDto> items = notifications.stream()
-			.map(NotificationConverter::toNotificationItemResDto)
-			.toList();
-
-		return NotificationListResDto.builder()
-			.notifications(items)
-			.build();
-	}
-
-	private NotificationItemResDto toNotificationItemResDto(Notification entity) {
-		return NotificationItemResDto.builder()
-			.notificationId(entity.getId())
-			.type(entity.getType().name())
-			.title(entity.getTitle())
-			.content(entity.getContent())
-			.url(entity.getUrl())
 			.createdAt(entity.getCreatedAt())
 			.build();
 	}

@@ -9,6 +9,7 @@ import com.mento.domain.notification.converter.NotificationConverter;
 import com.mento.domain.notification.dto.response.NotificationResDto;
 import com.mento.domain.notification.repository.NotificationRepository;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,7 +22,7 @@ public class NotificationQueryServiceImpl implements NotificationQueryService {
 	private final NotificationRepository notificationRepository;
 
 	@Override
-	public Slice<NotificationResDto> getNotifications(final Long userId, final Pageable pageable) {
+	public Slice<@NonNull NotificationResDto> getNotifications(final Long userId, final Pageable pageable) {
 		return notificationRepository.findAllByUserId(userId, pageable)
 			.map(NotificationConverter::toNotificationResDto);
 	}
