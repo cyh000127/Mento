@@ -1,10 +1,13 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+import type { User } from "@/types/user"
 
 interface AuthState {
   accessToken: string | null
   isLoggedIn: boolean
+  user: User | null
   setAccessToken: (token: string) => void
+  setUser: (user: User) => void
   logout: () => void
 }
 
@@ -13,6 +16,7 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       accessToken: null,
       isLoggedIn: false,
+      user: null,
 
       setAccessToken: (token) =>
         set({
@@ -20,10 +24,16 @@ export const useAuthStore = create<AuthState>()(
           isLoggedIn: true,
         }),
 
+      setUser: (user) =>
+        set({
+          user,
+        }),
+
       logout: () =>
         set({
           accessToken: null,
           isLoggedIn: false,
+          user: null,
         }),
     }),
     {
@@ -31,6 +41,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         accessToken: state.accessToken,
         isLoggedIn: state.isLoggedIn,
+        user: state.user,
       }),
     }
   )
