@@ -47,24 +47,39 @@ public class NotificationScheduleService {
 	public void scheduleConsultationReminders() {
 		LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
 
-		checkAndSendReminders(now.toLocalDate(), now.toLocalTime().plusMinutes(40), now.toLocalTime().plusMinutes(60),
-			"1시간 안에 상담이 시작됩니다.", NotificationType.RESERVATION_REMINDER, -30);
+		int minute = now.getMinute();
+		LocalTime nextHour = now.toLocalTime().plusHours(1).truncatedTo(ChronoUnit.HOURS);
+		LocalTime currentHour = now.toLocalTime().truncatedTo(ChronoUnit.HOURS);
 
-		checkAndSendReminders(now.toLocalDate(), now.toLocalTime().plusMinutes(20), now.toLocalTime().plusMinutes(30),
-			"30분 안에 상담이 시작됩니다.", NotificationType.RESERVATION_REMINDER, -10);
+		if (minute <= 25) {
+			checkAndSendReminders(now.toLocalDate(), nextHour, 
+				"상담 시작이 60분도 안 남았어요!", NotificationType.RESERVATION_REMINDER, -30);
+		}
 
-		checkAndSendReminders(now.toLocalDate(), now.toLocalTime().plusMinutes(5), now.toLocalTime().plusMinutes(15),
-			"지금부터 상담 입장이 가능합니다!", NotificationType.RESERVATION_REMINDER, 10);
+		if (minute >= 30 && minute <= 45) {
+			checkAndSendReminders(now.toLocalDate(), nextHour, 
+				"상담 시작 30분 전입니다. 준비해주세요.", NotificationType.RESERVATION_REMINDER, -10);
+		}
+
+		if (minute >= 50) {
+			checkAndSendReminders(now.toLocalDate(), nextHour, 
+				"지금부터 상담 입장이 가능합니다. 미리 입장해주세요!", NotificationType.CONSULTING_STARTED, 10);
+		}
+
+		if (minute <= 10) {
+			checkAndSendReminders(now.toLocalDate(), currentHour, 
+				"상담이 시작되었습니다. 얼른 입장해주세요!", NotificationType.CONSULTING_STARTED, 10);
+		}
 	}
 
 	private void checkAndSendReminders(LocalDate targetDate,
-		LocalTime startTime,
-		LocalTime endTime,
+		LocalTime targetTime,
 		String title,
 		NotificationType type,
 		int expiryOffsetMinutes) {
+		
 		List<Timetable> timetables = timetableRepository
-			.findTimetablesInTimeRange(targetDate, startTime, endTime);
+			.findByScheduledDateAndScheduledTime(targetDate, targetTime);
 
 		if (timetables.isEmpty()) {
 			return;

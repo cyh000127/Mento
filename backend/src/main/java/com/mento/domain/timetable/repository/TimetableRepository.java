@@ -51,12 +51,11 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
 		SELECT t
 		FROM Timetable t
 		WHERE t.scheduledDate = :scheduledDate
-			AND t.scheduledTime BETWEEN :startTime AND :endTime
+			AND t.scheduledTime = :scheduledTime
 			AND t.deletedAt IS NULL
 		""")
-	List<Timetable> findTimetablesInTimeRange(
+	List<Timetable> findByScheduledDateAndScheduledTime(
 		@Param("scheduledDate") LocalDate scheduledDate,
-		@Param("startTime") LocalTime startTime,
-		@Param("endTime") LocalTime endTime
+		@Param("scheduledTime") LocalTime scheduledTime
 	);
 }
