@@ -10,8 +10,8 @@ services:
       - ../livekit/config.yml:/etc/livekit/config.yml:ro
     ports:
       # signaling (ws/wss)
-      - "7880:7880"
+      - "8001:7880"
       # WebRTC TCP fallback
-      - "7881:7881"
+      - "8000:7881"
       # WebRTC media (UDP Range) - 대규모 접속 대응
-      - "50000-60000:50000-60000/udp"
+      - "20000-30000:50000-60000/udp"
