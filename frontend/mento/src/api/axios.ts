@@ -8,6 +8,9 @@ export const api = axios.create({
   withCredentials: true, // refreshToken 쿠키를 위해 필수
 })
 
+// 토큰 재발급 요청 중복 방지를 위한 Promise
+let refreshTokenPromise: Promise<string | null> | null = null
+
 // 요청마다 accessToken 붙이기 (메모리에서 가져옴)
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken
@@ -31,25 +34,61 @@ api.interceptors.response.use(
   async (error) => {
     const original = error.config
 
+    // 재발급 요청 자체가 실패한 경우 무한 루프 방지
+    if (original?.url?.includes("/auth/reissue")) {
+      refreshTokenPromise = null
+      useAuthStore.getState().logout()
+      return Promise.reject(error)
+    }
+
     // 401 에러이고 재시도하지 않은 요청인 경우
     if (error.response?.status === 401 && !original?._retry) {
       original._retry = true
+
       try {
-        // refreshToken 쿠키를 사용하여 토큰 재발급
-        const response = await api.post("/auth/reissue")
-        
-        // 새로운 accessToken을 헤더에서 추출하여 저장
-        const authHeader = response.headers["authorization"]
-        if (authHeader?.startsWith("Bearer ")) {
-          const newAccessToken = authHeader.replace("Bearer ", "")
-          useAuthStore.getState().setAccessToken(newAccessToken)
+        // 이미 재발급 요청이 진행 중이면 그 결과를 기다림 (중복 방지)
+        if (!refreshTokenPromise) {
+          refreshTokenPromise = (async () => {
+            try {
+              // refreshToken 쿠키를 사용하여 토큰 재발급
+              const response = await axios.post(
+                `${API_BASE}/api/v1/auth/reissue`,
+                {},
+                { withCredentials: true }
+              )
+
+              // 새로운 accessToken을 헤더에서 추출하여 저장
+              const authHeader = response.headers["authorization"]
+              if (authHeader?.startsWith("Bearer ")) {
+                const newAccessToken = authHeader.replace("Bearer ", "")
+                useAuthStore.getState().setAccessToken(newAccessToken)
+                return newAccessToken
+              }
+              return null
+            } catch (err) {
+              refreshTokenPromise = null
+              throw err
+            }
+          })()
         }
-        
+
+        const newAccessToken = await refreshTokenPromise
+        refreshTokenPromise = null
+
+        if (!newAccessToken) {
+          throw new Error("토큰 재발급 실패: 새 토큰을 받지 못했습니다.")
+        }
+
+        // 원래 요청에 새 토큰 적용
+        original.headers.Authorization = `Bearer ${newAccessToken}`
         // 원래 요청 재시도
         return api(original)
       } catch (reissueError) {
         // 토큰 재발급 실패 시 로그아웃
+        refreshTokenPromise = null
         useAuthStore.getState().logout()
+        
+        console.error("토큰 재발급 실패:", reissueError)
         return Promise.reject(reissueError)
       }
     }
