@@ -23,6 +23,7 @@ public enum ErrorCode {
 	METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "C-008", "지원하지 않는 HTTP 메서드입니다."),
 	UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "C-009", "지원하지 않는 미디어 타입입니다."),
 	DATA_INTEGRITY_VIOLATION(HttpStatus.CONFLICT, "C-010", "데이터 무결성 위반입니다."),
+	CRYPTO_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C-011", "데이터 암호화 처리 중 오류가 발생했습니다."),
 
 	/**
 	 * File Error (F-xxx)

@@ -18,6 +18,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.BusinessException;
+import com.mento.common.error.exception.CryptoException;
 import com.mento.common.error.exception.FileStorageException;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.response.ErrorResponse;
@@ -177,5 +178,16 @@ public class GlobalExceptionHandler {
 		LoggingUtils.logException("MethodArgumentNotValidException 발생", ex, request);
 		ErrorResponse response = ErrorResponse.of(ErrorCode.INVALID_INPUT, request);
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(BaseResponse.fail(response));
+	}
+
+	@ExceptionHandler(CryptoException.class)
+	public ResponseEntity<BaseResponse<ErrorResponse>> handleCryptoException(
+		CryptoException ex,
+		HttpServletRequest request
+	) {
+		LoggingUtils.logException("CryptoException 발생 ", ex, request);
+		ErrorResponse response = ErrorResponse.of(ErrorCode.CRYPTO_ERROR, request);
+
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(BaseResponse.fail(response));
 	}
 }

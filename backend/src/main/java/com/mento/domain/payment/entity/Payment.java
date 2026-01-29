@@ -2,14 +2,14 @@ package com.mento.domain.payment.entity;
 
 import java.time.LocalDateTime;
 
+import com.mento.common.converter.AesConverter;
 import com.mento.common.entity.BaseEntity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -25,17 +25,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(name = "payments")
 public class Payment extends BaseEntity {
-
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "payment_id")
 	private Long id;
 
 	@Column(name = "reservation_id", nullable = false)
 	private Long reservationId;
-
-	@Column(name = "order_id", nullable = false)
-	private Long orderId;
 
 	@Column(name = "amount", nullable = false)
 	private Integer amount;
@@ -48,6 +43,7 @@ public class Payment extends BaseEntity {
 	@Column(name = "status", nullable = false)
 	private PaymentStatus status;
 
+	@Convert(converter = AesConverter.class)
 	@Column(name = "kakao_tid")
 	private String kakaoTid;
 

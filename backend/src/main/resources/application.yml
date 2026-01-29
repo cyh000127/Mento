@@ -44,6 +44,9 @@ kakaopay:
     cancel: http://localhost:8080/swagger-ui/index.html
     fail: http://localhost:8080/swagger-ui/index.html
 
+encryption:
+  secret-key: ${ENCRYPTION_SECRET_KEY}
+
 springdoc:
   swagger-ui:
     display-request-duration: true
