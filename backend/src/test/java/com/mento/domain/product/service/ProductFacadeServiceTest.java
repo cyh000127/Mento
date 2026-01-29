@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,7 +19,7 @@ import org.springframework.data.domain.Sort;
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.brand.entity.Brand;
 import com.mento.domain.brand.exception.BrandException;
-import com.mento.domain.brand.repository.BrandRepository;
+import com.mento.domain.brand.service.query.BrandQueryService;
 import com.mento.domain.product.dto.request.ProductCreateReqDto;
 import com.mento.domain.product.dto.request.ProductSearchCondition;
 import com.mento.domain.product.dto.response.ProductResDto;
@@ -40,7 +39,7 @@ class ProductFacadeServiceTest {
 	private ProductQueryService productQueryService;
 
 	@Mock
-	private BrandRepository brandRepository;
+	private BrandQueryService brandQueryService;
 
 	@InjectMocks
 	private ProductFacadeService productFacadeService;
@@ -65,7 +64,7 @@ class ProductFacadeServiceTest {
 			.name("Test Product")
 			.build();
 
-		given(brandRepository.findById(brandId)).willReturn(Optional.of(brand));
+		given(brandQueryService.getBrand(brandId)).willReturn(brand);
 		given(productCommandService.create(any(Product.class))).willReturn(product);
 
 		// when
@@ -74,7 +73,7 @@ class ProductFacadeServiceTest {
 		// then
 		assertThat(result.name()).isEqualTo("Test Product");
 		assertThat(result.brandName()).isEqualTo("Test Brand");
-		then(brandRepository).should(times(1)).findById(brandId);
+		then(brandQueryService).should(times(1)).getBrand(brandId);
 		then(productCommandService).should(times(1)).create(any(Product.class));
 	}
 
@@ -91,7 +90,8 @@ class ProductFacadeServiceTest {
 			.defaultUsageDays(90)
 			.build();
 
-		given(brandRepository.findById(brandId)).willReturn(Optional.empty());
+		given(brandQueryService.getBrand(brandId))
+			.willThrow(new BrandException(ErrorCode.BRAND_NOT_FOUND));
 
 		// when & then
 		assertThatThrownBy(() -> productFacadeService.createProduct(reqDto))
