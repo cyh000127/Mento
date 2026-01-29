@@ -15,96 +15,95 @@ pipeline {
                 }
             }
 
-            stage('Backend Test') {
-                steps {
-                    dir('backend') { // 디렉토리 이동
-                        echo "===== STARTING TESTS ====="
-                        sh 'chmod +x gradlew' // 실행 권한 부여
-                        sh './gradlew test || echo "Test failed but continuing..." '
-                    }
+        stage('Backend Test') {
+            steps {
+                dir('backend') { // 디렉토리 이동
+                    echo "===== STARTING TESTS ====="
+                    sh 'chmod +x gradlew' // 실행 권한 부여
+                    sh './gradlew test || echo "Test failed but continuing..." '
                 }
             }
+        }
 
-            stage('Backend Build') {
-                steps {
-                    dir('backend') { // 디렉토리 이동
-                        echo "===== BUILDING JAR ====="
-                        sh 'chmod +x gradlew'
-                        sh './gradlew clean build -x test'
-                    }
+        stage('Backend Build') {
+            steps {
+                dir('backend') { // 디렉토리 이동
+                    echo "===== BUILDING JAR ====="
+                    sh 'chmod +x gradlew'
+                    sh './gradlew clean build -x test'
                 }
             }
+        }
 
-            stage('Docker Build & Push') {
-                steps {
-                    echo "===== DOCKERIZING ====="
+        stage('Docker Build & Push') {
+            steps {
+                echo "===== DOCKERIZING ====="
                     script {
                         dir('backend') { // 디렉토리 이동
                             // Docker Build
                             // 태그: backend (고정 태그 사용)
                             sh "docker build -t ${DOCKERHUB_REPO}:backend ."
-                            
+
                             // Docker Login & Push
                             withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIAL_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                                sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
-                                sh "docker push ${DOCKERHUB_REPO}:backend"
-                            }
-                            
-                            // Clean up local images
-                            sh 'docker rmi ejjem/s14p11a704:backend || true'
+                            sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+                            sh "docker push ${DOCKERHUB_REPO}:backend"
                         }
-                    }
-                }
-            }
-
-            stage('Sync SQL to EC2') {
-                            steps {
-                                script {
-                                    echo "===== COPYING SQL TO INFRA DIRECTORY (LOCAL) ====="
-
-                                    // EC2 내부의 절대 경로 정의
-                                    def TARGET_SCRIPT_DIR = "/home/ubuntu/app/infra/infra-repo/infra/script"
-
-                                    // 1. 디렉토리 생성 (이미 있어도 에러 안 남)
-                                    sh "mkdir -p ${TARGET_SCRIPT_DIR}"
-
-                                    // 2. 로컬 복사 (Jenkins 작업 공간 -> 서비스 운영 폴더)
-                                    // Jenkins는 현재 'backend' 폴더 안에서 작업 중이므로 경로 주의
-                                    sh "cp backend/script/init.sql ${TARGET_SCRIPT_DIR}/init.sql"
-
-                                    // 3. 권한 설정 (필요 시)
-                                    sh "chmod 644 ${TARGET_SCRIPT_DIR}/init.sql"
-                                }
-                            }
-                        }
-
-            stage('Trigger CD') {
-                steps {
-                    script {
-                      echo "===== TRIGGER CD/FINAL ====="
-                      // CD 트리거는 디렉토리와 상관없이 수행
-                      build job: 'CD/Final',
-                        wait: true,
-                        parameters: [
-                          string(name: 'TARGET_SERVICES', value: 'backend'),
-                        ]
+                        // Clean up local images
+                        sh 'docker rmi ejjem/s14p11a704:backend || true'
                     }
                 }
             }
         }
+        stage('Sync file to EC2'){
+            steps {
+                script {
+                    echo "===== COPYING redis.conf, init.sql TO INFRA DIRECTORY (LOCAL) ====="
+                    // EC2 내부의 절대 경로 정의
+                    def TARGET_SCRIPT_DIR = "/home/ubuntu/app/infra/infra-repo/infra/script"
+                    def TARGET_CONF_DIR = "/home/ubuntu/app/infra/infra-repo/infra/conf"
 
-    post {
-      success {
-        echo "CI(BE) SUCCESS"
-        sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
-      }
-      failure {
-        echo "CI(BE) FAILURE"
-        sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
-      }
-      always {
-        echo "CI(BE) DONE"
-      }
+                   // 1. 디렉토리 생성
+                    sh "mkdir -p ${TARGET_SCRIPT_DIR}"
+                    sh "mkdir -p ${TARGET_CONF_DIR}"
+
+                    // 2. 로컬 복사 (redis.conf 추가)
+                    sh "cp backend/script/init.sql ${TARGET_SCRIPT_DIR}/init.sql"
+                    sh "cp backend/redis.conf ${TARGET_CONF_DIR}/redis.conf"
+
+                    // 3. 권한 설정
+                    sh "chmod 644 ${TARGET_SCRIPT_DIR}/init.sql"
+                    sh "chmod 644 ${TARGET_CONF_DIR}/redis.conf"
+                }
+            }
+        }
+
+
+        stage('Trigger CD') {
+            steps {
+                script {
+                    echo "===== TRIGGER CD/FINAL ====="
+                    // CD 트리거는 디렉토리와 상관없이 수행
+                    build job: 'CD/Final',
+                        wait: true,
+                        parameters: [
+                        string(name: 'TARGET_SERVICES', value: 'backend'),
+                        ]
+                }
+            }
+        }
     }
-
+    post {
+        success {
+            echo "CI(BE) SUCCESS"
+            sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
+        }
+        failure {
+            echo "CI(BE) FAILURE"
+            sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
+        }
+        always {
+            echo "CI(BE) DONE"
+        }
+    }
 }
