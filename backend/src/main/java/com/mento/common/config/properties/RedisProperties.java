@@ -15,7 +15,7 @@ public record RedisProperties(
 	@NotNull(message = "Redis Port 정보는 필수입니다.")
 	Integer port,
 
-	@NotBlank(message = "Redis Password 정본느 필수입니다.")
+	@NotBlank(message = "Redis Password 정보는 필수입니다.")
 	String password
 ) {
 }
