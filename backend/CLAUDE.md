@@ -88,6 +88,12 @@ Entity (도메인 모델)
 - 예: `service/schedule/`, `service/strategy/` 등
 - FacadeService에서 이러한 특수 서비스들을 조율
 
+**도메인 간 의존성 처리:**
+- FacadeService는 **다른 도메인의 QueryService를 직접 의존** 가능
+- 예: `PaymentFacadeService` → `ReservationQueryService`, `MentorQueryService` 의존
+- 읽기 전용 조회는 QueryService로 직접 호출, 상태 변경은 해당 도메인의 CommandService 호출
+- 여러 도메인의 상태를 동시에 변경하는 경우 FacadeService에서 트랜잭션 관리
+
 ### 패키지 구조
 
 ```
@@ -325,6 +331,10 @@ log.info("[User] 생성 완료 {id: {}, email: {}}", user.getId(), user.getEmail
 **화상 상담:**
 - `LiveKitManager`: LiveKit 토큰 생성 및 룸 관리
 
+**데이터 보안:**
+- `AesConverter`: JPA AttributeConverter, AES-256 암호화/복호화
+- 사용처: 민감한 문자열 필드 (예: Payment.kakaoTid)
+
 ## Security Configuration
 
 **현재 상태:**
@@ -341,8 +351,19 @@ log.info("[User] 생성 완료 {id: {}, email: {}}", user.getId(), user.getEmail
 - 환경변수: `CLOUDFLARE_ENDPOINT`, `CLOUDFLARE_BUCKET`, `CLOUDFLARE_ACCESS_KEY`, `CLOUDFLARE_SECRET_KEY`
 
 ### LiveKit (화상 상담)
-- consulting 도메인에서 사용
+- livekit 도메인에서 사용
 - 환경변수: `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`
+
+### 카카오페이 (결제)
+- payment 도메인에서 사용
+- Base URL: https://open-api.kakaopay.com
+- 환경변수: `KAKAOPAY_CLIENT_ID`, `KAKAOPAY_SECRET_KEY`
+- Redirect URLs: 승인/취소/실패 페이지 (프로파일별 설정 권장)
+
+### 데이터 암호화
+- AES 암호화 사용 (민감 정보 저장)
+- 환경변수: `ENCRYPTION_SECRET_KEY`
+- 사용처: Payment.kakaoTid (`@Convert(converter = AesConverter.class)`)
 
 ## Code Quality
 
@@ -354,12 +375,15 @@ log.info("[User] 생성 완료 {id: {}, email: {}}", user.getId(), user.getEmail
 
 ## 구현된 도메인
 
-- **User**: 사용자 관리 (OAuth2)
-- **Auth**: 인증/인가 (JWT, Refresh Token)
-- **Consulting**: 화상 상담 (LiveKit)
-- **File**: 파일 업로드 (Cloudflare R2)
-- **Reservation**: 예약 관리
-- **Timetable**: 시간표 관리 (스케줄링, 31일 범위 조회 API)
+- **User**: 사용자 관리 (OAuth2, 구현체만 사용)
+- **Auth**: 인증/인가 (JWT, Refresh Token, 인터페이스+Impl)
+- **LiveKit**: 화상 상담 (LiveKit 토큰 발급)
+- **Reservation**: 예약 관리 (멘토 배정, 인터페이스+Impl)
+- **Timetable**: 시간표 관리 (스케줄링, 31일 범위 조회 API, 인터페이스+Impl)
+- **Payment**: 결제 관리 (카카오페이, AES 암호화, 인터페이스+Impl)
+- **Mentor**: 멘토 관리 (타입별 랜덤 조회, 인터페이스+Impl)
+- **Brand**: 브랜드 관리 (인터페이스+Impl)
+- **Product**: 상품 관리 (구현체만 사용)
 
 ### Timetable 도메인 특징
 - **VO (Value Object)**: `DateRange` - 날짜 범위 객체로 비즈니스 로직 캡슐화
@@ -367,6 +391,19 @@ log.info("[User] 생성 완료 {id: {}, email: {}}", user.getId(), user.getEmail
 - **Strategy 패턴**: `TimetableGenerationStrategy` - 누락된 날짜만 타임테이블 생성
 - **Scheduling Service**: `TimetableSchedulingService` - 타임테이블 자동 생성/삭제 스케줄링
 - **월별 조회 API**: 네이버 예약 방식으로 31일치 데이터를 한 번에 반환 (페이지네이션 없음)
+
+### Payment 도메인 특징
+- **Factory 패턴**: `PaymentFactory` - 결제 엔티티 생성 로직 분리
+- **외부 API 통합**: `KakaoPaymentService` - 카카오페이 API (준비/승인)
+- **AES 암호화**: `kakaoTid` 필드에 `@Convert(converter = AesConverter.class)` 사용
+- **상태 관리**: `PaymentStatus` enum (INIT → READY → PAID/FAILED/REFUNDED)
+- **도메인 간 트랜잭션**: `PaymentFacadeService.approvePaymentAndConfirmReservation()`
+  - 결제 승인 처리 (Payment)
+  - 예약 확정 처리 (Reservation)
+  - 랜덤 멘토 배정 (Mentor)
+  - 타임테이블 슬롯 용량 증가 (Timetable)
+- **양방향 관계**: `Payment` ↔ `Reservation` (OneToOne)
+- **TSID 사용**: paymentId 생성
 
 ## 새 도메인 추가 체크리스트
 
@@ -382,12 +419,29 @@ log.info("[User] 생성 완료 {id: {}, email: {}}", user.getId(), user.getEmail
 ### 선택 컴포넌트
 - **Exception** - BusinessException 상속, ErrorCode (도메인별 prefix)
 - **VO** - 불변 객체, 비즈니스 로직 캡슐화 (예: DateRange)
-- **Factory** - 복잡한 Entity 생성 로직 분리
+- **Factory** - 복잡한 Entity 생성 로직 분리 (예: PaymentFactory, TimetableFactory)
 - **Strategy** - 알고리즘 패턴 분리
 - **Scheduling Service** - 스케줄링 작업 분리
+- **외부 API Service** - 외부 API 통합 서비스 (예: KakaoPaymentService)
+- **Converter** - 데이터 변환 (예: AesConverter for 암호화)
 
 ## Additional Notes
 
 - Virtual Threads 활성화
 - Swagger: http://localhost:8080/swagger-ui/index.html
 - Plain JAR 비활성화 (bootJar만 생성)
+- TSID 사용: `com.github.f4b6a3:tsid-creator` (분산 환경에서 고유 ID 생성)
+
+## 최근 구현 완료 기능
+
+### Payment + Reservation 통합 워크플로우
+1. 결제 준비 (`POST /api/v1/payments/ready`)
+   - 예약 정보 기반 카카오페이 결제 준비
+   - Payment 엔티티 생성 (READY 상태)
+
+2. 결제 승인 + 예약 확정 (`POST /api/v1/payments/approve/reservation`)
+   - 카카오페이 승인 처리
+   - 랜덤 멘토 배정 (타입별)
+   - 타임테이블 슬롯 용량 증가
+   - 예약 상태 CONFIRMED로 변경
+   - 단일 트랜잭션 처리 (롤백 보장)
