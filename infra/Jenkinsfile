@@ -313,23 +313,41 @@ pipeline {
             when { expression { return env.RUN_CD == 'true' } }
             steps {
                 script {
-                    // Compose 파일들 동기화
+                    // 1. 공통 인프라 설정 동기화 (Nginx, Livekit 등)
+                    // 특정 서비스 변경과 무관하게 항상 최신 상태를 유지해야 하는 설정들
+                    def commonConfigs = ['nginx', 'livekit']
+                    commonConfigs.each { config ->
+                        echo "Syncing common config: ${config}"
+                        sh """
+                        if [ -d "./infra/${config}" ]; then
+                            mkdir -p ${env.EC2_PROJECT_PATH}/infra/${config}
+                            rsync -avz --delete ./infra/${config}/ ${env.EC2_PROJECT_PATH}/infra/${config}/
+                        else
+                            echo "Common config directory ./infra/${config} not found."
+                        fi
+                        """
+                    }
+
+                    // 2. Compose 파일 동기화
                     if (env.COMPOSE_CHANGED == 'true') {
                         echo "Syncing: ./infra/compose/ -> ${env.EC2_PROJECT_PATH}/infra/compose/"
                         sh "rsync -avz --delete ./infra/compose/ ${env.EC2_PROJECT_PATH}/infra/compose/"
                     }
 
-                    // 서비스별 설정 파일 동기화
+                    // 3. 서비스별 설정 파일 동기화 (기존 로직)
                     def targetList = (env.EFFECTIVE_TARGET_SERVICES ?: '').tokenize()
                     targetList.each { service ->
-                        echo "Syncing config for: ${service}"
-                        sh """
-                        if [ -d "./infra/${service}" ]; then
-                            rsync -avz --delete ./infra/${service}/ ${env.EC2_PROJECT_PATH}/infra/${service}/
-                        else
-                            echo "Directory ./infra/${service} not found. Skipping."
-                        fi
-                        """
+                        // 위에서 이미 처리한 commonConfigs는 중복 방지를 위해 제외 가능
+                        if (!commonConfigs.contains(service)) {
+                            echo "Syncing config for target service: ${service}"
+                            sh """
+                            if [ -d "./infra/${service}" ]; then
+                                rsync -avz --delete ./infra/${service}/ ${env.EC2_PROJECT_PATH}/infra/${service}/
+                            else
+                                echo "Directory ./infra/${service} not found. Skipping."
+                            fi
+                            """
+                        }
                     }
                 }
             }
