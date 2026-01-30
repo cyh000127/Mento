@@ -155,84 +155,76 @@ pipeline {
                     env.EFFECTIVE_TARGET_SERVICES = ''
                     env.COMPOSE_CHANGED = 'false'
                     def targets = []
+                    // 배포 허용 리스트
                     def appAllowed = ['ai', 'certbot', 'livekit', 'nginx', 'backend']
-                    // 1) 수동 override
-                    def manual = (params.TARGET_SERVICES ?: '').trim()
+
+                 // 1) 수동 모드 처리
                     if (params.MANUAL_MODE) {
                         env.RUN_CD = 'true'
                         env.COMPOSE_CHANGED = 'true'
-                        if (manual == '') {
-                            // TARGET_SERVICES가 공백이면 CD에 빈 값을 전달 (CD에서 전체 변경 처리)
-                            env.EFFECTIVE_TARGET_SERVICES = ''
-                            echo "📢 MANUAL_MODE ON + Empty Target: Requesting FULL deployment to CD."
-                        } else {
-                            // 값이 있으면 해당 서비스만 전달
-                            env.EFFECTIVE_TARGET_SERVICES = manual.replace(',', ' ')
-                            echo "🎯 MANUAL_MODE ON: Targeting specific services: ${env.EFFECTIVE_TARGET_SERVICES}"
-                        }
-                        return
-                    }
-
-                    if (manual != '') {
-                        env.RUN_CD = 'true'
+                        def manual = (params.TARGET_SERVICES ?: '').trim()
                         env.EFFECTIVE_TARGET_SERVICES = manual.replace(',', ' ')
-                        echo "Manual override -> Targets: ${env.EFFECTIVE_TARGET_SERVICES}"
+                        echo "🎯 MANUAL_MODE ON: Targeting: ${env.EFFECTIVE_TARGET_SERVICES ?: 'ALL'}"
                         return
                     }
 
-                    // 2) 변경 파일 목록 읽기
+                 // 2) 변경 파일 목록 읽기
                     def changedLines = []
-                    try {
-                        if (fileExists('changed_files.txt')) {
-                            changedLines = readFile('changed_files.txt').readLines().collect { it.trim() }.findAll { it }
-                        }
-                    } catch (ignored) { }
+                    if (fileExists('changed_files.txt')) {
+                        changedLines = readFile('changed_files.txt').readLines().collect { it.trim() }.findAll { it }
+                    }
 
-                    if (changedLines.isEmpty()) {
-                        echo "No changes detected."
+                 if (changedLines.isEmpty()) {
+                        echo "📢 No changes detected in git diff."
                         return
                     }
 
-                    // 3) Compose 파일 변경 감지 -> 서비스명 추출
+                 // 3) 변경 감지 상세 로직
                     changedLines.each { line ->
+                        // A. Compose 파일 변경 감지
                         if (line.startsWith(env.COMPOSE_PATH_PREFIX) && (line.endsWith(".yml") || line.endsWith(".yaml"))) {
                             env.COMPOSE_CHANGED = 'true'
                             def fileName = line.split('/').last()
                             def parts = fileName.split('\\.')
                             if (parts.size() >= 3) {
-                                def serviceIdentifier = parts[1..-2].join('.')
-                                targets << serviceIdentifier
+                                targets << parts[1..-2].join('.')
                             }
+                        }
+
+                        // B. Nginx 설정 파일 변경 감지
+                        if (line.startsWith("infra/nginx/")) {
+                            echo "🔍 Nginx config change detected: ${line}"
+                            targets << 'nginx'
+                        }
+
+                     // C. LiveKit 설정 파일 변경 감지
+                        if (line.startsWith("infra/livekit/")) {
+                            echo "🔍 LiveKit config change detected: ${line}"
+                            targets << 'livekit'
+                        }
+
+                     // D. Certbot 관련 변경 (Nginx 재시작 필요)
+                        if (line.startsWith("infra/certbot/")) {
+                            targets << 'certbot'
+                            targets << 'nginx'
                         }
                     }
 
-                    // 4) 관련 설정(conf 등) 변경 시 타겟 추가
-                    if (changedLines.any { it.startsWith("infra/nginx/") }) targets << 'nginx'
-                    if (changedLines.any { it.startsWith("infra/certbot/") }) {
-                        targets << 'certbot'
-                        targets << 'nginx' // 의존성 반영
-                    }
-                    if (changedLines.any { it.startsWith("infra/livekit/") || it.contains("livekit") }) {
-                        targets << 'livekit'
-                    }
-
-                    // 5) 결과 정리
-                    // 중복 제거 후 화이트리스트(appAllowed)에 있는 것만 추출
+                 // 4) 필터링 및 최종 결정
                     def filteredAppTargets = targets.unique().findAll { it in appAllowed }
 
-                    // 제외된 서비스(모니터링 등)가 있다면 로그 출력
-                    def ignored = targets.unique().findAll { !(it in appAllowed) }
-                    if (!ignored.isEmpty()) {
-                        echo "🛡️ CI/Infra Defense: Ignoring non-app services: 🚫 ${ignored}"
-                    }
-
-                    // 필터링된 결과가 있을 때만 배포 진행
-                    if (!filteredAppTargets.isEmpty()) {
+                 if (!filteredAppTargets.isEmpty()) {
                         env.RUN_CD = 'true'
                         env.EFFECTIVE_TARGET_SERVICES = filteredAppTargets.join(' ')
                         echo "🚀 Final compute targets: ✅ ${env.EFFECTIVE_TARGET_SERVICES}"
                     } else {
-                        echo "⚠️ No app-related changes detected after filtering."
+                        // 만약 compose 파일만 바뀌었는데 targets에 안 들어간 경우 대비
+                        if (env.COMPOSE_CHANGED == 'true') {
+                            env.RUN_CD = 'true'
+                            echo "⚙️ Only Compose files changed. Triggering CD."
+                        } else {
+                            echo "⚠️ No app-related changes detected."
+                        }
                     }
                 }
             }
