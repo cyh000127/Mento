@@ -1,6 +1,7 @@
 package com.mento.domain.reservation.repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -34,4 +35,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 		@Param("status") ReservationStatus status,
 		Pageable pageable
 	);
+
+	boolean existsByUserIdAndSlotIdAndStatusIn(Long userId, Long slotId, Collection<ReservationStatus> statuses);
 }

@@ -1,6 +1,7 @@
 package com.mento.domain.reservation.service.query;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,4 +23,6 @@ public interface ReservationQueryService {
 		final LocalDate endDate,
 		final Pageable pageable
 	);
+
+	boolean existsByUserIdAndSlotIdAndStatusIn(Long userId, Long id, List<ReservationStatus> reservationStatuses);
 }

@@ -1,6 +1,7 @@
 package com.mento.domain.reservation.service.query;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -62,6 +63,15 @@ public class ReservationQueryServiceImpl implements ReservationQueryService {
 			userId, status, startDate, endDate, page.getTotalElements(), page.getNumber()
 		);
 		return page;
+	}
+
+	@Override
+	public boolean existsByUserIdAndSlotIdAndStatusIn(
+		final Long userId,
+		final Long reservationId,
+		final List<ReservationStatus> reservationStatuses
+	) {
+		return reservationRepository.existsByUserIdAndSlotIdAndStatusIn(userId, reservationId, reservationStatuses);
 	}
 
 }

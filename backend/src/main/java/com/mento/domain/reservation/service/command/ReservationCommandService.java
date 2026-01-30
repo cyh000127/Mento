@@ -1,17 +1,8 @@
 package com.mento.domain.reservation.service.command;
 
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.mento.domain.reservation.entity.Reservation;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+public interface ReservationCommandService {
 
-@Slf4j
-@Service
-@Transactional
-@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
-public class ReservationCommandService {
-
+	Reservation save(Reservation reservation);
 }
-
