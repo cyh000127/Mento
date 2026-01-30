@@ -21,16 +21,14 @@ public class PaymentQueryService {
 		Payment payment = paymentRepository.findById(id)
 			.orElseThrow(() -> new PaymentException(ErrorCode.PAYMENT_NOT_FOUND));
 
-		PaymentResponseDto response = PaymentResponseDto.builder()
+		return PaymentResponseDto.builder()
 			.paymentId(String.valueOf(payment.getPaymentId()))
-			.reservationId(String.valueOf(payment.getReservationId()))
+			.reservationId(String.valueOf(payment.getReservation().getId()))
 			.amount(String.valueOf(payment.getAmount()))
 			.status(String.valueOf(payment.getStatus()))
 			.paidAt(payment.getPaidAt())
 			.refundedAt(payment.getRefundedAt())
 			.build();
-		
-		return response;
 	}
 
 }
