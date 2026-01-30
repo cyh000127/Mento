@@ -10,6 +10,7 @@ type AnalysisState = "upload" | "loading" | "result";
 
 export function SkinAnalysis() {
   const [state, setState] = useState<AnalysisState>("upload");
+  const [gender, setGender] = useState<string>("");
   const [birthDate, setBirthDate] = useState("");
   const [leftImage, setLeftImage] = useState<UploadedImage | null>(null);
   const [frontImage, setFrontImage] = useState<UploadedImage | null>(null);
@@ -72,6 +73,11 @@ export function SkinAnalysis() {
   };
 
   const handleStartAnalysis = async () => {
+    if (!gender) {
+      alert("성별을 선택해주세요.");
+      return;
+    }
+
     if (!birthDate) {
       alert("생년월일을 입력해주세요.");
       return;
@@ -88,6 +94,7 @@ export function SkinAnalysis() {
     try {
       // TODO: API 호출 로직 추가
       // const formData = new FormData();
+      // formData.append("gender", gender);
       // formData.append("birthDate", birthDate);
       // formData.append("leftImage", leftImage.file);
       // formData.append("frontImage", frontImage.file);
@@ -97,9 +104,6 @@ export function SkinAnalysis() {
       //   body: formData,
       // });
       // const data = await response.json();
-
-      console.log("Birth Date:", birthDate);
-      console.log("Images:", { leftImage, frontImage, rightImage });
 
       // 시뮬레이션: 3초 후 결과 표시
       await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -123,22 +127,57 @@ export function SkinAnalysis() {
             <h2 className="mb-4 text-2xl font-bold text-text-primary md:text-3xl">피부 분석 시작하기</h2>
             <p className="mb-8 text-text-secondary">사진을 업로드하면 AI가 피부 상태를 분석하여 맞춤 솔루션을 제안합니다.</p>
 
-            {/* Birth Date Input */}
-            <div className="mb-6">
-              <label htmlFor="birth-date" className="mb-2 block text-sm font-medium text-text-primary">
-                생년월일 <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                id="birth-date"
-                value={birthDate}
-                onChange={(e) => setBirthDate(e.target.value)}
-                max={new Date().toISOString().split("T")[0]}
-                className="w-full rounded-lg border border-border bg-background px-4 py-3 text-text-primary focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                placeholder="YYYY-MM-DD"
-              />
-              <p className="mt-2 text-xs text-text-secondary">정확한 피부 분석을 위해 생년월일을 입력해주세요.</p>
+            {/* Gender and Birth Date Input */}
+            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {/* Gender Input - Left */}
+              <div>
+                <div className="mb-2 block text-sm font-medium text-text-primary">
+                  성별 <span className="text-red-500">*</span>
+                </div>
+                <div className="flex gap-6 py-3">
+                  <label className="w-1/2 flex cursor-pointer items-center gap-2">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value="male"
+                      checked={gender === "male"}
+                      onChange={(e) => setGender(e.target.value)}
+                      className="h-5 w-5 cursor-pointer border-2 border-border text-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:ring-offset-0"
+                    />
+                    <span className="text-sm font-medium text-text-primary">남성</span>
+                  </label>
+                  <label className="w-1/2 flex cursor-pointer items-center gap-2">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value="female"
+                      checked={gender === "female"}
+                      onChange={(e) => setGender(e.target.value)}
+                      className="h-5 w-5 cursor-pointer border-2 border-border text-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:ring-offset-0"
+                    />
+                    <span className="text-sm font-medium text-text-primary">여성</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Birth Date Input - Right */}
+              <div>
+                <label htmlFor="birth-date" className="mb-2 block text-sm font-medium text-text-primary">
+                  생년월일 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  id="birth-date"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  max={new Date().toISOString().split("T")[0]}
+                  className="w-full rounded-lg border border-border bg-background px-4 py-3 text-text-primary focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                  placeholder="YYYY-MM-DD"
+                />
+              </div>
             </div>
+
+            <p className="mb-6 text-xs text-text-secondary">정확한 피부 분석을 위해 성별과 생년월일을 입력해주세요.</p>
 
             {/* Upload Boxes - 3 sections */}
             <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -146,7 +185,7 @@ export function SkinAnalysis() {
               <div className="rounded-xl border-2 border-dashed border-primary-300 bg-primary-100/30 p-4 text-center transition-all hover:border-primary-400 hover:bg-primary-100/50">
                 <input ref={leftInputRef} type="file" accept="image/*" onChange={(e) => handleFileChange(e, "left")} className="hidden" id="left-image-input" />
                 {leftImage ? (
-                  <div className="relative h-40 w-full">
+                  <div className="relative aspect-[3/4] w-full">
                     <img src={leftImage.preview} alt="좌측면" className="h-full w-full rounded-lg object-cover" />
                     <button
                       type="button"
@@ -157,7 +196,7 @@ export function SkinAnalysis() {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex h-40 w-full flex-col items-center justify-center">
+                  <div className="flex aspect-[3/4] w-full flex-col items-center justify-center">
                     <div className="mb-3 flex justify-center">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-500">
                         <Upload className="h-6 w-6 text-dark-bg" />
@@ -180,7 +219,7 @@ export function SkinAnalysis() {
               <div className="rounded-xl border-2 border-dashed border-primary-300 bg-primary-100/30 p-4 text-center transition-all hover:border-primary-400 hover:bg-primary-100/50">
                 <input ref={frontInputRef} type="file" accept="image/*" onChange={(e) => handleFileChange(e, "front")} className="hidden" id="front-image-input" />
                 {frontImage ? (
-                  <div className="relative h-40 w-full">
+                  <div className="relative aspect-[3/4] w-full">
                     <img src={frontImage.preview} alt="정면" className="h-full w-full rounded-lg object-cover" />
                     <button
                       type="button"
@@ -191,7 +230,7 @@ export function SkinAnalysis() {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex h-40 w-full flex-col items-center justify-center">
+                  <div className="flex aspect-[3/4] w-full flex-col items-center justify-center">
                     <div className="mb-3 flex justify-center">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-500">
                         <Upload className="h-6 w-6 text-dark-bg" />
@@ -214,7 +253,7 @@ export function SkinAnalysis() {
               <div className="rounded-xl border-2 border-dashed border-primary-300 bg-primary-100/30 p-4 text-center transition-all hover:border-primary-400 hover:bg-primary-100/50">
                 <input ref={rightInputRef} type="file" accept="image/*" onChange={(e) => handleFileChange(e, "right")} className="hidden" id="right-image-input" />
                 {rightImage ? (
-                  <div className="relative h-40 w-full">
+                  <div className="relative aspect-[3/4] w-full">
                     <img src={rightImage.preview} alt="우측면" className="h-full w-full rounded-lg object-cover" />
                     <button
                       type="button"
@@ -225,7 +264,7 @@ export function SkinAnalysis() {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex h-40 w-full flex-col items-center justify-center">
+                  <div className="flex aspect-[3/4] w-full flex-col items-center justify-center">
                     <div className="mb-3 flex justify-center">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-500">
                         <Upload className="h-6 w-6 text-dark-bg" />
@@ -264,14 +303,16 @@ export function SkinAnalysis() {
             <button
               type="button"
               onClick={handleStartAnalysis}
-              disabled={!birthDate || !leftImage || !frontImage || !rightImage}
+              disabled={!gender || !birthDate || !leftImage || !frontImage || !rightImage}
               className="mt-6 w-full rounded-lg bg-primary-500 px-6 py-3 font-medium text-dark-bg transition-colors hover:bg-primary-400 disabled:cursor-not-allowed disabled:bg-muted disabled:text-text-secondary"
             >
-              {birthDate && leftImage && frontImage && rightImage ? (
+              {gender && birthDate && leftImage && frontImage && rightImage ? (
                 <>
                   <Sparkles className="mr-2 inline-block h-4 w-4" />
                   AI 피부 분석 시작
                 </>
+              ) : !gender ? (
+                "성별을 선택해주세요"
               ) : !birthDate ? (
                 "생년월일을 입력해주세요"
               ) : (
@@ -381,6 +422,7 @@ export function SkinAnalysis() {
                 type="button"
                 onClick={() => {
                   setState("upload");
+                  setGender("");
                   setBirthDate("");
                   setLeftImage(null);
                   setFrontImage(null);
