@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { Upload, Sparkles, ChevronRight, X, Loader2 } from "lucide-react";
+import { userApi } from "@/api/user";
 
 interface UploadedImage {
   file: File;
@@ -92,18 +93,15 @@ export function SkinAnalysis() {
     setState("loading");
 
     try {
-      // TODO: API 호출 로직 추가
-      // const formData = new FormData();
-      // formData.append("gender", gender);
-      // formData.append("birthDate", birthDate);
-      // formData.append("leftImage", leftImage.file);
-      // formData.append("frontImage", frontImage.file);
-      // formData.append("rightImage", rightImage.file);
-      // const response = await fetch("/api/skin-analysis", {
-      //   method: "POST",
-      //   body: formData,
-      // });
-      // const data = await response.json();
+      // 1. 생년월일 정보 업데이트 API 호출
+      console.log("생년월일 업데이트 중:", birthDate);
+      await userApi.updateUserProfile({
+        birthDate: birthDate,
+      });
+      console.log("생년월일 업데이트 완료");
+
+      // 2. 피부 분석 API 호출 (TODO: 실제 피부 분석 API 구현)
+      
 
       // 시뮬레이션: 3초 후 결과 표시
       await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -111,8 +109,9 @@ export function SkinAnalysis() {
       // 결과 상태로 변경
       setState("result");
     } catch (error) {
-      console.error("Analysis failed:", error);
-      alert("분석 중 오류가 발생했습니다. 다시 시도해주세요.");
+      console.error("분석 실패:", error);
+      const errorMessage = error instanceof Error ? error.message : "분석 중 오류가 발생했습니다.";
+      alert(errorMessage);
       setState("upload");
     }
   };
