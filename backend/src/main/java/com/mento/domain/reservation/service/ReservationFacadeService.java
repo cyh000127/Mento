@@ -169,6 +169,18 @@ public class ReservationFacadeService {
 		return ReservationConverter.toReservationDraftResDto(savedReservation);
 	}
 
+	@Transactional
+	public ReservationDetailResDto updateReservationSurveyData(
+		final AuthenticatedUser authUser,
+		final Long reservationId,
+		final String surveyData
+	) {
+		Reservation reservation = reservationQueryService.findById(reservationId);
+		reservationValidator.validateReservationAccess(authUser, reservation);
+		reservation.updateSurveyData(surveyData);
+		return ReservationConverter.toReservationDetailResDto(reservation);
+	}
+
 	private void validateNoDuplicateReservation(final Long userId, final Long slotId) {
 		boolean exists = reservationQueryService.existsByUserIdAndSlotIdAndStatusIn(
 			userId,
