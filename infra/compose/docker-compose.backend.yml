@@ -23,6 +23,9 @@ services:
       - --slow-query-log=1
       - --slow-query-log-file=/var/lib/mysql/slow.log
       - --long-query-time=0.5
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
     deploy:
       resources:
         limits:
