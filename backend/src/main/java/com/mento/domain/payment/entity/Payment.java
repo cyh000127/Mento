@@ -38,7 +38,7 @@ public class Payment extends BaseEntity {
 	@JsonSerialize(using = ToStringSerializer.class)
 	private Long paymentId = TsidCreator.getTsid().toLong();
 
-	@OneToOne(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToOne(mappedBy = "payment", cascade = CascadeType.ALL)
 	private Reservation reservation;
 
 	@Column(name = "amount", nullable = false)
@@ -63,22 +63,29 @@ public class Payment extends BaseEntity {
 	@Column(name = "refunded_at")
 	private LocalDateTime refundedAt;
 
-	public void ready(String kakaoTid) {
+	public void assignReservation(final Reservation reservation) {
+		if (reservation == null) {
+			throw new IllegalArgumentException("예약 정보가 누락되었습니다");
+		}
+		this.reservation = reservation;
+	}
+
+	public void updateReady(final String kakaoTid) {
 		this.kakaoTid = kakaoTid;
 		this.status = PaymentStatus.READY;
 	}
 
-	public void approve() {
+	public void updateApprove() {
 		this.paidAt = TimeUtils.nowAsLocalDateTime();
 		this.status = PaymentStatus.PAID;
 	}
 
-	public void refund() {
+	public void updateRefund() {
 		this.refundedAt = TimeUtils.nowAsLocalDateTime();
 		this.status = PaymentStatus.REFUNDED;
 	}
 
-	public void fail() {
+	public void updateFail() {
 		this.status = PaymentStatus.FAILED;
 	}
 
