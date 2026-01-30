@@ -2,7 +2,7 @@ package com.mento.common.config;
 
 import java.util.Collections;
 import java.util.List;
-
+import java.util.Arrays;
 import org.springdoc.core.properties.SwaggerUiConfigProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
