@@ -5,7 +5,6 @@ import { Footer } from "@/components/footer"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { authApi } from "@/api/auth"
 import { userApi } from "@/api/user"
-import { getCookie } from "@/utils/cookie"
 
 export default function Layout() {
   const { accessToken, user, setUser } = useAuthStore()
@@ -42,16 +41,14 @@ export default function Layout() {
       }
 
       // accessToken도 없고 user도 없는 경우 - refreshToken으로 복원 시도
-      const hasRefreshToken = getCookie("refreshToken")
-      
-      if (hasRefreshToken && !accessToken) {
+      if (!accessToken) {
         console.log("토큰 재발급 및 사용자 정보 복원 시도")
         isFetchingRef.current = true
         try {
           // refreshToken을 사용하여 새로운 accessToken 발급
           await authApi.reissue()
           // authApi.reissue()에서 이미 setAccessToken을 호출함
-          
+
           // 사용자 정보 복원
           try {
             const userData = await userApi.getCurrentUser()

@@ -4,9 +4,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 // 환경변수 없이 hostname 기반으로 API Origin 자동 결정
 const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
-const API_ORIGIN = isLocalhost
-  ? "http://localhost:8080"
-  : "https://i14a704.p.ssafy.io";
+const API_ORIGIN = isLocalhost ? "http://localhost:8080" : "https://i14a704.p.ssafy.io";
 
 // /api/v1 포함한 baseURL (API 호출용)
 export const api = axios.create({
