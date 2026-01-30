@@ -25,15 +25,15 @@ public record KakaoApproveResDto(
 
 	@JsonProperty("approved_at")
 	LocalDateTime approvedAt
-	
+
 ) {
-	public Integer totalAmount() {
+	public Long totalAmount() {
 		return (amount == null) ? 0 : amount.total();
 	}
 
 	private record Amount(
 		@JsonProperty("total")
-		Integer total
+		Long total
 	) {
 	}
 

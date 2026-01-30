@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.github.f4b6a3.tsid.TsidCreator;
 import com.mento.common.converter.AesConverter;
 import com.mento.common.entity.BaseEntity;
+import com.mento.common.util.TimeUtils;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -38,15 +39,16 @@ public class Payment extends BaseEntity {
 	private Long reservationId;
 
 	@Column(name = "amount", nullable = false)
-	private Integer amount;
+	private Long amount;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "payment_method", nullable = false)
 	private PaymentMethod paymentMethod;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false)
-	private PaymentStatus status;
+	@Column(name = "status")
+	@Builder.Default
+	private PaymentStatus status = PaymentStatus.INIT;
 
 	@Convert(converter = AesConverter.class)
 	@Column(name = "kakao_tid")
@@ -58,20 +60,23 @@ public class Payment extends BaseEntity {
 	@Column(name = "refunded_at")
 	private LocalDateTime refundedAt;
 
-	public void approve(LocalDateTime paidAt) {
-		this.paidAt = paidAt;
+	public void ready(String kakaoTid) {
+		this.kakaoTid = kakaoTid;
+		this.status = PaymentStatus.READY;
+	}
+
+	public void approve() {
+		this.paidAt = TimeUtils.nowAsLocalDateTime();
 		this.status = PaymentStatus.PAID;
+	}
+
+	public void refund() {
+		this.refundedAt = TimeUtils.nowAsLocalDateTime();
+		this.status = PaymentStatus.REFUNDED;
 	}
 
 	public void fail() {
 		this.status = PaymentStatus.FAILED;
 	}
 
-	public void cancel() {
-		this.status = PaymentStatus.CANCELLED;
-	}
-
-	public void refund() {
-		this.status = PaymentStatus.REFUNDED;
-	}
 }

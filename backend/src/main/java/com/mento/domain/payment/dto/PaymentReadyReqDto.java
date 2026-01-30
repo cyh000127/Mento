@@ -4,9 +4,9 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
 @Builder
-public record PaymentReqDto(
-	@NotNull String reservationId,
+public record PaymentReadyReqDto(
+	@NotNull Long reservationId,
 	@NotNull String itemName,
-	@NotNull Integer totalAmount
+	@NotNull Long totalAmount
 ) {
 }

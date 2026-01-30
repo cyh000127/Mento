@@ -81,7 +81,15 @@ public enum ErrorCode {
 	/**
 	 * Brand Error (B-xxx)
 	 */
-	BRAND_NOT_FOUND(HttpStatus.NOT_FOUND, "B-001", "브랜드를 찾을 수 없습니다.");
+	BRAND_NOT_FOUND(HttpStatus.NOT_FOUND, "B-001", "브랜드를 찾을 수 없습니다."),
+
+	/**
+	 * Payment Error(PY-xxx)
+	 */
+	PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PY-001", "결제 내역을 찾을 수 없습니다."),
+	PAYMENT_READY_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PY-002", "결제 준비 요청에 실패했습니다."),
+	PAYMENT_APPROVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PY-003", "결제 승인 요청이 실패했습니다."),
+	PAYMENT_REFUND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PY-004", "결제 환불 요청에 실패했습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;
