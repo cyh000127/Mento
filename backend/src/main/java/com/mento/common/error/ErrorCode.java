@@ -65,6 +65,8 @@ public enum ErrorCode {
 	CONSULTING_ENDED(HttpStatus.GONE, "CS-003", "이미 종료된 상담입니다."),
 	NOT_AUTHORIZED(HttpStatus.FORBIDDEN, "CS-004", "해당 상담에 참여 권한이 없습니다."),
 	MISSING_TIMETABLE(HttpStatus.BAD_REQUEST, "CS-005", "타임테이블 정보가 누락되었습니다."),
+	TIMETABLE_PAST_TIME(HttpStatus.BAD_REQUEST, "CS-006", "만료된 타임테이블입니다."),
+	TIMETABLE_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "CS-007", "타임테이블에 접근이 불가능합니다."),
 
 	/**
 	 * Timetable Slot Error (TS-xxx)
@@ -79,6 +81,7 @@ public enum ErrorCode {
 	RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "R-001", "예약 정보를 찾을 수 없습니다."),
 	RESERVATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "R-002", "해당 예약에 접근할 권한이 없습니다."),
 	MISSING_RESERVATION(HttpStatus.BAD_REQUEST, "R-003", "예약 정보가 누락되었습니다."),
+	DUPLICATE_RESERVATION(HttpStatus.BAD_REQUEST, "R-004", "중복된 예약 요청입니다."),
 
 	/**
 	 * MENTOR Error (M-xxx)
@@ -104,7 +107,8 @@ public enum ErrorCode {
 	PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PY-001", "결제 내역을 찾을 수 없습니다."),
 	PAYMENT_READY_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PY-002", "결제 준비 요청이 실패했습니다."),
 	PAYMENT_APPROVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PY-003", "결제 승인 요청이 실패했습니다."),
-	PAYMENT_REFUND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PY-004", "결제 환불 요청이 실패했습니다.");
+	PAYMENT_REFUND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PY-004", "결제 환불 요청이 실패했습니다."),
+	MISSING_PAYMENT(HttpStatus.BAD_REQUEST, "R-005", "결제 정보가 누락되었습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;
