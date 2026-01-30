@@ -26,7 +26,6 @@ import com.mento.domain.reservation.dto.response.ReservationDetailResDto;
 import com.mento.domain.reservation.dto.response.ReservationPageInfoDto;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.entity.ReservationStatus;
-import com.mento.domain.reservation.factory.ReservationFactory;
 import com.mento.domain.reservation.service.command.ReservationCommandService;
 import com.mento.domain.reservation.service.query.ReservationQueryService;
 import com.mento.domain.reservation.validator.ReservationValidator;
@@ -48,7 +47,6 @@ public class ReservationFacadeService {
 	private final ReservationCommandService reservationCommandService;
 	private final ReservationQueryService reservationQueryService;
 	private final ReservationValidator reservationValidator;
-	private final ReservationFactory reservationFactory;
 
 	private final TimetableQueryService timeTableQueryService;
 	private final TimetableSlotQueryService timetableSlotQueryService;
