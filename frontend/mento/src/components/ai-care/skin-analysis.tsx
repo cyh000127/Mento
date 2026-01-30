@@ -93,7 +93,7 @@ export function SkinAnalysis() {
   };
 
   return (
-    <section className="bg-background py-16 md:py-24">
+    <section id="skin-analysis" className="bg-background py-16 md:py-24">
       <div className="mx-auto max-w-[1200px] px-6">
         <div className="grid items-start gap-12 lg:grid-cols-2">
           {/* Left - Upload Area */}
