@@ -1,4 +1,4 @@
-package com.mento.domain.timetable.service;
+package com.mento.domain.timetable.service.facade;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -6,10 +6,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.mento.common.error.ErrorCode;
-import com.mento.common.error.exception.BusinessException;
 import com.mento.domain.mentor.entity.MentorType;
-import com.mento.domain.mentor.repository.MentorTypeRepository;
+import com.mento.domain.mentor.service.query.MentorTypeQueryService;
 import com.mento.domain.timetable.converter.TimetableConverter;
 import com.mento.domain.timetable.dto.response.MonthlyTimetableResDto;
 import com.mento.domain.timetable.entity.Timetable;
@@ -28,14 +26,12 @@ public class TimetableFacadeService {
 
 	private final TimetableQueryService timetableQueryService;
 	private final TimetableSlotQueryService timetableSlotQueryService;
-	private final MentorTypeRepository mentorTypeRepository;
+	private final MentorTypeQueryService mentorTypeQueryService;
 
 	public MonthlyTimetableResDto getMonthlyTimetables(final Long typeId) {
 		DateRange dateRange = DateRange.ofOneMonthFromToday(LocalDate.now());
 
-		MentorType mentorType = mentorTypeRepository.findById(typeId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.MENTOR_TYPE_NOT_FOUND));
-
+		MentorType mentorType = mentorTypeQueryService.findById(typeId);
 		List<Timetable> timetables = timetableQueryService.findAllByDateRange(dateRange);
 		List<TimetableSlot> slots = findSlotsByTimetablesAndType(timetables, typeId);
 

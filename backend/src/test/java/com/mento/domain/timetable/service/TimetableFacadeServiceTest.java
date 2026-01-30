@@ -7,7 +7,6 @@ import static org.mockito.Mockito.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,12 +14,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.mento.domain.mentor.entity.MentorType;
-import com.mento.domain.mentor.repository.MentorTypeRepository;
+import com.mento.domain.mentor.service.query.MentorTypeQueryService;
 import com.mento.domain.timetable.dto.response.MonthlyTimetableResDto;
 import com.mento.domain.timetable.entity.Timetable;
 import com.mento.domain.timetable.entity.TimetableSlot;
+import com.mento.domain.timetable.service.facade.TimetableFacadeService;
 import com.mento.domain.timetable.service.query.TimetableQueryService;
 import com.mento.domain.timetable.service.query.TimetableSlotQueryService;
 import com.mento.domain.timetable.vo.DateRange;
@@ -36,7 +37,7 @@ class TimetableFacadeServiceTest {
 	private TimetableSlotQueryService timetableSlotQueryService;
 
 	@Mock
-	private MentorTypeRepository mentorTypeRepository;
+	private MentorTypeQueryService mentorTypeQueryService;
 
 	@InjectMocks
 	private TimetableFacadeService timetableFacadeService;
@@ -51,8 +52,8 @@ class TimetableFacadeServiceTest {
 		List<Timetable> mockTimetables = createMockTimetables(today);
 		List<TimetableSlot> mockSlots = createMockSlots(mockTimetables, mockMentorType);
 
-		when(mentorTypeRepository.findById(typeId))
-			.thenReturn(Optional.of(mockMentorType));
+		when(mentorTypeQueryService.findById(typeId))
+			.thenReturn(mockMentorType);
 		when(timetableQueryService.findAllByDateRange(any(DateRange.class)))
 			.thenReturn(mockTimetables);
 		when(timetableSlotQueryService.findAllByTimetableIdsAndTypeId(anyList(), eq(typeId)))
@@ -67,7 +68,7 @@ class TimetableFacadeServiceTest {
 		assertThat(result.mentorTypeName()).isEqualTo("스킨케어");
 		assertThat(result.startDate()).isEqualTo(today);
 		assertThat(result.endDate()).isEqualTo(today.plusMonths(1));
-		verify(mentorTypeRepository, times(1)).findById(typeId);
+		verify(mentorTypeQueryService, times(1)).findById(typeId);
 		verify(timetableQueryService, times(1)).findAllByDateRange(any(DateRange.class));
 		verify(timetableSlotQueryService, times(1)).findAllByTimetableIdsAndTypeId(anyList(), eq(typeId));
 	}
@@ -79,8 +80,8 @@ class TimetableFacadeServiceTest {
 		Long typeId = 1L;
 		MentorType mockMentorType = createMockMentorType(typeId, "스킨케어");
 
-		when(mentorTypeRepository.findById(typeId))
-			.thenReturn(Optional.of(mockMentorType));
+		when(mentorTypeQueryService.findById(typeId))
+			.thenReturn(mockMentorType);
 		when(timetableQueryService.findAllByDateRange(any(DateRange.class)))
 			.thenReturn(List.of());
 		when(timetableSlotQueryService.findAllByTimetableIdsAndTypeId(anyList(), eq(typeId)))
@@ -93,7 +94,7 @@ class TimetableFacadeServiceTest {
 		assertThat(result).isNotNull();
 		assertThat(result.dailyTimetables())
 			.allMatch(daily -> daily.slots().isEmpty());
-		verify(mentorTypeRepository, times(1)).findById(typeId);
+		verify(mentorTypeQueryService, times(1)).findById(typeId);
 		verify(timetableQueryService, times(1)).findAllByDateRange(any(DateRange.class));
 	}
 
@@ -108,8 +109,8 @@ class TimetableFacadeServiceTest {
 		List<Timetable> mockTimetables = createMockTimetables(targetDate);
 		List<TimetableSlot> mockSlots = createMockSlots(mockTimetables, mockMentorType);
 
-		when(mentorTypeRepository.findById(typeId))
-			.thenReturn(Optional.of(mockMentorType));
+		when(mentorTypeQueryService.findById(typeId))
+			.thenReturn(mockMentorType);
 		when(timetableQueryService.findAllByDateRange(any(DateRange.class)))
 			.thenReturn(mockTimetables);
 		when(timetableSlotQueryService.findAllByTimetableIdsAndTypeId(anyList(), eq(typeId)))
@@ -126,7 +127,7 @@ class TimetableFacadeServiceTest {
 			.count();
 
 		assertThat(daysWithSlots).isEqualTo(1);
-		verify(mentorTypeRepository, times(1)).findById(typeId);
+		verify(mentorTypeQueryService, times(1)).findById(typeId);
 		verify(timetableQueryService, times(1)).findAllByDateRange(any(DateRange.class));
 	}
 
@@ -139,31 +140,42 @@ class TimetableFacadeServiceTest {
 	}
 
 	private Timetable createMockTimetable(final Long id, final LocalDate date, final LocalTime time) {
-		return Timetable.builder()
-			.id(id)
+		final Timetable timetable = Timetable.builder()
 			.scheduledDate(date)
 			.scheduledTime(time)
 			.build();
+		if (id != null) {
+			ReflectionTestUtils.setField(timetable, "id", id);
+		}
+		return timetable;
 	}
 
 	private MentorType createMockMentorType(final Long id, final String typeName) {
-		return MentorType.builder()
-			.id(id)
+		final MentorType mentorType = MentorType.builder()
 			.typeName(typeName)
 			.price(35000)
 			.description("테스트용 멘토 유형")
 			.build();
+		if (id != null) {
+			ReflectionTestUtils.setField(mentorType, "id", id);
+		}
+		return mentorType;
 	}
 
 	private List<TimetableSlot> createMockSlots(final List<Timetable> timetables, final MentorType mentorType) {
 		return timetables.stream()
-			.map(timetable -> TimetableSlot.builder()
-				.id(timetable.getId())
-				.timetable(timetable)
-				.mentorType(mentorType)
-				.maxCapacity(5)
-				.currentCapacity(0)
-				.build())
+			.map(timetable -> {
+				final TimetableSlot slot = TimetableSlot.builder()
+					.timetable(timetable)
+					.mentorType(mentorType)
+					.maxCapacity(5)
+					.currentCapacity(0)
+					.build();
+				if (timetable.getId() != null) {
+					ReflectionTestUtils.setField(slot, "id", timetable.getId());
+				}
+				return slot;
+			})
 			.toList();
 	}
 }

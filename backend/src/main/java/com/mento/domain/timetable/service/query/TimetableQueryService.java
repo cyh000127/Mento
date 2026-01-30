@@ -8,6 +8,8 @@ import com.mento.domain.timetable.entity.Timetable;
 import com.mento.domain.timetable.vo.DateRange;
 
 public interface TimetableQueryService {
+	Timetable findById(final Long id);
+
 	Timetable findByReservationId(final Long id);
 
 	List<Timetable> findAllExpiredTimetables(final LocalDate now);

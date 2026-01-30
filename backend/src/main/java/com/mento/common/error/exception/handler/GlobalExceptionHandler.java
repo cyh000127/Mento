@@ -24,7 +24,9 @@ import com.mento.common.error.exception.PaymentException;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.response.ErrorResponse;
 import com.mento.common.util.LoggingUtils;
+import com.mento.domain.mentor.exception.MentorException;
 import com.mento.domain.reservation.exception.ReservationException;
+import com.mento.domain.timetable.exception.TimetableException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -151,26 +153,6 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(BaseResponse.fail(response));
 	}
 
-	@ExceptionHandler(FileStorageException.class)
-	public ResponseEntity<BaseResponse<ErrorResponse>> handleFileStorageException(
-		FileStorageException ex,
-		HttpServletRequest request
-	) {
-		LoggingUtils.logException("FileStorageException 발생", ex, request);
-		ErrorResponse response = ErrorResponse.of(ErrorCode.NOT_FOUND, request);
-		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(BaseResponse.fail(response));
-	}
-
-	@ExceptionHandler(ReservationException.class)
-	public ResponseEntity<BaseResponse<ErrorResponse>> handleReservationException(
-		ReservationException ex,
-		HttpServletRequest request
-	) {
-		LoggingUtils.logException("ReservationException 발생", ex, request);
-		ErrorResponse response = ErrorResponse.of(ErrorCode.NOT_FOUND, request);
-		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(BaseResponse.fail(response));
-	}
-
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<BaseResponse<ErrorResponse>> handleMethodArgumentNotValidException(
 		MethodArgumentNotValidException ex,
@@ -179,6 +161,46 @@ public class GlobalExceptionHandler {
 		LoggingUtils.logException("MethodArgumentNotValidException 발생", ex, request);
 		ErrorResponse response = ErrorResponse.of(ErrorCode.INVALID_INPUT, request);
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(BaseResponse.fail(response));
+	}
+
+	@ExceptionHandler(FileStorageException.class)
+	public ResponseEntity<BaseResponse<ErrorResponse>> handleFileStorageException(
+		FileStorageException ex,
+		HttpServletRequest request
+	) {
+		LoggingUtils.logException("FileStorageException 발생", ex, request);
+		ErrorResponse response = ErrorResponse.of(ex.getErrorCode(), request);
+		return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(BaseResponse.fail(response));
+	}
+
+	@ExceptionHandler(ReservationException.class)
+	public ResponseEntity<BaseResponse<ErrorResponse>> handleReservationException(
+		ReservationException ex,
+		HttpServletRequest request
+	) {
+		LoggingUtils.logException("ReservationException 발생", ex, request);
+		ErrorResponse response = ErrorResponse.of(ex.getErrorCode(), request);
+		return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(BaseResponse.fail(response));
+	}
+
+	@ExceptionHandler(MentorException.class)
+	public ResponseEntity<BaseResponse<ErrorResponse>> handleMentorException(
+		MentorException ex,
+		HttpServletRequest request
+	) {
+		LoggingUtils.logException("MentorException 발생", ex, request);
+		ErrorResponse response = ErrorResponse.of(ex.getErrorCode(), request);
+		return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(BaseResponse.fail(response));
+	}
+
+	@ExceptionHandler(TimetableException.class)
+	public ResponseEntity<BaseResponse<ErrorResponse>> handleTimetableException(
+		TimetableException ex,
+		HttpServletRequest request
+	) {
+		LoggingUtils.logException("TimetableException 발생", ex, request);
+		ErrorResponse response = ErrorResponse.of(ex.getErrorCode(), request);
+		return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(BaseResponse.fail(response));
 	}
 
 	@ExceptionHandler(CryptoException.class)
@@ -200,5 +222,5 @@ public class GlobalExceptionHandler {
 		ErrorResponse response = ErrorResponse.of(ex.getErrorCode(), request);
 		return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(BaseResponse.fail(response));
 	}
-	
+
 }

@@ -27,6 +27,14 @@ public class TimetableQueryServiceImpl implements TimetableQueryService {
 	private final TimetableRepository timetableRepository;
 
 	@Override
+	public Timetable findById(final Long id) {
+		Timetable timetable = timetableRepository.findById(id)
+			.orElseThrow(() -> new TimetableException(ErrorCode.TIMETABLE_NOT_FOUND));
+		log.info("[Timetable] 시간표 조회 완료 {id: {}}", timetable.getId());
+		return timetable;
+	}
+
+	@Override
 	public Timetable findByReservationId(final Long timetableId) {
 		Timetable timetable = timetableRepository.findByTimetableId(timetableId)
 			.orElseThrow(() -> new TimetableException(ErrorCode.TIMETABLE_NOT_FOUND));

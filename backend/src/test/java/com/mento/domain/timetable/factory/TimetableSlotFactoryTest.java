@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.timetable.entity.SlotStatus;
@@ -75,10 +76,14 @@ class TimetableSlotFactoryTest {
 	}
 
 	private MentorType createMockMentorType(final Long id, final String typeName) {
-		return MentorType.builder()
+		final MentorType mentorType = MentorType.builder()
 			.typeName(typeName)
 			.price(50000)
 			.description("테스트용 멘토 유형")
 			.build();
+		if (id != null) {
+			ReflectionTestUtils.setField(mentorType, "id", id);
+		}
+		return mentorType;
 	}
 }

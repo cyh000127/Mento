@@ -1,10 +1,15 @@
 package com.mento.domain.reservation.service.query;
 
+import java.time.LocalDate;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.reservation.entity.Reservation;
+import com.mento.domain.reservation.entity.ReservationStatus;
 import com.mento.domain.reservation.exception.ReservationException;
 import com.mento.domain.reservation.repository.ReservationRepository;
 
@@ -32,6 +37,31 @@ public class ReservationQueryServiceImpl implements ReservationQueryService {
 			.orElseThrow(() -> new ReservationException(ErrorCode.RESERVATION_NOT_FOUND));
 		log.info("[Reservation] 예약 조회 완료 - id: {}, reservation: {}", id, reservation);
 		return reservation;
+	}
+
+	@Override
+	public Reservation findWithDetailsById(final Long id) {
+		Reservation reservation = reservationRepository.findWithDetailsById(id)
+			.orElseThrow(() -> new ReservationException(ErrorCode.RESERVATION_NOT_FOUND));
+		log.info("[Reservation] 예약 상세 조회 완료 - id: {}", id);
+		return reservation;
+	}
+
+	@Override
+	public Page<Reservation> findAllByUserIdAndStatusWithPageable(
+		final Long userId,
+		final ReservationStatus status,
+		final LocalDate startDate,
+		final LocalDate endDate,
+		final Pageable pageable
+	) {
+		Page<Reservation> page = reservationRepository.findAllByUserIdAndDateRange(
+			userId, startDate, endDate, status, pageable
+		);
+		log.info("[Reservation] 예약 목록 조회 완료 {userId: {}, status: {}, dateRange: {}-{}, total: {}, page: {}}",
+			userId, status, startDate, endDate, page.getTotalElements(), page.getNumber()
+		);
+		return page;
 	}
 
 }

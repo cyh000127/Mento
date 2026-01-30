@@ -140,7 +140,7 @@ class ProductFacadeServiceTest {
 		assertThat(result.skinTypes()).containsExactly("지성", "복합성");
 		assertThat(result.benefits()).containsExactly("진정", "수분");
 		assertThat(result.ingredients()).isEqualTo("정제수, 녹차추출물");
-		
+
 		then(productQueryService).should(times(1)).findById(productId);
 	}
 

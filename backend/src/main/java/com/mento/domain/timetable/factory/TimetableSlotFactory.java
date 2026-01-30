@@ -33,12 +33,15 @@ public class TimetableSlotFactory {
 	}
 
 	private TimetableSlot createSlot(final Timetable timetable, final MentorType mentorType) {
-		return TimetableSlot.builder()
-			.timetable(timetable)
-			.mentorType(mentorType)
+		TimetableSlot timetableSlot = TimetableSlot.builder()
 			.maxCapacity(SLOT_MAX_CAPACITY)
 			.currentCapacity(0)
 			.status(SlotStatus.AVAILABLE)
 			.build();
+
+		timetableSlot.assignTimetable(timetable);
+		timetableSlot.assignMentorType(mentorType);
+
+		return timetableSlot;
 	}
 }

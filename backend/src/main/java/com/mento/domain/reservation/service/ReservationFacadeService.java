@@ -1,9 +1,12 @@
 package com.mento.domain.reservation.service;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,13 +18,22 @@ import com.mento.common.file.dto.FileInfo;
 import com.mento.common.file.service.FileService;
 import com.mento.common.livekit.LiveKitManager;
 import com.mento.common.livekit.dto.LiveKitSessionResponse;
+import com.mento.common.util.PageUtils;
+import com.mento.domain.reservation.constants.LiveKitConstants;
 import com.mento.domain.reservation.converter.ReservationConverter;
 import com.mento.domain.reservation.dto.response.MediaUploadResDto;
+import com.mento.domain.reservation.dto.response.ReservationDetailResDto;
+import com.mento.domain.reservation.dto.response.ReservationPageInfoDto;
 import com.mento.domain.reservation.entity.Reservation;
+import com.mento.domain.reservation.entity.ReservationStatus;
+import com.mento.domain.reservation.service.command.ReservationCommandService;
 import com.mento.domain.reservation.service.query.ReservationQueryService;
+import com.mento.domain.reservation.validator.ReservationValidator;
 import com.mento.domain.timetable.entity.Timetable;
-import com.mento.domain.timetable.service.query.impl.TimetableQueryServiceImpl;
+import com.mento.domain.timetable.service.query.TimetableQueryService;
+import com.mento.domain.timetable.service.query.TimetableSlotQueryService;
 import com.mento.domain.user.entity.Role;
+import com.mento.domain.user.service.query.UserQueryService;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -32,33 +44,39 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class ReservationFacadeService {
 
-	public static final String ROOM_NAME_PREFIX = "room_";
-	private static final String RESERVATION_DIRECTORY = "reservations/";
-	private static final int EARLY_ENTRY_MINUTES = 10;
-	private static final int END_MINUTES = 10;
+	private final ReservationCommandService reservationCommandService;
 	private final ReservationQueryService reservationQueryService;
-	private final TimetableQueryServiceImpl timeTableQueryService;
-	private final FileService fileService;
+	private final ReservationValidator reservationValidator;
 
+	private final TimetableQueryService timeTableQueryService;
+	private final TimetableSlotQueryService timetableSlotQueryService;
+
+	private final UserQueryService userQueryService;
+
+	private final FileService fileService;
 	private final LiveKitManager liveKitManager;
 
 	@Transactional
-	public MediaUploadResDto uploadFiles(final List<MultipartFile> files, final Long id) {
-		validateReservationExists(id);
-		String directory = RESERVATION_DIRECTORY + id;
+	public MediaUploadResDto uploadFiles(final List<MultipartFile> files, final Long reservationId) {
+		validateReservationExists(reservationId);
+		String directory = buildUploadDirectory(reservationId);
 		List<FileInfo> uploadedFiles = fileService.uploadFiles(files, directory);
-		log.info("[Reservation] 미디어 파일 업로드 완료 {id: {}, count: {}}", id, uploadedFiles.size());
-		return ReservationConverter.toMediaUploadResDto(id, uploadedFiles);
+		log.info("[Reservation] 미디어 파일 업로드 완료 {id: {}, count: {}}", reservationId, uploadedFiles.size());
+		return ReservationConverter.toMediaUploadResDto(reservationId, uploadedFiles);
+	}
+
+	private String buildUploadDirectory(final Long reservationId) {
+		return LiveKitConstants.RESERVATION_DIRECTORY + reservationId;
 	}
 
 	public LiveKitSessionResponse createSession(final Long reservationId, final AuthenticatedUser user) {
 		Reservation reservation = reservationQueryService.findById(reservationId);
-		Timetable timetable = timeTableQueryService.findByReservationId(reservation.getTimetableId());
+		Timetable timetable = timeTableQueryService.findByReservationId(reservation.getSlot().getTimetable().getId());
 
 		LocalDateTime now = LocalDateTime.now();
 		LocalDateTime startTime = calculateStartTime(timetable);
-		LocalDateTime entryStartTime = startTime.minusMinutes(EARLY_ENTRY_MINUTES);
-		LocalDateTime endTime = startTime.plusMinutes(END_MINUTES);
+		LocalDateTime entryStartTime = startTime.minusMinutes(LiveKitConstants.EARLY_ENTRY_MINUTES);
+		LocalDateTime endTime = startTime.plusMinutes(LiveKitConstants.END_MINUTES);
 
 		validateSessionTiming(now, entryStartTime, endTime);
 		Role role = Role.fromString(user.getRole());
@@ -102,12 +120,38 @@ public class ReservationFacadeService {
 	}
 
 	private String generateRoomName(final Long reservationId) {
-		return ROOM_NAME_PREFIX + reservationId;
+		return LiveKitConstants.ROOM_NAME_PREFIX + reservationId;
 	}
 
 	private void validateReservationExists(final Long id) {
 		if (!reservationQueryService.existById(id)) {
 			throw new ReservationException(ErrorCode.RESERVATION_NOT_FOUND);
 		}
+	}
+
+
+	public ReservationDetailResDto findById(final AuthenticatedUser authUser, final Long id) {
+		Reservation reservation = reservationQueryService.findWithDetailsById(id);
+		reservationValidator.validateReservationAccess(authUser, reservation);
+		return ReservationConverter.toReservationDetailResDto(reservation);
+	}
+
+	public Page<ReservationPageInfoDto> findAllByUserIdAndDateRange(
+		final Long userId,
+		final ReservationStatus status,
+		final LocalDate startDate,
+		final LocalDate endDate,
+		final int page,
+		final int size
+	) {
+		Pageable pageable = PageUtils.getPageable(page, size);
+		Page<Reservation> reservations = reservationQueryService.findAllByUserIdAndStatusWithPageable(
+			userId,
+			status,
+			startDate,
+			endDate,
+			pageable
+		);
+		return ReservationConverter.toReservationPageResDto(reservations);
 	}
 }
