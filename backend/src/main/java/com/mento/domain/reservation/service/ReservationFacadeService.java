@@ -1,6 +1,7 @@
 package com.mento.domain.reservation.service;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,11 +21,11 @@ import com.mento.common.livekit.dto.LiveKitSessionResponse;
 import com.mento.common.util.PageUtils;
 import com.mento.domain.reservation.constants.LiveKitConstants;
 import com.mento.domain.reservation.converter.ReservationConverter;
-import com.mento.domain.reservation.dto.request.ReservationHistoryReqDto;
 import com.mento.domain.reservation.dto.response.MediaUploadResDto;
 import com.mento.domain.reservation.dto.response.ReservationDetailResDto;
 import com.mento.domain.reservation.dto.response.ReservationPageInfoDto;
 import com.mento.domain.reservation.entity.Reservation;
+import com.mento.domain.reservation.entity.ReservationStatus;
 import com.mento.domain.reservation.factory.ReservationFactory;
 import com.mento.domain.reservation.service.command.ReservationCommandService;
 import com.mento.domain.reservation.service.query.ReservationQueryService;
@@ -139,16 +140,18 @@ public class ReservationFacadeService {
 
 	public Page<ReservationPageInfoDto> findAllByUserIdAndDateRange(
 		final Long userId,
-		final ReservationHistoryReqDto reqDto,
+		final ReservationStatus status,
+		final LocalDate startDate,
+		final LocalDate endDate,
 		final int page,
 		final int size
 	) {
 		Pageable pageable = PageUtils.getPageable(page, size);
 		Page<Reservation> reservations = reservationQueryService.findAllByUserIdAndStatusWithPageable(
 			userId,
-			reqDto.status(),
-			reqDto.startDate(),
-			reqDto.endDate(),
+			status,
+			startDate,
+			endDate,
 			pageable
 		);
 		return ReservationConverter.toReservationPageResDto(reservations);
