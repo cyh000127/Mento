@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.mento.domain.reservation.entity.Reservation;
-import com.mento.domain.reservation.entity.ReservationStatus;
+import com.mento.domain.reservation.enums.ReservationStatus;
 
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 

@@ -18,7 +18,7 @@ import com.mento.common.response.PageResponse;
 import com.mento.common.util.ResponseUtils;
 import com.mento.domain.reservation.dto.response.ReservationDetailResDto;
 import com.mento.domain.reservation.dto.response.ReservationPageInfoDto;
-import com.mento.domain.reservation.entity.ReservationStatus;
+import com.mento.domain.reservation.enums.ReservationStatus;
 import com.mento.domain.reservation.service.ReservationFacadeService;
 
 import io.swagger.v3.oas.annotations.Operation;

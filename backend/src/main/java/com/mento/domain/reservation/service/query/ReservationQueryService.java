@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.mento.domain.reservation.entity.Reservation;
-import com.mento.domain.reservation.entity.ReservationStatus;
+import com.mento.domain.reservation.enums.ReservationStatus;
 
 public interface ReservationQueryService {
 	boolean existById(final Long id);

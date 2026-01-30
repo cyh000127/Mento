@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.reservation.entity.Reservation;
-import com.mento.domain.reservation.entity.ReservationStatus;
+import com.mento.domain.reservation.enums.ReservationStatus;
 import com.mento.domain.reservation.exception.ReservationException;
 import com.mento.domain.reservation.repository.ReservationRepository;
 
