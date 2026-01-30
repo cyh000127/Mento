@@ -34,4 +34,12 @@ public class ReservationQueryServiceImpl implements ReservationQueryService {
 		return reservation;
 	}
 
+	@Override
+	public Reservation findWithDetailsById(final Long id) {
+		Reservation reservation = reservationRepository.findWithDetailsById(id)
+			.orElseThrow(() -> new ReservationException(ErrorCode.RESERVATION_NOT_FOUND));
+		log.info("[Reservation] 예약 상세 조회 완료 - id: {}", id);
+		return reservation;
+	}
+
 }

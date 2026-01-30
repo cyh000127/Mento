@@ -6,4 +6,6 @@ public interface ReservationQueryService {
 	boolean existById(final Long id);
 
 	Reservation findById(final Long id);
+
+	Reservation findWithDetailsById(final Long id);
 }
