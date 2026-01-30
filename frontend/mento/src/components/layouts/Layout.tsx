@@ -7,8 +7,9 @@ import { authApi } from "@/api/auth"
 import { userApi } from "@/api/user"
 
 export default function Layout() {
-  const { accessToken, user, setUser } = useAuthStore()
+  const { accessToken, user, setUser, logoutTriggered } = useAuthStore()
   const isFetchingRef = useRef(false)
+  const reissueAttemptedRef = useRef(false)
 
   useEffect(() => {
     // 앱 초기화 시 토큰 복원 로직
@@ -41,7 +42,14 @@ export default function Layout() {
       }
 
       // accessToken도 없고 user도 없는 경우 - refreshToken으로 복원 시도
-      if (!accessToken) {
+      const hasRefreshTokenFlag = localStorage.getItem("hasRefreshToken") === "true"
+
+      if (!accessToken && !logoutTriggered && hasRefreshTokenFlag) {
+        if (reissueAttemptedRef.current) {
+          console.log("이미 토큰 재발급을 시도했습니다.")
+          return
+        }
+        reissueAttemptedRef.current = true
         console.log("토큰 재발급 및 사용자 정보 복원 시도")
         isFetchingRef.current = true
         try {
@@ -65,7 +73,7 @@ export default function Layout() {
     }
 
     initializeAuth()
-  }, [accessToken, user, setUser]) // accessToken이나 user가 변경될 때 실행
+  }, [accessToken, user, setUser, logoutTriggered]) // accessToken이나 user가 변경될 때 실행
 
   return (
     <div className="flex min-h-screen flex-col">

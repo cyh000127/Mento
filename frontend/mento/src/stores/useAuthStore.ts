@@ -5,6 +5,7 @@ interface AuthState {
   accessToken: string | null
   isLoggedIn: boolean
   user: User | null
+  logoutTriggered: boolean
   setAccessToken: (token: string) => void
   setUser: (user: User) => void
   logout: () => void
@@ -15,11 +16,13 @@ export const useAuthStore = create<AuthState>()((set) => ({
   accessToken: null,
   isLoggedIn: false,
   user: null,
+  logoutTriggered: false,
 
   setAccessToken: (token) =>
     set({
       accessToken: token,
       isLoggedIn: true,
+      logoutTriggered: false,
     }),
 
   setUser: (user) =>
@@ -32,5 +35,6 @@ export const useAuthStore = create<AuthState>()((set) => ({
       accessToken: null,
       isLoggedIn: false,
       user: null,
+      logoutTriggered: true,
     }),
 }))
