@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuthStore } from "@/stores/useAuthStore"
+import { authApi } from "@/api/auth"
 
 export default function KakaoCallback() {
   const navigate = useNavigate()
@@ -24,19 +25,26 @@ export default function KakaoCallback() {
           return
         }
 
-        // accessToken이 없는 경우
-        if (!accessToken) {
-          console.error("accessToken이 없습니다.")
-          setError("로그인 정보를 받지 못했습니다.")
-          setTimeout(() => {
-            navigate("/", { replace: true })
-          }, 2000)
-          return
+        // accessToken이 있으면 바로 저장, 없으면 reissue로 복원
+        if (accessToken) {
+          // accessToken을 메모리에 저장 (localStorage 사용 안 함)
+          // refreshToken은 이미 쿠키로 설정되어 있음
+          setAccessToken(accessToken)
+          localStorage.setItem("hasRefreshToken", "true")
+        } else {
+          try {
+            await authApi.reissue()
+            // authApi.reissue()에서 setAccessToken 처리됨
+            localStorage.setItem("hasRefreshToken", "true")
+          } catch (reissueError) {
+            console.error("토큰 재발급 실패:", reissueError)
+            setError("로그인 정보를 받지 못했습니다.")
+            setTimeout(() => {
+              navigate("/", { replace: true })
+            }, 2000)
+            return
+          }
         }
-
-        // accessToken을 메모리에 저장 (localStorage 사용 안 함)
-        // refreshToken은 이미 쿠키로 설정되어 있음
-        setAccessToken(accessToken)
 
         // 사용자 정보는 Layout에서 자동으로 조회됨
         // 여기서는 토큰만 저장하고 바로 리다이렉트
