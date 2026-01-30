@@ -3,7 +3,9 @@ package com.mento.domain.timetable.entity;
 import java.time.LocalDateTime;
 
 import com.mento.common.entity.BaseEntity;
+import com.mento.common.error.ErrorCode;
 import com.mento.domain.mentor.entity.MentorType;
+import com.mento.domain.timetable.exception.TimetableException;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -88,5 +90,34 @@ public class TimetableSlot extends BaseEntity {
 
 	public boolean isAvailable() {
 		return status == SlotStatus.AVAILABLE && currentCapacity < maxCapacity;
+	}
+
+	public void assignTimetable(final Timetable timetable) {
+		if (timetable == null) {
+			throw new TimetableException(ErrorCode.MISSING_TIMETABLE);
+		}
+		if (this.timetable != null) {
+			this.timetable.getSlots().remove(this);
+		}
+
+		this.timetable = timetable;
+		if (!timetable.getSlots().contains(this)) {
+			timetable.getSlots().add(this);
+		}
+	}
+
+	public void assignMentorType(final MentorType mentorType) {
+		if (mentorType == null) {
+			throw new TimetableException(ErrorCode.MISSING_MENTOR_TYPE);
+		}
+
+		if (this.mentorType != null) {
+			this.mentorType.getSlots().remove(this);
+		}
+
+		this.mentorType = mentorType;
+		if (!mentorType.getSlots().contains(this)) {
+			mentorType.getSlots().add(this);
+		}
 	}
 }

@@ -57,12 +57,20 @@ public enum ErrorCode {
 	TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "A-009", "토큰을 찾을 수 없습니다."),
 
 	/**
-	 * Consulting Error (CS-xxx)
+	 * TimeTable Error (CS-xxx)
 	 */
 	TIMETABLE_NOT_FOUND(HttpStatus.NOT_FOUND, "CS-001", "타임테이블을 찾을 수 없습니다."),
 	NOT_STARTED_YET(HttpStatus.CONFLICT, "CS-002", "상담 시작 시간이 아닙니다."),
 	CONSULTING_ENDED(HttpStatus.GONE, "CS-003", "이미 종료된 상담입니다."),
 	NOT_AUTHORIZED(HttpStatus.FORBIDDEN, "CS-004", "해당 상담에 참여 권한이 없습니다."),
+	MISSING_TIMETABLE(HttpStatus.BAD_REQUEST, "CS-005", "타임테이블 정보가 누락되었습니다."),
+
+	/**
+	 * Timetable Slot Error (TS-xxx)
+	 */
+	TIMETABLE_SLOT_NOT_FOUND(HttpStatus.NOT_FOUND, "TS-001", "해당 시간대와 유형의 예약 슬롯을 찾을 수 없습니다."),
+	TIMETABLE_SLOT_FULL(HttpStatus.CONFLICT, "TS-002", "예약이 마감되었습니다."),
+	MISSING_SLOT(HttpStatus.BAD_REQUEST, "TS-003", "슬롯 정보가 누락되었습니다."),
 
 	/**
 	 * RESERVATION Error (R-xxx)
@@ -73,6 +81,9 @@ public enum ErrorCode {
 	 * MENTOR Error (M-xxx)
 	 */
 	MENTOR_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND, "M-001", "멘토 유형을 찾을 수 없습니다."),
+	MISSING_MENTOR_TYPE(HttpStatus.BAD_REQUEST, "M-002", "멘토 유형 정보가 누락되었습니다."),
+	MENTO_NOT_FOUND(HttpStatus.NOT_FOUND, "M_003", "멘토 정보를 찾을 수 없습니다."),
+	MISSING_MENTOR(HttpStatus.BAD_REQUEST, "M-004", "멘토 정보가 누락되었습니다."),
 
 	/**
 	 * Product Error (P-xxx)
