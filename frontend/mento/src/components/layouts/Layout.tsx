@@ -16,19 +16,16 @@ export default function Layout() {
     const initializeAuth = async () => {
       // 이미 accessToken과 user 정보가 모두 있으면 스킵
       if (accessToken && user) {
-        console.log("이미 로그인 정보가 있어 스킵합니다.")
         return
       }
 
       // 이미 요청 중이면 스킵 (중복 호출 방지)
       if (isFetchingRef.current) {
-        console.log("이미 사용자 정보 조회 중입니다.")
         return
       }
 
       // accessToken은 있는데 user가 없는 경우 (KakaoCallback에서 온 경우)
       if (accessToken && !user) {
-        console.log("사용자 정보 조회 시도 (로그인 후)")
         isFetchingRef.current = true
         try {
           const userData = await userApi.getCurrentUser()
@@ -46,11 +43,9 @@ export default function Layout() {
 
       if (!accessToken && !logoutTriggered && hasRefreshTokenFlag) {
         if (reissueAttemptedRef.current) {
-          console.log("이미 토큰 재발급을 시도했습니다.")
           return
         }
         reissueAttemptedRef.current = true
-        console.log("토큰 재발급 및 사용자 정보 복원 시도")
         isFetchingRef.current = true
         try {
           // refreshToken을 사용하여 새로운 accessToken 발급
