@@ -1,12 +1,21 @@
 import axios from "axios";
 import { useAuthStore } from "@/stores/useAuthStore";
 
-export const API_BASE = ["localhost", "127.0.0.1"].includes(window.location.hostname) ? "http://localhost:8080" : "";
+// 환경변수 없이 hostname 기반으로 API Origin 자동 결정
+const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
+const API_ORIGIN = isLocalhost
+  ? "http://localhost:8080"
+  : "https://i14a704.p.ssafy.io";
+
+// /api/v1 포함한 baseURL (API 호출용)
 export const api = axios.create({
-  baseURL: `${API_BASE}/api/v1`,
+  baseURL: `${API_ORIGIN}/api/v1`,
   withCredentials: true, // refreshToken 쿠키를 위해 필수
 });
+
+// /api/v1 미포함 Origin (OAuth 등 특수 용도)
+export const API_BASE = API_ORIGIN;
 
 // 토큰 재발급 요청 중복 방지를 위한 Promise
 let refreshTokenPromise: Promise<string | null> | null = null;
@@ -51,7 +60,7 @@ api.interceptors.response.use(
           refreshTokenPromise = (async () => {
             try {
               // refreshToken 쿠키를 사용하여 토큰 재발급
-              const response = await axios.post(`${API_BASE}/api/v1/auth/reissue`, {}, { withCredentials: true });
+              const response = await axios.post(`${API_ORIGIN}/api/v1/auth/reissue`, {}, { withCredentials: true });
 
               // 새로운 accessToken을 헤더에서 추출하여 저장
               const authHeader = response.headers["authorization"];

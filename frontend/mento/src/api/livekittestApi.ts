@@ -1,6 +1,5 @@
-import axios from "axios";
+import { api } from "./axios";
 import type { LivekitTestTokenResponse, LivekitTestTokenParams } from "@/types/livekitTest";
-import { API_BASE } from "./axios";
 
 /**
  * LiveKit 테스트 토큰 발급 API (인증 없음)
@@ -33,8 +32,8 @@ export const fetchLivekitTestToken = async (params?: LivekitTestTokenParams): Pr
     role: params?.role || "MENTOR",
   });
 
-  // 인증이 필요 없는 Public API이므로 api 인스턴스가 아닌 axios 직접 사용
-  const response = await axios.get(`${API_BASE}/api/v1/test/livekit/token?${queryParams.toString()}`);
+  // api 인스턴스 사용 (baseURL에 이미 /api/v1 포함)
+  const response = await api.get(`/test/livekit/token?${queryParams.toString()}`);
 
   return response.data;
 };

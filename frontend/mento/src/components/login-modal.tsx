@@ -54,6 +54,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
               type="button"
               onClick={() => {
                 onClose();
+                // OAuth URL은 /api/v1을 포함하지 않음
                 window.location.href = `${API_BASE}/oauth2/authorization/kakao`;
               }}
               className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#FEE500] px-4 py-3.5 font-medium text-[#191919] transition-all hover:brightness-95"
