@@ -6,6 +6,7 @@ import com.mento.domain.mentor.entity.MentorType;
 
 public interface MentorTypeQueryService {
 
-	List<MentorType> findAll();
+	MentorType findById(Long id);
 
+	List<MentorType> findAll();
 }

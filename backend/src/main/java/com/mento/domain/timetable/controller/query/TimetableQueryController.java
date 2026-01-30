@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.util.ResponseUtils;
 import com.mento.domain.timetable.dto.response.MonthlyTimetableResDto;
-import com.mento.domain.timetable.service.TimetableFacadeService;
+import com.mento.domain.timetable.service.facade.TimetableFacadeService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
