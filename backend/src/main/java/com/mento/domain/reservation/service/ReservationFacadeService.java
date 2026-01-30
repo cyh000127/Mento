@@ -4,6 +4,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,10 +17,13 @@ import com.mento.common.file.dto.FileInfo;
 import com.mento.common.file.service.FileService;
 import com.mento.common.livekit.LiveKitManager;
 import com.mento.common.livekit.dto.LiveKitSessionResponse;
+import com.mento.common.util.PageUtils;
 import com.mento.domain.reservation.constants.LiveKitConstants;
 import com.mento.domain.reservation.converter.ReservationConverter;
+import com.mento.domain.reservation.dto.request.ReservationHistoryReqDto;
 import com.mento.domain.reservation.dto.response.MediaUploadResDto;
 import com.mento.domain.reservation.dto.response.ReservationDetailResDto;
+import com.mento.domain.reservation.dto.response.ReservationPageInfoDto;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.factory.ReservationFactory;
 import com.mento.domain.reservation.service.command.ReservationCommandService;
@@ -125,9 +130,27 @@ public class ReservationFacadeService {
 		}
 	}
 
+
 	public ReservationDetailResDto findById(final AuthenticatedUser authUser, final Long id) {
 		Reservation reservation = reservationQueryService.findWithDetailsById(id);
 		reservationValidator.validateReservationAccess(authUser, reservation);
 		return ReservationConverter.toReservationDetailResDto(reservation);
+	}
+
+	public Page<ReservationPageInfoDto> findAllByUserIdAndDateRange(
+		final Long userId,
+		final ReservationHistoryReqDto reqDto,
+		final int page,
+		final int size
+	) {
+		Pageable pageable = PageUtils.getPageable(page, size);
+		Page<Reservation> reservations = reservationQueryService.findAllByUserIdAndStatusWithPageable(
+			userId,
+			reqDto.status(),
+			reqDto.startDate(),
+			reqDto.endDate(),
+			pageable
+		);
+		return ReservationConverter.toReservationPageResDto(reservations);
 	}
 }
