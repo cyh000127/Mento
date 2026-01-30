@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.util.ResponseUtils;
 import com.mento.domain.payment.dto.response.PaymentResDto;
-import com.mento.domain.payment.service.PaymentFacadeService;
+import com.mento.domain.payment.service.facade.PaymentFacadeService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
