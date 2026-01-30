@@ -21,6 +21,10 @@ services:
       - --port=3307
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
+      - --init-connect=SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci
+      - --init-connect=SET character_set_client=utf8mb4
+      - --init-connect=SET character_set_connection=utf8mb4
+      - --init-connect=SET character_set_results=utf8mb4
       - --max_connections=200
       - --slow-query-log=1
       - --slow-query-log-file=/var/lib/mysql/slow.log
