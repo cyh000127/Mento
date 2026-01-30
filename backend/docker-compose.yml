@@ -4,7 +4,7 @@ services:
     image: mysql:8.4
     restart: unless-stopped
     env_file:
-      - .env.backend
+      - .env
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USERNAME}
@@ -17,14 +17,9 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./script/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf:ro
     command:
       - --port=3307
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --init-connect=SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci
-      - --init-connect=SET character_set_client=utf8mb4
-      - --init-connect=SET character_set_connection=utf8mb4
-      - --init-connect=SET character_set_results=utf8mb4
       - --max_connections=200
       - --slow-query-log=1
       - --slow-query-log-file=/var/lib/mysql/slow.log
@@ -50,7 +45,7 @@ services:
       - redis_data:/data
       - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
     env_file:
-      - .env.backend
+      - .env
     command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD}
     cpus: '0.5'
     mem_limit: 1g
@@ -71,7 +66,7 @@ services:
     image: mento-backend:latest
     restart: unless-stopped
     env_file:
-      - .env.backend
+      - .env
     ports:
       - "8080:8080"
     cpus: '3.5'
