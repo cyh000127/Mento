@@ -19,8 +19,8 @@ public class CookieUtil {
 		cookie.setHttpOnly(true);
 
 		// http 환경
-		cookie.setSecure(false);
-		cookie.setAttribute("SameSite", "Lax");
+		cookie.setSecure(true);
+		cookie.setAttribute("SameSite", "None");
 
 		cookie.setMaxAge(maxAge);
 		response.addCookie(cookie);
