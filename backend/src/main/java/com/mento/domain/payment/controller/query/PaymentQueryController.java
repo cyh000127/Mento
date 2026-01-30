@@ -8,21 +8,34 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mento.common.response.BaseResponse;
 import com.mento.common.util.ResponseUtils;
-import com.mento.domain.payment.dto.PaymentResponseDto;
-import com.mento.domain.payment.service.query.PaymentQueryService;
+import com.mento.domain.payment.dto.response.PaymentResDto;
+import com.mento.domain.payment.service.PaymentFacadeService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Payment", description = "결제 조회 API")
 @RestController
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 @RequestMapping("/api/v1/payments")
 class PaymentQueryController {
 
-	private final PaymentQueryService paymentQueryService;
+	private final PaymentFacadeService paymentFacadeService;
 
+	@Operation(
+		summary = "결제 상세 조회",
+		description = "결제 ID로 결제 정보를 상세 조회합니다. "
+			+ "결제 금액, 결제 수단, 결제 상태, 예약 정보 등을 포함합니다."
+	)
 	@GetMapping("/{id}")
-	public ResponseEntity<BaseResponse<PaymentResponseDto>> findById(@PathVariable Long id) {
-		PaymentResponseDto responseDto = paymentQueryService.findById(id);
-		return ResponseUtils.ok(responseDto);
+	public ResponseEntity<BaseResponse<PaymentResDto>> findById(
+		@Schema(description = "결제 ID", example = "1234567890123456")
+		@PathVariable final Long id
+	) {
+		PaymentResDto response = paymentFacadeService.findPaymentById(id);
+		return ResponseUtils.ok(response);
 	}
 }
