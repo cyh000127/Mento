@@ -10,9 +10,7 @@ import lombok.Builder;
 public record NotificationResDto(
 	Long notificationId,
 	NotificationType type,
-	String url,
-	String title,
-	String content,
+	String value,
 	LocalDateTime createdAt
 ) {
 }

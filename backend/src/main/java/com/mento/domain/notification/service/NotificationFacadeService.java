@@ -2,10 +2,9 @@ package com.mento.domain.notification.service;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -13,7 +12,6 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import com.mento.domain.notification.converter.NotificationConverter;
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.dto.response.NotificationResDto;
-import com.mento.domain.notification.dto.response.NotificationTestResDto;
 import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.event.NotificationEvent;
 import com.mento.domain.notification.repository.NotificationRepository;
@@ -31,7 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 public class NotificationFacadeService {
 
 	private static final Long DEFAULT_TIMEOUT = 60L * 1000 * 60;
-	private static final Integer SIZE = 20;
 
 	private final NotificationCommandService notificationCommandService;
 	private final NotificationQueryService notificationQueryService;
@@ -58,13 +55,17 @@ public class NotificationFacadeService {
 				.name("connect")
 				.data("connected!"));
 
-			Slice<@NonNull Notification> unreadNotifications = notificationRepository
-				.findActiveNotifications(userId, LocalDateTime.now(), Pageable.ofSize(SIZE));
+			List<@NonNull Notification> unreadNotifications = notificationRepository
+				.findActiveNotifications(userId, LocalDateTime.now());
 
-			for (Notification notification : unreadNotifications.getContent()) {
+			if (!unreadNotifications.isEmpty()) {
+				List<NotificationResDto> initialData = unreadNotifications.stream()
+					.map(NotificationConverter::toNotificationResDto)
+					.toList();
+
 				emitter.send(SseEmitter.event()
-					.name("notification")
-					.data(NotificationConverter.toNotificationResDto(notification)));
+					.name("initial-notifications")
+					.data(initialData));
 			}
 
 		} catch (IOException e) {
@@ -76,16 +77,15 @@ public class NotificationFacadeService {
 	}
 
 	@Transactional
-	public NotificationTestResDto sendNotification(final NotificationSendReqDto dto) {
+	public void sendNotification(final NotificationSendReqDto dto) {
 		Notification notification = notificationCommandService.send(dto);
 
 		eventPublisher.publishEvent(new NotificationEvent(this, notification));
-		return NotificationConverter.toNotificationTestResDto(notification);
 	}
 
 	@Transactional(readOnly = true)
-	public Slice<@NonNull NotificationResDto> getNotifications(final Long userId, final Pageable pageable) {
-		return notificationQueryService.getNotifications(userId, pageable);
+	public List<@NonNull NotificationResDto> getNotifications(final Long userId) {
+		return notificationQueryService.getNotifications(userId);
 	}
 
 	@Transactional

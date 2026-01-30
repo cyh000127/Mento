@@ -14,14 +14,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.SliceImpl;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.dto.response.NotificationResDto;
-import com.mento.domain.notification.dto.response.NotificationTestResDto;
 import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.event.NotificationEvent;
@@ -61,14 +57,12 @@ class NotificationFacadeServiceTest {
 			.id(1L)
 			.userId(userId)
 			.type(NotificationType.RESERVATION_REMINDER)
-			.title("Title")
-			.content("Content")
-			.url("/url")
+			.value("60")
 			.build();
 
-		Slice<Notification> unreadNotifications = new SliceImpl<>(List.of(notification));
+		List<Notification> unreadNotifications = List.of(notification);
 
-		given(notificationRepository.findActiveNotifications(eq(userId), any(LocalDateTime.class), any(Pageable.class)))
+		given(notificationRepository.findActiveNotifications(eq(userId), any(LocalDateTime.class)))
 			.willReturn(unreadNotifications);
 
 		// when
@@ -84,23 +78,22 @@ class NotificationFacadeServiceTest {
 	void sendNotification_Success() {
 		// given
 		NotificationSendReqDto reqDto = new NotificationSendReqDto(
-			1L, NotificationType.RESERVATION_REMINDER, "T", "M", "U", null
+			1L, NotificationType.RESERVATION_REMINDER, "60", null
 		);
 
 		Notification notification = Notification.builder()
 			.id(1L)
 			.userId(1L)
 			.type(NotificationType.RESERVATION_REMINDER)
+			.value("60")
 			.build();
 
 		given(notificationCommandService.send(reqDto)).willReturn(notification);
 
 		// when
-		NotificationTestResDto result = notificationFacadeService.sendNotification(reqDto);
+		notificationFacadeService.sendNotification(reqDto);
 
 		// then
-		assertThat(result).isNotNull();
-		assertThat(result.targetMemberId()).isEqualTo(1L);
 		verify(notificationCommandService).send(reqDto);
 		verify(eventPublisher).publishEvent(any(NotificationEvent.class));
 	}
@@ -110,17 +103,16 @@ class NotificationFacadeServiceTest {
 	void getNotifications_Success() {
 		// given
 		Long userId = 1L;
-		Pageable pageable = Pageable.ofSize(10);
-		Slice<NotificationResDto> expectedResponse = new SliceImpl<>(List.of());
+		List<NotificationResDto> expectedResponse = List.of();
 
-		given(notificationQueryService.getNotifications(userId, pageable)).willReturn(expectedResponse);
+		given(notificationQueryService.getNotifications(userId)).willReturn(expectedResponse);
 
 		// when
-		Slice<NotificationResDto> result = notificationFacadeService.getNotifications(userId, pageable);
+		List<NotificationResDto> result = notificationFacadeService.getNotifications(userId);
 
 		// then
 		assertThat(result).isEqualTo(expectedResponse);
-		verify(notificationQueryService).getNotifications(userId, pageable);
+		verify(notificationQueryService).getNotifications(userId);
 	}
 
 	@Test

@@ -1,10 +1,7 @@
 package com.mento.domain.notification.service.schedule;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.BDDMockito.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -97,7 +94,7 @@ class NotificationScheduleServiceTest {
 
 		NotificationSendReqDto reqDto = captor.getValue();
 		assertThat(reqDto.type()).isEqualTo(NotificationType.RESERVATION_REMINDER);
-		assertThat(reqDto.title()).contains("60분");
+		assertThat(reqDto.value()).isEqualTo("60");
 		LocalDateTime expectedExpiredAt = LocalDateTime.of(today, scheduledTime).minusMinutes(30);
 		assertThat(reqDto.expiredAt()).isEqualTo(expectedExpiredAt);
 	}
@@ -139,7 +136,7 @@ class NotificationScheduleServiceTest {
 
 		NotificationSendReqDto reqDto = captor.getValue();
 		assertThat(reqDto.type()).isEqualTo(NotificationType.RESERVATION_REMINDER);
-		assertThat(reqDto.title()).contains("30분");
+		assertThat(reqDto.value()).isEqualTo("30");
 		LocalDateTime expectedExpiredAt = LocalDateTime.of(today, scheduledTime).minusMinutes(10);
 		assertThat(reqDto.expiredAt()).isEqualTo(expectedExpiredAt);
 	}
@@ -181,7 +178,7 @@ class NotificationScheduleServiceTest {
 
 		NotificationSendReqDto reqDto = captor.getValue();
 		assertThat(reqDto.type()).isEqualTo(NotificationType.CONSULTING_STARTED);
-		assertThat(reqDto.title()).contains("입장");
+		assertThat(reqDto.value()).isEqualTo("0");
 		LocalDateTime expectedExpiredAt = LocalDateTime.of(today, scheduledTime).plusMinutes(10);
 		assertThat(reqDto.expiredAt()).isEqualTo(expectedExpiredAt);
 	}

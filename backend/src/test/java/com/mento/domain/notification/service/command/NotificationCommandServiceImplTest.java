@@ -1,11 +1,8 @@
 package com.mento.domain.notification.service.command;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.times;
-import static org.mockito.BDDMockito.verify;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.BDDMockito.*;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -40,9 +37,7 @@ class NotificationCommandServiceImplTest {
 		NotificationSendReqDto reqDto = new NotificationSendReqDto(
 			1L,
 			NotificationType.RESERVATION_REMINDER,
-			"제목",
-			"메시지",
-			"/url",
+			"60",
 			LocalDateTime.now().plusDays(1)
 		);
 

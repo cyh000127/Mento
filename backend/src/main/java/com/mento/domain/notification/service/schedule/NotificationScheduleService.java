@@ -29,8 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class NotificationScheduleService {
 
-	// TODO: 아이템 만료 알림 구현 필요 (로그인 시 또는 매일 특정 시간에 인벤토리 확인 후 만료 1주 전 알림)
-	// TODO: 컨설팅 리포트 생성 알림 구현 필요 (리포트 생성 시점에 NotificationFacadeService 호출)
+	// TODO: 아이템 만료 알림 구현 필요
+	// TODO: 컨설팅 리포트 생성 알림 구현 필요
 
 	private final NotificationFacadeService notificationFacadeService;
 	private final TimetableRepository timetableRepository;
@@ -49,23 +49,23 @@ public class NotificationScheduleService {
 
 		if (minute <= 25) {
 			checkAndSendReminders(now.toLocalDate(), nextHour, 
-				"상담 시작 60분 전입니다.", NotificationType.RESERVATION_REMINDER, -30);
+				"60", NotificationType.RESERVATION_REMINDER, -30);
 		}
 
 		if (minute >= 30 && minute <= 45) {
 			checkAndSendReminders(now.toLocalDate(), nextHour, 
-				"상담 시작 30분 전입니다. 준비해주세요.", NotificationType.RESERVATION_REMINDER, -10);
+				"30", NotificationType.RESERVATION_REMINDER, -10);
 		}
 
 		if (minute >= 50) {
 			checkAndSendReminders(now.toLocalDate(), nextHour, 
-				"상담 입장이 가능합니다.", NotificationType.CONSULTING_STARTED, 10);
+				"0", NotificationType.CONSULTING_STARTED, 10);
 		}
 	}
 
 	private void checkAndSendReminders(LocalDate targetDate,
 		LocalTime targetTime,
-		String title,
+		String value,
 		NotificationType type,
 		int expiryOffsetMinutes) {
 		
@@ -95,25 +95,21 @@ public class NotificationScheduleService {
 				timetable.getScheduledTime());
 			LocalDateTime expiredAt = scheduledDateTime.plusMinutes(expiryOffsetMinutes);
 
-			sendNotification(reservation, title, "상담 예정 시각: " + timetable.getScheduledTime(), type, expiredAt);
+			sendNotification(reservation, value, type, expiredAt);
 		}
 	}
 
 	private void sendNotification(
 		Reservation reservation,
-		String title, String content,
+		String value,
 		NotificationType type,
 		LocalDateTime expiredAt) {
 		try {
 
-			String url = type.getDefaultUrl() + "/" + reservation.getId();
-
 			NotificationSendReqDto reqDto = NotificationSendReqDto.builder()
 				.targetMemberId(reservation.getUserId())
 				.type(type)
-				.title(title)
-				.message(content)
-				.url(url)
+				.value(value)
 				.expiredAt(expiredAt)
 				.build();
 

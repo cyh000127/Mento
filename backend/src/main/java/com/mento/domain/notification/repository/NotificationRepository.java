@@ -1,9 +1,8 @@
 package com.mento.domain.notification.repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,16 +15,15 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 		+ "FROM Notification n "
 		+ "WHERE n.userId = :userId "
 		+ "ORDER BY n.createdAt DESC")
-	Slice<Notification> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
+	List<Notification> findAllByUserId(@Param("userId") Long userId);
 
 	@Query("SELECT n "
 		+ "FROM Notification n "
 		+ "WHERE n.userId = :userId "
 		+ "AND n.expiredAt > :now "
 		+ "ORDER BY n.createdAt DESC")
-	Slice<Notification> findActiveNotifications(
+	List<Notification> findActiveNotifications(
 		@Param("userId") Long userId,
-		@Param("now") LocalDateTime now,
-		Pageable pageable
+		@Param("now") LocalDateTime now
 	);
 }

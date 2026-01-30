@@ -1,7 +1,7 @@
 package com.mento.domain.notification.service.query;
 
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,8 +22,10 @@ public class NotificationQueryServiceImpl implements NotificationQueryService {
 	private final NotificationRepository notificationRepository;
 
 	@Override
-	public Slice<@NonNull NotificationResDto> getNotifications(final Long userId, final Pageable pageable) {
-		return notificationRepository.findAllByUserId(userId, pageable)
-			.map(NotificationConverter::toNotificationResDto);
+	public List<@NonNull NotificationResDto> getNotifications(final Long userId) {
+		return notificationRepository.findAllByUserId(userId)
+			.stream()
+			.map(NotificationConverter::toNotificationResDto)
+			.toList();
 	}
 }

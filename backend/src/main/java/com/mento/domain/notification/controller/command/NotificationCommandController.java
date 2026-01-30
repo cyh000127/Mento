@@ -14,7 +14,6 @@ import com.mento.common.auth.principal.AuthenticatedUser;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.util.ResponseUtils;
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
-import com.mento.domain.notification.dto.response.NotificationTestResDto;
 import com.mento.domain.notification.service.NotificationFacadeService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,11 +33,11 @@ public class NotificationCommandController {
 	@Operation(summary = "알림 발송 (테스트용)", description = "알림을 생성하고 발송합니다.")
 	@PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/test")
-	public ResponseEntity<BaseResponse<NotificationTestResDto>> sendNotification(
+	public ResponseEntity<BaseResponse<Void>> sendNotification(
 		@RequestBody @Valid NotificationSendReqDto reqDto
 	) {
-		NotificationTestResDto resDto = notificationFacadeService.sendNotification(reqDto);
-		return ResponseUtils.ok(resDto);
+		notificationFacadeService.sendNotification(reqDto);
+		return ResponseUtils.ok(null);
 	}
 
 	@Operation(summary = "알림 삭제", description = "알림을 삭제합니다.")

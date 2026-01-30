@@ -1,7 +1,7 @@
 package com.mento.domain.notification.controller.query;
 
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import java.util.List;
+
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -40,11 +40,10 @@ public class NotificationQueryController {
 
 	@Operation(summary = "알림 목록 조회", description = "나의 알림 목록을 최신순으로 조회합니다.")
 	@GetMapping
-	public ResponseEntity<BaseResponse<Slice<NotificationResDto>>> getNotifications(
-		@AuthenticationPrincipal AuthenticatedUser user,
-		Pageable pageable
+	public ResponseEntity<BaseResponse<List<NotificationResDto>>> getNotifications(
+		@AuthenticationPrincipal AuthenticatedUser user
 	) {
-		Slice<NotificationResDto> response = notificationFacadeService.getNotifications(user.getId(), pageable);
+		List<NotificationResDto> response = notificationFacadeService.getNotifications(user.getId());
 		return ResponseUtils.ok(response);
 	}
 }
