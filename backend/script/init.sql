@@ -122,10 +122,9 @@ CREATE TABLE IF NOT EXISTS `payments`
 (
     `payment_id`     BIGINT AUTO_INCREMENT PRIMARY KEY,
     `reservation_id` BIGINT       NOT NULL,
-    `order_id`       BIGINT       NOT NULL,
     `amount`         INTEGER      NOT NULL,
     `payment_method` ENUM ('KAKAO_PAY') NOT NULL,
-    `status`         ENUM ('READY', 'PAID', 'CANCELLED', 'FAILED', 'REFUNDED') NOT NULL,
+    `status`         ENUM ('INIT' 'READY', 'PAID', 'FAILED', 'REFUNDED') NOT NULL,
     `kakao_tid`      VARCHAR(255) NOT NULL,
     `paid_at`        TIMESTAMP NULL,
     `refunded_at`    TIMESTAMP NULL,
