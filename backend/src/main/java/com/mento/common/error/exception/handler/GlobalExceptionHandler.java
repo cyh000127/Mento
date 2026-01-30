@@ -20,6 +20,7 @@ import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.BusinessException;
 import com.mento.common.error.exception.CryptoException;
 import com.mento.common.error.exception.FileStorageException;
+import com.mento.common.error.exception.PaymentException;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.response.ErrorResponse;
 import com.mento.common.util.LoggingUtils;
@@ -186,8 +187,18 @@ public class GlobalExceptionHandler {
 		HttpServletRequest request
 	) {
 		LoggingUtils.logException("CryptoException 발생 ", ex, request);
-		ErrorResponse response = ErrorResponse.of(ErrorCode.CRYPTO_ERROR, request);
-
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(BaseResponse.fail(response));
+		ErrorResponse response = ErrorResponse.of(ex.getErrorCode(), request);
+		return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(BaseResponse.fail(response));
 	}
+
+	@ExceptionHandler(PaymentException.class)
+	public ResponseEntity<BaseResponse<ErrorResponse>> handlePaymentException(
+		PaymentException ex,
+		HttpServletRequest request
+	) {
+		LoggingUtils.logException("PaymentException 발생 ", ex, request);
+		ErrorResponse response = ErrorResponse.of(ex.getErrorCode(), request);
+		return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(BaseResponse.fail(response));
+	}
+	
 }

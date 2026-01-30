@@ -3,7 +3,6 @@ package com.mento.domain.payment.service.command;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -11,7 +10,6 @@ import org.springframework.web.client.RestClient;
 import com.mento.common.config.properties.KakaopayProperties;
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.PaymentException;
-import com.mento.common.error.exception.PaymentGatewayException;
 import com.mento.domain.payment.dto.KakaoApproveReqDto;
 import com.mento.domain.payment.dto.KakaoApproveResDto;
 import com.mento.domain.payment.dto.KakaoReadyReqDto;
@@ -65,14 +63,11 @@ public class PaymentCommandService {
 				.retrieve()
 				.onStatus(HttpStatusCode::isError, (_, res) -> {
 					String errorBody = new String(res.getBody().readAllBytes(), StandardCharsets.UTF_8);
-					throw new PaymentGatewayException(res.getStatusCode(), ErrorCode.PAYMENT_READY_FAILED, errorBody);
-				}) // TODO: 예외처리 검증 필요
+					log.error("KakaoPay Client Error (4xx): body={}", errorBody);
+					throw new PaymentException(ErrorCode.PAYMENT_READY_FAILED);
+				})
 				.body(KakaoReadyResDto.class)
-		).orElseThrow(() -> new PaymentGatewayException(
-			HttpStatus.INTERNAL_SERVER_ERROR,
-			ErrorCode.PAYMENT_READY_FAILED,
-			"카카오 응답 바디가 비어있습니다."
-		));
+		).orElseThrow(() -> new PaymentException(ErrorCode.PAYMENT_READY_FAILED));
 		payment.ready(kakaoResponse.tid());
 
 		return PaymentReadyResDto.builder()
@@ -101,14 +96,14 @@ public class PaymentCommandService {
 				String errorBody = new String(res.getBody().readAllBytes(), StandardCharsets.UTF_8);
 				log.error("KakaoPay Client Error (4xx): paymentId={}, body={}", request.paymentId(), errorBody);
 				payment.fail(); // TODO: payment 상태 변화 처리가 롤백 되지 않는지 검증 필요.
-				throw new PaymentGatewayException(res.getStatusCode(), ErrorCode.PAYMENT_APPROVE_FAILED, errorBody);
+				throw new PaymentException(ErrorCode.PAYMENT_APPROVE_FAILED);
 			})
 			.onStatus(HttpStatusCode::is5xxServerError, (_, res) -> {
 				String errorBody = new String(res.getBody().readAllBytes(), StandardCharsets.UTF_8);
 				log.error("KakaoPay Server Error (5xx): paymentId={}, body={}", request.paymentId(), errorBody);
 				payment.fail();
-				throw new PaymentGatewayException(res.getStatusCode(), ErrorCode.PAYMENT_APPROVE_FAILED, errorBody);
-			}) // TODO: timeout 고려한 ResourceAccessException 처리
+				throw new PaymentException(ErrorCode.PAYMENT_APPROVE_FAILED);
+			})
 			.body(KakaoApproveResDto.class);
 
 		payment.approve();

@@ -29,9 +29,9 @@ class PaymentCommandController {
 	@PostMapping("/ready")
 	public ResponseEntity<BaseResponse<PaymentReadyResDto>> ready(
 		@Valid @RequestBody PaymentReadyReqDto request,
-		@AuthenticationPrincipal AuthenticatedUser user
+		@AuthenticationPrincipal AuthenticatedUser authUser
 	) {
-		PaymentReadyResDto response = paymentCommandService.ready(request, user.getId());
+		PaymentReadyResDto response = paymentCommandService.ready(request, authUser.getId());
 		return ResponseUtils.ok(response);
 	}
 

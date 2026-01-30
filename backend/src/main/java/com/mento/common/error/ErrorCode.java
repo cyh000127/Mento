@@ -23,7 +23,8 @@ public enum ErrorCode {
 	METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "C-008", "지원하지 않는 HTTP 메서드입니다."),
 	UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "C-009", "지원하지 않는 미디어 타입입니다."),
 	DATA_INTEGRITY_VIOLATION(HttpStatus.CONFLICT, "C-010", "데이터 무결성 위반입니다."),
-	CRYPTO_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C-011", "데이터 암호화 처리 중 오류가 발생했습니다."),
+	ENCRYPT_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C-011", "데이터 암호화 중 오류가 발생했습니다."),
+	DECRYPT_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C-012", "데이터 복호화 중 오류가 발생했습니다."),
 
 	/**
 	 * File Error (F-xxx)
@@ -87,9 +88,9 @@ public enum ErrorCode {
 	 * Payment Error(PY-xxx)
 	 */
 	PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PY-001", "결제 내역을 찾을 수 없습니다."),
-	PAYMENT_READY_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PY-002", "결제 준비 요청에 실패했습니다."),
+	PAYMENT_READY_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PY-002", "결제 준비 요청이 실패했습니다."),
 	PAYMENT_APPROVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PY-003", "결제 승인 요청이 실패했습니다."),
-	PAYMENT_REFUND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PY-004", "결제 환불 요청에 실패했습니다.");
+	PAYMENT_REFUND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PY-004", "결제 환불 요청이 실패했습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;

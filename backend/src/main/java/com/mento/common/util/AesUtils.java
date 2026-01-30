@@ -13,6 +13,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.CryptoException;
 
 @Component
@@ -42,7 +43,7 @@ public class AesUtils {
 
 			return new String(plainBytes, StandardCharsets.UTF_8);
 		} catch (Exception e) {
-			throw new CryptoException("데이터 복호화 중 오류 발생", e);
+			throw new CryptoException(ErrorCode.DECRYPT_ERROR);
 		}
 	}
 
@@ -66,7 +67,7 @@ public class AesUtils {
 			return Base64.getEncoder().encodeToString(byteBuffer.array());
 
 		} catch (Exception e) {
-			throw new CryptoException("데이터 암호화 중 오류 발생", e);
+			throw new CryptoException(ErrorCode.ENCRYPT_ERROR);
 		}
 	}
 }
