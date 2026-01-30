@@ -26,4 +26,14 @@ public class MentorQueryServiceImpl implements MentorQueryService {
 		return mentorRepository.findById(id)
 			.orElseThrow(() -> new MentorException(ErrorCode.MENTOR_NOT_FOUND));
 	}
+
+	@Override
+	public Mentor findRandomMentorByTypeId(final Long typeId) {
+		Mentor mentor = mentorRepository.findRandomMentorByTypeId(typeId);
+		if (mentor == null) {
+			throw new MentorException(ErrorCode.MENTOR_NOT_FOUND);
+		}
+		log.info("[Reservation] 랜덤 멘토 조회 완료 {typeId: {}, mentorId: {}}", typeId, mentor.getId());
+		return mentor;
+	}
 }
