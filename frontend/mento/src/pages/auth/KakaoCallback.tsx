@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuthStore } from "@/stores/useAuthStore"
-import { userApi } from "@/api/user"
 
 export default function KakaoCallback() {
   const navigate = useNavigate()
-  const { setAccessToken, setUser } = useAuthStore()
+  const { setAccessToken } = useAuthStore()
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -39,19 +38,13 @@ export default function KakaoCallback() {
         // refreshToken은 이미 쿠키로 설정되어 있음
         setAccessToken(accessToken)
 
-        // 사용자 정보 가져오기
-        try {
-          const userData = await userApi.getCurrentUser()
-          setUser(userData)
-        } catch (userError) {
-          console.error("사용자 정보 조회 실패:", userError)
-          // 사용자 정보 조회 실패해도 로그인은 유지
-        }
+        // 사용자 정보는 Layout에서 자동으로 조회됨
+        // 여기서는 토큰만 저장하고 바로 리다이렉트
 
         // URL에서 토큰 제거 (보안을 위해)
         window.history.replaceState({}, "", "/")
 
-        // 홈으로 리다이렉트
+        // 홈으로 리다이렉트 (Layout에서 사용자 정보를 조회함)
         navigate("/", { replace: true })
       } catch (err) {
         console.error("로그인 처리 중 오류:", err)
@@ -63,7 +56,8 @@ export default function KakaoCallback() {
     }
 
     handleCallback()
-  }, [navigate, setAccessToken, setUser])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // 최초 마운트 시에만 실행
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
