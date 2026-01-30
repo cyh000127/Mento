@@ -14,7 +14,8 @@ import com.mento.domain.payment.dto.request.PaymentApproveReqDto;
 import com.mento.domain.payment.dto.request.PaymentReadyReqDto;
 import com.mento.domain.payment.dto.response.PaymentApproveResDto;
 import com.mento.domain.payment.dto.response.PaymentReadyResDto;
-import com.mento.domain.payment.service.PaymentFacadeService;
+import com.mento.domain.payment.service.facade.PaymentFacadeService;
+import com.mento.domain.reservation.dto.response.ReservationDetailResDto;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -55,6 +56,24 @@ class PaymentCommandController {
 		@AuthenticationPrincipal final AuthenticatedUser authUser
 	) {
 		PaymentApproveResDto response = paymentFacadeService.approvePayment(request, authUser.getId());
+		return ResponseUtils.ok(response);
+	}
+
+	@Operation(
+		summary = "결제 승인 및 예약 확정",
+		description = "카카오페이 결제를 승인하고 동시에 예약을 확정합니다. "
+			+ "멘토가 랜덤 배정되고 예약 상태가 CONFIRMED로 변경됩니다. "
+			+ "이 API는 프론트에서 카카오페이 리다이렉트 후 자동으로 호출되어야 합니다."
+	)
+	@PostMapping("/approve/reservation")
+	public ResponseEntity<BaseResponse<ReservationDetailResDto>> approveWithReservation(
+		@Valid @RequestBody final PaymentApproveReqDto request,
+		@AuthenticationPrincipal final AuthenticatedUser authUser
+	) {
+		ReservationDetailResDto response = paymentFacadeService.approvePaymentAndConfirmReservation(
+			request,
+			authUser.getId()
+		);
 		return ResponseUtils.ok(response);
 	}
 }
