@@ -6,6 +6,10 @@ import com.mento.domain.timetable.entity.TimetableSlot;
 
 public interface TimetableSlotQueryService {
 
+	TimetableSlot findById(Long slotId);
+
+	TimetableSlot findByTimetableIdAndTypeId(Long timetableId, Long typeId);
+
 	List<TimetableSlot> findAllByTimetableIdsAndTypeId(List<Long> timetableIds, Long typeId);
 
 	List<TimetableSlot> findAllByTimetableIds(final List<Long> timetableIds);
