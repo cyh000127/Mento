@@ -37,18 +37,20 @@ public class SwaggerConfig {
 			.addList("accessTokenAuth")
 			.addList("refreshTokenAuth");
 
-		Server server = new Server();
-		server.setUrl(BackDomain.LOCAL.getUrl());
-		server.setDescription(BackDomain.LOCAL.getDescription());
+		List<Server> servers = Arrays.stream(BackDomain.values())
+			.map(domain -> new Server()
+				.url(domain.getUrl())
+				.description(domain.getDescription()))
+			.toList();
 
 		return new OpenAPI()
-			.info(new Info().title("M-Ready API")
-				.description("M-Ready API 서버")
+			.info(new Info().title("Mento API")
+				.description("Mento API 서버")
 				.version("v1.0"))
 			.components(new Components()
 				.addSecuritySchemes("accessTokenAuth", accessTokenAuth))
 			.security(Collections.singletonList(securityRequirement))
-			.servers(List.of(server));
+			.servers(servers);
 	}
 
 	@Bean
