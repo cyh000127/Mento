@@ -24,6 +24,6 @@ public class MentorQueryServiceImpl implements MentorQueryService {
 	@Override
 	public Mentor findById(final Long id) {
 		return mentorRepository.findById(id)
-			.orElseThrow(() -> new MentorException(ErrorCode.MENTO_NOT_FOUND));
+			.orElseThrow(() -> new MentorException(ErrorCode.MENTOR_NOT_FOUND));
 	}
 }

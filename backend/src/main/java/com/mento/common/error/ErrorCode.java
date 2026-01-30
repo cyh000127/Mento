@@ -88,7 +88,7 @@ public enum ErrorCode {
 	 */
 	MENTOR_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND, "M-001", "멘토 유형을 찾을 수 없습니다."),
 	MISSING_MENTOR_TYPE(HttpStatus.BAD_REQUEST, "M-002", "멘토 유형 정보가 누락되었습니다."),
-	MENTO_NOT_FOUND(HttpStatus.NOT_FOUND, "M_003", "멘토 정보를 찾을 수 없습니다."),
+	MENTOR_NOT_FOUND(HttpStatus.NOT_FOUND, "M_003", "멘토 정보를 찾을 수 없습니다."),
 	MISSING_MENTOR(HttpStatus.BAD_REQUEST, "M-004", "멘토 정보가 누락되었습니다."),
 
 	/**
