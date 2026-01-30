@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
+import { API_BASE } from "@/api/axios";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -52,20 +53,12 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             <button
               type="button"
               onClick={() => {
-                onClose()
-                window.location.href =
-                  `${import.meta.env.VITE_API_BASE_URL}/oauth2/authorization/kakao`
+                onClose();
+                window.location.href = `${API_BASE}/oauth2/authorization/kakao`;
               }}
               className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#FEE500] px-4 py-3.5 font-medium text-[#191919] transition-all hover:brightness-95"
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"

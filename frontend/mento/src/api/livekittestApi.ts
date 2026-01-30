@@ -1,7 +1,6 @@
 import axios from "axios";
 import type { LivekitTestTokenResponse, LivekitTestTokenParams } from "@/types/livekitTest";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+import { API_BASE } from "./axios";
 
 /**
  * LiveKit 테스트 토큰 발급 API (인증 없음)
