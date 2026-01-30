@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mento.common.auth.principal.AuthenticatedUser;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.util.ResponseUtils;
-import com.mento.domain.payment.dto.KakaoReadyResDto;
-import com.mento.domain.payment.dto.PaymentReqDto;
+import com.mento.domain.payment.dto.PaymentApproveReqDto;
+import com.mento.domain.payment.dto.PaymentApproveResDto;
+import com.mento.domain.payment.dto.PaymentReadyReqDto;
+import com.mento.domain.payment.dto.PaymentReadyResDto;
 import com.mento.domain.payment.service.command.PaymentCommandService;
 
 import jakarta.validation.Valid;
@@ -25,12 +27,20 @@ class PaymentCommandController {
 	private final PaymentCommandService paymentCommandService;
 
 	@PostMapping("/ready")
-	public ResponseEntity<BaseResponse<KakaoReadyResDto>> ready(
-		@Valid @RequestBody PaymentReqDto dto,
+	public ResponseEntity<BaseResponse<PaymentReadyResDto>> ready(
+		@Valid @RequestBody PaymentReadyReqDto request,
 		@AuthenticationPrincipal AuthenticatedUser user
 	) {
-		KakaoReadyResDto response = paymentCommandService.ready(dto, user.getId());
+		PaymentReadyResDto response = paymentCommandService.ready(request, user.getId());
 		return ResponseUtils.ok(response);
 	}
 
+	@PostMapping("/approve")
+	public ResponseEntity<BaseResponse<PaymentApproveResDto>> approve(
+		@Valid @RequestBody PaymentApproveReqDto request,
+		@AuthenticationPrincipal AuthenticatedUser user
+	) {
+		PaymentApproveResDto response = paymentCommandService.approve(request, user.getId());
+		return ResponseUtils.ok(response);
+	}
 }
