@@ -2,9 +2,15 @@ package com.mento.domain.user.entity;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.mento.common.entity.BaseEntity;
+import com.mento.common.error.ErrorCode;
+import com.mento.domain.reservation.entity.Reservation;
+import com.mento.domain.user.exception.UserException;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,6 +18,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -32,6 +39,10 @@ public class User extends BaseEntity {
 	@Column(name = "user_id")
 	private Long id;
 
+	@Builder.Default
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Reservation> reservations = new ArrayList<>();
+
 	@Column(nullable = false, unique = true, length = 100)
 	private String email;
 
@@ -47,7 +58,7 @@ public class User extends BaseEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	@Builder.Default
-	private Role role = Role.USER; // [USER, MENTO, ADMIN]
+	private Role role = Role.USER;
 
 	@Column(name = "birth_date")
 	private LocalDate birthDate;
@@ -69,6 +80,16 @@ public class User extends BaseEntity {
 
 	public void withdraw() {
 		this.deletedAt = LocalDateTime.now();
+	}
+
+	public void assignReservation(final Reservation reservation) {
+		if (reservation == null) {
+			throw new UserException(ErrorCode.MISSING_RESERVATION);
+		}
+		this.reservations.add(reservation);
+		if (reservation.getUser() != this) {
+			reservation.assignUser(this);
+		}
 	}
 
 }
