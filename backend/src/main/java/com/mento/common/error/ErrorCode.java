@@ -42,6 +42,7 @@ public enum ErrorCode {
 	USER_EMAIL_DUPLICATE(HttpStatus.CONFLICT, "U-002", "이미 존재하는 이메일입니다."),
 	ALREADY_WITHDRAWN(HttpStatus.CONFLICT, "U-003", "이미 탈퇴한 회원입니다."),
 	INVALID_USER_ROLE(HttpStatus.BAD_REQUEST, "U-004", "유효하지 않은 사용자 역할입니다."),
+	MISSING_USER(HttpStatus.BAD_REQUEST, "U-005", "사용자 정보가 누락되었습니다."),
 
 	/**
 	 * Auth Error (A-xxx)
@@ -76,6 +77,8 @@ public enum ErrorCode {
 	 * RESERVATION Error (R-xxx)
 	 */
 	RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "R-001", "예약 정보를 찾을 수 없습니다."),
+	RESERVATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "R-002", "해당 예약에 접근할 권한이 없습니다."),
+	MISSING_RESERVATION(HttpStatus.BAD_REQUEST, "R-003", "예약 정보가 누락되었습니다."),
 
 	/**
 	 * MENTOR Error (M-xxx)
