@@ -1,3 +1,4 @@
+//axios.ts
 import axios from "axios";
 import { useAuthStore } from "@/stores/useAuthStore";
 
@@ -44,6 +45,7 @@ api.interceptors.response.use(
     // 재발급 요청 자체가 실패한 경우 무한 루프 방지
     if (original?.url?.includes("/auth/reissue")) {
       refreshTokenPromise = null;
+      localStorage.removeItem("hasRefreshToken");
       useAuthStore.getState().logout();
       return Promise.reject(error);
     }
@@ -89,6 +91,10 @@ api.interceptors.response.use(
       } catch (reissueError) {
         // 토큰 재발급 실패 시 로그아웃
         refreshTokenPromise = null;
+        const status = (reissueError as { response?: { status?: number } })?.response?.status;
+        if (status === 401 || status === 403) {
+          localStorage.removeItem("hasRefreshToken");
+        }
         useAuthStore.getState().logout();
 
         console.error("토큰 재발급 실패:", reissueError);
@@ -97,5 +103,5 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  },
+  }
 );
