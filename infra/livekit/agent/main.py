@@ -3,6 +3,8 @@ import os
 from dotenv import load_dotenv
 from livekit.agents import JobContext, WorkerOptions, cli, WorkerType
 from livekit import rtc
+from livekit.plugins import openai
+
 
 load_dotenv()
 
