@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Upload, Sparkles, ChevronRight, X, Loader2 } from "lucide-react";
+import { Upload, Sparkles, ChevronRight, X, Loader2, Droplets, Search, Minus, Sun, Dumbbell } from "lucide-react";
 import { userApi } from "@/api/user";
 
 interface UploadedImage {
@@ -340,79 +340,287 @@ export function SkinAnalysis() {
 
         {/* Result State */}
         {state === "result" && (
-          <div className="mx-auto max-w">
+          <div className="mx-auto max-w-6xl">
+            {/* Header */}
             <div className="mb-8 text-center">
-              <h2 className="mb-4 text-2xl font-bold text-text-primary md:text-3xl">피부 분석 결과</h2>
-              <p className="text-text-secondary">AI가 분석한 당신의 피부 상태입니다</p>
+              <h2 className="mb-2 text-3xl font-bold text-text-primary md:text-4xl">피부 분석 결과</h2>
+              <p className="text-text-secondary">AI가 분석한 당신의 피부 상태를 확인해보세요</p>
             </div>
 
-            {/* Score Header */}
-            <div className="mb-8 rounded-2xl border border-border bg-background p-8 shadow-lg">
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <p className="mb-2 text-sm text-text-secondary">피부 종합 점수</p>
-                  <p className="text-5xl font-bold text-text-primary">87점</p>
+            {/* Top Summary Section */}
+            <div className="mb-8 grid gap-6 md:grid-cols-2">
+              {/* Total Score Card */}
+              <div className="rounded-3xl bg-gradient-to-br from-primary-400 to-primary-500 p-8 text-center shadow-xl">
+                <p className="mb-3 text-sm font-medium text-white/90">피부 종합 점수</p>
+                <div className="mb-4 flex items-center justify-center gap-3">
+                  <p className="text-7xl font-bold text-white">87</p>
+                  <div className="flex flex-col items-start">
+                    <p className="text-2xl font-semibold text-white">점</p>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4].map((star) => (
+                        <div key={star} className="h-4 w-4 rounded-full bg-white" />
+                      ))}
+                      <div className="h-4 w-4 rounded-full bg-white/40" />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-500">
-                  <Sparkles className="h-10 w-10 text-dark-bg" />
-                </div>
+                <p className="text-sm text-white/90">5단계 중 4단계 - 양호</p>
               </div>
 
-              {/* Analysis Results */}
-              <div className="space-y-4">
-                <div>
-                  <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="font-medium text-text-primary">수분도</span>
-                    <span className="font-semibold text-text-primary">92%</span>
+              {/* Skin Type Summary Card */}
+              <div className="rounded-3xl border-2 border-primary-300 bg-gradient-to-br from-primary-50 to-white p-8 shadow-lg">
+                <p className="mb-3 text-sm font-medium text-text-secondary">피부 타입</p>
+                <p className="mb-4 text-4xl font-bold text-primary-600">복합성 피부</p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+                    <span className="text-sm font-medium text-text-primary">수분</span>
+                    <span className="text-sm font-semibold text-primary-600">양호</span>
                   </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full w-[92%] rounded-full bg-gradient-to-r from-primary-400 to-primary-500" />
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="font-medium text-text-primary">유분 밸런스</span>
-                    <span className="font-semibold text-text-primary">78%</span>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full w-[78%] rounded-full bg-gradient-to-r from-pastel-green-200 to-pastel-green-100" />
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="font-medium text-text-primary">모공 상태</span>
-                    <span className="font-semibold text-text-primary">85%</span>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full w-[85%] rounded-full bg-gradient-to-r from-pastel-purple-200 to-pastel-purple-100" />
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="font-medium text-text-primary">탄력도</span>
-                    <span className="font-semibold text-text-primary">89%</span>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full w-[89%] rounded-full bg-gradient-to-r from-pastel-blue-200 to-pastel-blue-100" />
+                  <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+                    <span className="text-sm font-medium text-text-primary">민감도</span>
+                    <span className="text-sm font-semibold text-orange-600">집중관리</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* AI Recommendation */}
-            <div className="rounded-2xl border border-border bg-primary-100/30 p-8 shadow-lg">
-              <div className="mb-4 flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-primary-500" />
-                <h3 className="text-xl font-semibold text-text-primary">AI 맞춤 추천</h3>
+            {/* Central Visualization Section */}
+            <div className="mb-8 rounded-3xl border border-border bg-gradient-to-br from-primary-50/50 to-white p-8 shadow-lg">
+              <h3 className="mb-6 text-center text-xl font-bold text-text-primary">피부 상태 상세 분석</h3>
+              
+              <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 lg:flex-row lg:items-center">
+                {/* Radar Chart */}
+                <div className="relative flex w-full max-w-lg items-center justify-center lg:w-1/2">
+                  <svg viewBox="0 0 500 500" className="h-full w-full" style={{ maxHeight: "500px" }}>
+                    {/* Background circles */}
+                    {[180, 144, 108, 72, 36].map((radius, idx) => (
+                      <circle
+                        key={`circle-${idx}`}
+                        cx="250"
+                        cy="250"
+                        r={radius}
+                        fill="none"
+                        stroke={idx === 0 ? "#b8f6ff" : "#e5e7eb"}
+                        strokeWidth="2"
+                      />
+                    ))}
+
+                    {/* Guide lines */}
+                    {[0, 72, 144, 216, 288].map((angle, idx) => {
+                      const radian = ((angle - 90) * Math.PI) / 180;
+                      const x = 250 + 180 * Math.cos(radian);
+                      const y = 250 + 180 * Math.sin(radian);
+                      return (
+                        <line
+                          key={`line-${idx}`}
+                          x1="250"
+                          y1="250"
+                          x2={x}
+                          y2={y}
+                          stroke="#d1d5db"
+                          strokeWidth="2"
+                        />
+                      );
+                    })}
+
+                    {/* Data polygon */}
+                    <polygon
+                      points={[
+                        { angle: 0, value: 8 },    // 수분 (상단) - 낮을수록 좋음
+                        { angle: 72, value: 15 },   // 모공 (우상단)
+                        { angle: 144, value: 22 },  // 주름 (우하단)
+                        { angle: 216, value: 30 },  // 색소침착 (좌하단)
+                        { angle: 288, value: 11 },  // 탄력 (좌상단)
+                      ]
+                        .map(({ angle, value }) => {
+                          const radian = ((angle - 90) * Math.PI) / 180;
+                          // 점수가 낮을수록 바깥쪽 (100 - value로 반전, 그리고 1.8배 스케일)
+                          const radius = (100 - value) * 1.8;
+                          const x = 250 + radius * Math.cos(radian);
+                          const y = 250 + radius * Math.sin(radian);
+                          return `${x},${y}`;
+                        })
+                        .join(" ")}
+                      fill="rgba(134, 239, 172, 0.3)"
+                      stroke="#86efac"
+                      strokeWidth="4"
+                    />
+
+                    {/* Data points */}
+                    {[
+                      { angle: 0, value: 8, label: "수분" },
+                      { angle: 72, value: 15, label: "모공" },
+                      { angle: 144, value: 22, label: "주름" },
+                      { angle: 216, value: 30, label: "색소침착" },
+                      { angle: 288, value: 11, label: "탄력" },
+                    ].map(({ angle, value, label }, idx) => {
+                      const radian = ((angle - 90) * Math.PI) / 180;
+                      // 점수가 낮을수록 바깥쪽
+                      const radius = (100 - value) * 1.8;
+                      const x = 250 + radius * Math.cos(radian);
+                      const y = 250 + radius * Math.sin(radian);
+                      const labelX = 250 + 210 * Math.cos(radian);
+                      const labelY = 250 + 210 * Math.sin(radian);
+                      
+                      return (
+                        <g key={`point-${idx}`}>
+                          <circle cx={x} cy={y} r="8" fill="#22c55e" stroke="white" strokeWidth="3" />
+                          <text
+                            x={labelX}
+                            y={labelY}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            className="text-base font-bold"
+                            fill="#111827"
+                          >
+                            {label}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+
+                {/* Legend / Quick Stats */}
+                <div className="w-full space-y-3 lg:w-1/2">
+                  {[
+                    { label: "수분", value: 8, color: "bg-[#beeffc]", status: "우수", icon: Droplets, iconColor: "text-primary-500" },
+                    { label: "모공", value: 15, color: "bg-[#bfeedd]", status: "양호", icon: Search, iconColor: "text-[#6fb896]" },
+                    { label: "주름", value: 22, color: "bg-[#e6e3fa]", status: "보통", icon: Minus, iconColor: "text-[#9b93d4]" },
+                    { label: "색소침착", value: 30, color: "bg-[#ccf8ff]", status: "집중관리", icon: Sun, iconColor: "text-primary-500" },
+                    { label: "탄력", value: 11, color: "bg-[#dffaf0]", status: "양호", icon: Dumbbell, iconColor: "text-[#6fb896]" },
+                  ].map((item, idx) => {
+                    const Icon = item.icon;
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between rounded-xl border border-border bg-white p-4 shadow-sm transition-all hover:shadow-md"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`flex h-8 w-8 items-center justify-center rounded-full ${item.color}`}>
+                            <Icon className={`h-4 w-4 ${item.iconColor}`} />
+                          </div>
+                          <span className="font-medium text-text-primary">{item.label}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-semibold text-text-secondary">{item.value}점</span>
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-medium ${
+                              item.value <= 10
+                                ? "bg-primary-100 text-primary-500 font-semibold"
+                                : item.value <= 20
+                                  ? "bg-primary-100/70 text-primary-400 font-semibold"
+                                  : item.value <= 30
+                                    ? "bg-primary-100/50 text-text-primary"
+                                    : "bg-muted text-text-secondary"
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <p className="mb-6 leading-relaxed text-text-secondary">
-                수분도가 높은 편이지만, 유분 밸런스 개선이 필요합니다. 나이아신아마이드 성분의 세럼과 가벼운 젤 타입 보습제를 추천드립니다. 또한, 모공 관리를 위해 주 2-3회 AHA/BHA 토너 사용을
-                권장합니다.
-              </p>
-              <button type="button" className="inline-flex items-center gap-2 rounded-lg bg-primary-500 px-6 py-3 font-medium text-dark-bg transition-colors hover:bg-primary-400">
-                맞춤 제품 보기
-                <ChevronRight className="h-5 w-5" />
-              </button>
+            </div>
+
+            {/* Detail Cards Section */}
+            <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[
+                {
+                  category: "수분",
+                  score: 8,
+                  grade: 5,
+                  icon: Droplets,
+                  iconColor: "text-primary-500",
+                  description: "피부 수분도가 매우 우수합니다. 현재 수분 관리를 잘 유지하고 계십니다.",
+                  color: "from-[#beeffc] to-[#ccf8ff]",
+                  bgColor: "bg-[#ccf8ff]/50",
+                  textColor: "text-dark-bg",
+                },
+                {
+                  category: "모공",
+                  score: 15,
+                  grade: 4,
+                  icon: Search,
+                  iconColor: "text-[#6fb896]",
+                  description: "모공 상태가 양호합니다. 꾸준한 각질 제거로 더 개선할 수 있습니다.",
+                  color: "from-[#bfeedd] to-[#dffaf0]",
+                  bgColor: "bg-[#dffaf0]/50",
+                  textColor: "text-dark-bg",
+                },
+                {
+                  category: "주름",
+                  score: 22,
+                  grade: 3,
+                  icon: Minus,
+                  iconColor: "text-[#9b93d4]",
+                  description: "주름 관리가 필요합니다. 레티놀 성분의 제품 사용을 권장합니다.",
+                  color: "from-[#e6e3fa] to-[#f2f0ff]",
+                  bgColor: "bg-[#f2f0ff]/50",
+                  textColor: "text-dark-bg",
+                },
+                {
+                  category: "색소침착",
+                  score: 30,
+                  grade: 3,
+                  icon: Sun,
+                  iconColor: "text-primary-500",
+                  description: "색소침착 개선이 필요합니다. 자외선 차단제를 꼼꼼히 발라주세요.",
+                  color: "from-[#ccf8ff] to-[#beeffc]",
+                  bgColor: "bg-[#beeffc]/50",
+                  textColor: "text-dark-bg",
+                },
+                {
+                  category: "탄력",
+                  score: 11,
+                  grade: 4,
+                  icon: Dumbbell,
+                  iconColor: "text-[#6fb896]",
+                  description: "피부 탄력이 좋은 상태입니다. 콜라겐 관리를 지속하세요.",
+                  color: "from-[#dffaf0] to-[#bfeedd]",
+                  bgColor: "bg-[#bfeedd]/50",
+                  textColor: "text-dark-bg",
+                },
+              ].map((item, idx) => {
+                const Icon = item.icon;
+                return (
+                  <div
+                    key={idx}
+                    className={`overflow-hidden rounded-2xl border border-border ${item.bgColor} shadow-md transition-all hover:shadow-lg`}
+                  >
+                    <div className={`bg-gradient-to-r ${item.color} px-6 py-4 ${item.textColor}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Icon className={`h-6 w-6 ${item.iconColor}`} />
+                          <h4 className="text-lg font-bold">{item.category}</h4>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-3xl font-bold">{item.score}</p>
+                          <p className="text-xs opacity-90">점</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <div className="mb-3 flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <div
+                            key={i}
+                            className={`h-2 w-2 rounded-full ${
+                              i < item.grade ? "bg-[#22c55e]" : "bg-gray-300"
+                            }`}
+                          />
+                        ))}
+                        <span className="ml-2 text-xs text-text-secondary">
+                          {item.grade}/5 단계
+                        </span>
+                      </div>
+                      <p className="text-sm leading-relaxed text-text-secondary">{item.description}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Retry Button */}
@@ -427,8 +635,9 @@ export function SkinAnalysis() {
                   setFrontImage(null);
                   setRightImage(null);
                 }}
-                className="text-sm text-text-secondary underline hover:text-text-primary"
+                className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-4 font-medium text-dark-bg shadow-lg transition-all hover:bg-primary-400 hover:shadow-xl hover:scale-105"
               >
+                <Sparkles className="h-5 w-5" />
                 다시 분석하기
               </button>
             </div>
