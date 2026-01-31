@@ -6,7 +6,7 @@ interface QuestionnaireProps {
   answers: string[];
   selectedCategory: ConsultationCategory | null;
   onAnswerChange: (index: number, answer: string) => void;
-  onNext: () => void;
+  onSubmitSurvey: (surveyData: string) => void;
   onPrev: () => void;
   canProceed: boolean;
 }
@@ -23,7 +23,14 @@ const questionsByCategory: Record<NonNullable<ConsultationCategory>, string[]> =
   hair: ["현재 헤어 스타일에서 불만족스러운 점이 있나요?", "선호하는 헤어 스타일이나 참고 이미지가 있나요?", "두피나 모발 관련 고민이 있다면 알려주세요."],
 };
 
-export function Questionnaire({ answers, selectedCategory, onAnswerChange, onNext, onPrev, canProceed }: QuestionnaireProps) {
+export function Questionnaire({
+  answers,
+  selectedCategory,
+  onAnswerChange,
+  onSubmitSurvey,
+  onPrev,
+  canProceed,
+}: QuestionnaireProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const questions = selectedCategory ? questionsByCategory[selectedCategory] : [];
   const totalQuestions = questions.length;
@@ -59,8 +66,12 @@ export function Questionnaire({ answers, selectedCategory, onAnswerChange, onNex
     if (!saved) return;
 
     try {
-      const parsed = JSON.parse(saved) as { question: string; answer: string }[];
-      parsed.forEach((item, index) => {
+      const parsed = JSON.parse(saved) as
+        | { category: ConsultationCategory | null; items: { question: string; answer: string }[] }
+        | { question: string; answer: string }[];
+      const items = Array.isArray(parsed) ? parsed : parsed.items;
+
+      items.forEach((item, index) => {
         if (questions[index] === item.question && item.answer) {
           onAnswerChange(index, item.answer);
         }
@@ -71,12 +82,16 @@ export function Questionnaire({ answers, selectedCategory, onAnswerChange, onNex
   }, [answers, onAnswerChange, questions]);
 
   const handleSubmitAnswers = () => {
-    const payload = questions.map((question, index) => ({
-      question,
-      answer: answers[index] ?? "",
-    }));
-    localStorage.setItem(storageKey, JSON.stringify(payload));
-    onNext();
+    const payload = {
+      category: selectedCategory,
+      items: questions.map((question, index) => ({
+        question,
+        answer: answers[index] ?? "",
+      })),
+    };
+    const surveyData = JSON.stringify(payload);
+    localStorage.setItem(storageKey, surveyData);
+    onSubmitSurvey(surveyData);
   };
 
   if (!selectedCategory) {

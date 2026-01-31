@@ -8,6 +8,7 @@ import { BookingComplete } from "@/components/consultation/booking-complete"
 import { StepIndicator } from "@/components/consultation/step-indicator"
 import type { ConsultationCategory } from "@/types/consultation"
 import { createReservationDraft } from "@/api/reservationApi"
+import { updateReservationSurvey } from "@/api/reservationSurveyApi"
 
 interface BookingData {
   category: ConsultationCategory | null
@@ -74,6 +75,20 @@ export default function ConsultationPage() {
   const handleQuestionnaireComplete = () => {
     window.scrollTo({ top: 0, behavior: "smooth" })
     setShowSurveyComplete(true)
+  }
+
+  const handleSurveySubmit = async (surveyData: string) => {
+    if (!bookingData.reservationId) {
+      return
+    }
+
+    try {
+      await updateReservationSurvey(bookingData.reservationId, { surveyData })
+      handleQuestionnaireComplete()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      console.error(message)
+    }
   }
 
   const handleSurveyCompleteNext = () => {
@@ -151,7 +166,7 @@ export default function ConsultationPage() {
               answers={answers}
               selectedCategory={bookingData.category}
               onAnswerChange={handleAnswerChange}
-              onNext={handleQuestionnaireComplete}
+              onSubmitSurvey={handleSurveySubmit}
               onPrev={handleBack}
               canProceed={answers.every((a) => a && a.trim() !== "")}
             />
