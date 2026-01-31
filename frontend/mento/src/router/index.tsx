@@ -6,6 +6,7 @@ import ConsultationPage from "@/pages/consultation/ConsultationPage";
 import { ConsultationRoomPage } from "@/pages/consultation/ConsultationRoomPage";
 import { LivekitTestPage } from "@/pages/consultation/LiveKitTestPage";
 import GuidePage from "@/pages/guide/GuidePage";
+import GuideDetailPage from "@/pages/guide/GuideDetailPage";
 import MentoringPage from "@/pages/mentoring/MentoringPage";
 import RecommendPage from "@/pages/recommend/RecommendPage";
 import InventoryPage from "@/pages/inventory/InventoryPage";
@@ -33,6 +34,10 @@ const router = createBrowserRouter([
       {
         path: "guide",
         element: <GuidePage />,
+      },
+      {
+        path: "guide/:category/:productType",
+        element: <GuideDetailPage />,
       },
       {
         path: "mentoring",
