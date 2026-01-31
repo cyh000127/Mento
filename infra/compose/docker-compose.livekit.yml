@@ -23,6 +23,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
+      - PYTHONUNBUFFERED=1
       - LIVEKIT_URL=http://host.docker.internal:8000
       - LIVEKIT_API_KEY=${LIVEKIT_API_KEY}
       - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET}
