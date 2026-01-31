@@ -30,7 +30,8 @@ public class ReservationConverter {
 		return ReservationDetailResDto.builder()
 			.reservationId(reservation.getId())
 			.userInfo(UserConverter.toUserInfoDto(reservation.getUser()))
-			.mentorInfo(MentorConverter.toMentorInfoDto(reservation.getMentor()))
+			.mentorInfo(
+				reservation.getMentor() == null ? null : MentorConverter.toMentorInfoDto(reservation.getMentor()))
 			.mentorTypeInfo(MentorConverter.toMentorTypeInfoDto(reservation.getSlot().getMentorType()))
 			.timetableId(reservation.getSlot().getTimetable().getId())
 			.scheduledDate(reservation.getSlot().getTimetable().getScheduledDate())

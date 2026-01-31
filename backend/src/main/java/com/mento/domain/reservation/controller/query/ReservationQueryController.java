@@ -61,7 +61,7 @@ public class ReservationQueryController {
 
 		@Schema(description = "예약 상태 필터링 (선택)", example = "CONFIRMED")
 		ReservationStatus status,
-		@RequestParam(defaultValue = "0") final int page,
+		@RequestParam(defaultValue = "1") final int page,
 		@RequestParam(defaultValue = "10") final int size
 	) {
 		Page<ReservationPageInfoDto> response = facadeService.findAllByUserIdAndDateRange(
