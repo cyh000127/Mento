@@ -21,17 +21,11 @@ const categoryLabels: Record<NonNullable<ConsultationCategory>, { label: string;
 
 const DAYS_KO = ["일", "월", "화", "수", "목", "금", "토"]
 
-const morningTimes = ["10:00", "10:30", "11:00", "11:30"]
-const afternoonTimes = [
-  "12:00", "12:30", "1:00", "1:30",
-  "2:00", "2:30", "3:00", "3:30",
-  "4:00", "4:30", "5:00", "5:30",
-  "6:00", "6:30", "7:00", "7:30",
-  "8:00", "8:30", "9:00",
-]
+const morningTimes = ["09:00", "10:00", "11:00", "12:00"]
+const afternoonTimes = ["13:00", "14:00", "15:00", "16:00", "17:00"]
 
 // Simulate some unavailable times
-const unavailableTimes = ["6:00", "6:30", "7:00", "7:30", "8:00", "8:30", "9:00"]
+const unavailableTimes = ["13:00", "16:00"]
 
 // Simulate some fully booked dates (day of month)
 const bookedDates = [23, 28]
