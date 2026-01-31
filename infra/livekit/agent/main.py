@@ -1,5 +1,6 @@
 import asyncio
 import os
+import datetime
 from dotenv import load_dotenv
 from livekit.agents import JobContext, WorkerOptions, cli, WorkerType, stt as agents_stt
 from livekit import rtc
@@ -11,17 +12,17 @@ async def entrypoint(ctx: JobContext):
     print(f"--- [Room: {ctx.room.name}] 상담 에이전트 가동 (GMS 모드) ---", flush=True)
     await ctx.connect()
 
-    # 1. STT 엔진 설정
+    # 1. STT 엔진 설정 (한국어 고정)
     whisper_stt = openai.STT(
         base_url="https://gms.ssafy.io/gmsapi/api.openai.com/v1",
-        model="whisper-1"
+        model="whisper-1",
+        language="ko"
     )
 
     # 2. VAD 모델 로드
     vad_model = silero.VAD.load()
 
-    # 3. StreamAdapter 생성 (인자 이름을 명확히 지정하는 것이 최신 버전의 필수 조건입니다)
-    # 로그의 'takes 1 positional argument' 에러를 해결하는 유일한 방법입니다.
+    # 3. StreamAdapter 생성
     stt_adapter = agents_stt.StreamAdapter(
         stt=whisper_stt,
         vad=vad_model
@@ -38,7 +39,6 @@ async def entrypoint(ctx: JobContext):
 
         async def push_audio():
             async for event in audio_stream:
-                # event가 frame을 가지고 있는지 확인하여 타입 에러 방지
                 frame = getattr(event, 'frame', event)
                 stt_stream.push_frame(frame)
             stt_stream.end_input()
@@ -48,8 +48,9 @@ async def entrypoint(ctx: JobContext):
                 if event.type == agents_stt.SpeechEventType.FINAL_TRANSCRIPT:
                     text = event.alternatives[0].text.strip()
                     if text:
-                        print(f"[{participant.identity}]: {text}", flush=True)
-
+                        # 타임스탬프 생성 및 출력 (변수명 통일)
+                        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+                        print(f"[{timestamp}] [{participant.identity}]: {text}", flush=True)
         try:
             await asyncio.gather(push_audio(), receive_text())
         except Exception as e:
