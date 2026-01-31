@@ -1,8 +1,9 @@
-import { api } from "./axios"
-import { useAuthStore } from "@/stores/useAuthStore"
+//auth.ts
+import { api } from "./axios";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 // reissue 중복 호출 방지
-let reissuePromise: Promise<unknown> | null = null
+let reissuePromise: Promise<unknown> | null = null;
 
 export const authApi = {
   /**
@@ -12,16 +13,16 @@ export const authApi = {
    */
   logout: async () => {
     try {
-      await api.post("/auth/logout")
-      localStorage.removeItem("hasRefreshToken")
+      await api.post("/auth/logout");
+      localStorage.removeItem("hasRefreshToken");
       // 로컬 상태 초기화
-      useAuthStore.getState().logout()
+      useAuthStore.getState().logout();
     } catch (error) {
-      console.error("로그아웃 실패:", error)
+      console.error("로그아웃 실패:", error);
       // 실패해도 로컬 상태는 초기화
-      localStorage.removeItem("hasRefreshToken")
-      useAuthStore.getState().logout()
-      throw error
+      localStorage.removeItem("hasRefreshToken");
+      useAuthStore.getState().logout();
+      throw error;
     }
   },
 
@@ -32,47 +33,48 @@ export const authApi = {
    */
   reissue: async () => {
     if (reissuePromise) {
-      return reissuePromise
+      return reissuePromise;
     }
 
     reissuePromise = (async () => {
       try {
-        const response = await api.post("/auth/reissue")
+        const response = await api.post("/auth/reissue");
 
         // 새로운 accessToken을 헤더에서 추출 (우선)
-        const authHeader = response.headers["authorization"]
-        let newAccessToken: string | null = null
+        const authHeader = response.headers["authorization"];
+        let newAccessToken: string | null = null;
         if (authHeader?.startsWith("Bearer ")) {
-          newAccessToken = authHeader.replace("Bearer ", "")
+          newAccessToken = authHeader.replace("Bearer ", "");
         }
 
         // 헤더에 없으면 응답 바디에서 추출 (백엔드 구현 차이 대응)
         if (!newAccessToken) {
-          const dataToken =
-            response.data?.data?.accessToken ??
-            response.data?.accessToken ??
-            response.data?.access_token
+          const dataToken = response.data?.data?.accessToken ?? response.data?.accessToken ?? response.data?.access_token;
           if (typeof dataToken === "string" && dataToken) {
-            newAccessToken = dataToken
+            newAccessToken = dataToken;
           }
         }
 
         if (newAccessToken) {
-          useAuthStore.getState().setAccessToken(newAccessToken)
-          localStorage.setItem("hasRefreshToken", "true")
+          useAuthStore.getState().setAccessToken(newAccessToken);
+          localStorage.setItem("hasRefreshToken", "true");
         } else {
-          throw new Error("토큰 재발급 실패: accessToken을 받지 못했습니다.")
+          throw new Error("토큰 재발급 실패: accessToken을 받지 못했습니다.");
         }
 
-        return response
+        return response;
       } catch (error) {
-        console.error("토큰 재발급 실패:", error)
-        throw error
+        const status = (error as { response?: { status?: number } })?.response?.status;
+        if (status === 401 || status === 403) {
+          localStorage.removeItem("hasRefreshToken");
+        }
+        console.error("토큰 재발급 실패:", error);
+        throw error;
       } finally {
-        reissuePromise = null
+        reissuePromise = null;
       }
-    })()
+    })();
 
-    return reissuePromise
+    return reissuePromise;
   },
-}
+};
