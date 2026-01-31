@@ -8,13 +8,16 @@ import com.github.f4b6a3.tsid.TsidCreator;
 import com.mento.common.converter.AesConverter;
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.util.TimeUtils;
+import com.mento.domain.reservation.entity.Reservation;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -35,8 +38,8 @@ public class Payment extends BaseEntity {
 	@JsonSerialize(using = ToStringSerializer.class)
 	private Long paymentId = TsidCreator.getTsid().toLong();
 
-	@Column(name = "reservation_id", nullable = false)
-	private Long reservationId;
+	@OneToOne(mappedBy = "payment", cascade = CascadeType.ALL)
+	private Reservation reservation;
 
 	@Column(name = "amount", nullable = false)
 	private Long amount;
@@ -60,22 +63,29 @@ public class Payment extends BaseEntity {
 	@Column(name = "refunded_at")
 	private LocalDateTime refundedAt;
 
-	public void ready(String kakaoTid) {
+	public void assignReservation(final Reservation reservation) {
+		if (reservation == null) {
+			throw new IllegalArgumentException("예약 정보가 누락되었습니다");
+		}
+		this.reservation = reservation;
+	}
+
+	public void updateReady(final String kakaoTid) {
 		this.kakaoTid = kakaoTid;
 		this.status = PaymentStatus.READY;
 	}
 
-	public void approve() {
+	public void updateApprove() {
 		this.paidAt = TimeUtils.nowAsLocalDateTime();
 		this.status = PaymentStatus.PAID;
 	}
 
-	public void refund() {
+	public void updateRefund() {
 		this.refundedAt = TimeUtils.nowAsLocalDateTime();
 		this.status = PaymentStatus.REFUNDED;
 	}
 
-	public void fail() {
+	public void updateFail() {
 		this.status = PaymentStatus.FAILED;
 	}
 

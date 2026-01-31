@@ -23,16 +23,19 @@ import com.mento.domain.reservation.constants.LiveKitConstants;
 import com.mento.domain.reservation.converter.ReservationConverter;
 import com.mento.domain.reservation.dto.response.MediaUploadResDto;
 import com.mento.domain.reservation.dto.response.ReservationDetailResDto;
+import com.mento.domain.reservation.dto.response.ReservationDraftResDto;
 import com.mento.domain.reservation.dto.response.ReservationPageInfoDto;
 import com.mento.domain.reservation.entity.Reservation;
-import com.mento.domain.reservation.entity.ReservationStatus;
+import com.mento.domain.reservation.enums.ReservationStatus;
+import com.mento.domain.reservation.factory.ReservationFactory;
 import com.mento.domain.reservation.service.command.ReservationCommandService;
 import com.mento.domain.reservation.service.query.ReservationQueryService;
 import com.mento.domain.reservation.validator.ReservationValidator;
 import com.mento.domain.timetable.entity.Timetable;
-import com.mento.domain.timetable.service.query.TimetableQueryService;
+import com.mento.domain.timetable.entity.TimetableSlot;
 import com.mento.domain.timetable.service.query.TimetableSlotQueryService;
 import com.mento.domain.user.entity.Role;
+import com.mento.domain.user.entity.User;
 import com.mento.domain.user.service.query.UserQueryService;
 
 import lombok.AccessLevel;
@@ -44,17 +47,15 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class ReservationFacadeService {
 
-	private final ReservationCommandService reservationCommandService;
 	private final ReservationQueryService reservationQueryService;
-	private final ReservationValidator reservationValidator;
-
-	private final TimetableQueryService timeTableQueryService;
+	private final ReservationCommandService reservationCommandService;
 	private final TimetableSlotQueryService timetableSlotQueryService;
-
 	private final UserQueryService userQueryService;
 
 	private final FileService fileService;
 	private final LiveKitManager liveKitManager;
+	private final ReservationValidator reservationValidator;
+	private final ReservationFactory reservationFactory;
 
 	@Transactional
 	public MediaUploadResDto uploadFiles(final List<MultipartFile> files, final Long reservationId) {
@@ -71,7 +72,7 @@ public class ReservationFacadeService {
 
 	public LiveKitSessionResponse createSession(final Long reservationId, final AuthenticatedUser user) {
 		Reservation reservation = reservationQueryService.findById(reservationId);
-		Timetable timetable = timeTableQueryService.findByReservationId(reservation.getSlot().getTimetable().getId());
+		Timetable timetable = reservation.getSlot().getTimetable();
 
 		LocalDateTime now = LocalDateTime.now();
 		LocalDateTime startTime = calculateStartTime(timetable);
@@ -129,7 +130,6 @@ public class ReservationFacadeService {
 		}
 	}
 
-
 	public ReservationDetailResDto findById(final AuthenticatedUser authUser, final Long id) {
 		Reservation reservation = reservationQueryService.findWithDetailsById(id);
 		reservationValidator.validateReservationAccess(authUser, reservation);
@@ -153,5 +153,55 @@ public class ReservationFacadeService {
 			pageable
 		);
 		return ReservationConverter.toReservationPageResDto(reservations);
+	}
+
+	@Transactional
+	public ReservationDraftResDto createDraftReservation(final Long userId, final Long slotId) {
+		User user = userQueryService.findById(userId);
+		TimetableSlot timetableSlot = timetableSlotQueryService.findById(slotId);
+
+		validateSlotAvailability(timetableSlot);
+		validateNoDuplicateReservation(user.getId(), timetableSlot.getId());
+
+		Reservation reservation = reservationFactory.createReservation(user, timetableSlot);
+		Reservation savedReservation = reservationCommandService.save(reservation);
+
+		return ReservationConverter.toReservationDraftResDto(savedReservation);
+	}
+
+	@Transactional
+	public ReservationDetailResDto updateReservationSurveyData(
+		final AuthenticatedUser authUser,
+		final Long reservationId,
+		final String surveyData
+	) {
+		Reservation reservation = reservationQueryService.findById(reservationId);
+		reservationValidator.validateReservationAccess(authUser, reservation);
+		reservation.updateSurveyData(surveyData);
+		return ReservationConverter.toReservationDetailResDto(reservation);
+	}
+
+	private void validateNoDuplicateReservation(final Long userId, final Long slotId) {
+		boolean exists = reservationQueryService.existsByUserIdAndSlotIdAndStatusIn(
+			userId,
+			slotId,
+			ReservationStatus.getActiveStatuses()
+		);
+
+		if (exists) {
+			throw new ReservationException(ErrorCode.DUPLICATE_RESERVATION);
+		}
+	}
+
+	private void validateSlotAvailability(final TimetableSlot timetableSlot) {
+		Timetable timetable = timetableSlot.getTimetable();
+		LocalDateTime slotDateTime = LocalDateTime.of(timetable.getScheduledDate(), timetable.getScheduledTime());
+
+		if (slotDateTime.isBefore(LocalDateTime.now())) {
+			throw new ReservationException(ErrorCode.TIMETABLE_PAST_TIME);
+		}
+		if (!timetableSlot.isAvailable()) {
+			throw new ReservationException(ErrorCode.TIMETABLE_NOT_AVAILABLE);
+		}
 	}
 }

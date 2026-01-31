@@ -1,6 +1,7 @@
 package com.mento.domain.reservation.service.query;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.reservation.entity.Reservation;
-import com.mento.domain.reservation.entity.ReservationStatus;
+import com.mento.domain.reservation.enums.ReservationStatus;
 import com.mento.domain.reservation.exception.ReservationException;
 import com.mento.domain.reservation.repository.ReservationRepository;
 
@@ -62,6 +63,15 @@ public class ReservationQueryServiceImpl implements ReservationQueryService {
 			userId, status, startDate, endDate, page.getTotalElements(), page.getNumber()
 		);
 		return page;
+	}
+
+	@Override
+	public boolean existsByUserIdAndSlotIdAndStatusIn(
+		final Long userId,
+		final Long reservationId,
+		final List<ReservationStatus> reservationStatuses
+	) {
+		return reservationRepository.existsByUserIdAndSlotIdAndStatusIn(userId, reservationId, reservationStatuses);
 	}
 
 }

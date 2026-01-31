@@ -1,7 +1,6 @@
 package com.mento.domain.timetable.controller.command;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,7 +23,7 @@ public class TimetableCommandController {
 	private final TimetableSchedulingService schedulingService;
 
 	@Operation(summary = "[개발용] 타임테이블 생성 스케줄링 수동 실행", description = "테스트 목적으로 생성 스케줄링을 수동 실행합니다")
-	@PreAuthorize("hasAnyAuthority('ADMIN')")
+	// @PreAuthorize("hasAnyAuthority('ADMIN')")
 	@PostMapping("/schedule/generate")
 	public ResponseEntity<BaseResponse<Void>> triggerGenerateTimeTableScheduling() {
 		schedulingService.createScheduledTimetables();
@@ -32,7 +31,7 @@ public class TimetableCommandController {
 	}
 
 	@Operation(summary = "[개발용] 타임테이블 삭제 스케줄링 수동 실행", description = "테스트 목적으로 삭제 스케줄링을 수동 실행합니다")
-	@PreAuthorize("hasAnyAuthority('ADMIN')")
+	// @PreAuthorize("hasAnyAuthority('ADMIN')")
 	@PostMapping("/schedule/delete")
 	public ResponseEntity<BaseResponse<Void>> triggerDeleteTimeTableScheduling() {
 		schedulingService.deleteExpiredTimetables();

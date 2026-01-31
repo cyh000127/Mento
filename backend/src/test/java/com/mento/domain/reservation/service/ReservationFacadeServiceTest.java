@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -27,16 +28,22 @@ import com.mento.common.livekit.dto.LiveKitSessionResponse;
 import com.mento.domain.mentor.entity.Mentor;
 import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.reservation.dto.response.ReservationDetailResDto;
+import com.mento.domain.reservation.dto.response.ReservationDraftResDto;
 import com.mento.domain.reservation.dto.response.ReservationPageInfoDto;
 import com.mento.domain.reservation.entity.Reservation;
-import com.mento.domain.reservation.entity.ReservationStatus;
+import com.mento.domain.reservation.enums.ReservationStatus;
+import com.mento.domain.reservation.factory.ReservationFactory;
+import com.mento.domain.reservation.service.command.ReservationCommandService;
 import com.mento.domain.reservation.service.query.ReservationQueryService;
 import com.mento.domain.reservation.validator.ReservationValidator;
+import com.mento.domain.timetable.entity.SlotStatus;
 import com.mento.domain.timetable.entity.Timetable;
 import com.mento.domain.timetable.entity.TimetableSlot;
 import com.mento.domain.timetable.service.query.TimetableQueryService;
+import com.mento.domain.timetable.service.query.TimetableSlotQueryService;
 import com.mento.domain.user.entity.Role;
 import com.mento.domain.user.entity.User;
+import com.mento.domain.user.service.query.UserQueryService;
 
 @ExtendWith(MockitoExtension.class)
 class ReservationFacadeServiceTest {
@@ -48,13 +55,25 @@ class ReservationFacadeServiceTest {
 	private ReservationQueryService reservationQueryService;
 
 	@Mock
+	private ReservationCommandService reservationCommandService;
+
+	@Mock
 	private TimetableQueryService timeTableQueryService;
+
+	@Mock
+	private TimetableSlotQueryService timetableSlotQueryService;
+
+	@Mock
+	private UserQueryService userQueryService;
 
 	@Mock
 	private LiveKitManager liveKitManager;
 
 	@Mock
 	private ReservationValidator reservationValidator;
+
+	@Mock
+	private ReservationFactory reservationFactory;
 
 	@Test
 	@DisplayName("멘토가_예약_세션에_입장한다")
@@ -78,7 +97,6 @@ class ReservationFacadeServiceTest {
 		Reservation reservation = createReservation(reservationId, user, mentor, slot, ReservationStatus.CONFIRMED);
 
 		given(reservationQueryService.findById(reservationId)).willReturn(reservation);
-		given(timeTableQueryService.findByReservationId(timetableId)).willReturn(timetable);
 		given(liveKitManager.createToken(anyString(), anyString(), anyString(), eq(Role.MENTOR), anyLong()))
 			.willReturn("mock_mentor_token");
 		given(liveKitManager.getUrl()).willReturn("wss://livekit.test.com");
@@ -94,7 +112,6 @@ class ReservationFacadeServiceTest {
 		assertThat(response.participantRole()).isEqualTo(Role.MENTOR.getDescription());
 
 		then(reservationQueryService).should().findById(reservationId);
-		then(timeTableQueryService).should().findByReservationId(timetableId);
 		then(liveKitManager).should().createToken(
 			eq(String.valueOf(mentorId)),
 			eq("mentor@test.com"),
@@ -126,7 +143,6 @@ class ReservationFacadeServiceTest {
 		Reservation reservation = createReservation(reservationId, user, mentor, slot, ReservationStatus.CONFIRMED);
 
 		given(reservationQueryService.findById(reservationId)).willReturn(reservation);
-		given(timeTableQueryService.findByReservationId(timetableId)).willReturn(timetable);
 		given(liveKitManager.createToken(anyString(), anyString(), anyString(), eq(Role.USER), anyLong()))
 			.willReturn("mock_user_token");
 		given(liveKitManager.getUrl()).willReturn("wss://livekit.test.com");
@@ -142,7 +158,6 @@ class ReservationFacadeServiceTest {
 		assertThat(response.participantRole()).isEqualTo(Role.USER.getDescription());
 
 		then(reservationQueryService).should().findById(reservationId);
-		then(timeTableQueryService).should().findByReservationId(timetableId);
 		then(liveKitManager).should().createToken(
 			eq(String.valueOf(userId)),
 			eq("user@test.com"),
@@ -172,7 +187,6 @@ class ReservationFacadeServiceTest {
 			.hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESERVATION_NOT_FOUND);
 
 		then(reservationQueryService).should().findById(reservationId);
-		then(timeTableQueryService).should(never()).findByReservationId(any());
 	}
 
 	@Test
@@ -197,7 +211,6 @@ class ReservationFacadeServiceTest {
 		Reservation reservation = createReservation(reservationId, user, mentor, slot, ReservationStatus.CONFIRMED);
 
 		given(reservationQueryService.findById(reservationId)).willReturn(reservation);
-		given(timeTableQueryService.findByReservationId(timetableId)).willReturn(timetable);
 
 		// When & Then
 		assertThatThrownBy(() -> reservationFacadeService.createSession(reservationId, mentorAuth))
@@ -227,7 +240,6 @@ class ReservationFacadeServiceTest {
 		Reservation reservation = createReservation(reservationId, user, mentor, slot, ReservationStatus.COMPLETED);
 
 		given(reservationQueryService.findById(reservationId)).willReturn(reservation);
-		given(timeTableQueryService.findByReservationId(timetableId)).willReturn(timetable);
 
 		// When & Then
 		assertThatThrownBy(() -> reservationFacadeService.createSession(reservationId, mentorAuth))
@@ -257,7 +269,6 @@ class ReservationFacadeServiceTest {
 		Reservation reservation = createReservation(reservationId, user, mentor, slot, ReservationStatus.CONFIRMED);
 
 		given(reservationQueryService.findById(reservationId)).willReturn(reservation);
-		given(timeTableQueryService.findByReservationId(timetableId)).willReturn(timetable);
 
 		// When & Then
 		assertThatThrownBy(() -> reservationFacadeService.createSession(reservationId, mentorAuth))
@@ -340,6 +351,169 @@ class ReservationFacadeServiceTest {
 		);
 	}
 
+	@Test
+	@DisplayName("임시_예약_생성_성공")
+	void 임시_예약_생성_성공() {
+		// Given
+		Long userId = 1L;
+		Long slotId = 10L;
+		Long reservationId = 100L;
+		LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(15);
+
+		User user = createUser(userId);
+		Timetable timetable = createTimetable(1L, LocalDate.now().plusDays(1), LocalTime.of(14, 0));
+		MentorType mentorType = createMentorType(1L, "스킨케어");
+		TimetableSlot timetableSlot = createSlotWithMentorType(slotId, timetable, mentorType, SlotStatus.AVAILABLE, 0,
+			5);
+		Reservation reservation = createReservationWithExpiry(reservationId, user, null, timetableSlot,
+			ReservationStatus.IN_PROGRESS, expiresAt);
+
+		given(userQueryService.findById(userId)).willReturn(user);
+		given(timetableSlotQueryService.findById(slotId)).willReturn(timetableSlot);
+		given(reservationQueryService.existsByUserIdAndSlotIdAndStatusIn(
+			userId, slotId, ReservationStatus.getActiveStatuses()
+		)).willReturn(false);
+		given(reservationFactory.createReservation(user, timetableSlot)).willReturn(reservation);
+		given(reservationCommandService.save(reservation)).willReturn(reservation);
+
+		// When
+		ReservationDraftResDto result = reservationFacadeService.createDraftReservation(userId, slotId);
+
+		// Then
+		assertThat(result).isNotNull();
+		assertThat(result.reservationId()).isEqualTo(reservationId);
+		assertThat(result.status()).isEqualTo(ReservationStatus.IN_PROGRESS);
+		assertThat(result.expiresAt()).isNotNull();
+
+		then(userQueryService).should().findById(userId);
+		then(timetableSlotQueryService).should().findById(slotId);
+		then(reservationQueryService).should().existsByUserIdAndSlotIdAndStatusIn(
+			eq(userId), eq(slotId), eq(ReservationStatus.getActiveStatuses())
+		);
+		then(reservationFactory).should().createReservation(user, timetableSlot);
+		then(reservationCommandService).should().save(reservation);
+	}
+
+	@Test
+	@DisplayName("임시_예약_생성_실패_슬롯이_이용_불가능함")
+	void 임시_예약_생성_실패_슬롯이_이용_불가능함() {
+		// Given
+		Long userId = 1L;
+		Long slotId = 10L;
+
+		User user = createUser(userId);
+		Timetable timetable = createTimetable(1L, LocalDate.now().plusDays(1), LocalTime.of(14, 0));
+		MentorType mentorType = createMentorType(1L, "스킨케어");
+		TimetableSlot timetableSlot = createSlotWithMentorType(slotId, timetable, mentorType, SlotStatus.FULL, 5, 5);
+
+		given(userQueryService.findById(userId)).willReturn(user);
+		given(timetableSlotQueryService.findById(slotId)).willReturn(timetableSlot);
+
+		// When & Then
+		assertThatThrownBy(() -> reservationFacadeService.createDraftReservation(userId, slotId))
+			.isInstanceOf(ReservationException.class)
+			.hasFieldOrPropertyWithValue("errorCode", ErrorCode.TIMETABLE_NOT_AVAILABLE);
+
+		then(userQueryService).should().findById(userId);
+		then(timetableSlotQueryService).should().findById(slotId);
+		then(reservationQueryService).should(never()).existsByUserIdAndSlotIdAndStatusIn(any(), any(), any());
+		then(reservationFactory).should(never()).createReservation(any(), any());
+		then(reservationCommandService).should(never()).save(any());
+	}
+
+	@Test
+	@DisplayName("임시_예약_생성_실패_과거_시간대_슬롯")
+	void 임시_예약_생성_실패_과거_시간대_슬롯() {
+		// Given
+		Long userId = 1L;
+		Long slotId = 10L;
+
+		User user = createUser(userId);
+		Timetable timetable = createTimetable(1L, LocalDate.now().minusDays(1), LocalTime.of(14, 0));
+		MentorType mentorType = createMentorType(1L, "스킨케어");
+		TimetableSlot timetableSlot = createSlotWithMentorType(slotId, timetable, mentorType, SlotStatus.AVAILABLE, 0,
+			5);
+
+		given(userQueryService.findById(userId)).willReturn(user);
+		given(timetableSlotQueryService.findById(slotId)).willReturn(timetableSlot);
+
+		// When & Then
+		assertThatThrownBy(() -> reservationFacadeService.createDraftReservation(userId, slotId))
+			.isInstanceOf(ReservationException.class)
+			.hasFieldOrPropertyWithValue("errorCode", ErrorCode.TIMETABLE_PAST_TIME);
+
+		then(userQueryService).should().findById(userId);
+		then(timetableSlotQueryService).should().findById(slotId);
+		then(reservationQueryService).should(never()).existsByUserIdAndSlotIdAndStatusIn(any(), any(), any());
+		then(reservationFactory).should(never()).createReservation(any(), any());
+		then(reservationCommandService).should(never()).save(any());
+	}
+
+	@Test
+	@DisplayName("임시_예약_생성_실패_중복_예약_존재")
+	void 임시_예약_생성_실패_중복_예약_존재() {
+		// Given
+		Long userId = 1L;
+		Long slotId = 10L;
+
+		User user = createUser(userId);
+		Timetable timetable = createTimetable(1L, LocalDate.now().plusDays(1), LocalTime.of(14, 0));
+		MentorType mentorType = createMentorType(1L, "스킨케어");
+		TimetableSlot timetableSlot = createSlotWithMentorType(slotId, timetable, mentorType, SlotStatus.AVAILABLE, 0,
+			5);
+
+		given(userQueryService.findById(userId)).willReturn(user);
+		given(timetableSlotQueryService.findById(slotId)).willReturn(timetableSlot);
+		given(reservationQueryService.existsByUserIdAndSlotIdAndStatusIn(userId, slotId,
+			ReservationStatus.getActiveStatuses()
+		)).willReturn(true);
+
+		// When & Then
+		assertThatThrownBy(() -> reservationFacadeService.createDraftReservation(userId, slotId))
+			.isInstanceOf(ReservationException.class)
+			.hasFieldOrPropertyWithValue("errorCode", ErrorCode.DUPLICATE_RESERVATION);
+
+		then(userQueryService).should().findById(userId);
+		then(timetableSlotQueryService).should().findById(slotId);
+		then(reservationQueryService).should().existsByUserIdAndSlotIdAndStatusIn(
+			eq(userId), eq(slotId), eq(ReservationStatus.getActiveStatuses())
+		);
+		then(reservationFactory).should(never()).createReservation(any(), any());
+		then(reservationCommandService).should(never()).save(any());
+	}
+
+	@Test
+	@DisplayName("예약_설문조사_데이터_업데이트_성공")
+	void 예약_설문조사_데이터_업데이트_성공() {
+		// Given
+		Long reservationId = 1L;
+		Long userId = 100L;
+		String surveyData = "{\"question1\":\"answer1\",\"question2\":\"answer2\"}";
+
+		AuthenticatedUser authUser = AuthenticatedUser.builder()
+			.id(userId)
+			.email("user@test.com")
+			.role(Role.USER.name())
+			.build();
+
+		Reservation reservation = createReservationWithFullDetails(reservationId, userId);
+
+		given(reservationQueryService.findById(reservationId)).willReturn(reservation);
+		willDoNothing().given(reservationValidator).validateReservationAccess(authUser, reservation);
+
+		// When
+		ReservationDetailResDto result = reservationFacadeService.updateReservationSurveyData(
+			authUser, reservationId, surveyData
+		);
+
+		// Then
+		assertThat(result).isNotNull();
+		assertThat(result.reservationId()).isEqualTo(reservationId);
+
+		then(reservationQueryService).should().findById(reservationId);
+		then(reservationValidator).should().validateReservationAccess(authUser, reservation);
+	}
+
 	// Helper Methods
 	private User createUser(final Long userId) {
 		User user = User.builder()
@@ -377,6 +551,52 @@ class ReservationFacadeServiceTest {
 			.build();
 		ReflectionTestUtils.setField(slot, "id", slotId);
 		return slot;
+	}
+
+	private TimetableSlot createSlotWithMentorType(
+		final Long slotId,
+		final Timetable timetable,
+		final MentorType mentorType,
+		final SlotStatus status,
+		final Integer currentCapacity,
+		final Integer maxCapacity
+	) {
+		TimetableSlot slot = TimetableSlot.builder()
+			.timetable(timetable)
+			.mentorType(mentorType)
+			.status(status)
+			.currentCapacity(currentCapacity)
+			.maxCapacity(maxCapacity)
+			.build();
+		ReflectionTestUtils.setField(slot, "id", slotId);
+		return slot;
+	}
+
+	private MentorType createMentorType(final Long typeId, final String typeName) {
+		MentorType mentorType = MentorType.builder()
+			.typeName(typeName)
+			.build();
+		ReflectionTestUtils.setField(mentorType, "id", typeId);
+		return mentorType;
+	}
+
+	private Reservation createReservationWithExpiry(
+		final Long reservationId,
+		final User user,
+		final Mentor mentor,
+		final TimetableSlot slot,
+		final ReservationStatus status,
+		final LocalDateTime expiresAt
+	) {
+		Reservation reservation = Reservation.builder()
+			.user(user)
+			.mentor(mentor)
+			.slot(slot)
+			.status(status)
+			.expiresAt(expiresAt)
+			.build();
+		ReflectionTestUtils.setField(reservation, "id", reservationId);
+		return reservation;
 	}
 
 	private Reservation createReservation(

@@ -1,8 +1,12 @@
 package com.mento.domain.reservation.entity;
 
+import java.time.LocalDateTime;
+
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.mentor.entity.Mentor;
+import com.mento.domain.payment.entity.Payment;
+import com.mento.domain.reservation.enums.ReservationStatus;
 import com.mento.domain.reservation.exception.ReservationException;
 import com.mento.domain.timetable.entity.TimetableSlot;
 import com.mento.domain.user.entity.User;
@@ -17,6 +21,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -37,34 +42,34 @@ public class Reservation extends BaseEntity {
 	@Column(name = "reservation_id")
 	private Long id;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false)
-	private ReservationStatus status;
-
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = false)
 	private User user;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "mentor_id")
-	private Mentor mentor;
-
-	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "slot_id", nullable = false)
 	private TimetableSlot slot;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "mentor_id")
+	private Mentor mentor;
+
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "payment_id")
+	Payment payment;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", nullable = false)
+	private ReservationStatus status;
+
+	@Column(name = "expires_at")
+	private LocalDateTime expiresAt;
+
+	@Column(name = "confirmed_at")
+	private LocalDateTime confirmedAt;
+
 	@Column(name = "survey_data", columnDefinition = "TEXT")
 	private String surveyData;
-
-	//TODO 결제 정보 연관관계 설정 필요
-
-	public void updateSurveyData(final String surveyData) {
-		this.surveyData = surveyData;
-	}
-
-	public void updateStatus(final ReservationStatus status) {
-		this.status = status;
-	}
 
 	public void assignMentor(final Mentor mentor) {
 		if (mentor == null) {
@@ -85,5 +90,26 @@ public class Reservation extends BaseEntity {
 			throw new ReservationException(ErrorCode.MISSING_SLOT);
 		}
 		this.slot = slot;
+	}
+
+	public void assignPayment(final Payment payment) {
+		if (payment == null) {
+			throw new ReservationException(ErrorCode.MISSING_PAYMENT);
+		}
+		this.payment = payment;
+	}
+
+	public void confirm() {
+		this.status = ReservationStatus.CONFIRMED;
+		this.confirmedAt = LocalDateTime.now();
+		this.expiresAt = null;
+	}
+
+	public void updateSurveyData(final String surveyData) {
+		this.surveyData = surveyData;
+	}
+
+	public void updateStatus(final ReservationStatus status) {
+		this.status = status;
 	}
 }
