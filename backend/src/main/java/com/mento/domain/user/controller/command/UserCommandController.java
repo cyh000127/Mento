@@ -16,7 +16,7 @@ import com.mento.common.response.BaseResponse;
 import com.mento.common.util.ResponseUtils;
 import com.mento.domain.auth.service.command.AuthCommandService;
 import com.mento.domain.item.dto.common.ItemInfoResDto;
-import com.mento.domain.item.dto.request.UserItemAddReqDto;
+import com.mento.domain.user.dto.request.MentorAddItemReqDto;
 import com.mento.domain.user.dto.request.UserUpdateReqDto;
 import com.mento.domain.user.dto.response.UserResDto;
 import com.mento.domain.user.service.UserFacadeService;
@@ -67,7 +67,7 @@ public class UserCommandController {
 	public ResponseEntity<BaseResponse<ItemInfoResDto>> addItemToUser(
 		@AuthenticationPrincipal final AuthenticatedUser authUser,
 		@PathVariable final Long userId,
-		@Validated @RequestBody final UserItemAddReqDto reqDto
+		@Validated @RequestBody final MentorAddItemReqDto reqDto
 	) {
 		ItemInfoResDto response = userFacadeService.addItemToUser(authUser, userId, reqDto);
 		return ResponseUtils.created(response);

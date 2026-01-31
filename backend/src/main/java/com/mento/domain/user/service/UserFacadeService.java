@@ -12,7 +12,6 @@ import com.mento.common.error.exception.BusinessException;
 import com.mento.common.util.PageUtils;
 import com.mento.domain.item.converter.ItemConverter;
 import com.mento.domain.item.dto.common.ItemInfoResDto;
-import com.mento.domain.item.dto.request.UserItemAddReqDto;
 import com.mento.domain.item.dto.response.ItemPageResDto;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.enums.ItemStatus;
@@ -25,6 +24,7 @@ import com.mento.domain.product.service.query.ProductQueryService;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.service.query.ReservationQueryService;
 import com.mento.domain.user.converter.UserConverter;
+import com.mento.domain.user.dto.request.MentorAddItemReqDto;
 import com.mento.domain.user.dto.request.UserItemsReqDto;
 import com.mento.domain.user.dto.request.UserUpdateReqDto;
 import com.mento.domain.user.dto.response.UserResDto;
@@ -84,7 +84,7 @@ public class UserFacadeService {
 	public ItemInfoResDto addItemToUser(
 		final AuthenticatedUser mentor,
 		final Long userId,
-		final UserItemAddReqDto reqDto
+		final MentorAddItemReqDto reqDto
 	) {
 		Reservation reservation = reservationQueryService.findById(reqDto.reservationId());
 		itemValidator.validateMentorAccess(mentor, reservation, userId);
