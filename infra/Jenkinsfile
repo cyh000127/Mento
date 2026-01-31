@@ -339,14 +339,16 @@ pipeline {
                     // 3. 서비스별 설정 파일 동기화 (기존 로직)
                     def targetList = (env.EFFECTIVE_TARGET_SERVICES ?: '').tokenize()
                     targetList.each { service ->
-                        // 위에서 이미 처리한 commonConfigs는 중복 방지를 위해 제외 가능
                         if (!commonConfigs.contains(service)) {
-                            echo "Syncing config for target service: ${service}"
+                            // service가 'livekit-agent'일 때
                             sh """
+                            # 실제 경로는 infra/livekit/agent 이므로 경로 수정이 필요할 수 있습니다.
                             if [ -d "./infra/${service}" ]; then
                                 rsync -avz --delete ./infra/${service}/ ${env.EC2_PROJECT_PATH}/infra/${service}/
-                            else
-                                echo "Directory ./infra/${service} not found. Skipping."
+                            elif [ "${service}" == "livekit-agent" ]; then
+                                # 특별 케이스 처리
+                                mkdir -p ${env.EC2_PROJECT_PATH}/infra/livekit/agent
+                                rsync -avz --delete ./infra/livekit/agent/ ${env.EC2_PROJECT_PATH}/infra/livekit/agent/
                             fi
                             """
                         }
@@ -361,7 +363,7 @@ pipeline {
                     if (env.RUN_CD != 'true') return false
                     def ts = (env.EFFECTIVE_TARGET_SERVICES ?: '').trim()
                     // 변경된 서비스 목록에 'agent'가 포함되어 있거나 수동 모드일 때 실행
-                    return ts.tokenize().contains('agent') || (params.MANUAL_MODE && ts.contains('agent'))
+                    return ts.tokenize().contains('livekit-agent') || (params.MANUAL_MODE && ts.contains('livekit-agent'))
                 }
             }
             steps {
