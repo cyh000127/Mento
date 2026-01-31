@@ -16,6 +16,7 @@ export function SkinAnalysis() {
   const [leftImage, setLeftImage] = useState<UploadedImage | null>(null);
   const [frontImage, setFrontImage] = useState<UploadedImage | null>(null);
   const [rightImage, setRightImage] = useState<UploadedImage | null>(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
   const leftInputRef = useRef<HTMLInputElement>(null);
   const frontInputRef = useRef<HTMLInputElement>(null);
@@ -91,6 +92,7 @@ export function SkinAnalysis() {
 
     // 로딩 상태로 변경
     setState("loading");
+    setLoadingProgress(0);
     
     // 로딩 화면으로 전환 시 스크롤
     setTimeout(() => {
@@ -99,6 +101,17 @@ export function SkinAnalysis() {
         analysisSection.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }, 100);
+
+    // 프로그레스 바 애니메이션
+    const progressInterval = setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev >= 95) {
+          clearInterval(progressInterval);
+          return 95;
+        }
+        return prev + 5;
+      });
+    }, 150);
 
     try {
       // 1. 생년월일 정보 업데이트 API 호출
@@ -114,6 +127,13 @@ export function SkinAnalysis() {
       // 시뮬레이션: 3초 후 결과 표시
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
+      // 로딩 완료
+      clearInterval(progressInterval);
+      setLoadingProgress(100);
+      
+      // 잠시 100% 표시 후 결과로 전환
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       // 결과 상태로 변경
       setState("result");
       
@@ -126,9 +146,11 @@ export function SkinAnalysis() {
       }, 100);
     } catch (error) {
       console.error("분석 실패:", error);
+      clearInterval(progressInterval);
       const errorMessage = error instanceof Error ? error.message : "분석 중 오류가 발생했습니다.";
       alert(errorMessage);
       setState("upload");
+      setLoadingProgress(0);
     }
   };
 
@@ -347,9 +369,12 @@ export function SkinAnalysis() {
             <p className="mb-8 text-text-secondary">잠시만 기다려주세요. 곧 맞춤 분석 결과를 확인하실 수 있습니다.</p>
             <div className="w-full max-w-md">
               <div className="mb-2 h-2 overflow-hidden rounded-full bg-muted">
-                <div className="h-full animate-pulse rounded-full bg-gradient-to-r from-primary-400 to-primary-500" style={{ width: "70%" }} />
+                <div 
+                  className="h-full rounded-full bg-gradient-to-r from-primary-400 to-primary-500 transition-all duration-300 ease-out" 
+                  style={{ width: `${loadingProgress}%` }}
+                />
               </div>
-              <p className="text-sm text-text-secondary">분석 진행중...</p>
+              <p className="text-sm text-text-secondary">분석 진행중... {loadingProgress}%</p>
             </div>
           </div>
         )}
