@@ -197,9 +197,13 @@ export function DateTimeSelection({
   }
 
   const selectedDateSlots = selectedDate ? getSlotsByDate(selectedDate) : null
+  const normalizeScheduledTime = (time: string) => time.slice(0, 5)
+
   const isTimeUnavailable = (time: string) => {
     if (!selectedDateSlots) return true
-    const slot = selectedDateSlots.find((candidate) => candidate.scheduledTime === time)
+    const slot = selectedDateSlots.find(
+      (candidate) => normalizeScheduledTime(candidate.scheduledTime) === time
+    )
     return !slot || slot.status !== "AVAILABLE" || slot.availableCapacity <= 0
   }
 
