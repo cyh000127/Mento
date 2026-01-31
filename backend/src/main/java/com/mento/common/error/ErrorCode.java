@@ -95,6 +95,7 @@ public enum ErrorCode {
 	 * Product Error (P-xxx)
 	 */
 	PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "P-001", "상품을 찾을 수 없습니다."),
+	MISSING_PRODUCT(HttpStatus.BAD_REQUEST, "P-002", "상품 정보가 누락되었습니다."),
 
 	/**
 	 * Brand Error (B-xxx)
@@ -108,7 +109,12 @@ public enum ErrorCode {
 	PAYMENT_READY_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PY-002", "결제 준비 요청이 실패했습니다."),
 	PAYMENT_APPROVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PY-003", "결제 승인 요청이 실패했습니다."),
 	PAYMENT_REFUND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PY-004", "결제 환불 요청이 실패했습니다."),
-	MISSING_PAYMENT(HttpStatus.BAD_REQUEST, "R-005", "결제 정보가 누락되었습니다.");
+	MISSING_PAYMENT(HttpStatus.BAD_REQUEST, "R-005", "결제 정보가 누락되었습니다."),
+
+	/**
+	 * USER Item Error(UI-xxx)
+	 */
+	MISSING_USER_ITEM(HttpStatus.BAD_REQUEST, "UI-001", "유저 아이템 정보가 누락되었습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;
