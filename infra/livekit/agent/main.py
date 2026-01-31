@@ -35,12 +35,11 @@ async def entrypoint(ctx: JobContext):
 
         # [Consumer] 엔진이 번역해서 주는 텍스트를 받아오는 작업
         async def receive_text():
-        async for event in stt_stream:
-            if event.type == "transcript" and event.transcript.text.strip():
-                timestamp = f"{event.transcript.start_time:.2f}"
-                content = event.transcript.text.strip()
-                # 드디어 우리가 원하는 로그 출력!
-                print(f"[{timestamp}] {participant.identity}: {content}", flush=True)
+            async for event in stt_stream:
+                if event.type == "transcript" and event.transcript.text.strip():
+                    timestamp = f"{event.transcript.start_time:.2f}"
+                    content = event.transcript.text.strip()
+                    print(f"[{timestamp}] {participant.identity}: {content}", flush=True)
 
         # 두 작업을 동시에 돌립니다 (Java의 Thread 두 개 돌리는 것과 비슷)
         await asyncio.gather(push_audio(), receive_text())
