@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useLivekitTestSession } from "@/hooks/useLivekitTestSession";
 import { VideoTrack } from "@/components/consultation/VideoTrack";
 import { SidePanel } from "@/components/consultation/side-panel";
+import { useConsultationStore } from "@/stores/useConsultationStore";
 
 /**
  * LiveKit 테스트 페이지 (테스트 전용)
@@ -20,6 +21,7 @@ export function LivekitTestPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { connectionState, error, sessionData, localParticipant, remoteParticipants, connect, toggleMic, toggleCamera, disconnect, isMicEnabled, isCameraEnabled } = useLivekitTestSession();
+  const { selectedMaskArea } = useConsultationStore();
 
   const hasConnected = useRef(false);
 
@@ -98,7 +100,7 @@ export function LivekitTestPage() {
             <div className="aspect-video bg-gray-800 rounded-lg shadow-2xl border border-gray-700 overflow-hidden relative">
               {topParticipant ? (
                 <>
-                  <VideoTrack participant={topParticipant} />
+                  <VideoTrack participant={topParticipant} maskType={null} />
                   <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm">{topLabel}</div>
                 </>
               ) : (
@@ -113,13 +115,18 @@ export function LivekitTestPage() {
             </div>
           </div>
 
-          {/* 고객 비디오 영역 (하단) */}
+          {/* 고객 비디오 영역 (하단) - 사이드 패널에서 선택한 마스크 적용 */}
           <div className="w-full max-w-2xl">
             <div className="aspect-video bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden relative">
               {bottomParticipant ? (
                 <>
-                  <VideoTrack participant={bottomParticipant} />
-                  <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm">{bottomLabel}</div>
+                  <VideoTrack participant={bottomParticipant} maskType={selectedMaskArea} />
+                  <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm">
+                    {bottomLabel}
+                    {selectedMaskArea && (
+                      <span className="ml-2 text-xs text-cyan-300">🎭 {selectedMaskArea} 분석 중</span>
+                    )}
+                  </div>
                 </>
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -206,5 +213,5 @@ export function LivekitTestPage() {
       {/* 오른쪽 사이드 패널 */}
       <SidePanel />
     </div>
-);
+  );
 }
