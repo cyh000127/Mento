@@ -98,7 +98,7 @@ export function LivekitTestPage() {
             <div className="aspect-video bg-gray-800 rounded-lg shadow-2xl border border-gray-700 overflow-hidden relative">
               {topParticipant ? (
                 <>
-                  <VideoTrack participant={topParticipant} />
+                  <VideoTrack participant={topParticipant} enableTZoneMask={true} />
                   <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm">{topLabel}</div>
                 </>
               ) : (
@@ -113,12 +113,12 @@ export function LivekitTestPage() {
             </div>
           </div>
 
-          {/* 고객 비디오 영역 (하단) */}
+          {/* 고객 비디오 영역 (하단) - T-zone 마스크 활성화 */}
           <div className="w-full max-w-2xl">
             <div className="aspect-video bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden relative">
               {bottomParticipant ? (
                 <>
-                  <VideoTrack participant={bottomParticipant} />
+                  <VideoTrack participant={bottomParticipant} enableTZoneMask={true} />
                   <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm">{bottomLabel}</div>
                 </>
               ) : (
@@ -206,5 +206,5 @@ export function LivekitTestPage() {
       {/* 오른쪽 사이드 패널 */}
       <SidePanel />
     </div>
-);
+  );
 }

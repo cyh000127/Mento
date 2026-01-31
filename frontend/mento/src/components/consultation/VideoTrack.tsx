@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Track, LocalParticipant, RemoteParticipant, TrackPublication, ParticipantEvent } from "livekit-client";
+import { useTZoneFaceMask } from "@/hooks/useTZoneFaceMask";
 
 interface VideoTrackProps {
   participant: LocalParticipant | RemoteParticipant;
+  enableTZoneMask?: boolean; // T-zone 마스크 활성화 여부
 }
 
 /**
@@ -12,13 +14,48 @@ interface VideoTrackProps {
  * - 로컬: trackPublications에서 직접 트랙을 가져와 attach
  * - 원격: TrackSubscribed 이벤트를 통해 트랙을 받아 attach
  */
-export function VideoTrack({ participant }: VideoTrackProps) {
+export function VideoTrack({ participant, enableTZoneMask = false }: VideoTrackProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const isLocal = participant instanceof LocalParticipant;
   // 트랙 변경을 감지하기 위한 state (강제 리렌더링용)
   const [trackUpdateCount, setTrackUpdateCount] = useState(0);
   const retryTimeoutRef = useRef<number | null>(null);
+  const [videoElementReady, setVideoElementReady] = useState(false);
+
+  // T-zone 마스크 훅 초기화 (비디오 요소가 준비된 후에만 실행)
+  useTZoneFaceMask(
+    videoElementReady ? videoRef.current : null,
+    canvasRef,
+    enableTZoneMask
+  );
+
+  // 비디오 요소가 준비되었을 때 감지
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+
+    const handleLoadedData = () => {
+      console.log("📹 비디오 요소 준비 완료:", {
+        identity: participant.identity,
+        videoWidth: videoElement.videoWidth,
+        videoHeight: videoElement.videoHeight,
+      });
+      setVideoElementReady(true);
+    };
+
+    if (videoElement.readyState >= 2) {
+      handleLoadedData();
+    } else {
+      videoElement.addEventListener("loadeddata", handleLoadedData);
+    }
+
+    return () => {
+      videoElement.removeEventListener("loadeddata", handleLoadedData);
+    };
+  }, [participant.identity]);
 
   // 트랙 업데이트 시 재연결을 위한 별도 useEffect
   useEffect(() => {
@@ -260,10 +297,23 @@ export function VideoTrack({ participant }: VideoTrackProps) {
   }, [participant, isLocal]);
 
   return (
-    <>
+    <div ref={containerRef} className="relative w-full h-full">
+      {/* LiveKit 비디오 */}
       <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted={isLocal} />
+      
+      {/* T-zone 마스크 오버레이 캔버스 */}
+      {enableTZoneMask && (
+        <canvas
+          ref={canvasRef}
+          className="absolute top-0 left-0 w-full h-full pointer-events-none"
+          style={{
+            objectFit: "cover",
+          }}
+        />
+      )}
+      
       {/* 오디오 엘리먼트 (원격 참가자의 소리를 재생) */}
       <audio ref={audioRef} autoPlay playsInline />
-    </>
+    </div>
   );
 }
