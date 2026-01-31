@@ -1,4 +1,4 @@
-import { Calendar, Sparkles } from "lucide-react"
+import { Calendar, Sparkles, UserX } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 
 interface MenuItem {
@@ -20,6 +20,12 @@ const menuItems: MenuItem[] = [
     label: "AI 피부관리 내역",
     icon: <Sparkles className="h-5 w-5" />,
     path: "/mypage/ai-skincare",
+  },
+  {
+    id: "account-withdrawal",
+    label: "회원 탈퇴",
+    icon: <UserX className="h-5 w-5" />,
+    path: "/mypage/account-withdrawal",
   },
 ]
 
