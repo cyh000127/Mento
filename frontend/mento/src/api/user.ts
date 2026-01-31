@@ -60,4 +60,19 @@ export const userApi = {
       throw error
     }
   },
+
+  /**
+   * 회원 탈퇴
+   * - DELETE /api/v1/users/account
+   * - Authorization 헤더는 axios 인터셉터에서 자동 추가
+   * - 회원 탈퇴 후 로그아웃 처리 필요
+   */
+  withdrawAccount: async (): Promise<void> => {
+    try {
+      await api.delete("/users/account")
+    } catch (error) {
+      console.error("회원 탈퇴 실패:", error)
+      throw error
+    }
+  },
 }
