@@ -16,8 +16,12 @@ public enum FrontDomain {
 
 	public static FrontDomain current() {
 		String env = System.getenv("SPRING_PROFILES_ACTIVE");
-		if (env == null || env.isBlank()) return PROD;
-		if (env.contains("local")) return LOCAL;
+		if (env == null || env.isBlank()) {
+			return PROD;
+		}
+		if (env.contains("local")) {
+			return LOCAL;
+		}
 		return PROD;
 	}
 }
