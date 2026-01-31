@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { MyPageSidebar } from "@/components/mypage/mypage-sidebar"
 import { userApi } from "@/api/user"
-import { authApi } from "@/api/auth"
+import { useAuthStore } from "@/stores/useAuthStore"
 import { AlertTriangle, X } from "lucide-react"
 
 export default function AccountWithdrawalPage() {
@@ -29,12 +29,10 @@ export default function AccountWithdrawalPage() {
     } catch (error) {
       console.error("회원 탈퇴 처리 중 오류:", error)
     } finally {
-      // 성공/실패와 관계없이 로그아웃 처리 및 홈으로 리다이렉트
-      try {
-        await authApi.logout()
-      } catch (logoutError) {
-        console.error("로그아웃 처리 중 오류:", logoutError)
-      }
+      // 회원 탈퇴 후 프론트엔드에서만 로그아웃 처리
+      // (백엔드에서 이미 토큰이 무효화되어 로그아웃 API 호출 시 401 에러 발생)
+      localStorage.removeItem("hasRefreshToken")
+      useAuthStore.getState().logout()
       navigate("/")
     }
   }
