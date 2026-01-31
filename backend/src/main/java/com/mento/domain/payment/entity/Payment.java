@@ -2,9 +2,6 @@ package com.mento.domain.payment.entity;
 
 import java.time.LocalDateTime;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-import com.github.f4b6a3.tsid.TsidCreator;
 import com.mento.common.converter.AesConverter;
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.util.TimeUtils;
@@ -16,6 +13,8 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -32,11 +31,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(name = "payments")
 public class Payment extends BaseEntity {
+
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "payment_id")
-	@Builder.Default
-	@JsonSerialize(using = ToStringSerializer.class)
-	private Long paymentId = TsidCreator.getTsid().toLong();
+	private Long paymentId;
 
 	@OneToOne(mappedBy = "payment", cascade = CascadeType.ALL)
 	private Reservation reservation;

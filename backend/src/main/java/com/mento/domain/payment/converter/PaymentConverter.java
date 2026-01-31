@@ -12,21 +12,21 @@ public class PaymentConverter {
 
 	public PaymentReadyResDto toPaymentReadyResDto(final Payment payment, final String redirectUrl) {
 		return PaymentReadyResDto.builder()
-			.paymentId(String.valueOf(payment.getPaymentId()))
+			.paymentId(payment.getPaymentId())
 			.redirectUrl(redirectUrl)
 			.build();
 	}
 
 	public PaymentApproveResDto toPaymentApproveResDto(final Payment payment) {
 		return PaymentApproveResDto.builder()
-			.paymentId(String.valueOf(payment.getPaymentId()))
+			.paymentId(payment.getPaymentId())
 			.paidAt(payment.getPaidAt())
 			.build();
 	}
 
 	public PaymentResDto toPaymentResDto(final Payment payment) {
 		return PaymentResDto.builder()
-			.paymentId(String.valueOf(payment.getPaymentId()))
+			.paymentId(payment.getPaymentId())
 			.reservationId(payment.getReservation() != null ? payment.getReservation().getId() : null)
 			.amount(payment.getAmount())
 			.paymentMethod(payment.getPaymentMethod())

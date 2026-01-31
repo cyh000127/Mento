@@ -119,7 +119,7 @@ class PaymentFacadeServiceTest {
 			.build();
 
 		PaymentApproveResDto approveResDto = PaymentApproveResDto.builder()
-			.paymentId(String.valueOf(paymentId))
+			.paymentId(paymentId)
 			.paidAt(java.time.LocalDateTime.now())
 			.build();
 
@@ -151,7 +151,7 @@ class PaymentFacadeServiceTest {
 			.build();
 
 		PaymentApproveResDto approveResDto = PaymentApproveResDto.builder()
-			.paymentId(String.valueOf(paymentId))
+			.paymentId(paymentId)
 			.paidAt(java.time.LocalDateTime.now())
 			.build();
 
