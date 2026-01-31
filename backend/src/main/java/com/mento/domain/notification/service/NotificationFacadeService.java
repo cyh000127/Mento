@@ -83,6 +83,15 @@ public class NotificationFacadeService {
 		eventPublisher.publishEvent(new NotificationEvent(this, notification));
 	}
 
+	@Transactional
+	public void sendNotifications(final List<NotificationSendReqDto> dtos) {
+		List<Notification> notifications = notificationCommandService.sendAll(dtos);
+
+		for (Notification notification : notifications) {
+			eventPublisher.publishEvent(new NotificationEvent(this, notification));
+		}
+	}
+
 	@Transactional(readOnly = true)
 	public List<@NonNull NotificationResDto> getNotifications(final Long userId) {
 		return notificationQueryService.getNotifications(userId);

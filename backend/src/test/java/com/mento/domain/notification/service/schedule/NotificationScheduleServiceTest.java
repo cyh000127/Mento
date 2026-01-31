@@ -14,6 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -46,6 +47,9 @@ class NotificationScheduleServiceTest {
 	@Mock
 	private ReservationRepository reservationRepository;
 
+	@Captor
+	private ArgumentCaptor<List<NotificationSendReqDto>> captor;
+
 	private MockedStatic<LocalDateTime> localDateTimeMock;
 
 	@BeforeEach
@@ -65,7 +69,7 @@ class NotificationScheduleServiceTest {
 		LocalDate today = LocalDate.of(2026, 1, 30);
 		LocalTime nowTime = LocalTime.of(9, 5);
 		LocalDateTime fixedNow = LocalDateTime.of(today, nowTime);
-		
+
 		localDateTimeMock.when(LocalDateTime::now).thenReturn(fixedNow);
 
 		LocalTime scheduledTime = LocalTime.of(10, 0);
@@ -100,7 +104,6 @@ class NotificationScheduleServiceTest {
 		given(timetableRepository.findByScheduledDateAndScheduledTime(today, scheduledTime))
 			.willReturn(List.of(timetable));
 
-
 		given(reservationRepository.findAllByTimetableIdIn(List.of(1L)))
 			.willReturn(List.of(reservation));
 
@@ -108,10 +111,12 @@ class NotificationScheduleServiceTest {
 		notificationScheduleService.scheduleConsultationReminders();
 
 		// then
-		ArgumentCaptor<NotificationSendReqDto> captor = ArgumentCaptor.forClass(NotificationSendReqDto.class);
-		then(notificationFacadeService).should(times(1)).sendNotification(captor.capture());
+		then(notificationFacadeService).should(times(1)).sendNotifications(captor.capture());
 
-		NotificationSendReqDto reqDto = captor.getValue();
+		List<NotificationSendReqDto> reqDtos = captor.getValue();
+		assertThat(reqDtos).hasSize(1);
+		NotificationSendReqDto reqDto = reqDtos.get(0);
+
 		assertThat(reqDto.type()).isEqualTo(NotificationType.RESERVATION_REMINDER);
 		assertThat(reqDto.value()).isEqualTo("60");
 		LocalDateTime expectedExpiredAt = LocalDateTime.of(today, scheduledTime).minusMinutes(30);
@@ -166,10 +171,12 @@ class NotificationScheduleServiceTest {
 		notificationScheduleService.scheduleConsultationReminders();
 
 		// then
-		ArgumentCaptor<NotificationSendReqDto> captor = ArgumentCaptor.forClass(NotificationSendReqDto.class);
-		then(notificationFacadeService).should(times(1)).sendNotification(captor.capture());
+		then(notificationFacadeService).should(times(1)).sendNotifications(captor.capture());
 
-		NotificationSendReqDto reqDto = captor.getValue();
+		List<NotificationSendReqDto> reqDtos = captor.getValue();
+		assertThat(reqDtos).hasSize(1);
+		NotificationSendReqDto reqDto = reqDtos.get(0); // Note: Assuming get(0) as per view_file.
+
 		assertThat(reqDto.type()).isEqualTo(NotificationType.RESERVATION_REMINDER);
 		assertThat(reqDto.value()).isEqualTo("30");
 		LocalDateTime expectedExpiredAt = LocalDateTime.of(today, scheduledTime).minusMinutes(10);
@@ -224,15 +231,16 @@ class NotificationScheduleServiceTest {
 		notificationScheduleService.scheduleConsultationReminders();
 
 		// then
-		ArgumentCaptor<NotificationSendReqDto> captor = ArgumentCaptor.forClass(NotificationSendReqDto.class);
-		then(notificationFacadeService).should(times(1)).sendNotification(captor.capture());
+		then(notificationFacadeService).should(times(1)).sendNotifications(captor.capture());
 
-		NotificationSendReqDto reqDto = captor.getValue();
+		List<NotificationSendReqDto> reqDtos = captor.getValue();
+		assertThat(reqDtos).hasSize(1);
+		NotificationSendReqDto reqDto = reqDtos.get(0);
+
 		assertThat(reqDto.type()).isEqualTo(NotificationType.CONSULTING_STARTED);
 		assertThat(reqDto.value()).isEqualTo("0");
 		LocalDateTime expectedExpiredAt = LocalDateTime.of(today, scheduledTime).plusMinutes(10);
 		assertThat(reqDto.expiredAt()).isEqualTo(expectedExpiredAt);
 	}
-
 
 }

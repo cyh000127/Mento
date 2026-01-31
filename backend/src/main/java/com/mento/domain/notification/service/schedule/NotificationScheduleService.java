@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -85,43 +86,34 @@ public class NotificationScheduleService {
 		Map<Long, Timetable> timetableMap = timetables.stream()
 			.collect(Collectors.toMap(Timetable::getId, Function.identity()));
 
-		for (Reservation reservation : reservations) {
-			Timetable timetable = timetableMap.get(reservation.getSlot().getTimetable().getId());
-			if (timetable == null) {
-				continue;
+		List<NotificationSendReqDto> notificationDtos = reservations.stream()
+			.map(reservation -> {
+				Timetable timetable = timetableMap.get(reservation.getSlot().getTimetable().getId());
+				if (timetable == null) {
+					return null;
+				}
+
+				LocalDateTime scheduledDateTime = LocalDateTime.of(timetable.getScheduledDate(),
+					timetable.getScheduledTime());
+				LocalDateTime expiredAt = scheduledDateTime.plusMinutes(expiryOffsetMinutes);
+
+				return NotificationSendReqDto.builder()
+					.targetMemberId(reservation.getUser().getId())
+					.type(type)
+					.value(value)
+					.expiredAt(expiredAt)
+					.build();
+			})
+			.filter(Objects::nonNull)
+			.toList();
+
+		if (!notificationDtos.isEmpty()) {
+			try {
+				notificationFacadeService.sendNotifications(notificationDtos);
+				log.info("[Notification] 알림 일괄 전송 성공 {count: {}, type: {}}", notificationDtos.size(), type);
+			} catch (Exception e) {
+				log.error("[Notification] 알림 일괄 전송 실패 {type: {}}", type, e);
 			}
-
-			LocalDateTime scheduledDateTime = LocalDateTime.of(timetable.getScheduledDate(),
-				timetable.getScheduledTime());
-			LocalDateTime expiredAt = scheduledDateTime.plusMinutes(expiryOffsetMinutes);
-
-			sendNotification(reservation, value, type, expiredAt);
-		}
-	}
-
-	private void sendNotification(
-		Reservation reservation,
-		String value,
-		NotificationType type,
-		LocalDateTime expiredAt) {
-		try {
-
-			NotificationSendReqDto reqDto = NotificationSendReqDto.builder()
-				.targetMemberId(reservation.getUser().getId())
-				.type(type)
-				.value(value)
-				.expiredAt(expiredAt)
-				.build();
-
-			notificationFacadeService.sendNotification(reqDto);
-
-			log.info("[Notification] 알림 전송 성공 {userId: {}, reservationId: {}, type: {}, expiredAt: {}}",
-				reservation.getUser().getId(), reservation.getId(), type, expiredAt);
-
-		} catch (Exception e) {
-			log.error("[Notification] 알림 전송 실패 {userId: {}, reservationId: {}}",
-				reservation.getUser().getId(),
-				reservation.getId(), e);
 		}
 	}
 }

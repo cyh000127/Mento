@@ -1,5 +1,7 @@
 package com.mento.domain.notification.service.command;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,14 @@ public class NotificationCommandServiceImpl implements NotificationCommandServic
 	public Notification send(final NotificationSendReqDto dto) {
 		Notification notification = NotificationConverter.toEntity(dto);
 		return notificationRepository.save(notification);
+	}
+
+	@Override
+	public List<Notification> sendAll(final List<NotificationSendReqDto> dtos) {
+		List<Notification> notifications = dtos.stream()
+			.map(NotificationConverter::toEntity)
+			.toList();
+		return notificationRepository.saveAll(notifications);
 	}
 
 	@Override
