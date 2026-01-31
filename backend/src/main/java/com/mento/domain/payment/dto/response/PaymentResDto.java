@@ -11,7 +11,7 @@ import lombok.Builder;
 @Builder
 public record PaymentResDto(
 	@Schema(description = "결제 ID", example = "1234567890123456")
-	Long paymentId,
+	String paymentId,
 
 	@Schema(description = "예약 ID", example = "1")
 	Long reservationId,
