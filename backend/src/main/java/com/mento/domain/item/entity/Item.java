@@ -68,6 +68,22 @@ public class Item extends BaseEntity {
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
 
+	public void updateStatus(final ItemStatus status) {
+		if (status == null) {
+			throw new ItemException(ErrorCode.BAD_REQUEST);
+		}
+		if (status == ItemStatus.OWNED) {
+			updateStatusToOwn();
+		}
+		this.status = status;
+	}
+
+	public void updateStatusToOwn() {
+		this.purchaseCount++;
+		this.purchaseDate = LocalDate.now();
+		this.expectedExpiryDate = LocalDate.now().plusDays(this.getProduct().getDefaultUsageDays());
+	}
+
 	public void assignUser(final User user) {
 		if (user == null) {
 			throw new ItemException(ErrorCode.MISSING_USER);
