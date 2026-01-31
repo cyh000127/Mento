@@ -4,13 +4,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mento.common.auth.principal.AuthenticatedUser;
+import com.mento.common.response.BaseResponse;
 import com.mento.common.response.PageResponse;
 import com.mento.common.util.ResponseUtils;
+import com.mento.domain.item.dto.response.ItemInfoDetailResDto;
 import com.mento.domain.item.dto.response.ItemPageResDto;
 import com.mento.domain.item.enums.ItemCategory;
 import com.mento.domain.item.enums.ItemStatus;
@@ -52,5 +55,15 @@ public class ItemQueryController {
 			authUser.getId(), status, category, isFavorite, sort, page, size
 		);
 		return ResponseUtils.page(response);
+	}
+
+	@GetMapping("/{id}")
+	@Operation(summary = "아이템 상세 정보 조회", description = "사용자의 아이템 상세정보를 조회합니다.")
+	public ResponseEntity<BaseResponse<ItemInfoDetailResDto>> findItemById(
+		@AuthenticationPrincipal final AuthenticatedUser authUser,
+		@PathVariable final Long id
+	) {
+		ItemInfoDetailResDto response =  itemFacadeService.findById(authUser.getId(), id);
+		return ResponseUtils.ok(response);
 	}
 }

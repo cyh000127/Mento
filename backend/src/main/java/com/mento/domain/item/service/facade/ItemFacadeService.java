@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mento.domain.item.converter.ItemConverter;
 import com.mento.domain.item.dto.common.ItemInfoResDto;
 import com.mento.domain.item.dto.request.UserItemAddReqDto;
+import com.mento.domain.item.dto.response.ItemInfoDetailResDto;
 import com.mento.domain.item.dto.response.ItemPageResDto;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.enums.ItemCategory;
@@ -74,12 +75,6 @@ public class ItemFacadeService {
 		item.withDraw();
 	}
 
-	private Item findAndValidateUserItem(final Long userId, final Long itemId) {
-		Item item = itemQueryService.findById(itemId);
-		itemValidator.validate(userId, item);
-		return item;
-	}
-
 	@Transactional(readOnly = true)
 	public Page<ItemPageResDto> findAllItemsByUserId(
 		final Long userId,
@@ -97,5 +92,16 @@ public class ItemFacadeService {
 		);
 
 		return items.map(ItemConverter::toItemPageResDto);
+	}
+
+	public ItemInfoDetailResDto findById(final Long userId, final Long itemId) {
+		Item item = findAndValidateUserItem(userId, itemId);
+		return ItemConverter.toItemInfoDetailResDto(item);
+	}
+
+	private Item findAndValidateUserItem(final Long userId, final Long itemId) {
+		Item item = itemQueryService.findById(itemId);
+		itemValidator.validate(userId, item);
+		return item;
 	}
 }
