@@ -12,7 +12,7 @@ async def entrypoint(ctx: JobContext):
 
     try:
         # 2. 연결 시도 직전
-        print(f"--- [DEBUG] 2. LiveKit 연결 시도 중... (URL: {ctx.api.url}) ---", flush=True)
+        print(f"--- [DEBUG] 2. LiveKit 연결 시도 중... ---", flush=True)
 
         # 여기서 멈춘다면 네트워크 주소(host.docker.internal) 문제임
         await ctx.connect()
