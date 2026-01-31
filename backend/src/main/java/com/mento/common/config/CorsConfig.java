@@ -15,7 +15,9 @@ import com.mento.common.constant.FrontDomain;
 public class CorsConfig {
 	private static final List<String> ALLOWED_ORIGINS = List.of(
 		BackDomain.LOCAL.getUrl(),
-		FrontDomain.LOCAL.getUrl()
+		FrontDomain.LOCAL.getUrl(),
+		BackDomain.PROD.getUrl(),
+		FrontDomain.PROD.getUrl()
 	);
 
 	private static final List<String> ALLOWED_HEADERS = List.of(
