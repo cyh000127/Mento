@@ -1,13 +1,19 @@
 package com.mento.domain.item.service.facade;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mento.domain.item.converter.ItemConverter;
 import com.mento.domain.item.dto.common.ItemInfoResDto;
 import com.mento.domain.item.dto.request.UserItemAddReqDto;
+import com.mento.domain.item.dto.response.ItemPageResDto;
 import com.mento.domain.item.entity.Item;
+import com.mento.domain.item.enums.ItemCategory;
 import com.mento.domain.item.enums.ItemStatus;
+import com.mento.domain.item.enums.SortType;
 import com.mento.domain.item.factory.ItemFactory;
 import com.mento.domain.item.service.command.ItemCommandService;
 import com.mento.domain.item.service.query.ItemQueryService;
@@ -72,5 +78,24 @@ public class ItemFacadeService {
 		Item item = itemQueryService.findById(itemId);
 		itemValidator.validate(userId, item);
 		return item;
+	}
+
+	@Transactional(readOnly = true)
+	public Page<ItemPageResDto> findAllItemsByUserId(
+		final Long userId,
+		final ItemStatus status,
+		final ItemCategory category,
+		final Boolean isFavorite,
+		final SortType sortType,
+		final int page,
+		final int size
+	) {
+		Pageable pageable = PageRequest.of(page, size, sortType.getSort());
+
+		Page<Item> items = itemQueryService.findAllByUserIdWithFilters(
+			userId, status, category, isFavorite, pageable
+		);
+
+		return items.map(ItemConverter::toItemPageResDto);
 	}
 }
