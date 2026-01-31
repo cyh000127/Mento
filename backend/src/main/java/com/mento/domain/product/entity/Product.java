@@ -10,7 +10,7 @@ import org.hibernate.type.SqlTypes;
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.brand.entity.Brand;
-import com.mento.domain.inventory.entity.UserItem;
+import com.mento.domain.item.entity.UserItem;
 import com.mento.domain.product.exception.ProductException;
 
 import jakarta.persistence.CascadeType;

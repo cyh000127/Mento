@@ -7,7 +7,7 @@ import java.util.List;
 
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
-import com.mento.domain.inventory.entity.UserItem;
+import com.mento.domain.item.entity.UserItem;
 import com.mento.domain.product.exception.ProductException;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.user.exception.UserException;
