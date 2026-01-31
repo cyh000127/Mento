@@ -62,18 +62,19 @@ pipeline {
                     // EC2 내부의 절대 경로 정의
                     def TARGET_SCRIPT_DIR = "/home/ubuntu/app/infra/infra-repo/infra/script"
                     def TARGET_CONF_DIR = "/home/ubuntu/app/infra/infra-repo/infra/conf"
-
                    // 1. 디렉토리 생성
                     sh "mkdir -p ${TARGET_SCRIPT_DIR}"
                     sh "mkdir -p ${TARGET_CONF_DIR}"
 
-                    // 2. 로컬 복사 (redis.conf 추가)
+                    // 2. 로컬 복사
                     sh "cp backend/script/init.sql ${TARGET_SCRIPT_DIR}/init.sql"
                     sh "cp backend/redis.conf ${TARGET_CONF_DIR}/redis.conf"
+                    sh "cp backend/redis.conf ${TARGET_CONF_DIR}/my.conf"
 
                     // 3. 권한 설정
                     sh "chmod 644 ${TARGET_SCRIPT_DIR}/init.sql"
                     sh "chmod 644 ${TARGET_CONF_DIR}/redis.conf"
+                    sh "chmod 644 ${TARGET_CONF_DIR}/my.conf"
                 }
             }
         }
