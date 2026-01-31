@@ -46,7 +46,7 @@ public class ItemFacadeService {
 		Product product = productQueryService.findById(reqDto.productId());
 		User user = userQueryService.findById(userId);
 
-		Item item = itemFactory.createItem(user, product);
+		Item item = itemFactory.createItem(user, product, ItemStatus.OWNED);
 		Item savedItem = commandService.saveItem(item);
 
 		return ItemConverter.toItemInfoResDto(savedItem);

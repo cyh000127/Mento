@@ -15,17 +15,23 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class ItemFactory {
 
-	public Item createItem(final User user, final Product product) {
+	public Item createItem(final User user, final Product product, final ItemStatus status) {
+		LocalDate today = LocalDate.now();
+		LocalDate expectedExpiryDate = today.plusDays(product.getDefaultUsageDays());
+
 		Item item = Item.builder()
-			.status(ItemStatus.OWNED)
+			.status(status)
 			.isFavorite(false)
 			.purchaseCount(1)
-			.purchaseDate(LocalDate.now())
-			.expectedExpiryDate(LocalDate.now())
+			.purchaseDate(today)
+			.expectedExpiryDate(expectedExpiryDate)
 			.build();
 
 		item.assignProduct(product);
 		item.assignUser(user);
+
+		log.info("[Item] 생성 완료 {userId: {}, productId: {}, expectedExpiryDate: {}}",
+			user.getId(), product.getId(), expectedExpiryDate);
 
 		return item;
 	}
