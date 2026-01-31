@@ -91,6 +91,14 @@ export function SkinAnalysis() {
 
     // 로딩 상태로 변경
     setState("loading");
+    
+    // 로딩 화면으로 전환 시 스크롤
+    setTimeout(() => {
+      const analysisSection = document.getElementById("skin-analysis");
+      if (analysisSection) {
+        analysisSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
 
     try {
       // 1. 생년월일 정보 업데이트 API 호출
@@ -108,6 +116,14 @@ export function SkinAnalysis() {
 
       // 결과 상태로 변경
       setState("result");
+      
+      // 결과 섹션으로 부드럽게 스크롤
+      setTimeout(() => {
+        const resultSection = document.getElementById("skin-analysis");
+        if (resultSection) {
+          resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
     } catch (error) {
       console.error("분석 실패:", error);
       const errorMessage = error instanceof Error ? error.message : "분석 중 오류가 발생했습니다.";
