@@ -18,4 +18,6 @@ COPY . .
 
 # 6. 실행 명령어 (Java의 Entrypoint와 동일)
 # 'dev' 대신 'start'를 사용하여 프로덕션 모드로 실행 가능합니다.
-ENTRYPOINT ["python", "main.py", "dev"]
+ENTRYPOINT ["python", "main.py"]
+
+CMD ["dev"]
