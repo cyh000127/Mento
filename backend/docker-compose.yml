@@ -64,6 +64,8 @@ services:
       context: .
       dockerfile: Dockerfile
     image: mento-backend:latest
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
     restart: unless-stopped
     env_file:
       - .env
