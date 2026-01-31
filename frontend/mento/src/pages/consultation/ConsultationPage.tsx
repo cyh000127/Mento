@@ -7,11 +7,14 @@ import { Payment } from "@/components/consultation/payment"
 import { BookingComplete } from "@/components/consultation/booking-complete"
 import { StepIndicator } from "@/components/consultation/step-indicator"
 import type { ConsultationCategory } from "@/types/consultation"
+import { createReservationDraft } from "@/api/reservationApi"
 
 interface BookingData {
   category: ConsultationCategory | null
   date: Date | null
   time: string
+  slotId: number | null
+  reservationId: number | null
 }
 
 const steps = [
@@ -29,6 +32,8 @@ export default function ConsultationPage() {
     category: null,
     date: null,
     time: "",
+    slotId: null,
+    reservationId: null,
   })
 
   const handleCategorySelect = (category: ConsultationCategory | null) => {
@@ -44,6 +49,21 @@ export default function ConsultationPage() {
   const handleNext = () => {
     window.scrollTo({ top: 0, behavior: "smooth" })
     setCurrentStep((prev) => Math.min(prev + 1, steps.length))
+  }
+
+  const handleNextFromDateTime = async () => {
+    if (!bookingData.date || !bookingData.time || !bookingData.slotId) {
+      return
+    }
+
+    try {
+      const data = await createReservationDraft({ slotId: bookingData.slotId })
+      setBookingData((prev) => ({ ...prev, reservationId: data.reservationId }))
+      handleNext()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      console.error(message)
+    }
   }
 
   const handleBack = () => {
@@ -106,12 +126,21 @@ export default function ConsultationPage() {
               selectedTime={bookingData.time}
               selectedCategory={bookingData.category}
               onDateSelect={(date) =>
-                setBookingData((prev) => ({ ...prev, date }))
+                setBookingData((prev) => ({
+                  ...prev,
+                  date,
+                  reservationId: null,
+                }))
               }
-              onTimeSelect={(time) =>
-                setBookingData((prev) => ({ ...prev, time }))
+              onTimeSelect={(time, slotId) =>
+                setBookingData((prev) => ({
+                  ...prev,
+                  time,
+                  slotId,
+                  reservationId: null,
+                }))
               }
-              onNext={handleNext}
+              onNext={handleNextFromDateTime}
               onPrev={handleBack}
               canProceed={bookingData.date !== null && bookingData.time !== ""}
             />
