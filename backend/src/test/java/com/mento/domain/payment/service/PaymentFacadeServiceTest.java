@@ -3,7 +3,6 @@ package com.mento.domain.payment.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -120,7 +119,7 @@ class PaymentFacadeServiceTest {
 			.build();
 
 		PaymentApproveResDto approveResDto = PaymentApproveResDto.builder()
-			.paymentId(paymentId)
+			.paymentId(String.valueOf(paymentId))
 			.paidAt(java.time.LocalDateTime.now())
 			.build();
 
@@ -152,7 +151,7 @@ class PaymentFacadeServiceTest {
 			.build();
 
 		PaymentApproveResDto approveResDto = PaymentApproveResDto.builder()
-			.paymentId(paymentId)
+			.paymentId(String.valueOf(paymentId))
 			.paidAt(java.time.LocalDateTime.now())
 			.build();
 
