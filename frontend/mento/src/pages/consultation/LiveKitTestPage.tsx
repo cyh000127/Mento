@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useLivekitTestSession } from "@/hooks/useLivekitTestSession";
 import { VideoTrack } from "@/components/consultation/VideoTrack";
+import { SidePanel } from "@/components/consultation/side-panel";
 
 /**
  * LiveKit 테스트 페이지 (테스트 전용)
@@ -70,7 +71,7 @@ export function LivekitTestPage() {
   return (
     <div className="relative h-screen bg-gray-950 overflow-hidden">
       {/* 테스트 모드 표시 배너 */}
-      <div className="absolute top-0 left-0 right-0 bg-yellow-600 text-white text-center py-2 px-4 z-50">
+      <div className="absolute top-0 left-0 right-0 bg-yellow-600 text-white text-center py-2 px-4 z-0">
         <span className="font-bold">🧪 테스트 모드</span>
         <span className="ml-4 text-sm">
           Room: {roomName} | Role: {role} | User: {userName}
@@ -78,7 +79,7 @@ export function LivekitTestPage() {
       </div>
 
       {/* 메인 컨텐츠 영역 */}
-      <div className="h-full pt-12">
+      <div className="h-full pt-12 pr-96">
         <div className="h-full flex flex-col items-center justify-center p-8">
           {/* 연결 상태 표시 */}
           {connectionState === "connecting" && <div className="absolute top-16 left-4 bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-lg">연결 중...</div>}
@@ -133,7 +134,7 @@ export function LivekitTestPage() {
           </div>
 
           {/* 하단 컨트롤 바 */}
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2">
+          <div className="fixed bottom-8 left-1/2 -translate-x-[calc(50%+12rem)]">
             <div className="bg-gray-800 rounded-full px-6 py-4 shadow-2xl border border-gray-700 flex items-center gap-4">
               {/* 마이크 버튼 */}
               <button
@@ -202,6 +203,8 @@ export function LivekitTestPage() {
           </div>
         </div>
       </div>
+      {/* 오른쪽 사이드 패널 */}
+      <SidePanel />
     </div>
-  );
+);
 }

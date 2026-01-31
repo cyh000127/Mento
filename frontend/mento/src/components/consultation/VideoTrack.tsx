@@ -14,6 +14,7 @@ interface VideoTrackProps {
  */
 export function VideoTrack({ participant }: VideoTrackProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const isLocal = participant instanceof LocalParticipant;
   // 트랙 변경을 감지하기 위한 state (강제 리렌더링용)
   const [trackUpdateCount, setTrackUpdateCount] = useState(0);
@@ -39,11 +40,13 @@ export function VideoTrack({ participant }: VideoTrackProps) {
 
   useEffect(() => {
     const videoElement = videoRef.current;
-    if (!videoElement) return;
+    const audioElement = audioRef.current;
+    if (!videoElement || !audioElement) return;
 
     console.log(`🔍 VideoTrack 마운트: ${participant.identity}, 타입: ${isLocal ? "Local" : "Remote"}`);
 
     let currentVideoTrack: Track | null = null;
+    let currentAudioTrack: Track | null = null;
 
     /**
      * 비디오 트랙 찾기 및 연결
@@ -58,15 +61,34 @@ export function VideoTrack({ participant }: VideoTrackProps) {
       return Array.from(publications.values()).find((pub) => pub.kind === Track.Kind.Video);
     };
 
+    /**
+     * 오디오 트랙 찾기
+     */
+    const getAudioPublication = () => {
+      if (typeof participant.getTrackPublication === "function") {
+        const bySource = participant.getTrackPublication(Track.Source.Microphone);
+        if (bySource) return bySource;
+      }
+
+      const publications = participant.trackPublications as Map<string, TrackPublication>;
+      return Array.from(publications.values()).find((pub) => pub.kind === Track.Kind.Audio);
+    };
+
     const attachVideoTrack = () => {
       // 기존 트랙이 있으면 먼저 해제
       if (currentVideoTrack) {
-        console.log(`🔄 기존 트랙 해제: ${participant.identity}`);
+        console.log(`🔄 기존 비디오 트랙 해제: ${participant.identity}`);
         currentVideoTrack.detach(videoElement);
         currentVideoTrack = null;
       }
 
-      // 트랙 publications에서 비디오 트랙 찾기
+      if (currentAudioTrack) {
+        console.log(`🔄 기존 오디오 트랙 해제: ${participant.identity}`);
+        currentAudioTrack.detach(audioElement);
+        currentAudioTrack = null;
+      }
+
+      // 트랙 publications에서 비디오/오디오 트랙 찾기
       const publications = participant.trackPublications as Map<string, TrackPublication>;
       console.log(`🔍 트랙 검색 중: ${participant.identity} (${isLocal ? "Local" : "Remote"})`, {
         publicationsCount: publications.size,
@@ -79,7 +101,9 @@ export function VideoTrack({ participant }: VideoTrackProps) {
       });
 
       const videoPublication = getVideoPublication();
+      const audioPublication = getAudioPublication();
 
+      // 비디오 트랙 연결
       if (videoPublication?.track) {
         console.log(`🎥 비디오 트랙 연결 시작: ${participant.identity} (${isLocal ? "Local" : "Remote"})`);
         console.log(`   트랙 정보:`, {
@@ -113,6 +137,28 @@ export function VideoTrack({ participant }: VideoTrackProps) {
           }, 200);
         }
       }
+
+      // 오디오 트랙 연결 (로컬 참가자는 제외 - 에코 방지)
+      if (!isLocal && audioPublication?.track) {
+        console.log(`🎤 오디오 트랙 연결 시작: ${participant.identity}`);
+        console.log(`   트랙 정보:`, {
+          trackSid: audioPublication.trackSid,
+          trackName: audioPublication.trackName,
+          isMuted: audioPublication.isMuted,
+        });
+
+        audioPublication.track.attach(audioElement);
+        currentAudioTrack = audioPublication.track;
+
+        console.log(`✅ 오디오 트랙 연결 완료: ${participant.identity}`);
+      } else if (isLocal) {
+        console.log(`🔇 로컬 참가자 오디오는 연결하지 않음 (에코 방지)`);
+      } else {
+        console.warn(`❌ 오디오 트랙 없음: ${participant.identity}`, {
+          hasPublication: !!audioPublication,
+          hasTrack: audioPublication?.track ? true : false,
+        });
+      }
     };
 
     // 초기 트랙 연결 시도
@@ -143,6 +189,9 @@ export function VideoTrack({ participant }: VideoTrackProps) {
         if (currentVideoTrack) {
           currentVideoTrack.detach(videoElement);
         }
+        if (currentAudioTrack) {
+          currentAudioTrack.detach(audioElement);
+        }
         if (retryTimeoutRef.current) {
           window.clearTimeout(retryTimeoutRef.current);
           retryTimeoutRef.current = null;
@@ -164,6 +213,15 @@ export function VideoTrack({ participant }: VideoTrackProps) {
           // 새 트랙 연결
           track.attach(videoElement);
           currentVideoTrack = track;
+        } else if (publication.kind === Track.Kind.Audio) {
+          // 기존 오디오 트랙 해제
+          if (currentAudioTrack) {
+            currentAudioTrack.detach(audioElement);
+          }
+          // 새 오디오 트랙 연결
+          track.attach(audioElement);
+          currentAudioTrack = track;
+          console.log(`✅ 원격 오디오 트랙 연결 완료: ${participant.identity}`);
         }
       };
 
@@ -173,6 +231,9 @@ export function VideoTrack({ participant }: VideoTrackProps) {
         if (publication.kind === Track.Kind.Video && currentVideoTrack) {
           currentVideoTrack.detach(videoElement);
           currentVideoTrack = null;
+        } else if (publication.kind === Track.Kind.Audio && currentAudioTrack) {
+          currentAudioTrack.detach(audioElement);
+          currentAudioTrack = null;
         }
       };
 
@@ -185,6 +246,9 @@ export function VideoTrack({ participant }: VideoTrackProps) {
         if (currentVideoTrack) {
           currentVideoTrack.detach(videoElement);
         }
+        if (currentAudioTrack) {
+          currentAudioTrack.detach(audioElement);
+        }
         if (retryTimeoutRef.current) {
           window.clearTimeout(retryTimeoutRef.current);
           retryTimeoutRef.current = null;
@@ -195,5 +259,11 @@ export function VideoTrack({ participant }: VideoTrackProps) {
     }
   }, [participant, isLocal]);
 
-  return <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted={isLocal} />;
+  return (
+    <>
+      <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted={isLocal} />
+      {/* 오디오 엘리먼트 (원격 참가자의 소리를 재생) */}
+      <audio ref={audioRef} autoPlay playsInline />
+    </>
+  );
 }
