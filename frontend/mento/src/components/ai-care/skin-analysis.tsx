@@ -522,13 +522,15 @@ export function SkinAnalysis() {
                           <span className="text-sm font-semibold text-text-secondary">{item.value}점</span>
                           <span
                             className={`rounded-full px-3 py-1 text-xs font-medium ${
-                              item.value <= 10
-                                ? "bg-primary-100 text-primary-500 font-semibold"
-                                : item.value <= 20
-                                  ? "bg-primary-100/70 text-primary-400 font-semibold"
-                                  : item.value <= 30
-                                    ? "bg-primary-100/50 text-text-primary"
-                                    : "bg-muted text-text-secondary"
+                              item.status === "우수"
+                                ? "bg-green-100 text-green-700 font-semibold"
+                                : item.status === "양호"
+                                  ? "bg-primary-100 text-primary-500 font-semibold"
+                                  : item.status === "보통"
+                                    ? "bg-orange-100 text-orange-600 font-semibold"
+                                    : item.status === "집중관리"
+                                      ? "bg-red-100 text-red-600 font-semibold"
+                                      : "bg-muted text-text-secondary"
                             }`}
                           >
                             {item.status}
