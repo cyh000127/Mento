@@ -72,7 +72,7 @@ public class Item extends BaseEntity {
 		if (status == null) {
 			throw new ItemException(ErrorCode.BAD_REQUEST);
 		}
-		if (status == ItemStatus.OWNED) {
+		if (this.status == ItemStatus.PURCHASING && status == ItemStatus.OWNED) {
 			updateStatusToOwn();
 		}
 		this.status = status;
