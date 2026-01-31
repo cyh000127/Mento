@@ -28,12 +28,16 @@ import com.mento.domain.item.dto.response.ItemPageResDto;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.enums.ItemStatus;
 import com.mento.domain.item.enums.SortType;
+import com.mento.domain.item.factory.ItemFactory;
+import com.mento.domain.item.service.command.ItemCommandService;
 import com.mento.domain.item.service.query.ItemQueryService;
 import com.mento.domain.item.validator.ItemValidator;
 import com.mento.domain.mentor.entity.Mentor;
 import com.mento.domain.product.entity.Product;
+import com.mento.domain.product.service.query.ProductQueryService;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.service.query.ReservationQueryService;
+import com.mento.domain.user.dto.request.MentorAddItemReqDto;
 import com.mento.domain.user.dto.request.UserItemsReqDto;
 import com.mento.domain.user.dto.response.UserResDto;
 import com.mento.domain.user.entity.User;
@@ -54,6 +58,15 @@ class UserFacadeServiceTest {
 
 	@Mock
 	private ReservationQueryService reservationQueryService;
+
+	@Mock
+	private 	ItemCommandService itemCommandService;
+
+	@Mock
+	private ItemFactory itemFactory;
+
+	@Mock
+	private ProductQueryService productQueryService;
 
 	@InjectMocks
 	private UserFacadeService userFacadeService;
@@ -398,6 +411,132 @@ class UserFacadeServiceTest {
 				.validateMentorAccess(mentorAuthUser, testReservation, userId);
 			then(itemQueryService).should(never())
 				.findAllByUserIdWithFilters(anyLong(), any(), any(), any(), any(Pageable.class));
+		}
+	}
+
+	@Nested
+	@DisplayName("멘토가 고객에게 아이템 추가 테스트")
+	class AddItemToUserTest {
+
+		@Test
+		@DisplayName("멘토가 고객에게 아이템 추가 성공")
+		void 멘토가_고객에게_아이템_추가_성공() {
+			// given
+			Long userId = testUser.getId();
+			MentorAddItemReqDto reqDto = MentorAddItemReqDto.builder()
+					.productId(1L)
+					.reservationId(1L)
+					.build();
+
+			Item createdItem = createItem(1L, testUser, testProduct, ItemStatus.RECOMMENDED, false, 1);
+
+			given(reservationQueryService.findById(1L)).willReturn(testReservation);
+			given(productQueryService.findById(1L)).willReturn(testProduct);
+			given(userQueryService.findById(userId)).willReturn(testUser);
+			given(itemFactory.createItem(testUser, testProduct, ItemStatus.RECOMMENDED)).willReturn(createdItem);
+			given(itemCommandService.saveItem(createdItem)).willReturn(createdItem);
+
+			// when
+			com.mento.domain.item.dto.common.ItemInfoResDto result = userFacadeService.addItemToUser(
+				mentorAuthUser, userId, reqDto
+			);
+
+			// then
+			assertThat(result).isNotNull();
+			assertThat(result.id()).isEqualTo(1L);
+			assertThat(result.status()).isEqualTo(ItemStatus.RECOMMENDED);
+
+			then(reservationQueryService).should(times(1)).findById(1L);
+			then(itemValidator).should(times(1))
+				.validateMentorAccess(mentorAuthUser, testReservation, userId);
+			then(productQueryService).should(times(1)).findById(1L);
+			then(userQueryService).should(times(1)).findById(userId);
+			then(itemFactory).should(times(1)).createItem(testUser, testProduct, ItemStatus.RECOMMENDED);
+			then(itemCommandService).should(times(1)).saveItem(createdItem);
+		}
+
+		@Test
+		@DisplayName("멘토 권한 검증 실패 시 예외 발생")
+		void 멘토_권한_검증_실패_시_예외_발생() {
+			// given
+			Long userId = testUser.getId();
+			MentorAddItemReqDto reqDto = MentorAddItemReqDto.builder()
+					.productId(1L)
+					.reservationId(1L)
+					.build();
+
+			given(reservationQueryService.findById(1L)).willReturn(testReservation);
+			willThrow(new BusinessException(ErrorCode.ACCESS_DENIED))
+				.given(itemValidator).validateMentorAccess(mentorAuthUser, testReservation, userId);
+
+			// when & then
+			assertThatThrownBy(
+				() -> userFacadeService.addItemToUser(mentorAuthUser, userId, reqDto))
+				.isInstanceOf(BusinessException.class)
+				.hasMessageContaining(ErrorCode.ACCESS_DENIED.getMessage());
+
+			then(reservationQueryService).should(times(1)).findById(1L);
+			then(itemValidator).should(times(1))
+				.validateMentorAccess(mentorAuthUser, testReservation, userId);
+			then(productQueryService).should(never()).findById(anyLong());
+			then(itemCommandService).should(never()).saveItem(any(Item.class));
+		}
+
+		@Test
+		@DisplayName("존재하지 않는 상품 ID로 추가 시 예외 발생")
+		void 존재하지_않는_상품_ID로_추가_시_예외_발생() {
+			// given
+			Long userId = testUser.getId();
+			Long invalidProductId = 999L;
+			MentorAddItemReqDto reqDto = MentorAddItemReqDto.builder()
+					.productId(invalidProductId)
+					.reservationId(1L)
+					.build();
+
+			given(reservationQueryService.findById(1L)).willReturn(testReservation);
+			given(productQueryService.findById(invalidProductId))
+				.willThrow(new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+			// when & then
+			assertThatThrownBy(
+				() -> userFacadeService.addItemToUser(mentorAuthUser, userId, reqDto))
+				.isInstanceOf(BusinessException.class)
+				.hasMessageContaining(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
+
+			then(reservationQueryService).should(times(1)).findById(1L);
+			then(itemValidator).should(times(1))
+				.validateMentorAccess(mentorAuthUser, testReservation, userId);
+			then(productQueryService).should(times(1)).findById(invalidProductId);
+			then(itemCommandService).should(never()).saveItem(any(Item.class));
+		}
+
+		@Test
+		@DisplayName("존재하지 않는 사용자 ID로 추가 시 예외 발생")
+		void 존재하지_않는_사용자_ID로_추가_시_예외_발생() {
+			// given
+			Long invalidUserId = 999L;
+			MentorAddItemReqDto reqDto = MentorAddItemReqDto.builder()
+					.productId(1L)
+					.reservationId(1L)
+					.build();
+
+			given(reservationQueryService.findById(1L)).willReturn(testReservation);
+			given(productQueryService.findById(1L)).willReturn(testProduct);
+			given(userQueryService.findById(invalidUserId))
+				.willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+			// when & then
+			assertThatThrownBy(
+				() -> userFacadeService.addItemToUser(mentorAuthUser, invalidUserId, reqDto))
+				.isInstanceOf(BusinessException.class)
+				.hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
+
+			then(reservationQueryService).should(times(1)).findById(1L);
+			then(itemValidator).should(times(1))
+				.validateMentorAccess(mentorAuthUser, testReservation, invalidUserId);
+			then(productQueryService).should(times(1)).findById(1L);
+			then(userQueryService).should(times(1)).findById(invalidUserId);
+			then(itemCommandService).should(never()).saveItem(any(Item.class));
 		}
 	}
 }
