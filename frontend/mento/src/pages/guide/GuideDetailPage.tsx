@@ -1,13 +1,13 @@
 import { useParams, useNavigate } from "react-router-dom"
 import { useState } from "react"
-import { FaceAreaSelector } from "@/components/guide/FaceAreaSelector"
+import { FaceCameraSection } from "@/components/guide/FaceCameraSection"
 import { StepGuide } from "@/components/guide/StepGuide"
 import { ArrowLeft } from "lucide-react"
 
 // Usage steps per product type and face area
 const usageSteps: Record<string, Record<string, any[]>> = {
   튜브: {
-    forehead: [
+    "t-zone": [
       {
         number: 1,
         title: "적당량 짜내기",
@@ -15,8 +15,8 @@ const usageSteps: Record<string, Record<string, any[]>> = {
       },
       {
         number: 2,
-        title: "이마 중앙에서 바깥쪽으로",
-        description: "이마 중앙에서 시작해 관자놀이 방향으로 부드럽게 펴 발라줍니다.",
+        title: "T존 중앙에서 바깥쪽으로",
+        description: "이마와 코 부위를 중심으로 부드럽게 펴 발라줍니다.",
       },
       {
         number: 3,
@@ -27,6 +27,28 @@ const usageSteps: Record<string, Record<string, any[]>> = {
         number: 4,
         title: "마무리",
         description: "완전히 흡수될 때까지 1-2분 정도 기다려 줍니다.",
+      },
+    ],
+    "u-zone": [
+      {
+        number: 1,
+        title: "적당량 준비",
+        description: "볼과 턱선 부위에 바를 만큼의 제품을 짜냅니다.",
+      },
+      {
+        number: 2,
+        title: "안쪽에서 바깥쪽으로",
+        description: "볼 안쪽에서 바깥쪽으로 원을 그리며 부드럽게 펴 발라줍니다.",
+      },
+      {
+        number: 3,
+        title: "가볍게 두드리기",
+        description: "손바닥으로 감싸 가볍게 두드리며 흡수를 도와줍니다.",
+      },
+      {
+        number: 4,
+        title: "보습 확인",
+        description: "건조함이 느껴지지 않을 때까지 충분히 흡수시킵니다.",
       },
     ],
     nose: [
@@ -51,53 +73,31 @@ const usageSteps: Record<string, Record<string, any[]>> = {
         description: "피부가 촉촉하게 정돈될 때까지 기다립니다.",
       },
     ],
-    cheeks: [
+    apple: [
       {
         number: 1,
         title: "적당량 손에 덜기",
-        description: "양 볼에 나눠 바를 만큼의 제품을 짜냅니다.",
+        description: "광대뼈 주변에 바를 만큼의 제품을 짜냅니다.",
       },
       {
         number: 2,
-        title: "안쪽에서 바깥쪽으로",
-        description: "볼 안쪽에서 바깥쪽으로 원을 그리며 부드럽게 펴 발라줍니다.",
+        title: "광대를 중심으로",
+        description: "볼 중앙의 광대뼈를 중심으로 원을 그리며 펴 발라줍니다.",
       },
       {
         number: 3,
-        title: "가볍게 두드리기",
-        description: "손바닥으로 볼을 감싸 가볍게 두드리며 흡수를 도와줍니다.",
+        title: "리프팅 마사지",
+        description: "아래에서 위로 쓸어올리며 리프팅 효과를 줍니다.",
       },
       {
         number: 4,
-        title: "보습 확인",
-        description: "건조함이 느껴지지 않을 때까지 충분히 흡수시킵니다.",
-      },
-    ],
-    jaw: [
-      {
-        number: 1,
-        title: "적당량 준비",
-        description: "턱선 전체에 바를 만큼의 제품을 짜냅니다.",
-      },
-      {
-        number: 2,
-        title: "턱 중앙에서 귀 방향으로",
-        description: "턱 중앙에서 시작해 귀 쪽으로 쓸어올리듯 발라줍니다.",
-      },
-      {
-        number: 3,
-        title: "목까지 연결",
-        description: "턱선에서 목으로 자연스럽게 이어지도록 펴 발라줍니다.",
-      },
-      {
-        number: 4,
-        title: "마무리 마사지",
-        description: "림프 순환을 위해 턱선을 따라 가볍게 마사지합니다.",
+        title: "핸드 프레스",
+        description: "손바닥으로 감싸고 체온으로 흡수를 도와줍니다.",
       },
     ],
   },
   펌프: {
-    forehead: [
+    "t-zone": [
       {
         number: 1,
         title: "펌프 1-2회 누르기",
@@ -110,13 +110,35 @@ const usageSteps: Record<string, Record<string, any[]>> = {
       },
       {
         number: 3,
-        title: "이마에 점 찍듯 배치",
-        description: "이마 여러 부위에 점 찍듯 배치한 후 펴 발라줍니다.",
+        title: "T존에 점 찍듯 배치",
+        description: "이마와 코 부위에 점 찍듯 배치한 후 펴 발라줍니다.",
       },
       {
         number: 4,
         title: "흡수 도우기",
-        description: "손바닥으로 이마를 감싸고 5-10초간 밀착시켜 흡수를 돕습니다.",
+        description: "손바닥으로 감싸고 5-10초간 밀착시켜 흡수를 돕습니다.",
+      },
+    ],
+    "u-zone": [
+      {
+        number: 1,
+        title: "적정량 준비",
+        description: "양 볼과 턱선에 충분한 양의 제품을 펌핑합니다.",
+      },
+      {
+        number: 2,
+        title: "볼 중앙에 배치",
+        description: "양 볼 중앙에 제품을 놓고 바깥쪽으로 펴줍니다.",
+      },
+      {
+        number: 3,
+        title: "리프팅 마사지",
+        description: "아래에서 위로 쓸어올리며 리프팅 효과를 줍니다.",
+      },
+      {
+        number: 4,
+        title: "핸드 프레스",
+        description: "손바닥으로 볼을 감싸고 체온으로 흡수를 도와줍니다.",
       },
     ],
     nose: [
@@ -141,54 +163,32 @@ const usageSteps: Record<string, Record<string, any[]>> = {
         description: "필요시 티슈로 가볍게 눌러 과도한 유분을 제거합니다.",
       },
     ],
-    cheeks: [
-      {
-        number: 1,
-        title: "적정량 준비",
-        description: "양 볼에 충분한 양의 제품을 펌핑합니다.",
-      },
-      {
-        number: 2,
-        title: "볼 중앙에 배치",
-        description: "양 볼 중앙에 제품을 놓고 바깥쪽으로 펴줍니다.",
-      },
-      {
-        number: 3,
-        title: "리프팅 마사지",
-        description: "아래에서 위로 쓸어올리며 리프팅 효과를 줍니다.",
-      },
-      {
-        number: 4,
-        title: "핸드 프레스",
-        description: "손바닥으로 볼을 감싸고 체온으로 흡수를 도와줍니다.",
-      },
-    ],
-    jaw: [
+    apple: [
       {
         number: 1,
         title: "적당량 덜기",
-        description: "턱선과 목 부위에 사용할 제품을 덜어냅니다.",
+        description: "광대뼈 부위에 사용할 제품을 덜어냅니다.",
       },
       {
         number: 2,
-        title: "턱선 따라 바르기",
-        description: "턱선을 따라 귀 뒤쪽까지 부드럽게 펴 발라줍니다.",
+        title: "광대 중심으로 펴기",
+        description: "볼 중앙의 광대뼈를 따라 부드럽게 펴 발라줍니다.",
       },
       {
         number: 3,
-        title: "목까지 연장",
-        description: "목 부위까지 자연스럽게 이어서 발라줍니다.",
+        title: "원을 그리며 흡수",
+        description: "원을 그리며 제품을 흡수시켜 줍니다.",
       },
       {
         number: 4,
-        title: "림프 마사지",
-        description: "턱에서 귀 아래로 쓸어내리며 림프 순환을 도와줍니다.",
+        title: "마무리 프레스",
+        description: "손바닥으로 가볍게 눌러 마무리합니다.",
       },
     ],
   },
   // Default steps for other products
   default: {
-    forehead: [
+    "t-zone": [
       {
         number: 1,
         title: "제품 덜어내기",
@@ -196,8 +196,8 @@ const usageSteps: Record<string, Record<string, any[]>> = {
       },
       {
         number: 2,
-        title: "이마에 바르기",
-        description: "이마 중앙에서 바깥쪽으로 부드럽게 펴 발라줍니다.",
+        title: "T존에 바르기",
+        description: "이마와 코 부위에 부드럽게 펴 발라줍니다.",
       },
       {
         number: 3,
@@ -208,6 +208,28 @@ const usageSteps: Record<string, Record<string, any[]>> = {
         number: 4,
         title: "마무리",
         description: "완전히 흡수될 때까지 기다려 줍니다.",
+      },
+    ],
+    "u-zone": [
+      {
+        number: 1,
+        title: "제품 덜어내기",
+        description: "적당량을 손바닥에 덜어냅니다.",
+      },
+      {
+        number: 2,
+        title: "U존에 바르기",
+        description: "볼과 턱선에 부드럽게 펴 발라줍니다.",
+      },
+      {
+        number: 3,
+        title: "흡수시키기",
+        description: "손바닥으로 감싸 가볍게 두드리며 흡수시킵니다.",
+      },
+      {
+        number: 4,
+        title: "마무리",
+        description: "충분히 흡수될 때까지 기다려 줍니다.",
       },
     ],
     nose: [
@@ -232,7 +254,7 @@ const usageSteps: Record<string, Record<string, any[]>> = {
         description: "완전히 흡수될 때까지 기다려 줍니다.",
       },
     ],
-    cheeks: [
+    apple: [
       {
         number: 1,
         title: "제품 덜어내기",
@@ -240,8 +262,8 @@ const usageSteps: Record<string, Record<string, any[]>> = {
       },
       {
         number: 2,
-        title: "볼에 바르기",
-        description: "안쪽에서 바깥쪽으로 원을 그리며 펴 발라줍니다.",
+        title: "광대에 바르기",
+        description: "광대뼈를 중심으로 원을 그리며 펴 발라줍니다.",
       },
       {
         number: 3,
@@ -254,35 +276,13 @@ const usageSteps: Record<string, Record<string, any[]>> = {
         description: "충분히 흡수될 때까지 기다려 줍니다.",
       },
     ],
-    jaw: [
-      {
-        number: 1,
-        title: "제품 덜어내기",
-        description: "적당량을 손바닥에 덜어냅니다.",
-      },
-      {
-        number: 2,
-        title: "턱에 바르기",
-        description: "턱 중앙에서 귀 방향으로 펴 발라줍니다.",
-      },
-      {
-        number: 3,
-        title: "흡수시키기",
-        description: "가볍게 마사지하며 흡수시킵니다.",
-      },
-      {
-        number: 4,
-        title: "마무리",
-        description: "완전히 흡수될 때까지 기다려 줍니다.",
-      },
-    ],
   },
 }
 
 export default function GuideDetailPage() {
   const { category, productType } = useParams<{ category: string; productType: string }>()
   const navigate = useNavigate()
-  const [selectedArea, setSelectedArea] = useState<string>("forehead")
+  const [selectedArea, setSelectedArea] = useState<string>("t-zone")
 
   // Get steps for current selection
   const getSteps = () => {
@@ -321,9 +321,9 @@ export default function GuideDetailPage() {
       <section className="mx-auto max-w-[1400px] px-6 py-12 md:py-16">
         <div className="bg-muted/30 rounded-2xl p-6 md:p-8">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-            {/* Left: Face Area Selector */}
+            {/* Left: Face Camera Section */}
             <div>
-              <FaceAreaSelector
+              <FaceCameraSection
                 selectedArea={selectedArea}
                 onAreaSelect={setSelectedArea}
               />
