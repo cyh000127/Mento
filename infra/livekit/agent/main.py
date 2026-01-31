@@ -7,40 +7,46 @@ from livekit import rtc
 load_dotenv()
 
 async def entrypoint(ctx: JobContext):
-    # 1. 프로세스 시작 직후 (이게 찍히면 프로세스 실행은 성공)
-    print(f"--- [DEBUG] 1. 에이전트 프로세스 진입 (Room: {ctx.room.name}) ---", flush=True)
+    # 최소한의 입장 로그만 남깁니다.
+    print(f"--- [Room: {ctx.room.name}] 상담 시작 및 에이전트 입장 ---", flush=True)
 
-    try:
-        # 2. 연결 시도 직전
-        print(f"--- [DEBUG] 2. LiveKit 연결 시도 중... ---", flush=True)
+    await ctx.connect()
+    stt = openai.STT(
+        base_url="https://gms.ssafy.io/gmsapi/api.openai.com/v1",
+        model="whisper-1"
+    )
 
-        # 여기서 멈춘다면 네트워크 주소(host.docker.internal) 문제임
-        await ctx.connect()
-
-        # 3. 연결 성공 직후
-        print(f"--- [DEBUG] 3. 연결 성공! 방 이름: {ctx.room.name} ---", flush=True)
-    except Exception as e:
-        print(f"--- [DEBUG] 연결 중 에러 발생: {e} ---", flush=True)
-        return
-
-    # 4. 참가자 감지 이벤트 핸들러 등록
-    @ctx.room.on("participant_connected")
-    def on_participant_connected(participant: rtc.RemoteParticipant):
-        print(f"--- [DEBUG] 4. 새로운 참가자 입장 감지: {participant.identity} ---", flush=True)
-
-    # 5. 오디오 트랙 감지
     @ctx.room.on("track_subscribed")
-    def on_track_subscribed(track: rtc.Track, publication, participant):
+    def on_track_subscribed(track, publication, participant):
         if track.kind == rtc.TrackKind.KIND_AUDIO:
-            print(f"--- [DEBUG] 5. [{participant.identity}]의 음성 트랙 구독 중! ---", flush=True)
+            asyncio.create_task(transcribe_track(track, participant, stt))
 
-    # 6. 루프 진입
-    print("--- [DEBUG] 6. 에이전트 대기 루프 시작 (정상 작동 중) ---", flush=True)
+    async def transcribe_track(track, participant, stt):
+        audio_stream = rtc.AudioStream(track)
+        stt_stream = stt.stream()
 
+        async def push_audio():
+            async for frame in audio_stream:
+                stt_stream.push_frame(frame)
+            stt_stream.end_input()
+
+        async def receive_text():
+            async for event in stt_stream:
+                if event.type == "transcript" and event.transcript.text.strip():
+                    # [최종 포맷] 나중에 Java에서 파싱하기 좋게 정갈하게 찍습니다.
+                    # 예: [12.45] user_id: 안녕하세요 상담 신청합니다.
+                    timestamp = f"{event.transcript.start_time:.2f}"
+                    speaker = participant.identity
+                    content = event.transcript.text.strip()
+
+                    print(f"[{timestamp}] {speaker}: {content}", flush=True)
+
+        await asyncio.gather(push_audio(), receive_text())
+
+    # 종료 시 로그
     while ctx.room.connection_state == rtc.ConnectionState.CONN_CONNECTED:
         await asyncio.sleep(1)
-
-    print("--- [DEBUG] 7. 연결이 종료되어 에이전트가 나갑니다. ---", flush=True)
+    print(f"--- [Room: {ctx.room.name}] 상담 종료 및 에이전트 퇴장 ---", flush=True)
 
 if __name__ == "__main__":
     # 실행 시 필요한 환경 변수:
