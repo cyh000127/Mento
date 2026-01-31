@@ -1,6 +1,7 @@
 package com.mento.domain.item.converter;
 
 import com.mento.domain.item.dto.common.ItemInfoResDto;
+import com.mento.domain.item.dto.response.ItemPageResDto;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.product.converter.ProductConverter;
 
@@ -8,7 +9,8 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class ItemConverter {
-	public static ItemInfoResDto toItemInfoResDto(final Item item) {
+
+	public ItemInfoResDto toItemInfoResDto(final Item item) {
 		return ItemInfoResDto.builder()
 			.id(item.getId())
 			.productInfo(ProductConverter.toProductInfoDto(item.getProduct()))
@@ -17,6 +19,17 @@ public class ItemConverter {
 			.purchaseCount(item.getPurchaseCount())
 			.purchaseDate(item.getPurchaseDate())
 			.expectedExpiryDate(item.getExpectedExpiryDate())
+			.build();
+	}
+
+	public ItemPageResDto toItemPageResDto(final Item item) {
+		return ItemPageResDto.builder()
+			.id(item.getId())
+			.productName(item.getProduct().getName())
+			.productImageUrl(item.getProduct().getImageUrl())
+			.brandName(item.getProduct().getBrand().getBrandName())
+			.status(item.getStatus())
+			.isFavorite(item.getIsFavorite())
 			.build();
 	}
 }
