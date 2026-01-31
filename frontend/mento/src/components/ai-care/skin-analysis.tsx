@@ -359,7 +359,7 @@ export function SkinAnalysis() {
           <div className="mx-auto max-w-6xl">
             {/* Header */}
             <div className="mb-8 text-center">
-              <h2 className="mb-2 text-3xl font-bold text-text-primary md:text-4xl">피부 분석 결과</h2>
+              <h2 className="mb-2 text-4xl font-bold text-text-primary md:text-4xl">피부 분석 결과</h2>
               <p className="text-text-secondary">AI가 분석한 당신의 피부 상태를 확인해보세요</p>
             </div>
 
@@ -367,7 +367,7 @@ export function SkinAnalysis() {
             <div className="mb-8 grid gap-6 md:grid-cols-2">
               {/* Total Score Card */}
               <div className="rounded-3xl bg-gradient-to-br from-primary-400 to-primary-500 p-8 text-center shadow-xl">
-                <p className="mb-3 text-sm font-medium text-white/90">피부 종합 점수</p>
+                <p className="mb-3 text-md font-medium text-white/90">피부 종합 점수</p>
                 <div className="mb-4 flex items-center justify-center gap-3">
                   <p className="text-7xl font-bold text-white">87</p>
                   <div className="flex flex-col items-start">
@@ -380,21 +380,21 @@ export function SkinAnalysis() {
                     </div>
                   </div>
                 </div>
-                <p className="text-sm text-white/90">5단계 중 4단계 - 양호</p>
+                <p className="text-md text-white/90">5단계 중 4단계 - 양호</p>
               </div>
 
               {/* Skin Type Summary Card */}
               <div className="rounded-3xl border-2 border-primary-300 bg-gradient-to-br from-primary-50 to-white p-8 shadow-lg">
-                <p className="mb-3 text-sm font-medium text-text-secondary">피부 타입</p>
+                <p className="mb-3 text-md font-medium text-text-secondary">피부 타입</p>
                 <p className="mb-4 text-4xl font-bold text-primary-600">복합성 피부</p>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
-                    <span className="text-sm font-medium text-text-primary">수분</span>
-                    <span className="text-sm font-semibold text-primary-600">양호</span>
+                    <span className="text-md font-medium text-text-primary">수분</span>
+                    <span className="text-md font-semibold text-primary-600">양호</span>
                   </div>
                   <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
-                    <span className="text-sm font-medium text-text-primary">민감도</span>
-                    <span className="text-sm font-semibold text-orange-600">집중관리</span>
+                    <span className="text-md font-medium text-text-primary">민감도</span>
+                    <span className="text-md font-semibold text-orange-600">집중관리</span>
                   </div>
                 </div>
               </div>
@@ -402,7 +402,7 @@ export function SkinAnalysis() {
 
             {/* Central Visualization Section */}
             <div className="mb-8 rounded-3xl border border-border bg-gradient-to-br from-primary-50/50 to-white p-8 shadow-lg">
-              <h3 className="mb-6 text-center text-xl font-bold text-text-primary">피부 상태 상세 분석</h3>
+              <h3 className="mb-6 text-center text-2xl font-bold text-text-primary">피부 상태 상세 분석</h3>
               
               <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 lg:flex-row lg:items-center">
                 {/* Radar Chart */}
@@ -481,7 +481,7 @@ export function SkinAnalysis() {
                             y={labelY}
                             textAnchor="middle"
                             dominantBaseline="middle"
-                            className="text-base font-bold"
+                            className="text-xl font-bold"
                             fill="#111827"
                           >
                             {label}
@@ -549,7 +549,7 @@ export function SkinAnalysis() {
                           <span className="font-medium text-text-primary">{item.label}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-sm font-semibold text-text-secondary">{item.value}점</span>
+                          <span className="text-md font-semibold text-text-secondary">{item.value}점</span>
                           <span
                             className={`rounded-full px-3 py-1 text-xs font-medium ${
                               item.status === "우수"
@@ -642,7 +642,7 @@ export function SkinAnalysis() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Icon className={`h-6 w-6 ${item.iconColor}`} />
-                          <h4 className="text-lg font-bold">{item.category}</h4>
+                          <h4 className="text-xl font-bold">{item.category}</h4>
                         </div>
                         <div className="text-right">
                           <p className="text-3xl font-bold">{item.score}</p>
@@ -660,7 +660,7 @@ export function SkinAnalysis() {
                             }`}
                           />
                         ))}
-                        <span className="ml-2 text-xs text-text-secondary">
+                        <span className="ml-2 text-sm text-text-secondary">
                           {item.grade}/5 단계
                         </span>
                       </div>
