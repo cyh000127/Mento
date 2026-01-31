@@ -19,6 +19,9 @@ import com.mento.common.file.service.FileService;
 import com.mento.common.livekit.LiveKitManager;
 import com.mento.common.livekit.dto.LiveKitSessionResponse;
 import com.mento.common.util.PageUtils;
+import com.mento.domain.notification.dto.request.NotificationSendReqDto;
+import com.mento.domain.notification.entity.NotificationType;
+import com.mento.domain.notification.service.NotificationFacadeService;
 import com.mento.domain.reservation.constants.LiveKitConstants;
 import com.mento.domain.reservation.converter.ReservationConverter;
 import com.mento.domain.reservation.dto.response.MediaUploadResDto;
@@ -56,6 +59,8 @@ public class ReservationFacadeService {
 	private final LiveKitManager liveKitManager;
 	private final ReservationValidator reservationValidator;
 	private final ReservationFactory reservationFactory;
+
+	private final NotificationFacadeService notificationFacadeService;
 
 	@Transactional
 	public MediaUploadResDto uploadFiles(final List<MultipartFile> files, final Long reservationId) {
@@ -165,6 +170,18 @@ public class ReservationFacadeService {
 
 		Reservation reservation = reservationFactory.createReservation(user, timetableSlot);
 		Reservation savedReservation = reservationCommandService.save(reservation);
+
+		try {
+			notificationFacadeService.sendNotification(NotificationSendReqDto.builder()
+				.targetMemberId(user.getId())
+				.type(NotificationType.RESERVATION_CONFIRMED)
+				.value(timetableSlot.getMentorType().getTypeName())
+				.expiredAt(LocalDateTime.now().plusDays(1))
+				.build()
+			);
+		} catch (Exception e) {
+			log.error("[Reservation] 예약 확정 알림 전송 실패 {userId: {}, error: {}}", userId, e.getMessage());
+		}
 
 		return ReservationConverter.toReservationDraftResDto(savedReservation);
 	}

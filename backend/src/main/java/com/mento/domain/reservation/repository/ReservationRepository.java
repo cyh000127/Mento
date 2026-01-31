@@ -39,7 +39,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
 	boolean existsByUserIdAndSlotIdAndStatusIn(Long userId, Long slotId, Collection<ReservationStatus> statuses);
 
-	Optional<Reservation> findByTimetableId(Long timetableId);
+	Optional<Reservation> findBySlotTimetableId(Long timetableId);
 
-	List<Reservation> findAllByTimetableIdIn(List<Long> timetableIds);
+	List<Reservation> findAllBySlotTimetableIdIn(List<Long> timetableIds);
 }

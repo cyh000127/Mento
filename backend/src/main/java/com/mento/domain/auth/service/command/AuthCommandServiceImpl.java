@@ -51,15 +51,12 @@ public class AuthCommandServiceImpl implements AuthCommandService {
 		String refreshToken = CookieUtil.getCookie(request, AuthConstant.REFRESH_TOKEN)
 			.orElseThrow(() -> new AuthException(ErrorCode.TOKEN_NOT_FOUND));
 
-		// 토큰 유효성 검증 (서명 + 만료 + 타입)
 		jwtTokenProvider.validateRefreshToken(refreshToken);
 
-		// 블랙리스트 확인
 		if (blackListRepository.existsById(refreshToken)) {
 			throw new AuthException(ErrorCode.TOKEN_BLACKLISTED_EXCEPTION);
 		}
 
-		// User 조회
 		User user = jwtTokenProvider.getUser(refreshToken)
 			.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
@@ -67,12 +64,12 @@ public class AuthCommandServiceImpl implements AuthCommandService {
 			throw new AuthException(ErrorCode.ALREADY_WITHDRAWN);
 		}
 
-		// 새 토큰 발급
 		Token newToken = jwtTokenProvider.createToken(user);
 
-		// 응답 설정
 		response.setHeader(AUTHORIZATION, BEARER + newToken.accessToken());
 		CookieUtil.addCookie(response, AuthConstant.REFRESH_TOKEN, newToken.refreshToken(),
 			(int)(jwtProperties.refreshTokenExpiration() / 1000));
+
+		jwtTokenProvider.setBlackList(refreshToken);
 	}
 }

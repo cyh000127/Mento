@@ -104,7 +104,7 @@ class NotificationScheduleServiceTest {
 		given(timetableRepository.findByScheduledDateAndScheduledTime(today, scheduledTime))
 			.willReturn(List.of(timetable));
 
-		given(reservationRepository.findAllByTimetableIdIn(List.of(1L)))
+		given(reservationRepository.findAllBySlotTimetableIdIn(List.of(1L)))
 			.willReturn(List.of(reservation));
 
 		// when
@@ -164,7 +164,7 @@ class NotificationScheduleServiceTest {
 
 		given(timetableRepository.findByScheduledDateAndScheduledTime(today, scheduledTime))
 			.willReturn(List.of(timetable));
-		given(reservationRepository.findAllByTimetableIdIn(List.of(1L)))
+		given(reservationRepository.findAllBySlotTimetableIdIn(List.of(1L)))
 			.willReturn(List.of(reservation));
 
 		// when
@@ -175,7 +175,7 @@ class NotificationScheduleServiceTest {
 
 		List<NotificationSendReqDto> reqDtos = captor.getValue();
 		assertThat(reqDtos).hasSize(1);
-		NotificationSendReqDto reqDto = reqDtos.get(0); // Note: Assuming get(0) as per view_file.
+		NotificationSendReqDto reqDto = reqDtos.getFirst(); // Note: Assuming get(0) as per view_file.
 
 		assertThat(reqDto.type()).isEqualTo(NotificationType.RESERVATION_REMINDER);
 		assertThat(reqDto.value()).isEqualTo("30");
@@ -224,7 +224,7 @@ class NotificationScheduleServiceTest {
 
 		given(timetableRepository.findByScheduledDateAndScheduledTime(today, scheduledTime))
 			.willReturn(List.of(timetable));
-		given(reservationRepository.findAllByTimetableIdIn(List.of(1L)))
+		given(reservationRepository.findAllBySlotTimetableIdIn(List.of(1L)))
 			.willReturn(List.of(reservation));
 
 		// when
@@ -235,7 +235,7 @@ class NotificationScheduleServiceTest {
 
 		List<NotificationSendReqDto> reqDtos = captor.getValue();
 		assertThat(reqDtos).hasSize(1);
-		NotificationSendReqDto reqDto = reqDtos.get(0);
+		NotificationSendReqDto reqDto = reqDtos.getFirst();
 
 		assertThat(reqDto.type()).isEqualTo(NotificationType.CONSULTING_STARTED);
 		assertThat(reqDto.value()).isEqualTo("0");

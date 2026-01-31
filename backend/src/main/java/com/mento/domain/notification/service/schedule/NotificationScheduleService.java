@@ -81,7 +81,7 @@ public class NotificationScheduleService {
 			.map(Timetable::getId)
 			.toList();
 
-		List<Reservation> reservations = reservationRepository.findAllByTimetableIdIn(timetableIds);
+		List<Reservation> reservations = reservationRepository.findAllBySlotTimetableIdIn(timetableIds);
 
 		Map<Long, Timetable> timetableMap = timetables.stream()
 			.collect(Collectors.toMap(Timetable::getId, Function.identity()));
