@@ -28,6 +28,7 @@ services:
       - LIVEKIT_API_KEY=${LIVEKIT_API_KEY}
       - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET}
       - LIVEKIT_REDIS_URL=redis://redis_livekit:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     command: ["dev"]
     depends_on:
       - livekit
