@@ -9,7 +9,7 @@ interface DateTimeSelectionProps {
   selectedTime: string | null
   selectedCategory: ConsultationCategory | null
   onDateSelect: (date: Date | null) => void
-  onTimeSelect: (time: string) => void
+  onTimeSelect: (time: string, slotId: number | null) => void
   onNext: () => void
   onPrev: () => void
   canProceed: boolean
@@ -116,7 +116,7 @@ export function DateTimeSelection({
   }, [selectedCategory])
 
   const resetSelectedTime = () => {
-    onTimeSelect("")
+    onTimeSelect("", null)
   }
 
   const resetSelectedDate = () => {
@@ -211,11 +211,18 @@ export function DateTimeSelection({
   const selectedDateSlots = selectedDate ? getSlotsByDate(selectedDate) : null
   const normalizeScheduledTime = (time: string) => time.slice(0, 5)
 
+  const getSlotForTime = (time: string) => {
+    if (!selectedDateSlots) return null
+    return (
+      selectedDateSlots.find(
+        (candidate) => normalizeScheduledTime(candidate.scheduledTime) === time
+      ) ?? null
+    )
+  }
+
   const isTimeUnavailable = (time: string) => {
     if (!selectedDateSlots) return true
-    const slot = selectedDateSlots.find(
-      (candidate) => normalizeScheduledTime(candidate.scheduledTime) === time
-    )
+    const slot = getSlotForTime(time)
     return !slot || slot.status !== "AVAILABLE" || slot.availableCapacity <= 0
   }
 
@@ -344,7 +351,11 @@ export function DateTimeSelection({
                   <button
                     key={time}
                     type="button"
-                    onClick={() => !isUnavailable && onTimeSelect(time)}
+                    onClick={() => {
+                      if (isUnavailable) return
+                      const slot = getSlotForTime(time)
+                      onTimeSelect(time, slot?.slotId ?? null)
+                    }}
                     disabled={isUnavailable}
                     className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-all ${
                       isSelected
@@ -373,7 +384,11 @@ export function DateTimeSelection({
                   <button
                     key={time}
                     type="button"
-                    onClick={() => !isUnavailable && onTimeSelect(time)}
+                    onClick={() => {
+                      if (isUnavailable) return
+                      const slot = getSlotForTime(time)
+                      onTimeSelect(time, slot?.slotId ?? null)
+                    }}
                     disabled={isUnavailable}
                     className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-all ${
                       isSelected
