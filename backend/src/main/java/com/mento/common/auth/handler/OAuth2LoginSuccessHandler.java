@@ -53,9 +53,12 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
 		response.setHeader(AuthConstant.AUTHORIZATION, AuthConstant.BEARER + token.accessToken());
 
-		String targetUrl = UriComponentsBuilder.fromUriString(FrontDomain.LOCAL.getUrl() + "/login/oauth2/callback")
+		String targetUrl = UriComponentsBuilder
+			.fromUriString(FrontDomain.current().getUrl())
+			.path("/login/oauth2/callback")
 			.queryParam("accessToken", token.accessToken())
-			.build().toUriString();
+			.build()
+			.toUriString();
 
 		getRedirectStrategy().sendRedirect(request, response, targetUrl);
 	}
