@@ -1,6 +1,8 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { ChevronLeft, ChevronRight, ArrowLeft, ArrowRight, Droplets, Sparkles, Scissors } from "lucide-react"
 import type { ConsultationCategory } from "@/types/consultation"
+import { getMonthlyTimetablesByMentorType } from "@/api/timetableApi"
+import type { MonthlyTimetablesData, TimetableSlot } from "@/types/timetable"
 
 interface DateTimeSelectionProps {
   selectedDate: Date | null
@@ -19,16 +21,16 @@ const categoryLabels: Record<NonNullable<ConsultationCategory>, { label: string;
   hair: { label: "헤어", icon: Scissors },
 }
 
+const categoryTypeIds: Record<NonNullable<ConsultationCategory>, number> = {
+  skincare: 1,
+  beauty: 2,
+  hair: 3,
+}
+
 const DAYS_KO = ["일", "월", "화", "수", "목", "금", "토"]
 
 const morningTimes = ["09:00", "10:00", "11:00", "12:00"]
 const afternoonTimes = ["13:00", "14:00", "15:00", "16:00", "17:00"]
-
-// Simulate some unavailable times
-const unavailableTimes = ["13:00", "16:00"]
-
-// Simulate some fully booked dates (day of month)
-const bookedDates = [23, 28]
 
 export function DateTimeSelection({
   selectedDate,
@@ -43,6 +45,9 @@ export function DateTimeSelection({
   const today = new Date()
   const [currentMonth, setCurrentMonth] = useState(today.getMonth())
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
+  const [timetable, setTimetable] = useState<MonthlyTimetablesData | null>(null)
+  const inFlightTypeId = useRef<number | null>(null)
+  const inFlightPromise = useRef<Promise<MonthlyTimetablesData> | null>(null)
 
   const categoryInfo = selectedCategory ? categoryLabels[selectedCategory] : null
   const CategoryIcon = categoryInfo?.icon
@@ -69,6 +74,47 @@ export function DateTimeSelection({
     return days
   }, [currentMonth, currentYear])
 
+  useEffect(() => {
+    let isActive = true
+    const typeId = selectedCategory ? categoryTypeIds[selectedCategory] : null
+
+    if (!typeId) {
+      setTimetable(null)
+      inFlightTypeId.current = null
+      inFlightPromise.current = null
+      return () => {
+        isActive = false
+      }
+    }
+
+    if (inFlightTypeId.current !== typeId || !inFlightPromise.current) {
+      inFlightTypeId.current = typeId
+      inFlightPromise.current = getMonthlyTimetablesByMentorType(typeId)
+    }
+
+    inFlightPromise.current
+      .then((data) => {
+        if (isActive) {
+          setTimetable(data)
+        }
+      })
+      .catch((error) => {
+        console.error("월간 타임테이블 조회 실패:", error)
+        if (isActive) {
+          setTimetable(null)
+        }
+      })
+      .finally(() => {
+        if (inFlightTypeId.current === typeId) {
+          inFlightPromise.current = null
+        }
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [selectedCategory])
+
   const prevMonth = () => {
     if (currentMonth === 0) {
       setCurrentMonth(11)
@@ -90,16 +136,39 @@ export function DateTimeSelection({
   const toDateOnly = (date: Date) =>
     new Date(date.getFullYear(), date.getMonth(), date.getDate())
 
+  const toDateKey = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const day = String(date.getDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
+  }
+
+  const getSlotsByDate = (date: Date): TimetableSlot[] | null => {
+    if (!timetable) return null
+    const dateKey = toDateKey(date)
+    return timetable.dailyTimetables.find((daily) => daily.date === dateKey)?.slots ?? null
+  }
+
+  const hasAvailableSlot = (slots: TimetableSlot[] | null) => {
+    if (!slots) return false
+    return slots.some((slot) => slot.status === "AVAILABLE" && slot.availableCapacity > 0)
+  }
+
+  const isWithinTimetableRange = (date: Date) => {
+    if (!timetable) return false
+    const dateKey = toDateKey(date)
+    return dateKey >= timetable.startDate && dateKey <= timetable.endDate
+  }
+
   const isDateDisabled = (date: Date) => {
     const todayDate = toDateOnly(new Date())
     const targetDate = toDateOnly(date)
-  
     const isPast = targetDate < todayDate
-    const isBooked =
-      bookedDates.includes(date.getDate()) &&
-      date.getMonth() === currentMonth
-  
-    return isPast || isBooked
+    const slots = getSlotsByDate(date)
+    const isOutsideRange = !isWithinTimetableRange(date)
+    const isBooked = isWithinTimetableRange(date) && !hasAvailableSlot(slots)
+
+    return isPast || isOutsideRange || isBooked
   }
 
   const isToday = (date: Date) => {
@@ -124,7 +193,14 @@ export function DateTimeSelection({
   }
 
   if (!selectedCategory) {
-    return null; // 또는 placeholder UI
+    return null
+  }
+
+  const selectedDateSlots = selectedDate ? getSlotsByDate(selectedDate) : null
+  const isTimeUnavailable = (time: string) => {
+    if (!selectedDateSlots) return true
+    const slot = selectedDateSlots.find((candidate) => candidate.scheduledTime === time)
+    return !slot || slot.status !== "AVAILABLE" || slot.availableCapacity <= 0
   }
 
   return (
@@ -190,7 +266,9 @@ export function DateTimeSelection({
               const selected = isSameDay(date, selectedDate)
               const todayDate = isToday(date)
               const inCurrentMonth = isCurrentMonth(date)
-              const isBooked = bookedDates.includes(date.getDate()) && date.getMonth() === currentMonth
+              const slots = getSlotsByDate(date)
+              const isBooked =
+                isWithinTimetableRange(date) && !hasAvailableSlot(slots)
               const dayOfWeek = date.getDay()
 
               return (
@@ -239,7 +317,7 @@ export function DateTimeSelection({
             <h4 className="mb-3 text-sm font-medium text-text-secondary">오전</h4>
             <div className="grid grid-cols-4 gap-2">
               {morningTimes.map((time) => {
-                const isUnavailable = unavailableTimes.includes(time)
+                const isUnavailable = isTimeUnavailable(time)
                 const isSelected = selectedTime === time
 
                 return (
@@ -268,7 +346,7 @@ export function DateTimeSelection({
             <h4 className="mb-3 text-sm font-medium text-text-secondary">오후</h4>
             <div className="grid grid-cols-4 gap-2">
               {afternoonTimes.map((time) => {
-                const isUnavailable = unavailableTimes.includes(time)
+                const isUnavailable = isTimeUnavailable(time)
                 const isSelected = selectedTime === time
 
                 return (
