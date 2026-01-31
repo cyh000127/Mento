@@ -115,8 +115,11 @@ CREATE TABLE `reservations`
     `user_id`        BIGINT      NOT NULL COMMENT '사용자 ID',
     `mentor_id`      BIGINT               DEFAULT NULL COMMENT '멘토 ID (배정 전 NULL 가능)',
     `slot_id`        BIGINT      NOT NULL COMMENT '슬롯 ID',
+    `payment_id`     BIGINT               DEFAULT NULL COMMENT '결제 ID',
     `status`         VARCHAR(20) NOT NULL COMMENT '상태: DRAFT, PENDING_PAYMENT, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW, EXPIRED, PENDING',
     `survey_data`    TEXT                 DEFAULT NULL COMMENT '설문 데이터',
+    `expires_at`     DATETIME(6)          DEFAULT NULL COMMENT '예약 만료일시',
+    `confirmed_at`   DATETIME(6)          DEFAULT NULL COMMENT '예약 확정일시',
     `created_at`     DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '생성일시',
     `updated_at`     DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6) COMMENT '수정일시',
     CONSTRAINT `fk_reservations_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -129,7 +132,6 @@ CREATE TABLE `reservations`
 CREATE TABLE `payments`
 (
     `payment_id`     BIGINT PRIMARY KEY COMMENT '결제 ID (TSID)',
-    `reservation_id` BIGINT      NOT NULL COMMENT '예약 ID',
     `amount`         BIGINT      NOT NULL COMMENT '결제 금액',
     `payment_method` VARCHAR(20) NOT NULL COMMENT '결제 수단: KAKAO_PAY',
     `status`         VARCHAR(20) NOT NULL DEFAULT 'INIT' COMMENT '상태: INIT, READY, PAID, FAILED, REFUNDED',
@@ -137,11 +139,14 @@ CREATE TABLE `payments`
     `paid_at`        DATETIME(6)          DEFAULT NULL COMMENT '결제 완료일시',
     `refunded_at`    DATETIME(6)          DEFAULT NULL COMMENT '환불일시',
     `created_at`     DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '생성일시',
-    `updated_at`     DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6) COMMENT '수정일시',
-    CONSTRAINT `fk_payments_reservation` FOREIGN KEY (`reservation_id`) REFERENCES `reservations` (`reservation_id`) ON DELETE CASCADE ON UPDATE CASCADE
+    `updated_at`     DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6) COMMENT '수정일시'
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
+
+-- Reservations와 Payments 간의 FK 추가 (payments 테이블 생성 후)
+ALTER TABLE `reservations`
+    ADD CONSTRAINT `fk_reservations_payment` FOREIGN KEY (`payment_id`) REFERENCES `payments` (`payment_id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- Mentor Types 초기 데이터
 INSERT INTO `mentor_types` (`type_id`, `type_name`, `price`, `description`, `created_at`, `updated_at`)
@@ -151,4 +156,14 @@ VALUES (1, '스킨케어', 35000, '피부 타입 분석 및 맞춤 스킨케어 
 ON DUPLICATE KEY UPDATE `type_name`   = VALUES(`type_name`),
                         `price`       = VALUES(`price`),
                         `description` = VALUES(`description`),
+                        `updated_at`  = NOW(6);
+
+INSERT INTO mentors (login_id, password, name, type_id, created_at, updated_at)
+VALUES
+    ('skincare01', 'test1234', '김스킨', 1, NOW(), NOW()),
+    ('beauty01', 'test1234', '강뷰티', 2, NOW(), NOW()),
+    ('hair01', 'test1234', '서헤어', 3, NOW(), NOW())
+ON DUPLICATE KEY UPDATE `login_id` = VALUES(`login_id`),
+                        `password` = VALUES(`password`),
+                        `name` = VALUES(`name`),
                         `updated_at`  = NOW(6);
