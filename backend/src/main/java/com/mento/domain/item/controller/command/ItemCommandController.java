@@ -58,4 +58,13 @@ public class ItemCommandController {
 		ItemInfoResDto response = itemFacadeService.toggleFavorite(authUser.getId(), id);
 		return ResponseUtils.ok(response);
 	}
+
+	@PostMapping("/{id}")
+	public ResponseEntity<BaseResponse<Void>> softDeleteItem(
+		@AuthenticationPrincipal final AuthenticatedUser authUser,
+		@PathVariable final Long id
+	) {
+		itemFacadeService.deleteItem(authUser.getId(), id);
+		return ResponseUtils.noContent();
+	}
 }

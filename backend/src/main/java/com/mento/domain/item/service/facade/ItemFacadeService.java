@@ -47,8 +47,7 @@ public class ItemFacadeService {
 
 	@Transactional
 	public ItemInfoResDto updateStatus(final Long userId, final Long itemId, final ItemStatus status) {
-		Item item = itemQueryService.findById(itemId);
-		itemValidator.validate(userId, item);
+		Item item = findAndValidateUserItem(userId, itemId);
 
 		item.updateStatus(status);
 
@@ -57,11 +56,21 @@ public class ItemFacadeService {
 
 	@Transactional
 	public ItemInfoResDto toggleFavorite(final Long userId, final Long itemId) {
-		Item item = itemQueryService.findById(itemId);
-		itemValidator.validate(userId, item);
+		Item item = findAndValidateUserItem(userId, itemId);
 
 		item.toggleFavorite();
 
 		return ItemConverter.toItemInfoResDto(item);
+	}
+
+	public void deleteItem(final Long userId, final Long itemId) {
+		Item item = findAndValidateUserItem(userId, itemId);
+		item.withDraw();
+	}
+
+	private Item findAndValidateUserItem(final Long userId, final Long itemId) {
+		Item item = itemQueryService.findById(itemId);
+		itemValidator.validate(userId, item);
+		return item;
 	}
 }

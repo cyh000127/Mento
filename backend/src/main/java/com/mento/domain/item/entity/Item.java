@@ -88,6 +88,10 @@ public class Item extends BaseEntity {
 		this.expectedExpiryDate = LocalDate.now().plusDays(this.getProduct().getDefaultUsageDays());
 	}
 
+	public void withDraw() {
+		this.deletedAt = LocalDateTime.now();
+	}
+
 	public void assignUser(final User user) {
 		if (user == null) {
 			throw new ItemException(ErrorCode.MISSING_USER);
