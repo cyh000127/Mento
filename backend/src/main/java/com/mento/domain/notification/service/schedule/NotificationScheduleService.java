@@ -86,7 +86,7 @@ public class NotificationScheduleService {
 			.collect(Collectors.toMap(Timetable::getId, Function.identity()));
 
 		for (Reservation reservation : reservations) {
-			Timetable timetable = timetableMap.get(reservation.getTimetableId());
+			Timetable timetable = timetableMap.get(reservation.getSlot().getTimetable().getId());
 			if (timetable == null) {
 				continue;
 			}
@@ -107,7 +107,7 @@ public class NotificationScheduleService {
 		try {
 
 			NotificationSendReqDto reqDto = NotificationSendReqDto.builder()
-				.targetMemberId(reservation.getUserId())
+				.targetMemberId(reservation.getUser().getId())
 				.type(type)
 				.value(value)
 				.expiredAt(expiredAt)
@@ -116,11 +116,11 @@ public class NotificationScheduleService {
 			notificationFacadeService.sendNotification(reqDto);
 
 			log.info("[Notification] 알림 전송 성공 {userId: {}, reservationId: {}, type: {}, expiredAt: {}}",
-				reservation.getUserId(), reservation.getId(), type, expiredAt);
+				reservation.getUser().getId(), reservation.getId(), type, expiredAt);
 
 		} catch (Exception e) {
 			log.error("[Notification] 알림 전송 실패 {userId: {}, reservationId: {}}",
-				reservation.getUserId(),
+				reservation.getUser().getId(),
 				reservation.getId(), e);
 		}
 	}

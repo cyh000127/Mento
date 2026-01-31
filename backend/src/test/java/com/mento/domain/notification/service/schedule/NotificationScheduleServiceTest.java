@@ -20,13 +20,16 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.service.NotificationFacadeService;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.repository.ReservationRepository;
 import com.mento.domain.timetable.entity.Timetable;
+import com.mento.domain.timetable.entity.TimetableSlot;
 import com.mento.domain.timetable.repository.TimetableRepository;
+import com.mento.domain.user.entity.User;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationScheduleServiceTest {
@@ -72,10 +75,26 @@ class NotificationScheduleServiceTest {
 			.scheduledTime(scheduledTime)
 			.build();
 
+		MentorType mentorType = MentorType.builder()
+			.id(1L)
+			.typeName("스킨케어")
+			.price(35000)
+			.build();
+
+		TimetableSlot slot = TimetableSlot.builder()
+			.id(1L)
+			.timetable(timetable)
+			.mentorType(mentorType)
+			.build();
+
+		User user = User.builder()
+			.id(1L)
+			.build();
+
 		Reservation reservation = Reservation.builder()
 			.id(100L)
-			.timetableId(1L)
-			.userId(1L)
+			.user(user)
+			.slot(slot)
 			.build();
 
 		given(timetableRepository.findByScheduledDateAndScheduledTime(today, scheduledTime))
@@ -116,10 +135,26 @@ class NotificationScheduleServiceTest {
 			.scheduledTime(scheduledTime)
 			.build();
 
+		MentorType mentorType = MentorType.builder()
+			.id(1L)
+			.typeName("스킨케어")
+			.price(35000)
+			.build();
+
+		TimetableSlot slot = TimetableSlot.builder()
+			.id(1L)
+			.timetable(timetable)
+			.mentorType(mentorType)
+			.build();
+
+		User user = User.builder()
+			.id(1L)
+			.build();
+
 		Reservation reservation = Reservation.builder()
 			.id(100L)
-			.timetableId(1L)
-			.userId(1L)
+			.user(user)
+			.slot(slot)
 			.build();
 
 		given(timetableRepository.findByScheduledDateAndScheduledTime(today, scheduledTime))
@@ -158,10 +193,26 @@ class NotificationScheduleServiceTest {
 			.scheduledTime(scheduledTime)
 			.build();
 
+		MentorType mentorType = MentorType.builder()
+			.id(1L)
+			.typeName("스킨케어")
+			.price(35000)
+			.build();
+
+		TimetableSlot slot = TimetableSlot.builder()
+			.id(1L)
+			.timetable(timetable)
+			.mentorType(mentorType)
+			.build();
+
+		User user = User.builder()
+			.id(1L)
+			.build();
+
 		Reservation reservation = Reservation.builder()
 			.id(100L)
-			.timetableId(1L)
-			.userId(1L)
+			.user(user)
+			.slot(slot)
 			.build();
 
 		given(timetableRepository.findByScheduledDateAndScheduledTime(today, scheduledTime))
