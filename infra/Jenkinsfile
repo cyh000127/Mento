@@ -159,7 +159,7 @@ pipeline {
                     env.COMPOSE_CHANGED = 'false'
                     def targets = []
                     // 배포 허용 리스트
-                    def appAllowed = ['ai', 'certbot', 'livekit', 'nginx', 'backend']
+                    def appAllowed = ['ai', 'certbot', 'livekit', 'nginx', 'backend', 'livekit-agent']
 
                  // 1) 수동 모드 처리
                     if (params.MANUAL_MODE) {
@@ -216,7 +216,7 @@ pipeline {
                      // E.Agent 관련 변경 감지 (추가)
                         if (line.startsWith("infra/livekit/agent/")) {
                             echo "🔍 Agent code/Dockerfile change detected: ${line}"
-                        targets << 'agent'
+                        targets << 'livekit-agent'
                         }
                     }
 
