@@ -50,4 +50,12 @@ public class ItemCommandController {
 		return ResponseUtils.ok(response);
 	}
 
+	@PostMapping("/{id}/favorite")
+	public ResponseEntity<BaseResponse<ItemInfoResDto>> toggleFavorite(
+		@AuthenticationPrincipal final AuthenticatedUser authUser,
+		@PathVariable final Long id
+	) {
+		ItemInfoResDto response = itemFacadeService.toggleFavorite(authUser.getId(), id);
+		return ResponseUtils.ok(response);
+	}
 }

@@ -54,4 +54,14 @@ public class ItemFacadeService {
 
 		return ItemConverter.toItemInfoResDto(item);
 	}
+
+	@Transactional
+	public ItemInfoResDto toggleFavorite(final Long userId, final Long itemId) {
+		Item item = itemQueryService.findById(itemId);
+		itemValidator.validate(userId, item);
+
+		item.toggleFavorite();
+
+		return ItemConverter.toItemInfoResDto(item);
+	}
 }
