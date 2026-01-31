@@ -1,12 +1,12 @@
-package com.mento.domain.inventory.entity;
+package com.mento.domain.item.entity;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
-import com.mento.domain.inventory.enums.ItemStatus;
-import com.mento.domain.inventory.exception.UserItemException;
+import com.mento.domain.item.enums.ItemStatus;
+import com.mento.domain.item.exception.ItemException;
 import com.mento.domain.product.entity.Product;
 import com.mento.domain.user.entity.User;
 
@@ -32,8 +32,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "user_items")
-public class UserItem extends BaseEntity {
+@Table(name = "items")
+public class Item extends BaseEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -70,14 +70,14 @@ public class UserItem extends BaseEntity {
 
 	public void assignUser(final User user) {
 		if (user == null) {
-			throw new UserItemException(ErrorCode.MISSING_USER);
+			throw new ItemException(ErrorCode.MISSING_USER);
 		}
 		this.user = user;
 	}
 
 	public void assignProduct(final Product product) {
 		if (product == null) {
-			throw new UserItemException(ErrorCode.MISSING_PRODUCT);
+			throw new ItemException(ErrorCode.MISSING_PRODUCT);
 		}
 		this.product = product;
 	}

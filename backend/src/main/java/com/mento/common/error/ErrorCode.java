@@ -114,7 +114,7 @@ public enum ErrorCode {
 	/**
 	 * USER Item Error(UI-xxx)
 	 */
-	MISSING_USER_ITEM(HttpStatus.BAD_REQUEST, "UI-001", "유저 아이템 정보가 누락되었습니다.");
+	MISSING_ITEM(HttpStatus.BAD_REQUEST, "UI-001", "유저 아이템 정보가 누락되었습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;

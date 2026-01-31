@@ -10,7 +10,7 @@ import org.hibernate.type.SqlTypes;
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.brand.entity.Brand;
-import com.mento.domain.item.entity.UserItem;
+import com.mento.domain.item.entity.Item;
 import com.mento.domain.product.exception.ProductException;
 
 import jakarta.persistence.CascadeType;
@@ -49,7 +49,7 @@ public class Product extends BaseEntity {
 
 	@Builder.Default
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<UserItem> userItems = new ArrayList<>();
+	private List<Item> items = new ArrayList<>();
 
 	@Column(name = "oliveyoung_goods_no", nullable = false, length = 50)
 	private String oliveyoungGoodsNo;
@@ -101,13 +101,13 @@ public class Product extends BaseEntity {
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
 
-	public void assignUserItem(final UserItem userItem) {
-		if (userItem == null) {
-			throw new ProductException(ErrorCode.MISSING_USER_ITEM);
+	public void assignUserItem(final Item item) {
+		if (item == null) {
+			throw new ProductException(ErrorCode.MISSING_ITEM);
 		}
-		userItems.add(userItem);
-		if (userItem.getProduct() != this) {
-			userItem.assignProduct(this);
+		items.add(item);
+		if (item.getProduct() != this) {
+			item.assignProduct(this);
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package com.mento.domain.inventory.enums;
+package com.mento.domain.item.enums;
 
 import lombok.AccessLevel;
 import lombok.Getter;
