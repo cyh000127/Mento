@@ -1,3 +1,4 @@
 livekit-agents
 livekit-api
 python-dotenv
+livekit-plugins-openai
