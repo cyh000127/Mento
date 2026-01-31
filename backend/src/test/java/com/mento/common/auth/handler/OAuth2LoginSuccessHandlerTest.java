@@ -86,6 +86,6 @@ class OAuth2LoginSuccessHandlerTest {
 
 		URI uri = URI.create(redirectedUrl);
 		assertThat(uri.getQuery()).contains("accessToken=access-token");
-		assertThat(redirectedUrl).contains(FrontDomain.LOCAL.getUrl() + "/login/oauth2/callback");
+		assertThat(redirectedUrl).contains(FrontDomain.current().getUrl() + "/login/oauth2/callback");
 	}
 }
