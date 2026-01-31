@@ -39,6 +39,9 @@ pipeline {
         LIVEKIT_IMAGE    = "livekit/livekit-server:latest"
 
         EC2_PROJECT_PATH = "/home/ubuntu/app/infra/infra-repo"
+
+        DOCKERHUB_REPO = "ejjem/s14p11a704"
+        DOCKER_CREDENTIAL_ID = "DockerHub_Token"
     }
 
     stages {
@@ -205,8 +208,15 @@ pipeline {
 
                      // D. Certbot 관련 변경 (Nginx 재시작 필요)
                         if (line.startsWith("infra/certbot/")) {
+                        echo "🔍 certbot change detected: ${line}"
                             targets << 'certbot'
                             targets << 'nginx'
+                        }
+
+                     // E.Agent 관련 변경 감지 (추가)
+                        if (line.startsWith("infra/livekit/agent/")) {
+                            echo "🔍 Agent code/Dockerfile change detected: ${line}"
+                        targets << 'agent'
                         }
                     }
 
@@ -340,6 +350,36 @@ pipeline {
                             fi
                             """
                         }
+                    }
+                }
+            }
+        }
+
+        stage('Docker Build & Push (Agent)') {
+            when {
+                expression {
+                    if (env.RUN_CD != 'true') return false
+                    def ts = (env.EFFECTIVE_TARGET_SERVICES ?: '').trim()
+                    // 변경된 서비스 목록에 'agent'가 포함되어 있거나 수동 모드일 때 실행
+                    return ts.tokenize().contains('agent') || (params.MANUAL_MODE && ts.contains('agent'))
+                }
+            }
+            steps {
+                echo "===== DOCKERIZING LIVEKIT AGENT ====="
+                script {
+                    // infra/agent 디렉토리로 이동하여 빌드
+                    dir('infra/livekit/agent') {
+                        // Docker Build (태그: livekit-agent)
+                        sh "docker build -t ${DOCKERHUB_REPO}:livekit-agent ."
+
+                        // Docker Login & Push
+                        withCredentials([usernamePassword(credentialsId: "${env.DOCKER_CREDENTIAL_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                            sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+                            sh "docker push ${DOCKERHUB_REPO}:livekit-agent"
+                        }
+
+                        // 로컬 이미지 정리 (용량 확보)
+                        sh "docker rmi ${DOCKERHUB_REPO}:livekit-agent || true"
                     }
                 }
             }
