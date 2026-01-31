@@ -52,5 +52,4 @@ public class UserQueryController {
 		Page<ItemPageResDto> response = userFacadeService.getAllItemsByUserId(authUser, id, reqDto);
 		return ResponseUtils.page(response);
 	}
-
 }
