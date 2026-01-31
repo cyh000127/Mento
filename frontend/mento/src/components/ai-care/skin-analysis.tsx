@@ -394,7 +394,7 @@ export function SkinAnalysis() {
                   </div>
                   <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
                     <span className="text-md font-medium text-text-primary">민감도</span>
-                    <span className="text-md font-semibold text-orange-600">집중관리</span>
+                    <span className="text-md font-semibold text-orange-600">주의</span>
                   </div>
                 </div>
               </div>
@@ -533,7 +533,7 @@ export function SkinAnalysis() {
                     { label: "수분", value: 8, color: "bg-[#beeffc]", status: "우수", icon: Droplets, iconColor: "text-primary-500" },
                     { label: "모공", value: 15, color: "bg-[#bfeedd]", status: "양호", icon: Search, iconColor: "text-[#6fb896]" },
                     { label: "주름", value: 22, color: "bg-[#e6e3fa]", status: "보통", icon: Minus, iconColor: "text-[#9b93d4]" },
-                    { label: "색소침착", value: 30, color: "bg-[#ccf8ff]", status: "집중관리", icon: Sun, iconColor: "text-primary-500" },
+                    { label: "색소침착", value: 30, color: "bg-[#ccf8ff]", status: "주의", icon: Sun, iconColor: "text-primary-500" },
                     { label: "탄력", value: 11, color: "bg-[#dffaf0]", status: "양호", icon: Dumbbell, iconColor: "text-[#6fb896]" },
                   ].map((item, idx) => {
                     const Icon = item.icon;
@@ -558,7 +558,7 @@ export function SkinAnalysis() {
                                   ? "bg-primary-100 text-primary-500 font-semibold"
                                   : item.status === "보통"
                                     ? "bg-orange-100 text-orange-600 font-semibold"
-                                    : item.status === "집중관리"
+                                    : item.status === "주의"
                                       ? "bg-red-100 text-red-600 font-semibold"
                                       : "bg-muted text-text-secondary"
                             }`}
