@@ -78,6 +78,10 @@ public class Item extends BaseEntity {
 		this.status = status;
 	}
 
+	public void toggleFavorite() {
+		this.isFavorite = !this.isFavorite;
+	}
+
 	public void updateStatusToOwn() {
 		this.purchaseCount++;
 		this.purchaseDate = LocalDate.now();
