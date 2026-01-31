@@ -462,7 +462,7 @@ export function SkinAnalysis() {
                       strokeWidth="4"
                     />
 
-                    {/* Data points */}
+                    {/* Data points - circles removed, icons will be overlaid */}
                     {[
                       { angle: 0, value: 8, label: "수분" },
                       { angle: 72, value: 15, label: "모공" },
@@ -471,16 +471,11 @@ export function SkinAnalysis() {
                       { angle: 288, value: 11, label: "탄력" },
                     ].map(({ angle, value, label }, idx) => {
                       const radian = ((angle - 90) * Math.PI) / 180;
-                      // 점수가 낮을수록 바깥쪽
-                      const radius = (100 - value) * 1.8;
-                      const x = 250 + radius * Math.cos(radian);
-                      const y = 250 + radius * Math.sin(radian);
                       const labelX = 250 + 210 * Math.cos(radian);
                       const labelY = 250 + 210 * Math.sin(radian);
                       
                       return (
                         <g key={`point-${idx}`}>
-                          <circle cx={x} cy={y} r="8" fill="#22c55e" stroke="white" strokeWidth="3" />
                           <text
                             x={labelX}
                             y={labelY}
@@ -495,6 +490,41 @@ export function SkinAnalysis() {
                       );
                     })}
                   </svg>
+                  
+                  {/* Data point icons overlay */}
+                  <div className="absolute inset-0" style={{ pointerEvents: "none" }}>
+                    {[
+                      { angle: 0, value: 8, icon: Droplets, color: "text-primary-500", bgColor: "bg-[#beeffc]" },
+                      { angle: 72, value: 15, icon: Search, color: "text-[#6fb896]", bgColor: "bg-[#bfeedd]" },
+                      { angle: 144, value: 22, icon: Minus, color: "text-[#9b93d4]", bgColor: "bg-[#e6e3fa]" },
+                      { angle: 216, value: 30, icon: Sun, color: "text-primary-500", bgColor: "bg-[#ccf8ff]" },
+                      { angle: 288, value: 11, icon: Dumbbell, color: "text-[#6fb896]", bgColor: "bg-[#dffaf0]" },
+                    ].map(({ angle, value, icon: Icon, color, bgColor }, idx) => {
+                      const radian = ((angle - 90) * Math.PI) / 180;
+                      const radius = (100 - value) * 1.8;
+                      // SVG viewBox는 500x500이고, 중심은 250,250
+                      // 실제 위치 계산: 중심(250) + radius * cos/sin
+                      const svgX = 250 + radius * Math.cos(radian);
+                      const svgY = 250 + radius * Math.sin(radian);
+                      // SVG 좌표를 퍼센트로 변환 (viewBox 500 기준)
+                      const percentX = (svgX / 500) * 100;
+                      const percentY = (svgY / 500) * 100;
+                      
+                      return (
+                        <div
+                          key={idx}
+                          className={`absolute flex h-7 w-7 items-center justify-center rounded-full ${bgColor} border-2 border-white shadow-md`}
+                          style={{
+                            left: `${percentX}%`,
+                            top: `${percentY}%`,
+                            transform: `translate(-50%, -50%)`,
+                          }}
+                        >
+                          <Icon className={`h-4 w-4 ${color}`} />
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* Legend / Quick Stats */}
