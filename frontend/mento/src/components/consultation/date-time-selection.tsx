@@ -8,7 +8,7 @@ interface DateTimeSelectionProps {
   selectedDate: Date | null
   selectedTime: string | null
   selectedCategory: ConsultationCategory | null
-  onDateSelect: (date: Date) => void
+  onDateSelect: (date: Date | null) => void
   onTimeSelect: (time: string) => void
   onNext: () => void
   onPrev: () => void
@@ -115,7 +115,17 @@ export function DateTimeSelection({
     }
   }, [selectedCategory])
 
+  const resetSelectedTime = () => {
+    onTimeSelect("")
+  }
+
+  const resetSelectedDate = () => {
+    onDateSelect(null)
+  }
+
   const prevMonth = () => {
+    resetSelectedTime()
+    resetSelectedDate()
     if (currentMonth === 0) {
       setCurrentMonth(11)
       setCurrentYear((y) => y - 1)
@@ -125,6 +135,8 @@ export function DateTimeSelection({
   }
 
   const nextMonth = () => {
+    resetSelectedTime()
+    resetSelectedDate()
     if (currentMonth === 11) {
       setCurrentMonth(0)
       setCurrentYear((y) => y + 1)
@@ -279,7 +291,11 @@ export function DateTimeSelection({
                 <button
                   key={date.toISOString()}
                   type="button"
-                  onClick={() => !disabled && onDateSelect(date)}
+                  onClick={() => {
+                    if (disabled) return
+                    onDateSelect(date)
+                    resetSelectedTime()
+                  }}
                   disabled={disabled}
                   className={`relative flex h-12 flex-col items-center justify-center rounded-lg text-sm transition-all
                     ${
@@ -380,7 +396,11 @@ export function DateTimeSelection({
       <div className="mt-12 flex items-center justify-between">
         <button
           type="button"
-          onClick={onPrev}
+          onClick={() => {
+            resetSelectedTime()
+            resetSelectedDate()
+            onPrev()
+          }}
           className="flex items-center gap-2 rounded-xl border border-border px-6 py-3 text-base font-semibold text-text-primary transition-colors hover:bg-muted"
         >
           <ArrowLeft className="h-5 w-5" />
