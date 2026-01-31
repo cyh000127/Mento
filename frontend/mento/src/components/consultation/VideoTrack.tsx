@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Track, LocalParticipant, RemoteParticipant, TrackPublication, ParticipantEvent } from "livekit-client";
-import { useTZoneFaceMask } from "@/hooks/useTZoneFaceMask";
+import { useFaceMask, type MaskType } from "@/hooks/useFaceMask";
 
 interface VideoTrackProps {
   participant: LocalParticipant | RemoteParticipant;
-  enableTZoneMask?: boolean; // T-zone 마스크 활성화 여부
+  maskType?: MaskType; // 마스크 타입 (null이면 마스크 비활성화)
 }
 
 /**
@@ -14,7 +14,7 @@ interface VideoTrackProps {
  * - 로컬: trackPublications에서 직접 트랙을 가져와 attach
  * - 원격: TrackSubscribed 이벤트를 통해 트랙을 받아 attach
  */
-export function VideoTrack({ participant, enableTZoneMask = false }: VideoTrackProps) {
+export function VideoTrack({ participant, maskType = null }: VideoTrackProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -25,11 +25,11 @@ export function VideoTrack({ participant, enableTZoneMask = false }: VideoTrackP
   const retryTimeoutRef = useRef<number | null>(null);
   const [videoElementReady, setVideoElementReady] = useState(false);
 
-  // T-zone 마스크 훅 초기화 (비디오 요소가 준비된 후에만 실행)
-  useTZoneFaceMask(
+  // 얼굴 마스크 훅 초기화 (비디오 요소가 준비된 후에만 실행)
+  useFaceMask(
     videoElementReady ? videoRef.current : null,
     canvasRef,
-    enableTZoneMask
+    maskType
   );
 
   // 비디오 요소가 준비되었을 때 감지
@@ -301,8 +301,8 @@ export function VideoTrack({ participant, enableTZoneMask = false }: VideoTrackP
       {/* LiveKit 비디오 */}
       <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted={isLocal} />
       
-      {/* T-zone 마스크 오버레이 캔버스 */}
-      {enableTZoneMask && (
+      {/* 얼굴 마스크 오버레이 캔버스 */}
+      {maskType && (
         <canvas
           ref={canvasRef}
           className="absolute top-0 left-0 w-full h-full pointer-events-none"
