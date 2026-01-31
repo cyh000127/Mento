@@ -29,9 +29,9 @@ public class PaymentCommandServiceImpl implements PaymentCommandService {
 	@Override
 	public PaymentReadyResDto ready(final PaymentReadyReqDto request, final Long userId) {
 		Payment payment = paymentFactory.createPayment(request);
-		paymentRepository.save(payment);
+		Payment savedPayment = paymentRepository.save(payment);
 
-		PaymentReadyResDto response = kakaoPaymentService.ready(payment, request, userId);
+		PaymentReadyResDto response = kakaoPaymentService.ready(savedPayment, request, userId);
 		log.info("[Payment] 결제 준비 완료 {paymentId: {}, userId: {}}", payment.getPaymentId(), userId);
 
 		return response;
