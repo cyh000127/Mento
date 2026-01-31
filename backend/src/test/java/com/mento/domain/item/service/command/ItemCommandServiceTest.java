@@ -206,7 +206,8 @@ class ItemCommandServiceTest {
 			LocalDate oldExpiryDate = LocalDate.now().minusDays(10);
 
 			Item item = createItemWithCustomDates(
-				1L, testUser, testProduct, ItemStatus.PURCHASING, false, 3,
+				1L, testUser, testProduct, ItemStatus.
+					PURCHASING, false, 3,
 				oldPurchaseDate, oldExpiryDate
 			);
 
@@ -361,6 +362,66 @@ class ItemCommandServiceTest {
 
 			// then
 			assertThat(item.getIsFavorite()).isTrue();
+		}
+	}
+
+	@Nested
+	@DisplayName("아이템 삭제 테스트")
+	class DeleteItemTest {
+
+		@Test
+		@DisplayName("아이템 삭제 성공")
+		void 아이템_삭제_성공() {
+			// given
+			Item item = createItem(1L, testUser, testProduct, ItemStatus.OWNED, false, 1);
+			assertThat(item.getDeletedAt()).isNull();
+
+			// when
+			item.withDraw();
+
+			// then
+			assertThat(item.getDeletedAt()).isNotNull();
+			assertThat(item.getDeletedAt()).isBeforeOrEqualTo(java.time.LocalDateTime.now());
+		}
+
+		@Test
+		@DisplayName("삭제 후에도 다른 필드는 유지됨")
+		void 아이템_삭제_후_필드_유지() {
+			// given
+			Item item = createItem(1L, testUser, testProduct, ItemStatus.OWNED, true, 3);
+			Long originalId = item.getId();
+			ItemStatus originalStatus = item.getStatus();
+			Boolean originalFavorite = item.getIsFavorite();
+			Integer originalPurchaseCount = item.getPurchaseCount();
+
+			// when
+			item.withDraw();
+
+			// then
+			assertThat(item.getDeletedAt()).isNotNull();
+			assertThat(item.getId()).isEqualTo(originalId);
+			assertThat(item.getStatus()).isEqualTo(originalStatus);
+			assertThat(item.getIsFavorite()).isEqualTo(originalFavorite);
+			assertThat(item.getPurchaseCount()).isEqualTo(originalPurchaseCount);
+		}
+
+		@Test
+		@DisplayName("여러 아이템 각각 삭제 성공")
+		void 여러_아이템_각각_삭제_성공() {
+			// given
+			Item item1 = createItem(1L, testUser, testProduct, ItemStatus.OWNED, false, 1);
+			Item item2 = createItem(2L, testUser, testProduct, ItemStatus.OWNED, true, 2);
+			Item item3 = createItem(3L, testUser, testProduct, ItemStatus.UNAVAILABLE, false, 3);
+
+			// when
+			item1.withDraw();
+			item2.withDraw();
+			item3.withDraw();
+
+			// then
+			assertThat(item1.getDeletedAt()).isNotNull();
+			assertThat(item2.getDeletedAt()).isNotNull();
+			assertThat(item3.getDeletedAt()).isNotNull();
 		}
 	}
 }
