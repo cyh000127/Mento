@@ -6,7 +6,7 @@ services:
     network_mode: "host"
     command: [ "--config", "/etc/livekit/config.yml" ]
     volumes:
-      - ../config.yml:/etc/livekit/config.yml:ro
+      - ../livekit/config.yml:/etc/livekit/config.yml:ro
     depends_on:
       - redis_livekit
 
@@ -50,7 +50,7 @@ services:
       - live-network
       - app-network
     volumes:
-      - ./egress/config.yml:/etc/egress/egress_config.yml:ro
+      - ../egress/config.yml:/etc/egress/egress_config.yml:ro
     environment:
       - LIVEKIT_URL=http://host.docker.internal:8000
       - LIVEKIT_API_KEY=${LIVEKIT_API_KEY}
