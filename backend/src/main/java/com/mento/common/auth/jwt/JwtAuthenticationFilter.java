@@ -25,6 +25,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	private final JwtTokenProvider jwtTokenProvider;
 
 	@Override
+	protected boolean shouldNotFilter(HttpServletRequest request) {
+		String path = request.getRequestURI();
+		return path.startsWith("/api/v1/auth/reissue");
+	}
+
+	@Override
 	protected void doFilterInternal(
 		HttpServletRequest request,
 		HttpServletResponse response,

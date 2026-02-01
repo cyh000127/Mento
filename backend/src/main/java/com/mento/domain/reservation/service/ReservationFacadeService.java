@@ -175,7 +175,7 @@ public class ReservationFacadeService {
 			notificationFacadeService.sendNotification(NotificationSendReqDto.builder()
 				.targetMemberId(user.getId())
 				.type(NotificationType.RESERVATION_CONFIRMED)
-				.value(timetableSlot.getMentorType().getTypeName())
+				.content(timetableSlot.getMentorType().getTypeName())
 				.expiredAt(LocalDateTime.now().plusDays(1))
 				.build()
 			);

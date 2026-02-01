@@ -118,7 +118,7 @@ class NotificationScheduleServiceTest {
 		NotificationSendReqDto reqDto = reqDtos.get(0);
 
 		assertThat(reqDto.type()).isEqualTo(NotificationType.RESERVATION_REMINDER);
-		assertThat(reqDto.value()).isEqualTo("60");
+		assertThat(reqDto.content()).isEqualTo("60");
 		LocalDateTime expectedExpiredAt = LocalDateTime.of(today, scheduledTime).minusMinutes(30);
 		assertThat(reqDto.expiredAt()).isEqualTo(expectedExpiredAt);
 	}
@@ -178,7 +178,7 @@ class NotificationScheduleServiceTest {
 		NotificationSendReqDto reqDto = reqDtos.get(0);
 
 		assertThat(reqDto.type()).isEqualTo(NotificationType.RESERVATION_REMINDER);
-		assertThat(reqDto.value()).isEqualTo("30");
+		assertThat(reqDto.content()).isEqualTo("30");
 		LocalDateTime expectedExpiredAt = LocalDateTime.of(today, scheduledTime).minusMinutes(10);
 		assertThat(reqDto.expiredAt()).isEqualTo(expectedExpiredAt);
 	}
@@ -238,7 +238,7 @@ class NotificationScheduleServiceTest {
 		NotificationSendReqDto reqDto = reqDtos.get(0);
 
 		assertThat(reqDto.type()).isEqualTo(NotificationType.CONSULTING_STARTED);
-		assertThat(reqDto.value()).isEqualTo("0");
+		assertThat(reqDto.content()).isEqualTo("0");
 		LocalDateTime expectedExpiredAt = LocalDateTime.of(today, scheduledTime).plusMinutes(10);
 		assertThat(reqDto.expiredAt()).isEqualTo(expectedExpiredAt);
 	}
