@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 import com.mento.domain.user.entity.Role;
 
 import io.livekit.server.AccessToken;
+import io.livekit.server.CanPublishData;
 import io.livekit.server.RoomAdmin;
 import io.livekit.server.RoomJoin;
 import io.livekit.server.RoomName;
@@ -40,6 +41,9 @@ public class LiveKitManager {
 
 		RoomName roomNameGrant = new RoomName(roomName);
 		token.addGrants(roomNameGrant);
+
+		CanPublishData canPublish = new CanPublishData(true);
+		token.addGrants(canPublish);
 
 		grantRoomAdmin(role, token);
 
