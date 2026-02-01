@@ -34,7 +34,8 @@ public class SecurityConfig {
 
 		// OAuth2
 		"/login/oauth/**",
-
+		"/api/v1/auth/reissue",
+		
 		// Test
 		"/api/v1/test/**"
 	};
@@ -68,7 +69,7 @@ public class SecurityConfig {
 			.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
 				.requestMatchers(WHITELIST).permitAll()
-				.anyRequest().permitAll());
+				.anyRequest().authenticated());
 
 		return http.build();
 	}
