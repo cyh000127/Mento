@@ -175,6 +175,20 @@ CREATE TABLE `payments`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE `notifications`
+(
+    `notification_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '알림 ID',
+    `user_id`         BIGINT       NOT NULL COMMENT '사용자 ID',
+    `type`            VARCHAR(50)  NOT NULL COMMENT '알림 유형: ENUM',
+    `value`           VARCHAR(1000) DEFAULT NULL COMMENT '알림 추가 데이터',
+    `expired_at`      DATETIME(6)  NOT NULL COMMENT '만료 일시',
+    `created_at`      DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '생성일시',
+    `updated_at`      DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6) COMMENT '수정일시',
+    CONSTRAINT `fk_notifications_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
 ALTER TABLE `reservations`
     ADD CONSTRAINT `fk_reservations_payment` FOREIGN KEY (`payment_id`) REFERENCES `payments` (`payment_id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
