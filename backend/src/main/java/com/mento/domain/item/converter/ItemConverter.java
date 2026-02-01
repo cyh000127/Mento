@@ -1,9 +1,11 @@
 package com.mento.domain.item.converter;
 
 import com.mento.domain.item.dto.common.ItemInfoResDto;
+import com.mento.domain.item.dto.response.ItemHistoryResDto;
 import com.mento.domain.item.dto.response.ItemInfoDetailResDto;
 import com.mento.domain.item.dto.response.ItemPageResDto;
 import com.mento.domain.item.entity.Item;
+import com.mento.domain.item.entity.ItemHistory;
 import com.mento.domain.product.converter.ProductConverter;
 
 import lombok.experimental.UtilityClass;
@@ -44,6 +46,19 @@ public class ItemConverter {
 			.purchaseDate(item.getPurchaseDate())
 			.expectedExpiry(item.getExpectedExpiryDate())
 			.purchaseCount(item.getPurchaseCount())
+			.build();
+	}
+
+	public ItemHistoryResDto toItemHistoryResDto(final ItemHistory history) {
+		return ItemHistoryResDto.builder()
+			.historyId(history.getId())
+			.productId(history.getProduct().getId())
+			.productName(history.getProduct().getName())
+			.brandName(history.getProduct().getBrand().getBrandName())
+			.imageUrl(history.getProduct().getImageUrl())
+			.actionType(history.getActionType())
+			.actionDescription(history.getActionType().getDescription())
+			.createdAt(history.getCreatedAt())
 			.build();
 	}
 }
