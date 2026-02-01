@@ -8,11 +8,12 @@ spring:
     redis:
       host: localhost
       port: 6379
-      password: 0000
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create
+    defer-datasource-initialization: true
+
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
@@ -27,3 +28,6 @@ spring:
           provider_disables_autocommit: true
         jdbc:
           time_zone: UTC
+  sql:
+    init:
+      mode: always
