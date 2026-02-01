@@ -1,0 +1,13 @@
+# 로그의 상세도 조절 (debug, info, warn, error)
+logging:
+  level: info
+
+options:
+  video_codec: H264_MAIN
+  video_bitrate: 2500
+  framerate: 30
+  width: 1280
+  height: 720
+  audio_codec: AAC
+  audio_bitrate: 128
+  audio_frequency: 44100

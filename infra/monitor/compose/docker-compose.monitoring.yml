@@ -32,8 +32,12 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.external-url=https://i14a704.p.ssafy.io/prometheus/'
       - '--web.route-prefix=/prometheus'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - monitoring-network
+      - app-network
+      - live-network
 
   # 3. Node-Exporter
   node-exporter:
@@ -68,6 +72,8 @@ services:
       - /dev/kmsg
     networks:
       - monitoring-network
+      - app-network
+      - live-network
 
   # 5. Loki
   loki:
@@ -90,6 +96,8 @@ services:
 #      DATA_SOURCE_NAME: "${DB_USERNAME}:${DB_PASSWORD}@(mysql:3306)/"
 #    networks:
 #      - monitoring-network
+#      - app-network
+
 
   # 7. Promtail
   promtail:
@@ -97,7 +105,8 @@ services:
     container_name: promtail
     restart: unless-stopped
     volumes:
-      - app_mysql_data:/var/lib/mysql:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log:/var/log:ro
       - ../promtail/config.yml:/etc/promtail/config.yml
     command: -config.file=/etc/promtail/config.yml
     networks:
@@ -112,4 +121,8 @@ volumes:
 
 networks:
   monitoring-network:
+    external: true
+  app-network:
+    external: true
+  live-network:
     external: true
