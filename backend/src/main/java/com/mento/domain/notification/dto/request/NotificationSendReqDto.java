@@ -19,8 +19,8 @@ public record NotificationSendReqDto(
 	@NotNull(message = "알림 유형은 필수입니다")
 	NotificationType type,
 
-	@Schema(description = "알림 값 (예: 30(분), 5(개))", example = "30")
-	String value,
+	@Schema(description = "알림 내용 (예: 30(분), 5(개))", example = "30")
+	String content,
 
 	@Schema(description = "알림 만료 시간", example = "2026-01-30T12:00:00")
 	LocalDateTime expiredAt

@@ -180,7 +180,7 @@ CREATE TABLE `notifications`
     `notification_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '알림 ID',
     `user_id`         BIGINT       NOT NULL COMMENT '사용자 ID',
     `type`            VARCHAR(50)  NOT NULL COMMENT '알림 유형: ENUM',
-    `value`           VARCHAR(1000) DEFAULT NULL COMMENT '알림 추가 데이터',
+    `content`           VARCHAR(1000) DEFAULT NULL COMMENT '알림 추가 데이터',
     `expired_at`      DATETIME(6)  NOT NULL COMMENT '만료 일시',
     `created_at`      DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '생성일시',
     `updated_at`      DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6) COMMENT '수정일시',

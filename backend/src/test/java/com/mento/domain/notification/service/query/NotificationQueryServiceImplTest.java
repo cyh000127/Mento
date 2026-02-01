@@ -35,7 +35,7 @@ class NotificationQueryServiceImplTest {
 			.id(1L)
 			.userId(userId)
 			.type(NotificationType.RESERVATION_REMINDER)
-			.value("60")
+			.content("60")
 			.build();
 
 		List<Notification> notificationList = List.of(notification);
@@ -48,7 +48,7 @@ class NotificationQueryServiceImplTest {
 		// then
 		assertThat(result).isNotNull()
 			.hasSize(1);
-		assertThat(result.getFirst().getValue()).isEqualTo("60");
+		assertThat(result.getFirst().getContent()).isEqualTo("60");
 		
 		verify(notificationRepository, times(1)).findAllByUserId(userId);
 	}

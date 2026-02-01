@@ -67,7 +67,7 @@ public class NotificationScheduleService {
 
 	private void checkAndSendReminders(LocalDate targetDate,
 		LocalTime targetTime,
-		String value,
+		String content,
 		NotificationType type,
 		int expiryOffsetMinutes) {
 		
@@ -101,7 +101,7 @@ public class NotificationScheduleService {
 				return NotificationSendReqDto.builder()
 					.targetMemberId(reservation.getUser().getId())
 					.type(type)
-					.value(value)
+					.content(content)
 					.expiredAt(expiredAt)
 					.build();
 			})

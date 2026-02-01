@@ -15,7 +15,7 @@ public class NotificationConverter {
 		return Notification.builder()
 			.userId(dto.targetMemberId())
 			.type(dto.type())
-			.value(dto.value())
+			.content(dto.content())
 			.expiredAt(expiredAt)
 			.build();
 	}
@@ -24,7 +24,7 @@ public class NotificationConverter {
 		return NotificationResDto.builder()
 			.notificationId(entity.getId())
 			.type(entity.getType())
-			.value(entity.getValue())
+			.content(entity.getContent())
 			.createdAt(entity.getCreatedAt())
 			.build();
 	}

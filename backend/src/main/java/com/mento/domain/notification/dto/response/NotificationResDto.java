@@ -16,8 +16,8 @@ public record NotificationResDto(
 	@Schema(description = "알림 유형", example = "MENTORING_REQUEST")
 	NotificationType type,
 
-	@Schema(description = "알림 내용의 변수", example = "30(분) 15(개) 등")
-	String value,
+	@Schema(description = "알림 내용", example = "30(분) 15(개) 등")
+	String content,
 
 	@Schema(description = "알림 생성 일시", example = "2024-02-01T12:00:00")
 	LocalDateTime createdAt

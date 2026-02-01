@@ -57,7 +57,7 @@ class NotificationFacadeServiceTest {
 			.id(1L)
 			.userId(userId)
 			.type(NotificationType.RESERVATION_REMINDER)
-			.value("60")
+			.content("60")
 			.build();
 
 		List<Notification> unreadNotifications = List.of(notification);
@@ -85,7 +85,7 @@ class NotificationFacadeServiceTest {
 			.id(1L)
 			.userId(1L)
 			.type(NotificationType.RESERVATION_REMINDER)
-			.value("60")
+			.content("60")
 			.build();
 
 		given(notificationCommandService.send(reqDto)).willReturn(notification);
@@ -108,7 +108,7 @@ class NotificationFacadeServiceTest {
 			.id(1L)
 			.userId(userId)
 			.type(NotificationType.RESERVATION_REMINDER)
-			.value("60")
+			.content("60")
 			.build();
 			
 		List<Notification> notifications = List.of(notification);
@@ -121,7 +121,7 @@ class NotificationFacadeServiceTest {
 		// then
 		assertThat(result).hasSize(1);
 		assertThat(result.get(0).notificationId()).isEqualTo(notification.getId());
-		assertThat(result.get(0).value()).isEqualTo(notification.getValue());
+		assertThat(result.get(0).content()).isEqualTo(notification.getContent());
 		verify(notificationQueryService).getNotifications(userId);
 	}
 
