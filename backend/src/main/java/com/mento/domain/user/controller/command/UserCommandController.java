@@ -2,8 +2,11 @@ package com.mento.domain.user.controller.command;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,6 +15,8 @@ import com.mento.common.auth.principal.AuthenticatedUser;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.util.ResponseUtils;
 import com.mento.domain.auth.service.command.AuthCommandService;
+import com.mento.domain.item.dto.common.ItemInfoResDto;
+import com.mento.domain.user.dto.request.MentorAddItemReqDto;
 import com.mento.domain.user.dto.request.UserUpdateReqDto;
 import com.mento.domain.user.dto.response.UserResDto;
 import com.mento.domain.user.service.UserFacadeService;
@@ -55,5 +60,16 @@ public class UserCommandController {
 	) {
 		UserResDto response = userFacadeService.updateUser(user, reqDto);
 		return ResponseUtils.ok(response);
+	}
+
+	@Operation(summary = "고객 아이템 추가", description = "멘토가 예약한 고객의 인벤토리에 아이템을 추가합니다.")
+	@PostMapping("/{userId}/items")
+	public ResponseEntity<BaseResponse<ItemInfoResDto>> addItemToUser(
+		@AuthenticationPrincipal final AuthenticatedUser authUser,
+		@PathVariable final Long userId,
+		@Validated @RequestBody final MentorAddItemReqDto reqDto
+	) {
+		ItemInfoResDto response = userFacadeService.addItemToUser(authUser, userId, reqDto);
+		return ResponseUtils.created(response);
 	}
 }

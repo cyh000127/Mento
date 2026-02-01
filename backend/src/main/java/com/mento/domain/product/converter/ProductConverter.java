@@ -1,6 +1,7 @@
 package com.mento.domain.product.converter;
 
 import com.mento.domain.brand.entity.Brand;
+import com.mento.domain.product.dto.common.ProductInfoDto;
 import com.mento.domain.product.dto.request.ProductCreateReqDto;
 import com.mento.domain.product.dto.response.ProductResDto;
 import com.mento.domain.product.entity.Product;
@@ -51,6 +52,15 @@ public class ProductConverter {
 			.defaultUsageDays(entity.getDefaultUsageDays())
 			.createdAt(entity.getCreatedAt())
 			.updatedAt(entity.getUpdatedAt())
+			.build();
+	}
+
+	public ProductInfoDto toProductInfoDto(final Product product) {
+		return ProductInfoDto.builder()
+			.id(product.getId())
+			.name(product.getName())
+			.imageUrl(product.getImageUrl())
+			.productUrl(product.getProductUrl())
 			.build();
 	}
 }

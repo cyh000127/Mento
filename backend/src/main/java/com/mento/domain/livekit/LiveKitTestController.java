@@ -31,7 +31,8 @@ public class LiveKitTestController {
 	public ResponseEntity<LiveKitSessionResponse> createTestToken(
 		@RequestParam(required = false, defaultValue = "test-room") String roomName,
 		@RequestParam(required = false, defaultValue = "test-user") String userName,
-		@RequestParam(required = false, defaultValue = "MENTOR") Role role) {
+		@RequestParam(required = false, defaultValue = "MENTOR") Role role
+	) {
 		String userId = UUID.randomUUID().toString();
 		long ttlSeconds = 3600;
 

@@ -1,14 +1,19 @@
 package com.mento.domain.product.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import com.mento.common.entity.BaseEntity;
+import com.mento.common.error.ErrorCode;
 import com.mento.domain.brand.entity.Brand;
+import com.mento.domain.item.entity.Item;
+import com.mento.domain.product.exception.ProductException;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -17,6 +22,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -40,6 +46,10 @@ public class Product extends BaseEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "brand_id", nullable = false)
 	private Brand brand;
+
+	@Builder.Default
+	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Item> items = new ArrayList<>();
 
 	@Column(name = "oliveyoung_goods_no", nullable = false, length = 50)
 	private String oliveyoungGoodsNo;
@@ -90,4 +100,14 @@ public class Product extends BaseEntity {
 
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
+
+	public void assignUserItem(final Item item) {
+		if (item == null) {
+			throw new ProductException(ErrorCode.MISSING_ITEM);
+		}
+		items.add(item);
+		if (item.getProduct() != this) {
+			item.assignProduct(this);
+		}
+	}
 }

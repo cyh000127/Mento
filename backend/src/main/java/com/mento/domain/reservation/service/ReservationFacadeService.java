@@ -198,8 +198,10 @@ public class ReservationFacadeService {
 		LocalDateTime slotDateTime = LocalDateTime.of(timetable.getScheduledDate(), timetable.getScheduledTime());
 
 		if (slotDateTime.isBefore(LocalDateTime.now())) {
+			//TODO: 생성시간과 요청 시간의 시간대가 서로 상이 (UTC, KR, 요청시 들어오는 시간대가 9시간 깎인다.)
 			throw new ReservationException(ErrorCode.TIMETABLE_PAST_TIME);
 		}
+
 		if (!timetableSlot.isAvailable()) {
 			throw new ReservationException(ErrorCode.TIMETABLE_NOT_AVAILABLE);
 		}
