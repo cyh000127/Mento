@@ -120,10 +120,8 @@ pipeline {
             when { expression { return env.RUN_CD == 'true' } }
             steps {
                 script {
-                    // 프로젝트별로 쪼개지 말고, 'infra' 폴더 자체를 통째로 동기화합니다.
-                    // 이렇게 하면 경로 계산이 훨씬 단순해지고 실수가 없습니다.
                     echo "🚀 Syncing all infra configs to EC2..."
-                    sh "rsync -avz --delete ./infra/ ${env.EC2_PROJECT_PATH}/infra/"
+                    sh "rsync -avz --delete ./infra ${env.EC2_PROJECT_PATH}/"
                 }
             }
         }
