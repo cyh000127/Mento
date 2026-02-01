@@ -1,6 +1,8 @@
 package com.mento.domain.notification.service.command;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,17 +24,25 @@ import lombok.extern.slf4j.Slf4j;
 public class NotificationCommandServiceImpl implements NotificationCommandService {
 
 	private final NotificationRepository notificationRepository;
+	static final long DEFAULT_EXPIRED_DAYS = 90L;
+
 
 	@Override
 	public Notification send(final NotificationSendReqDto dto) {
-		Notification notification = NotificationConverter.toEntity(dto);
+		LocalDateTime expiredAt = Optional.ofNullable(dto.expiredAt())
+			.orElse(LocalDateTime.now().plusDays(DEFAULT_EXPIRED_DAYS));
+		Notification notification = NotificationConverter.toEntity(dto, expiredAt);
 		return notificationRepository.save(notification);
 	}
 
 	@Override
 	public List<Notification> sendAll(final List<NotificationSendReqDto> dtos) {
 		List<Notification> notifications = dtos.stream()
-			.map(NotificationConverter::toEntity)
+			.map(dto -> {
+				LocalDateTime expiredAt = Optional.ofNullable(dto.expiredAt())
+					.orElse(LocalDateTime.now().plusDays(DEFAULT_EXPIRED_DAYS));
+				return NotificationConverter.toEntity(dto, expiredAt);
+			})
 			.toList();
 		return notificationRepository.saveAll(notifications);
 	}

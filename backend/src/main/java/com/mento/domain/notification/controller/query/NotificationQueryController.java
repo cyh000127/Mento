@@ -21,7 +21,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "Notification", description = "알림 조회 API (Query)")
+@Tag(name = "Notification", description = "알림 조회 API")
 @RestController
 @RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)

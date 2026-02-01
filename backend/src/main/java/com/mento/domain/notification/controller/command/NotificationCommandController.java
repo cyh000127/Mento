@@ -22,7 +22,7 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "Notification", description = "알림 관리 API (Command)")
+@Tag(name = "Notification", description = "알림 관리 API")
 @RestController
 @RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)

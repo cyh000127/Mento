@@ -93,7 +93,7 @@ public class NotificationFacadeService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<@NonNull NotificationResDto> getNotifications(final Long userId) {
+	public List<NotificationResDto> getNotifications(final Long userId) {
 		return notificationQueryService.getNotifications(userId);
 	}
 

@@ -11,7 +11,7 @@ public class NotificationEvent extends ApplicationEvent {
 
 	private final Notification notification;
 
-	public NotificationEvent(Object source, Notification notification) {
+	public NotificationEvent(final Object source, final Notification notification) {
 		super(source);
 		this.notification = notification;
 	}
