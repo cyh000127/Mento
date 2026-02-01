@@ -1,5 +1,8 @@
 package com.mento.domain.item.service.query;
 
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -45,5 +48,10 @@ public class ItemQueryServiceImpl implements ItemQueryService {
 		);
 		log.info("[Item] 사용자 아이템 목록 조회 완료 {userId: {}, totalElements: {}}", userId, items.getTotalElements());
 		return items;
+	}
+
+	@Override
+	public List<Item> findOverdueItems(final LocalDate today) {
+		return itemRepository.findOverdueItems(today);
 	}
 }

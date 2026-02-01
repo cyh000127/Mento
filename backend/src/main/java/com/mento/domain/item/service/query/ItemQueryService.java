@@ -1,5 +1,8 @@
 package com.mento.domain.item.service.query;
 
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -18,4 +21,6 @@ public interface ItemQueryService {
 		Boolean isFavorite,
 		Pageable pageable
 	);
+
+	List<Item> findOverdueItems(LocalDate today);
 }

@@ -1,8 +1,12 @@
 package com.mento.domain.item.repository;
 
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -28,4 +32,22 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 		@Param("isFavorite") Boolean isFavorite,
 		Pageable pageable
 	);
+
+	@Query("""
+		SELECT i FROM Item i
+		WHERE i.status != 'OVER_DATED'
+		AND i.expectedExpiryDate < :today
+		AND i.deletedAt IS NULL
+		""")
+	List<Item> findOverdueItems(@Param("today") LocalDate today);
+
+	@Modifying
+	@Query("""
+		UPDATE Item i
+		SET i.status = 'OVER_DATED'
+		WHERE i.status != 'OVER_DATED'
+		AND i.expectedExpiryDate < :today
+		AND i.deletedAt IS NULL
+		""")
+	int updateOverdueItemsToExpired(@Param("today") LocalDate today);
 }

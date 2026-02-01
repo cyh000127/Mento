@@ -14,9 +14,13 @@ import com.mento.domain.item.converter.ItemConverter;
 import com.mento.domain.item.dto.common.ItemInfoResDto;
 import com.mento.domain.item.dto.response.ItemPageResDto;
 import com.mento.domain.item.entity.Item;
+import com.mento.domain.item.entity.ItemHistory;
+import com.mento.domain.item.enums.ItemHistoryAction;
 import com.mento.domain.item.enums.ItemStatus;
 import com.mento.domain.item.factory.ItemFactory;
+import com.mento.domain.item.factory.ItemHistoryFactory;
 import com.mento.domain.item.service.command.ItemCommandService;
+import com.mento.domain.item.service.command.ItemHistoryCommandService;
 import com.mento.domain.item.service.query.ItemQueryService;
 import com.mento.domain.item.validator.ItemValidator;
 import com.mento.domain.product.entity.Product;
@@ -44,8 +48,10 @@ public class UserFacadeService {
 
 	private final ItemCommandService itemCommandService;
 	private final ItemQueryService itemQueryService;
+	private final ItemHistoryCommandService itemHistoryCommandService;
 	private final ItemValidator itemValidator;
 	private final ItemFactory itemFactory;
+	private final ItemHistoryFactory itemHistoryFactory;
 
 	private final ReservationQueryService reservationQueryService;
 	private final ProductQueryService productQueryService;
@@ -95,6 +101,13 @@ public class UserFacadeService {
 		Item item = itemFactory.createItem(user, product, ItemStatus.RECOMMENDED);
 		Item savedItem = itemCommandService.saveItem(item);
 
+		saveItemHistory(user, product);
+
 		return ItemConverter.toItemInfoResDto(savedItem);
+	}
+
+	private void saveItemHistory(final User user, final Product product) {
+		ItemHistory history = itemHistoryFactory.createHistory(user, product, ItemHistoryAction.CREATED);
+		itemHistoryCommandService.saveHistory(history);
 	}
 }
