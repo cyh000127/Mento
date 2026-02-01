@@ -1,9 +1,9 @@
-host: http://host.docker.internal:8000
+host: ws://host.docker.internal:8000
 api_key: CRRsJdJGKI
 api_secret: YQGcyneUgQiNUfhazwTJizHT2rEu6x6zdx6nPvQFftBiFrmRaUio5wTyvmt7PgaP
 
 redis:
-  address: http//redis_livekit:6379
+  address: redis_livekit:6379
 
 logging:
   level: info
