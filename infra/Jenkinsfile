@@ -117,11 +117,11 @@ pipeline {
         }
 
         stage('Sync Files to EC2') {
-            when { expression { return env.RUN_CD == 'true' } }
             steps {
                 script {
                     echo "🚀 Syncing all infra configs to EC2..."
-                    sh "rsync -avz --delete ./infra ${env.EC2_PROJECT_PATH}/"
+                    // 소스의 '내용물(./infra/)'을 목적지의 'infra(/infra/)' 폴더로 복사
+                    sh "rsync -avz --delete ./infra/ ${env.EC2_PROJECT_PATH}/infra/"
                 }
             }
         }
