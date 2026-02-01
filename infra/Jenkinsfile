@@ -120,26 +120,10 @@ pipeline {
             when { expression { return env.RUN_CD == 'true' } }
             steps {
                 script {
-                    def targetList = env.EFFECTIVE_TARGET_SERVICES.tokenize()
-
-                    // 1. 공통 인프라 (Nginx 등) 동기화
-                    if (targetList.contains('app')) {
-                        echo "Syncing App & Nginx configs..."
-                        sh "rsync -avz --delete ./infra/nginx/ ${env.EC2_PROJECT_PATH}/infra/nginx/"
-                        sh "rsync -avz --delete ./infra/compose/ ${env.EC2_PROJECT_PATH}/infra/compose/"
-                    }
-
-                    // 2. Live 구역 동기화
-                    if (targetList.contains('live')) {
-                        echo "Syncing Live configs..."
-                        sh "rsync -avz --delete ./infra/live/ ${env.EC2_PROJECT_PATH}/infra/live/"
-                    }
-
-                    // 3. Monitor 구역 동기화
-                    if (targetList.contains('monitor')) {
-                        echo "Syncing Monitor configs..."
-                        sh "rsync -avz --delete ./infra/monitor/ ${env.EC2_PROJECT_PATH}/infra/monitor/"
-                    }
+                    // 프로젝트별로 쪼개지 말고, 'infra' 폴더 자체를 통째로 동기화합니다.
+                    // 이렇게 하면 경로 계산이 훨씬 단순해지고 실수가 없습니다.
+                    echo "🚀 Syncing all infra configs to EC2..."
+                    sh "rsync -avz --delete ./infra/ ${env.EC2_PROJECT_PATH}/infra/"
                 }
             }
         }
