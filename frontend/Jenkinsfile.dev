@@ -107,7 +107,7 @@ pipeline {
           // [수정] 기본값을 'frontend.dev'로 변경
           def target = (params.TARGET_SERVICES ?: '').trim()
           if (target == '') {
-            target = 'frontend.dev'
+            target = 'app'
           }
 
           echo "===== TRIGGER CD/FINAL ====="
