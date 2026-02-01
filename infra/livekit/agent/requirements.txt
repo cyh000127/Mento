@@ -3,3 +3,4 @@ livekit-api
 livekit-plugins-openai
 livekit-plugins-silero
 python-dotenv
+httpx
