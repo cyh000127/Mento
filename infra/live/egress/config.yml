@@ -1,4 +1,10 @@
-# 로그의 상세도 조절 (debug, info, warn, error)
+host: ${LIVEKIT_URL}
+api_key: ${LIVEKIT_API_KEY}
+api_secret: ${LIVEKIT_API_SECRET}
+
+redis:
+  address: ${EGRESS_REDIS_URL}
+
 logging:
   level: info
 
