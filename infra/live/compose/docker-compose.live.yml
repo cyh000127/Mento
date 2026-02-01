@@ -63,8 +63,7 @@ services:
     depends_on:
       - livekit
       - redis_livekit
-    command:
-      ["--config", "/etc/egress/egress_config.yml"]
+    command: --config /etc/egress/egress_config.yml
     logging:
       driver: "json-file"
       options:
