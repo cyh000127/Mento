@@ -32,18 +32,18 @@ public class NotificationQueryController {
 	@Operation(summary = "SSE 구독", description = "서버로부터 실시간 알림을 받기 위해 SSE 연결을 구독합니다.")
 	@GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	public ResponseEntity<SseEmitter> subscribe(
-		@AuthenticationPrincipal AuthenticatedUser user
+		@AuthenticationPrincipal AuthenticatedUser authuser
 	) {
-		SseEmitter emitter = notificationFacadeService.subscribe(user.getId());
+		SseEmitter emitter = notificationFacadeService.subscribe(authuser.getId());
 		return ResponseEntity.ok(emitter);
 	}
 
 	@Operation(summary = "알림 목록 조회", description = "나의 알림 목록을 최신순으로 조회합니다.")
 	@GetMapping
 	public ResponseEntity<BaseResponse<List<NotificationResDto>>> getNotifications(
-		@AuthenticationPrincipal AuthenticatedUser user
+		@AuthenticationPrincipal AuthenticatedUser authuser
 	) {
-		List<NotificationResDto> response = notificationFacadeService.getNotifications(user.getId());
+		List<NotificationResDto> response = notificationFacadeService.getNotifications(authuser.getId());
 		return ResponseUtils.ok(response);
 	}
 }

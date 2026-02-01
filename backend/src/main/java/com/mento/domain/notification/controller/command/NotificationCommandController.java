@@ -37,16 +37,16 @@ public class NotificationCommandController {
 		@RequestBody @Valid NotificationSendReqDto reqDto
 	) {
 		notificationFacadeService.sendNotification(reqDto);
-		return ResponseUtils.ok(null);
+		return ResponseUtils.noContent();
 	}
 
 	@Operation(summary = "알림 삭제", description = "알림을 삭제합니다.")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<BaseResponse<Void>> deleteNotification(
-		@AuthenticationPrincipal AuthenticatedUser user,
+		@AuthenticationPrincipal AuthenticatedUser authuser,
 		@PathVariable Long id
 	) {
-		notificationFacadeService.deleteNotification(user.getId(), id);
-		return ResponseUtils.ok(null);
+		notificationFacadeService.deleteNotification(authuser.getId(), id);
+		return ResponseUtils.noContent();
 	}
 }

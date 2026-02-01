@@ -75,7 +75,7 @@ public class ReservationFacadeService {
 		return LiveKitConstants.RESERVATION_DIRECTORY + reservationId;
 	}
 
-	public LiveKitSessionResponse createSession(final Long reservationId, final AuthenticatedUser user) {
+	public LiveKitSessionResponse createSession(final Long reservationId, final AuthenticatedUser authuser) {
 		Reservation reservation = reservationQueryService.findById(reservationId);
 		Timetable timetable = reservation.getSlot().getTimetable();
 
@@ -85,16 +85,16 @@ public class ReservationFacadeService {
 		LocalDateTime endTime = startTime.plusMinutes(LiveKitConstants.END_MINUTES);
 
 		validateSessionTiming(now, entryStartTime, endTime);
-		Role role = Role.fromString(user.getRole());
+		Role role = Role.fromString(authuser.getRole());
 
 		long ttlSeconds = calculateTokenTtl(now, endTime);
 		String roomName = generateRoomName(reservationId);
 
-		String token = liveKitManager.createToken(String.valueOf(user.getId()), user.getEmail(), roomName, role,
+		String token = liveKitManager.createToken(String.valueOf(authuser.getId()), authuser.getEmail(), roomName, role,
 			ttlSeconds);
 
 		log.info("[Reservation] LiveKit 세션 생성 완료 {reservationId: {}, userId: {}, role: {}}", reservationId,
-			user.getId(), role);
+			authuser.getId(), role);
 
 		return LiveKitSessionResponse.of(reservationId, token, roomName, liveKitManager.getUrl(),
 			role.getDescription());
