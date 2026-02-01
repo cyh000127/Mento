@@ -3,7 +3,9 @@ package com.mento.domain.item.controller.query;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,6 +15,8 @@ import com.mento.common.auth.principal.AuthenticatedUser;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.response.PageResponse;
 import com.mento.common.util.ResponseUtils;
+import com.mento.domain.item.dto.request.ItemHistoryReqDto;
+import com.mento.domain.item.dto.response.ItemHistoryResDto;
 import com.mento.domain.item.dto.response.ItemInfoDetailResDto;
 import com.mento.domain.item.dto.response.ItemPageResDto;
 import com.mento.domain.item.enums.ItemCategory;
@@ -63,7 +67,17 @@ public class ItemQueryController {
 		@AuthenticationPrincipal final AuthenticatedUser authUser,
 		@PathVariable final Long id
 	) {
-		ItemInfoDetailResDto response =  itemFacadeService.findById(authUser.getId(), id);
+		ItemInfoDetailResDto response = itemFacadeService.findById(authUser.getId(), id);
 		return ResponseUtils.ok(response);
+	}
+
+	@GetMapping("/histories")
+	@Operation(summary = "아이템 히스토리 조회", description = "사용자의 아이템 변경 이력을 조회합니다.")
+	public ResponseEntity<PageResponse<ItemHistoryResDto>> getItemHistories(
+		@AuthenticationPrincipal final AuthenticatedUser authUser,
+		@Validated @ModelAttribute final ItemHistoryReqDto reqDto
+	) {
+		Page<ItemHistoryResDto> response = itemFacadeService.getItemHistories(authUser.getId(), reqDto);
+		return ResponseUtils.page(response);
 	}
 }
