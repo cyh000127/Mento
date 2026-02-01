@@ -24,12 +24,15 @@ import com.mento.common.auth.principal.AuthenticatedUser;
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.BusinessException;
 import com.mento.domain.brand.entity.Brand;
+import com.mento.domain.item.dto.common.ItemInfoResDto;
 import com.mento.domain.item.dto.response.ItemPageResDto;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.enums.ItemStatus;
 import com.mento.domain.item.enums.SortType;
 import com.mento.domain.item.factory.ItemFactory;
+import com.mento.domain.item.factory.ItemHistoryFactory;
 import com.mento.domain.item.service.command.ItemCommandService;
+import com.mento.domain.item.service.command.ItemHistoryCommandService;
 import com.mento.domain.item.service.query.ItemQueryService;
 import com.mento.domain.item.validator.ItemValidator;
 import com.mento.domain.mentor.entity.Mentor;
@@ -60,13 +63,19 @@ class UserFacadeServiceTest {
 	private ReservationQueryService reservationQueryService;
 
 	@Mock
-	private 	ItemCommandService itemCommandService;
+	private ItemCommandService itemCommandService;
 
 	@Mock
 	private ItemFactory itemFactory;
 
 	@Mock
 	private ProductQueryService productQueryService;
+
+	@Mock
+	private ItemHistoryCommandService itemHistoryCommandService;
+
+	@Mock
+	private ItemHistoryFactory itemHistoryFactory;
 
 	@InjectMocks
 	private UserFacadeService userFacadeService;
@@ -437,7 +446,7 @@ class UserFacadeServiceTest {
 			given(itemCommandService.saveItem(createdItem)).willReturn(createdItem);
 
 			// when
-			com.mento.domain.item.dto.common.ItemInfoResDto result = userFacadeService.addItemToUser(
+			ItemInfoResDto result = userFacadeService.addItemToUser(
 				mentorAuthUser, userId, reqDto
 			);
 
