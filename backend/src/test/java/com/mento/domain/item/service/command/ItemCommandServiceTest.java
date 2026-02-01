@@ -68,8 +68,10 @@ class ItemCommandServiceTest {
 			.build();
 	}
 
-	private Item createItem(final Long id, final User user, final Product product,
-		final ItemStatus status, final Boolean isFavorite, final Integer purchaseCount) {
+	private Item createItem(
+		final Long id, final User user, final Product product,
+		final ItemStatus status, final Boolean isFavorite, final Integer purchaseCount
+	) {
 		return Item.builder()
 			.id(id)
 			.user(user)
@@ -84,9 +86,11 @@ class ItemCommandServiceTest {
 
 	// ===== Test Fixture Methods =====
 
-	private Item createItemWithCustomDates(final Long id, final User user, final Product product,
+	private Item createItemWithCustomDates(
+		final Long id, final User user, final Product product,
 		final ItemStatus status, final Boolean isFavorite, final Integer purchaseCount,
-		final LocalDate purchaseDate, final LocalDate expectedExpiryDate) {
+		final LocalDate purchaseDate, final LocalDate expectedExpiryDate
+	) {
 		return Item.builder()
 			.id(id)
 			.user(user)
@@ -170,7 +174,7 @@ class ItemCommandServiceTest {
 
 		@Test
 		@DisplayName("UNAVAILABLE로 상태 변경 성공")
-		void 아이템_상태_업데이트_UNAVAILABLE로_변경_성공() {
+		void 아이템_상태_업데이트_Unavailable로_변경_성공() {
 			// given
 			Item item = createItem(1L, testUser, testProduct, ItemStatus.OWNED, false, 1);
 
@@ -184,7 +188,7 @@ class ItemCommandServiceTest {
 
 		@Test
 		@DisplayName("OVER_DATED로 상태 변경 성공")
-		void 아이템_상태_업데이트_OVER_DATED로_변경_성공() {
+		void 아이템_상태_업데이트_OverDated로_변경_성공() {
 			// given
 			Item item = createItemWithCustomDates(
 				1L, testUser, testProduct, ItemStatus.OWNED, false, 1,
@@ -200,16 +204,13 @@ class ItemCommandServiceTest {
 
 		@Test
 		@DisplayName("OWNED로 상태 변경 시 구매 정보 갱신")
-		void 아이템_상태_업데이트_OWNED로_변경_구매정보_갱신() {
+		void 아이템_상태_업데이트_Owned로_변경_구매정보_갱신() {
 			// given
 			LocalDate oldPurchaseDate = LocalDate.now().minusDays(100);
 			LocalDate oldExpiryDate = LocalDate.now().minusDays(10);
 
 			Item item = createItemWithCustomDates(
-				1L, testUser, testProduct, ItemStatus.
-					PURCHASING, false, 3,
-				oldPurchaseDate, oldExpiryDate
-			);
+				1L, testUser, testProduct, ItemStatus.PURCHASING, false, 3, oldPurchaseDate, oldExpiryDate);
 
 			// when
 			item.updateStatus(ItemStatus.OWNED);

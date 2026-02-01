@@ -37,27 +37,22 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Reservation extends BaseEntity {
 
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "payment_id")
+	Payment payment;
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "reservation_id")
 	private Long id;
-
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = false)
 	private User user;
-
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "slot_id", nullable = false)
 	private TimetableSlot slot;
-
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "mentor_id")
 	private Mentor mentor;
-
-	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "payment_id")
-	Payment payment;
-
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false)
 	private ReservationStatus status;

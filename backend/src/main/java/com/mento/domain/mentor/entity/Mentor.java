@@ -27,14 +27,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Mentor extends BaseEntity {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "type_id", nullable = false)
 	MentorType mentorType;
-
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 	@Column(name = "login_id", nullable = false)
 	private String loginId;
 

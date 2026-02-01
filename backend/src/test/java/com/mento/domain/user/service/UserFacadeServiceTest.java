@@ -433,9 +433,9 @@ class UserFacadeServiceTest {
 			// given
 			Long userId = testUser.getId();
 			MentorAddItemReqDto reqDto = MentorAddItemReqDto.builder()
-					.productId(1L)
-					.reservationId(1L)
-					.build();
+				.productId(1L)
+				.reservationId(1L)
+				.build();
 
 			Item createdItem = createItem(1L, testUser, testProduct, ItemStatus.RECOMMENDED, false, 1);
 
@@ -470,9 +470,9 @@ class UserFacadeServiceTest {
 			// given
 			Long userId = testUser.getId();
 			MentorAddItemReqDto reqDto = MentorAddItemReqDto.builder()
-					.productId(1L)
-					.reservationId(1L)
-					.build();
+				.productId(1L)
+				.reservationId(1L)
+				.build();
 
 			given(reservationQueryService.findById(1L)).willReturn(testReservation);
 			willThrow(new BusinessException(ErrorCode.ACCESS_DENIED))
@@ -498,9 +498,9 @@ class UserFacadeServiceTest {
 			Long userId = testUser.getId();
 			Long invalidProductId = 999L;
 			MentorAddItemReqDto reqDto = MentorAddItemReqDto.builder()
-					.productId(invalidProductId)
-					.reservationId(1L)
-					.build();
+				.productId(invalidProductId)
+				.reservationId(1L)
+				.build();
 
 			given(reservationQueryService.findById(1L)).willReturn(testReservation);
 			given(productQueryService.findById(invalidProductId))
@@ -525,9 +525,9 @@ class UserFacadeServiceTest {
 			// given
 			Long invalidUserId = 999L;
 			MentorAddItemReqDto reqDto = MentorAddItemReqDto.builder()
-					.productId(1L)
-					.reservationId(1L)
-					.build();
+				.productId(1L)
+				.reservationId(1L)
+				.build();
 
 			given(reservationQueryService.findById(1L)).willReturn(testReservation);
 			given(productQueryService.findById(1L)).willReturn(testProduct);
