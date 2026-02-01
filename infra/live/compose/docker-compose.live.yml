@@ -52,10 +52,7 @@ services:
     volumes:
       - ../egress/config.yml:/etc/egress/egress_config.yml:ro
     environment:
-      - LIVEKIT_URL=http://host.docker.internal:8000
-      - LIVEKIT_API_KEY=${LIVEKIT_API_KEY}
-      - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET}
-      - EGRESS_REDIS_URL=redis://redis_livekit:6379
+      - EGRESS_CONFIG_FILE=/etc/egress/egress_config.yml
       - EGRESS_S3_ENDPOINT=${CLOUDFLARE_ENDPOINT}
       - EGRESS_S3_ACCESS_KEY=${CLOUDFLARE_ACCESS_KEY}
       - EGRESS_S3_SECRET=${CLOUDFLARE_SECRET_KEY}
@@ -63,7 +60,6 @@ services:
     depends_on:
       - livekit
       - redis_livekit
-    command: --config /etc/egress/egress_config.yml
     logging:
       driver: "json-file"
       options:

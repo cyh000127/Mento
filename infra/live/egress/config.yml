@@ -1,4 +1,4 @@
-host: ws://host.docker.internal:8000
+ws_url: ws://host.docker.internal:8000
 api_key: CRRsJdJGKI
 api_secret: YQGcyneUgQiNUfhazwTJizHT2rEu6x6zdx6nPvQFftBiFrmRaUio5wTyvmt7PgaP
 
