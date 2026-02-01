@@ -43,11 +43,11 @@ public class UserCommandController {
 	@Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 수행합니다 (Soft Delete).")
 	@DeleteMapping("/account")
 	public ResponseEntity<BaseResponse<Void>> withdraw(
-		@AuthenticationPrincipal AuthenticatedUser user,
+		@AuthenticationPrincipal AuthenticatedUser authuser,
 		HttpServletRequest request,
 		HttpServletResponse response
 	) {
-		userCommandService.withdraw(user.getId());
+		userCommandService.withdraw(authuser.getId());
 		authCommandService.logout(request, response);
 		return ResponseUtils.ok(null);
 	}
@@ -55,10 +55,10 @@ public class UserCommandController {
 	@Operation(summary = "회원 생일 수정", description = "회원 생일 정보를 수정합니다.")
 	@PatchMapping("/edit")
 	public ResponseEntity<BaseResponse<UserResDto>> updateUser(
-		@AuthenticationPrincipal AuthenticatedUser user,
+		@AuthenticationPrincipal AuthenticatedUser authuser,
 		@RequestBody @Valid UserUpdateReqDto reqDto
 	) {
-		UserResDto response = userFacadeService.updateUser(user, reqDto);
+		UserResDto response = userFacadeService.updateUser(authuser, reqDto);
 		return ResponseUtils.ok(response);
 	}
 

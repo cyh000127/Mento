@@ -1,6 +1,7 @@
 package com.mento.domain.timetable.service.query.impl;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -67,6 +68,13 @@ public class TimetableQueryServiceImpl implements TimetableQueryService {
 			dateRange.getEndDate(),
 			timetables.size()
 		);
+		return timetables;
+	}
+
+	@Override
+	public List<Timetable> findAllByDateAndTime(final LocalDate date, final LocalTime time) {
+		List<Timetable> timetables = timetableRepository.findByScheduledDateAndScheduledTime(date, time);
+		log.info("[Timetable] 일시별 시간표 조회 완료 {date: {}, time: {}, size: {}}", date, time, timetables.size());
 		return timetables;
 	}
 }

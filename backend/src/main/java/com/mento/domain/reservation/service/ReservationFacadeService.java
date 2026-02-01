@@ -19,6 +19,9 @@ import com.mento.common.file.service.FileService;
 import com.mento.common.livekit.LiveKitManager;
 import com.mento.common.livekit.dto.LiveKitSessionResponse;
 import com.mento.common.util.PageUtils;
+import com.mento.domain.notification.dto.request.NotificationSendReqDto;
+import com.mento.domain.notification.entity.NotificationType;
+import com.mento.domain.notification.service.NotificationFacadeService;
 import com.mento.domain.reservation.constants.LiveKitConstants;
 import com.mento.domain.reservation.converter.ReservationConverter;
 import com.mento.domain.reservation.dto.response.MediaUploadResDto;
@@ -57,6 +60,8 @@ public class ReservationFacadeService {
 	private final ReservationValidator reservationValidator;
 	private final ReservationFactory reservationFactory;
 
+	private final NotificationFacadeService notificationFacadeService;
+
 	@Transactional
 	public MediaUploadResDto uploadFiles(final List<MultipartFile> files, final Long reservationId) {
 		validateReservationExists(reservationId);
@@ -70,7 +75,7 @@ public class ReservationFacadeService {
 		return LiveKitConstants.RESERVATION_DIRECTORY + reservationId;
 	}
 
-	public LiveKitSessionResponse createSession(final Long reservationId, final AuthenticatedUser user) {
+	public LiveKitSessionResponse createSession(final Long reservationId, final AuthenticatedUser authuser) {
 		Reservation reservation = reservationQueryService.findById(reservationId);
 		Timetable timetable = reservation.getSlot().getTimetable();
 
@@ -80,16 +85,16 @@ public class ReservationFacadeService {
 		LocalDateTime endTime = startTime.plusMinutes(LiveKitConstants.END_MINUTES);
 
 		validateSessionTiming(now, entryStartTime, endTime);
-		Role role = Role.fromString(user.getRole());
+		Role role = Role.fromString(authuser.getRole());
 
 		long ttlSeconds = calculateTokenTtl(now, endTime);
 		String roomName = generateRoomName(reservationId);
 
-		String token = liveKitManager.createToken(String.valueOf(user.getId()), user.getEmail(), roomName, role,
+		String token = liveKitManager.createToken(String.valueOf(authuser.getId()), authuser.getEmail(), roomName, role,
 			ttlSeconds);
 
 		log.info("[Reservation] LiveKit 세션 생성 완료 {reservationId: {}, userId: {}, role: {}}", reservationId,
-			user.getId(), role);
+			authuser.getId(), role);
 
 		return LiveKitSessionResponse.of(reservationId, token, roomName, liveKitManager.getUrl(),
 			role.getDescription());
@@ -165,6 +170,18 @@ public class ReservationFacadeService {
 
 		Reservation reservation = reservationFactory.createReservation(user, timetableSlot);
 		Reservation savedReservation = reservationCommandService.save(reservation);
+
+		try {
+			notificationFacadeService.sendNotification(NotificationSendReqDto.builder()
+				.targetMemberId(user.getId())
+				.type(NotificationType.RESERVATION_CONFIRMED)
+				.value(timetableSlot.getMentorType().getTypeName())
+				.expiredAt(LocalDateTime.now().plusDays(1))
+				.build()
+			);
+		} catch (Exception e) {
+			log.error("[Reservation] 예약 확정 알림 전송 실패 {userId: {}, error: {}}", userId, e.getMessage());
+		}
 
 		return ReservationConverter.toReservationDraftResDto(savedReservation);
 	}

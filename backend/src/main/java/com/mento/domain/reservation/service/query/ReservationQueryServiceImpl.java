@@ -74,4 +74,11 @@ public class ReservationQueryServiceImpl implements ReservationQueryService {
 		return reservationRepository.existsByUserIdAndSlotIdAndStatusIn(userId, reservationId, reservationStatuses);
 	}
 
+	@Override
+	public List<Reservation> findAllByTimetableIds(final List<Long> timetableIds) {
+		List<Reservation> reservations = reservationRepository.findAllBySlotTimetableIdIn(timetableIds);
+		log.info("[Reservation] 시간표 ID 목록으로 예약 조회 완료 {size: {}}", reservations.size());
+		return reservations;
+	}
+
 }

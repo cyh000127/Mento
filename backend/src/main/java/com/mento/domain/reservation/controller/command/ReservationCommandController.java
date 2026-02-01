@@ -36,9 +36,9 @@ public class ReservationCommandController {
 	@PostMapping("/{id}/sessions")
 	public ResponseEntity<BaseResponse<LiveKitSessionResponse>> createSession(
 		@PathVariable final Long id,
-		@AuthenticationPrincipal final AuthenticatedUser user
+		@AuthenticationPrincipal final AuthenticatedUser authuser
 	) {
-		LiveKitSessionResponse response = facadeService.createSession(id, user);
+		LiveKitSessionResponse response = facadeService.createSession(id, authuser);
 		return ResponseUtils.ok(response);
 	}
 

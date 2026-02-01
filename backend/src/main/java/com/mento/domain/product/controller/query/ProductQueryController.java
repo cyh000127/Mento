@@ -28,7 +28,7 @@ public class ProductQueryController {
 
 	private final ProductFacadeService productFacadeService;
 
-	@Operation(summary = "상품 조회", description = "상품 ID로 상세 정보를 조회합니다.")
+	@Operation(summary = "상품 상세 조회", description = "상품 ID로 상세 정보를 조회합니다.")
 	@GetMapping("/{id}")
 	public ResponseEntity<BaseResponse<ProductResDto>> getProduct(
 		@PathVariable final Long id
@@ -37,7 +37,7 @@ public class ProductQueryController {
 		return ResponseUtils.ok(response);
 	}
 
-	@Operation(summary = "상품 검색", description = "조건에 따라 상품을 검색합니다.")
+	@Operation(summary = "상품 조회", description = "조건에 따라 상품을 조회합니다.")
 	@GetMapping
 	public ResponseEntity<BaseResponse<Page<ProductResDto>>> getProducts(
 		@ModelAttribute final ProductSearchCondition condition,
