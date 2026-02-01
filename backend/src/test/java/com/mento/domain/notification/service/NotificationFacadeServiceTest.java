@@ -99,19 +99,29 @@ class NotificationFacadeServiceTest {
 	}
 
 	@Test
-	@DisplayName("알림 목록 조회를 위임한다")
+	@DisplayName("알림 목록 조회를 위임하고 변환하여 반환한다")
 	void getNotifications_Success() {
 		// given
 		Long userId = 1L;
-		List<NotificationResDto> expectedResponse = List.of();
-
-		given(notificationQueryService.getNotifications(userId)).willReturn(expectedResponse);
+		
+		Notification notification = Notification.builder()
+			.id(1L)
+			.userId(userId)
+			.type(NotificationType.RESERVATION_REMINDER)
+			.value("60")
+			.build();
+			
+		List<Notification> notifications = List.of(notification);
+		
+		given(notificationQueryService.getNotifications(userId)).willReturn(notifications);
 
 		// when
 		List<NotificationResDto> result = notificationFacadeService.getNotifications(userId);
 
 		// then
-		assertThat(result).isEqualTo(expectedResponse);
+		assertThat(result).hasSize(1);
+		assertThat(result.get(0).notificationId()).isEqualTo(notification.getId());
+		assertThat(result.get(0).value()).isEqualTo(notification.getValue());
 		verify(notificationQueryService).getNotifications(userId);
 	}
 

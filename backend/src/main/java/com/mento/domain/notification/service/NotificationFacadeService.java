@@ -19,7 +19,6 @@ import com.mento.domain.notification.repository.SseEmitterRepository;
 import com.mento.domain.notification.service.command.NotificationCommandService;
 import com.mento.domain.notification.service.query.NotificationQueryService;
 
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,7 +54,7 @@ public class NotificationFacadeService {
 				.name("connect")
 				.data("connected!"));
 
-			List<@NonNull Notification> unreadNotifications = notificationRepository
+			List<Notification> unreadNotifications = notificationRepository
 				.findActiveNotifications(userId, LocalDateTime.now());
 
 			if (!unreadNotifications.isEmpty()) {
@@ -94,7 +93,9 @@ public class NotificationFacadeService {
 
 	@Transactional(readOnly = true)
 	public List<NotificationResDto> getNotifications(final Long userId) {
-		return notificationQueryService.getNotifications(userId);
+		return notificationQueryService.getNotifications(userId).stream()
+			.map(NotificationConverter::toNotificationResDto)
+			.toList();
 	}
 
 	@Transactional

@@ -26,10 +26,10 @@ import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.service.NotificationFacadeService;
 import com.mento.domain.reservation.entity.Reservation;
-import com.mento.domain.reservation.repository.ReservationRepository;
+import com.mento.domain.reservation.service.query.ReservationQueryService;
 import com.mento.domain.timetable.entity.Timetable;
 import com.mento.domain.timetable.entity.TimetableSlot;
-import com.mento.domain.timetable.repository.TimetableRepository;
+import com.mento.domain.timetable.service.query.TimetableQueryService;
 import com.mento.domain.user.entity.User;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,10 +42,10 @@ class NotificationScheduleServiceTest {
 	private NotificationFacadeService notificationFacadeService;
 
 	@Mock
-	private TimetableRepository timetableRepository;
+	private TimetableQueryService timetableQueryService;
 
 	@Mock
-	private ReservationRepository reservationRepository;
+	private ReservationQueryService reservationQueryService;
 
 	@Captor
 	private ArgumentCaptor<List<NotificationSendReqDto>> captor;
@@ -101,10 +101,10 @@ class NotificationScheduleServiceTest {
 			.slot(slot)
 			.build();
 
-		given(timetableRepository.findByScheduledDateAndScheduledTime(today, scheduledTime))
+		given(timetableQueryService.findAllByDateAndTime(today, scheduledTime))
 			.willReturn(List.of(timetable));
 
-		given(reservationRepository.findAllBySlotTimetableIdIn(List.of(1L)))
+		given(reservationQueryService.findAllByTimetableIds(List.of(1L)))
 			.willReturn(List.of(reservation));
 
 		// when
@@ -162,9 +162,9 @@ class NotificationScheduleServiceTest {
 			.slot(slot)
 			.build();
 
-		given(timetableRepository.findByScheduledDateAndScheduledTime(today, scheduledTime))
+		given(timetableQueryService.findAllByDateAndTime(today, scheduledTime))
 			.willReturn(List.of(timetable));
-		given(reservationRepository.findAllBySlotTimetableIdIn(List.of(1L)))
+		given(reservationQueryService.findAllByTimetableIds(List.of(1L)))
 			.willReturn(List.of(reservation));
 
 		// when
@@ -175,7 +175,7 @@ class NotificationScheduleServiceTest {
 
 		List<NotificationSendReqDto> reqDtos = captor.getValue();
 		assertThat(reqDtos).hasSize(1);
-		NotificationSendReqDto reqDto = reqDtos.getFirst(); // Note: Assuming get(0) as per view_file.
+		NotificationSendReqDto reqDto = reqDtos.get(0);
 
 		assertThat(reqDto.type()).isEqualTo(NotificationType.RESERVATION_REMINDER);
 		assertThat(reqDto.value()).isEqualTo("30");
@@ -222,9 +222,9 @@ class NotificationScheduleServiceTest {
 			.slot(slot)
 			.build();
 
-		given(timetableRepository.findByScheduledDateAndScheduledTime(today, scheduledTime))
+		given(timetableQueryService.findAllByDateAndTime(today, scheduledTime))
 			.willReturn(List.of(timetable));
-		given(reservationRepository.findAllBySlotTimetableIdIn(List.of(1L)))
+		given(reservationQueryService.findAllByTimetableIds(List.of(1L)))
 			.willReturn(List.of(reservation));
 
 		// when
@@ -235,7 +235,7 @@ class NotificationScheduleServiceTest {
 
 		List<NotificationSendReqDto> reqDtos = captor.getValue();
 		assertThat(reqDtos).hasSize(1);
-		NotificationSendReqDto reqDto = reqDtos.getFirst();
+		NotificationSendReqDto reqDto = reqDtos.get(0);
 
 		assertThat(reqDto.type()).isEqualTo(NotificationType.CONSULTING_STARTED);
 		assertThat(reqDto.value()).isEqualTo("0");

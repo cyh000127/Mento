@@ -25,4 +25,6 @@ public interface ReservationQueryService {
 	);
 
 	boolean existsByUserIdAndSlotIdAndStatusIn(Long userId, Long id, List<ReservationStatus> reservationStatuses);
+
+	List<Reservation> findAllByTimetableIds(final List<Long> timetableIds);
 }

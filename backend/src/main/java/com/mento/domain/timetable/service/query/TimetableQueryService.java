@@ -1,6 +1,7 @@
 package com.mento.domain.timetable.service.query;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
 
@@ -17,4 +18,6 @@ public interface TimetableQueryService {
 	Set<LocalDate> findExistingDatesInRange(final LocalDate startDate, final LocalDate endDate);
 
 	List<Timetable> findAllByDateRange(final DateRange dateRange);
+
+	List<Timetable> findAllByDateAndTime(final LocalDate date, final LocalTime time);
 }

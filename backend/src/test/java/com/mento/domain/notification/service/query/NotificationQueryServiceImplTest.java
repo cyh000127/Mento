@@ -12,7 +12,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.mento.domain.notification.dto.response.NotificationResDto;
 import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.repository.NotificationRepository;
@@ -44,12 +43,12 @@ class NotificationQueryServiceImplTest {
 		given(notificationRepository.findAllByUserId(userId)).willReturn(notificationList);
 
 		// when
-		List<NotificationResDto> result = notificationQueryService.getNotifications(userId);
+		List<Notification> result = notificationQueryService.getNotifications(userId);
 
 		// then
 		assertThat(result).isNotNull()
 			.hasSize(1);
-		assertThat(result.getFirst().value()).isEqualTo("60");
+		assertThat(result.getFirst().getValue()).isEqualTo("60");
 		
 		verify(notificationRepository, times(1)).findAllByUserId(userId);
 	}
