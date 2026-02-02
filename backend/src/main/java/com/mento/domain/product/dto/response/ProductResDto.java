@@ -1,7 +1,6 @@
 package com.mento.domain.product.dto.response;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -49,14 +48,14 @@ public record ProductResDto(
 	@Schema(description = "상품 URL", example = "https://www.oliveyoung.co.kr/...")
 	String productUrl,
 
-	@Schema(description = "피부타입", example = "[\"지성\", \"민감성\"]")
-	List<String> skinTypes,
+	@Schema(description = "피부타입 (JSON 배열)", example = "[\"지성\", \"민감성\"]")
+	String skinTypes,
 
-	@Schema(description = "관련질환", example = "[\"여드름\"]")
-	List<String> relatedConditions,
+	@Schema(description = "관련질환 (JSON 배열)", example = "[\"여드름\"]")
+	String relatedConditions,
 
-	@Schema(description = "주요효능", example = "[\"진정\"]")
-	List<String> benefits,
+	@Schema(description = "주요효능 (JSON 배열)", example = "[\"진정\"]")
+	String benefits,
 
 	@Schema(description = "기본 예상 사용 기간(일)", example = "90")
 	Integer defaultUsageDays,
