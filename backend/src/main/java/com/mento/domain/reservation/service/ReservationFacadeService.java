@@ -61,8 +61,6 @@ public class ReservationFacadeService {
 	private final ReservationValidator reservationValidator;
 	private final ReservationFactory reservationFactory;
 
-	private final NotificationFacadeService notificationFacadeService;
-
 	@Transactional
 	public MediaUploadResDto uploadFiles(final List<MultipartFile> files, final Long reservationId) {
 		validateReservationExists(reservationId);
@@ -169,18 +167,6 @@ public class ReservationFacadeService {
 
 		Reservation reservation = reservationFactory.createReservation(user, timetableSlot);
 		Reservation savedReservation = reservationCommandService.save(reservation);
-
-		try {
-			notificationFacadeService.sendNotification(NotificationSendReqDto.builder()
-				.targetMemberId(user.getId())
-				.type(NotificationType.RESERVATION_CONFIRMED)
-				.content(timetableSlot.getMentorType().getTypeName())
-				.expiredAt(LocalDateTime.now().plusDays(1))
-				.build()
-			);
-		} catch (Exception e) {
-			log.error("[Reservation] 예약 확정 알림 전송 실패 {userId: {}, error: {}}", userId, e.getMessage());
-		}
 
 		return ReservationConverter.toReservationDraftResDto(savedReservation);
 	}
