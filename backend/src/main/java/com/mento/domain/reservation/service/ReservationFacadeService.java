@@ -19,6 +19,7 @@ import com.mento.common.file.service.FileService;
 import com.mento.common.livekit.LiveKitManager;
 import com.mento.common.livekit.dto.LiveKitSessionResponse;
 import com.mento.common.util.PageUtils;
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.service.NotificationFacadeService;
@@ -79,7 +80,7 @@ public class ReservationFacadeService {
 		Reservation reservation = reservationQueryService.findById(reservationId);
 		Timetable timetable = reservation.getSlot().getTimetable();
 
-		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime now = TimeUtils.nowAsLocalDateTime();
 		LocalDateTime startTime = calculateStartTime(timetable);
 		LocalDateTime entryStartTime = startTime.minusMinutes(LiveKitConstants.EARLY_ENTRY_MINUTES);
 		LocalDateTime endTime = startTime.plusMinutes(LiveKitConstants.END_MINUTES);
@@ -213,9 +214,9 @@ public class ReservationFacadeService {
 	private void validateSlotAvailability(final TimetableSlot timetableSlot) {
 		Timetable timetable = timetableSlot.getTimetable();
 		LocalDateTime slotDateTime = LocalDateTime.of(timetable.getScheduledDate(), timetable.getScheduledTime());
+		LocalDateTime now = TimeUtils.nowAsLocalDateTime();
 
-		if (slotDateTime.isBefore(LocalDateTime.now())) {
-			//TODO: 생성시간과 요청 시간의 시간대가 서로 상이 (UTC, KR, 요청시 들어오는 시간대가 9시간 깎인다.)
+		if (!slotDateTime.isAfter(now)) {
 			throw new ReservationException(ErrorCode.TIMETABLE_PAST_TIME);
 		}
 

@@ -18,9 +18,9 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.entity.NotificationType;
@@ -50,16 +50,16 @@ class NotificationScheduleServiceTest {
 	@Captor
 	private ArgumentCaptor<List<NotificationSendReqDto>> captor;
 
-	private MockedStatic<LocalDateTime> localDateTimeMock;
+	private MockedStatic<TimeUtils> timeUtilsMock;
 
 	@BeforeEach
 	void setUp() {
-		localDateTimeMock = mockStatic(LocalDateTime.class, Mockito.CALLS_REAL_METHODS);
+		timeUtilsMock = mockStatic(TimeUtils.class);
 	}
 
 	@AfterEach
 	void tearDown() {
-		localDateTimeMock.close();
+		timeUtilsMock.close();
 	}
 
 	@Test
@@ -70,7 +70,7 @@ class NotificationScheduleServiceTest {
 		LocalTime nowTime = LocalTime.of(9, 5);
 		LocalDateTime fixedNow = LocalDateTime.of(today, nowTime);
 
-		localDateTimeMock.when(LocalDateTime::now).thenReturn(fixedNow);
+		timeUtilsMock.when(TimeUtils::nowAsLocalDateTime).thenReturn(fixedNow);
 
 		LocalTime scheduledTime = LocalTime.of(10, 0);
 		Timetable timetable = Timetable.builder()
@@ -131,7 +131,7 @@ class NotificationScheduleServiceTest {
 		LocalTime nowTime = LocalTime.of(9, 35);
 		LocalDateTime fixedNow = LocalDateTime.of(today, nowTime);
 
-		localDateTimeMock.when(LocalDateTime::now).thenReturn(fixedNow);
+		timeUtilsMock.when(TimeUtils::nowAsLocalDateTime).thenReturn(fixedNow);
 
 		LocalTime scheduledTime = LocalTime.of(10, 0);
 		Timetable timetable = Timetable.builder()
@@ -191,7 +191,7 @@ class NotificationScheduleServiceTest {
 		LocalTime nowTime = LocalTime.of(9, 55);
 		LocalDateTime fixedNow = LocalDateTime.of(today, nowTime);
 
-		localDateTimeMock.when(LocalDateTime::now).thenReturn(fixedNow);
+		timeUtilsMock.when(TimeUtils::nowAsLocalDateTime).thenReturn(fixedNow);
 
 		LocalTime scheduledTime = LocalTime.of(10, 0);
 		Timetable timetable = Timetable.builder()
