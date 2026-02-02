@@ -38,8 +38,13 @@ public class ItemQueryController {
 
 	private final ItemFacadeService itemFacadeService;
 
+	@Operation(
+		summary = "아이템 목록 조회",
+		description = "사용자의 아이템 목록을 조회합니다. "
+			+ "상태(OWNED/USED/EMPTIED), 카테고리(HAIR/SKIN/BODY 등), 즐겨찾기 여부로 필터링할 수 있으며, "
+			+ "정렬 방식(LATEST/OLDEST/NAME)을 지정할 수 있습니다. 페이지네이션을 지원합니다."
+	)
 	@GetMapping
-	@Operation(summary = "사용자 아이템 목록 조회", description = "사용자의 아이템 목록을 필터링 및 정렬하여 페이징 조회합니다.")
 	public ResponseEntity<PageResponse<ItemPageResDto>> findAllItemsByUserId(
 		@AuthenticationPrincipal final AuthenticatedUser authUser,
 		@RequestParam(required = false)
@@ -61,8 +66,12 @@ public class ItemQueryController {
 		return ResponseUtils.page(response);
 	}
 
+	@Operation(
+		summary = "아이템 상세 조회",
+		description = "아이템의 상세 정보를 조회합니다. "
+			+ "아이템 ID를 통해 브랜드, 카테고리, 상태, 즐겨찾기 여부 등의 상세 정보를 확인할 수 있습니다."
+	)
 	@GetMapping("/{id}")
-	@Operation(summary = "아이템 상세 정보 조회", description = "사용자의 아이템 상세정보를 조회합니다.")
 	public ResponseEntity<BaseResponse<ItemInfoDetailResDto>> findItemById(
 		@AuthenticationPrincipal final AuthenticatedUser authUser,
 		@PathVariable final Long id
@@ -71,8 +80,12 @@ public class ItemQueryController {
 		return ResponseUtils.ok(response);
 	}
 
+	@Operation(
+		summary = "아이템 변경 이력 조회",
+		description = "사용자의 아이템 변경 이력을 조회합니다. "
+			+ "아이템의 상태 변경, 추가, 삭제 등의 이력을 시간순으로 확인할 수 있습니다. 페이지네이션을 지원합니다."
+	)
 	@GetMapping("/histories")
-	@Operation(summary = "아이템 히스토리 조회", description = "사용자의 아이템 변경 이력을 조회합니다.")
 	public ResponseEntity<PageResponse<ItemHistoryResDto>> getItemHistories(
 		@AuthenticationPrincipal final AuthenticatedUser authUser,
 		@Validated @ModelAttribute final ItemHistoryReqDto reqDto

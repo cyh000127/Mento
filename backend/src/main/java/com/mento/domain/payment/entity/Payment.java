@@ -13,9 +13,11 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -37,7 +39,8 @@ public class Payment extends BaseEntity {
 	@Column(name = "payment_id")
 	private Long paymentId;
 
-	@OneToOne(mappedBy = "payment", cascade = CascadeType.ALL)
+	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@JoinColumn(name = "reservation_id")
 	private Reservation reservation;
 
 	@Column(name = "amount", nullable = false)
@@ -67,6 +70,9 @@ public class Payment extends BaseEntity {
 			throw new IllegalArgumentException("예약 정보가 누락되었습니다");
 		}
 		this.reservation = reservation;
+		if (reservation.getPayment() != this) {
+			reservation.assignPayment(this);
+		}
 	}
 
 	public void updateReady(final String kakaoTid) {

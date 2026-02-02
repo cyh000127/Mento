@@ -37,8 +37,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Reservation extends BaseEntity {
 
-	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "payment_id")
+	@OneToOne(mappedBy = "reservation", fetch = FetchType.LAZY)
 	Payment payment;
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

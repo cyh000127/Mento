@@ -44,7 +44,7 @@ public class LiveKitTestController {
 
 		long ttlSeconds = 3600;
 
-		String token = liveKitManager.createToken(userId, userName, roomName, role, ttlSeconds);
+		String token = liveKitManager.createToken(uniqueId, userName, roomName, role, ttlSeconds);
 
 		LiveKitSessionResponse response = new LiveKitSessionResponse(
 			0L,
