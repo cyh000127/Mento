@@ -11,6 +11,8 @@ import com.mento.domain.payment.entity.Payment;
 import com.mento.domain.payment.factory.PaymentFactory;
 import com.mento.domain.payment.repository.PaymentRepository;
 import com.mento.domain.payment.service.command.kakao.KakaoPaymentService;
+import com.mento.domain.reservation.entity.Reservation;
+import com.mento.domain.reservation.service.query.ReservationQueryService;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -25,14 +27,19 @@ public class PaymentCommandServiceImpl implements PaymentCommandService {
 	private final PaymentRepository paymentRepository;
 	private final PaymentFactory paymentFactory;
 	private final KakaoPaymentService kakaoPaymentService;
+	private final ReservationQueryService reservationQueryService;
 
 	@Override
 	public PaymentReadyResDto ready(final PaymentReadyReqDto request, final Long userId) {
+		Reservation reservation = reservationQueryService.findById(request.reservationId());
+
 		Payment payment = paymentFactory.createPayment(request);
+		payment.assignReservation(reservation);
 		Payment savedPayment = paymentRepository.save(payment);
 
 		PaymentReadyResDto response = kakaoPaymentService.ready(savedPayment, request, userId);
-		log.info("[Payment] 결제 준비 완료 {paymentId: {}, userId: {}}", payment.getPaymentId(), userId);
+		log.info("[Payment] 결제 준비 완료 {paymentId: {}, reservationId: {}, userId: {}}",
+			payment.getPaymentId(), reservation.getId(), userId);
 
 		return response;
 	}

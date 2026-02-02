@@ -106,7 +106,6 @@ class PaymentFacadeServiceTest {
 			.build();
 		ReflectionTestUtils.setField(payment, "paymentId", paymentId);
 		payment.assignReservation(reservation);
-		reservation.assignPayment(payment);
 	}
 
 	@Test
