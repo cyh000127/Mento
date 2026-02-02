@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@/components/ui/pagination";
-import { getProducts } from "@/api/products";
+import { getProducts } from "@/api/productsApi";
 import type { ApiProduct } from "@/types/product";
 import type { Product } from "@/types/inventory";
 
@@ -18,9 +18,9 @@ interface InventoryRegisterModalProps {
 // API 상품을 재고 상품으로 변환하는 헬퍼 함수
 function convertApiProductToInventoryProduct(apiProduct: ApiProduct): Product {
   return {
-    id: apiProduct.id.toString(),
+    id: apiProduct.productId.toString(),
     name: apiProduct.name,
-    brand: apiProduct.brand,
+    brand: apiProduct.brandName,
     category: "skin", // 기본값
     image: apiProduct.imageUrl || "https://via.placeholder.com/150",
     purchaseDate: "",
@@ -48,7 +48,11 @@ function ProductSearchCard({ product, isSelected, onToggleSelect }: ProductSearc
       <div className="flex gap-2.5">
         {/* 체크박스 */}
         <div className="flex items-start pt-0.5">
-          <Checkbox checked={isSelected} onCheckedChange={() => onToggleSelect(product.id)} className="data-[state=checked]:bg-primary-500 data-[state=checked]:border-primary-500" />
+          <Checkbox 
+            checked={isSelected} 
+            onCheckedChange={() => onToggleSelect(product.productId)} 
+            className="data-[state=checked]:bg-primary-500 data-[state=checked]:border-primary-500" 
+          />
         </div>
 
         {/* 제품 이미지 */}
@@ -64,7 +68,7 @@ function ProductSearchCard({ product, isSelected, onToggleSelect }: ProductSearc
             </span>
           </div>
           <h4 className="mb-0.5 text-sm font-semibold text-text-primary truncate">{product.name}</h4>
-          <p className="text-xs text-text-secondary">{product.brand}</p>
+          <p className="text-xs text-text-secondary">{product.brandName}</p>
         </div>
       </div>
     </div>
@@ -164,12 +168,11 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
   // 페이지 크기
   const itemsPerPage = 10;
 
-  // API에서 상품 목록 조회
+  // API에서 상품 목록 조회 (전체 조회 후 클라이언트에서 필터링)
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await getProducts({
-        brand: searchQuery || undefined,
         sort_key: "name",
         order: "asc",
         page: currentPage - 1, // API는 0부터 시작
@@ -177,8 +180,18 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
       });
 
       if (response.success && response.data) {
-        // API 상품을 그대로 사용
-        setApiProducts(response.data.content);
+        // 검색어가 있으면 클라이언트에서 필터링
+        let filteredProducts = response.data.content;
+        
+        if (searchQuery.trim()) {
+          const query = searchQuery.toLowerCase().trim();
+          filteredProducts = filteredProducts.filter((product) => 
+            product.name.toLowerCase().includes(query) ||
+            product.brandName.toLowerCase().includes(query)
+          );
+        }
+        
+        setApiProducts(filteredProducts);
         setTotalPages(response.data.totalPages);
       } else {
         console.error("상품 목록 조회 실패:", response.error);
@@ -202,7 +215,7 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
   }, [open, fetchProducts]);
 
   const handleToggleSelect = (productId: number) => {
-    const apiProduct = apiProducts.find((p) => p.id === productId);
+    const apiProduct = apiProducts.find((p) => p.productId === productId);
     if (!apiProduct) return;
 
     const productIdStr = productId.toString();
@@ -282,7 +295,12 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
                 <div className="flex-1 overflow-y-auto">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {apiProducts.map((product) => (
-                      <ProductSearchCard key={product.id} product={product} isSelected={selectedProducts.some((p) => p.id === product.id.toString())} onToggleSelect={handleToggleSelect} />
+                      <ProductSearchCard 
+                        key={product.productId} 
+                        product={product} 
+                        isSelected={selectedProducts.some((p) => p.id === product.productId.toString())} 
+                        onToggleSelect={handleToggleSelect} 
+                      />
                     ))}
                   </div>
 

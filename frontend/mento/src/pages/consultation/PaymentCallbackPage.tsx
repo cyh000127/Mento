@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { approvePaymentReservation } from "@/api/paymentApproveApi";
-import { authApi } from "@/api/auth";
+import { authApi } from "@/api/authApi";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 export default function PaymentCallbackPage() {

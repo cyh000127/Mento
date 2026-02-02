@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuthStore } from "@/stores/useAuthStore"
-import { authApi } from "@/api/auth"
+import { authApi } from "@/api/authApi"
 
 export default function KakaoCallback() {
   const navigate = useNavigate()
