@@ -132,7 +132,7 @@ class ProductFacadeServiceTest {
 		ProductResDto result = productFacadeService.getProduct(productId);
 
 		// then
-		assertThat(result.id()).isEqualTo(productId);
+		assertThat(result.productId()).isEqualTo(productId);
 		assertThat(result.brandName()).isEqualTo("이니스프리");
 		assertThat(result.name()).isEqualTo("그린티 씨드 세럼");
 		assertThat(result.price()).isEqualTo(30000);
