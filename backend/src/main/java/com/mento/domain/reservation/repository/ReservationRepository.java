@@ -24,10 +24,11 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 	@Query("""
 		SELECT r
 		FROM Reservation r
-		WHERE r.slot.timetable.scheduledDate BETWEEN :startDate AND :endDate
-			AND r.user.id = :userId
+		WHERE r.user.id = :userId
+			AND (:startDate IS NULL OR r.slot.timetable.scheduledDate >= :startDate)
+			AND (:endDate IS NULL OR r.slot.timetable.scheduledDate <= :endDate)
 			AND (:status IS NULL OR r.status = :status)
-		ORDER BY r.createdAt
+		ORDER BY r.id DESC
 		""")
 	Page<Reservation> findAllByUserIdAndDateRange(
 		@Param("userId") Long userId,
