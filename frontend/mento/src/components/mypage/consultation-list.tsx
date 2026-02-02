@@ -9,12 +9,6 @@ interface ConsultationListProps {
   onEnterRoom: (roomUrl: string) => void;
 }
 
-const categoryLabels: Record<string, string> = {
-  skincare: "스킨케어",
-  beauty: "뷰티",
-  hair: "헤어",
-};
-
 export function ConsultationList({ consultations, onViewDetail, onCancelConsultation, onEnterRoom }: ConsultationListProps) {
   const formatDateTime = (dateStr: string, timeStr: string) => {
     return `${dateStr.replace(/-/g, ".")} ${timeStr}`;

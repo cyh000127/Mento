@@ -32,5 +32,45 @@ export async function getReservationList(
     throw new Error(errorMessage ?? "예약 목록 조회에 실패했습니다.")
   }
 
-  return payload as ReservationListData
+  const normalizeScheduledDateTime = (scheduledDate: string, scheduledTime?: string) => {
+    if (scheduledTime) {
+      const dateOnly = scheduledDate.includes("T")
+        ? scheduledDate.split("T")[0]
+        : scheduledDate.includes(" ")
+          ? scheduledDate.split(" ")[0]
+          : scheduledDate
+
+      return { scheduledDate: dateOnly, scheduledTime }
+    }
+
+    if (scheduledDate.includes("T")) {
+      const [datePart, timePart] = scheduledDate.split("T")
+      return { scheduledDate: datePart, scheduledTime: timePart.slice(0, 5) }
+    }
+
+    if (scheduledDate.includes(" ")) {
+      const [datePart, timePart] = scheduledDate.split(" ")
+      return { scheduledDate: datePart, scheduledTime: timePart.slice(0, 5) }
+    }
+
+    return { scheduledDate, scheduledTime: "00:00" }
+  }
+
+  const normalizedPayload: ReservationListData = {
+    ...payload,
+    content: payload.content.map((item) => {
+      const normalized = normalizeScheduledDateTime(
+        item.scheduledDate,
+        item.scheduledTime
+      )
+
+      return {
+        ...item,
+        scheduledDate: normalized.scheduledDate,
+        scheduledTime: normalized.scheduledTime,
+      }
+    }),
+  }
+
+  return normalizedPayload
 }
