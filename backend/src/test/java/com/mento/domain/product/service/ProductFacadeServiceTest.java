@@ -105,8 +105,8 @@ class ProductFacadeServiceTest {
 		// given
 		Long productId = 1L;
 		Brand brand = Brand.builder().id(1L).brandName("이니스프리").build();
-		String skinTypes = "[\"지성\",\"복합성\"]";
-		String benefits = "[\"진정\",\"수분\"]";
+		String skinTypes = "지성, 복합성";
+		String benefits = "진정, 수분";
 
 		Product product = Product.builder()
 			.id(productId)

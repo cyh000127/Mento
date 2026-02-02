@@ -1,5 +1,6 @@
 package com.mento.domain.product.converter;
 
+import java.util.Arrays;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,39 +16,45 @@ public class JsonStringConverter {
 	private static final ObjectMapper objectMapper = new ObjectMapper();
 
 	/**
-	 * List<String>을 JSON 문자열로 변환
-	 * @param list 변환할 리스트
-	 * @return JSON 문자열 (예: "[\"지성\", \"민감성\"]")
+	 * 쉼표로 구분된 문자열을 JSON 배열 문자열로 변환
+	 * @param commaSeparated 쉼표로 구분된 문자열 (예: "건성, 지성")
+	 * @return JSON 배열 문자열 (예: "[\"건성\",\"지성\"]")
 	 */
-	public static String toJsonString(final List<String> list) {
-		if (list == null || list.isEmpty()) {
+	public static String toJsonArray(final String commaSeparated) {
+		if (commaSeparated == null || commaSeparated.isBlank()) {
 			return "[]";
 		}
 
 		try {
-			return objectMapper.writeValueAsString(list);
+			List<String> items = Arrays.stream(commaSeparated.split(","))
+				.map(String::trim)
+				.filter(s -> !s.isEmpty())
+				.toList();
+			
+			return objectMapper.writeValueAsString(items);
 		} catch (JsonProcessingException e) {
-			log.error("Failed to convert list to JSON string: {}", list, e);
+			log.error("Failed to convert comma-separated string to JSON array: {}", commaSeparated, e);
 			return "[]";
 		}
 	}
 
 	/**
-	 * JSON 문자열을 List<String>으로 변환
-	 * @param jsonString JSON 문자열
-	 * @return List<String>
+	 * JSON 배열 문자열을 쉼표로 구분된 문자열로 변환
+	 * @param jsonArray JSON 배열 문자열
+	 * @return 쉼표로 구분된 문자열
 	 */
-	public static List<String> toList(final String jsonString) {
-		if (jsonString == null || jsonString.isBlank()) {
-			return List.of();
+	public static String fromJsonArray(final String jsonArray) {
+		if (jsonArray == null || jsonArray.isBlank()) {
+			return "";
 		}
 
 		try {
-			return objectMapper.readValue(jsonString, 
+			List<String> items = objectMapper.readValue(jsonArray, 
 				objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+			return String.join(", ", items);
 		} catch (JsonProcessingException e) {
-			log.error("Failed to convert JSON string to list: {}", jsonString, e);
-			return List.of();
+			log.error("Failed to convert JSON array to comma-separated string: {}", jsonArray, e);
+			return "";
 		}
 	}
 }
