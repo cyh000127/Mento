@@ -33,7 +33,7 @@ public class ProductConverter {
 
 	public ProductResDto toProductResDto(final Product entity) {
 		return ProductResDto.builder()
-			.id(entity.getId())
+			.productId(entity.getId())
 			.brandId(entity.getBrand().getId())
 			.brandName(entity.getBrand().getBrandName())
 			.oliveyoungGoodsNo(entity.getOliveyoungGoodsNo())

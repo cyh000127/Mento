@@ -11,7 +11,7 @@ import lombok.Builder;
 @Builder
 public record ProductResDto(
 	@Schema(description = "상품 ID", example = "1")
-	Long id,
+	Long productId,
 
 	@Schema(description = "브랜드 ID", example = "1")
 	Long brandId,
@@ -62,11 +62,11 @@ public record ProductResDto(
 	Integer defaultUsageDays,
 
 	@Schema(description = "생성 시각")
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Seoul")
 	LocalDateTime createdAt,
 
 	@Schema(description = "수정 시각")
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Seoul")
 	LocalDateTime updatedAt
 ) {
 }

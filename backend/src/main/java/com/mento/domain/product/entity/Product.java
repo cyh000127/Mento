@@ -63,7 +63,7 @@ public class Product extends BaseEntity {
 	@Column(nullable = false, length = 500)
 	private String name;
 
-	@Column(length = 255)
+	@Column
 	private String volume;
 
 	@Column(length = 1000)
@@ -83,15 +83,15 @@ public class Product extends BaseEntity {
 	private String productUrl;
 
 	@JdbcTypeCode(SqlTypes.JSON)
-	@Column(name = "skin_types", columnDefinition = "json")
+	@Column(name = "skin_types", columnDefinition = "longtext")
 	private List<String> skinTypes;
 
 	@JdbcTypeCode(SqlTypes.JSON)
-	@Column(name = "related_conditions", columnDefinition = "json")
+	@Column(name = "related_conditions", columnDefinition = "longtext")
 	private List<String> relatedConditions;
 
 	@JdbcTypeCode(SqlTypes.JSON)
-	@Column(name = "benefits", columnDefinition = "json")
+	@Column(name = "benefits", columnDefinition = "longtext")
 	private List<String> benefits;
 
 	@Column(name = "default_usage_days", nullable = false)
