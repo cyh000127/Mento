@@ -18,9 +18,9 @@ interface InventoryRegisterModalProps {
 // API 상품을 재고 상품으로 변환하는 헬퍼 함수
 function convertApiProductToInventoryProduct(apiProduct: ApiProduct): Product {
   return {
-    id: apiProduct.id.toString(),
+    id: apiProduct.productId.toString(),
     name: apiProduct.name,
-    brand: apiProduct.brand,
+    brand: apiProduct.brandName,
     category: "skin", // 기본값
     image: apiProduct.imageUrl || "https://via.placeholder.com/150",
     purchaseDate: "",
@@ -48,7 +48,11 @@ function ProductSearchCard({ product, isSelected, onToggleSelect }: ProductSearc
       <div className="flex gap-2.5">
         {/* 체크박스 */}
         <div className="flex items-start pt-0.5">
-          <Checkbox checked={isSelected} onCheckedChange={() => onToggleSelect(product.id)} className="data-[state=checked]:bg-primary-500 data-[state=checked]:border-primary-500" />
+          <Checkbox 
+            checked={isSelected} 
+            onCheckedChange={() => onToggleSelect(product.productId)} 
+            className="data-[state=checked]:bg-primary-500 data-[state=checked]:border-primary-500" 
+          />
         </div>
 
         {/* 제품 이미지 */}
@@ -64,7 +68,7 @@ function ProductSearchCard({ product, isSelected, onToggleSelect }: ProductSearc
             </span>
           </div>
           <h4 className="mb-0.5 text-sm font-semibold text-text-primary truncate">{product.name}</h4>
-          <p className="text-xs text-text-secondary">{product.brand}</p>
+          <p className="text-xs text-text-secondary">{product.brandName}</p>
         </div>
       </div>
     </div>
@@ -183,7 +187,7 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
           const query = searchQuery.toLowerCase().trim();
           filteredProducts = filteredProducts.filter((product) => 
             product.name.toLowerCase().includes(query) ||
-            product.brand.toLowerCase().includes(query)
+            product.brandName.toLowerCase().includes(query)
           );
         }
         
@@ -211,7 +215,7 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
   }, [open, fetchProducts]);
 
   const handleToggleSelect = (productId: number) => {
-    const apiProduct = apiProducts.find((p) => p.id === productId);
+    const apiProduct = apiProducts.find((p) => p.productId === productId);
     if (!apiProduct) return;
 
     const productIdStr = productId.toString();
@@ -291,7 +295,12 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
                 <div className="flex-1 overflow-y-auto">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {apiProducts.map((product) => (
-                      <ProductSearchCard key={product.id} product={product} isSelected={selectedProducts.some((p) => p.id === product.id.toString())} onToggleSelect={handleToggleSelect} />
+                      <ProductSearchCard 
+                        key={product.productId} 
+                        product={product} 
+                        isSelected={selectedProducts.some((p) => p.id === product.productId.toString())} 
+                        onToggleSelect={handleToggleSelect} 
+                      />
                     ))}
                   </div>
 

@@ -10,7 +10,7 @@ import {
   mapUiStatusToApiStatus,
   mapUiSortToApiSort,
   addInventoryItem,
-} from "@/api/inventory"
+} from "@/api/inventoryApi"
 
 export default function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -122,41 +122,88 @@ export default function InventoryPage() {
 
   const handleProductsAdded = async (selectedProducts: Product[]) => {
     try {
-      // 각 선택된 상품을 인벤토리에 추가
+      // 현재 인벤토리 목록을 최신 상태로 가져오기
+      await fetchInventory()
+      
+      // 중복 체크: 현재 인벤토리에 이미 있는 상품 찾기
+      const duplicateProducts: Product[] = []
+      const productsToAdd: Product[] = []
+      
+      selectedProducts.forEach((selectedProduct) => {
+        // products 배열에서 같은 이름의 상품이 있는지 확인
+        const isDuplicate = products.some(
+          (existingProduct) => existingProduct.name === selectedProduct.name
+        )
+        
+        if (isDuplicate) {
+          duplicateProducts.push(selectedProduct)
+        } else {
+          productsToAdd.push(selectedProduct)
+        }
+      })
+
+      // 중복된 상품이 있으면 경고 메시지 표시
+      if (duplicateProducts.length > 0) {
+        const duplicateNames = duplicateProducts.map(p => `"${p.name}"`).join(", ")
+        
+        if (productsToAdd.length > 0) {
+          const confirmMessage = `다음 상품은 이미 인벤토리에 존재합니다:\n${duplicateNames}\n\n나머지 ${productsToAdd.length}개 상품을 추가하시겠습니까?`
+          
+          if (!confirm(confirmMessage)) {
+            return // 사용자가 취소한 경우
+          }
+        } else {
+          alert(`선택한 모든 상품이 이미 인벤토리에 존재합니다:\n${duplicateNames}`)
+          return
+        }
+      }
+
+      // 중복되지 않은 상품만 추가
+      if (productsToAdd.length === 0) {
+        return
+      }
+
       const results = await Promise.allSettled(
-        selectedProducts.map((product) =>
+        productsToAdd.map((product) =>
           addInventoryItem({
             productId: parseInt(product.id),
-          })
+          }).then(() => ({ product, success: true }))
+            .catch((error) => ({ product, success: false, error }))
         )
       )
 
-      // 성공/실패 결과 확인
-      const successCount = results.filter((r) => r.status === "fulfilled").length
-      const failedResults = results.filter((r) => r.status === "rejected") as PromiseRejectedResult[]
+      // 성공/실패 결과 분류
+      const successResults = results
+        .filter((r) => r.status === "fulfilled" && r.value.success)
+        .map((r) => (r as PromiseFulfilledResult<any>).value.product)
+      
+      const failedResults = results
+        .filter((r) => r.status === "fulfilled" && !r.value.success)
+        .map((r) => (r as PromiseFulfilledResult<any>).value)
 
-      // 에러 메시지 처리
+      // 에러 메시지 생성
+      const errorMessages: string[] = []
+      
       if (failedResults.length > 0) {
-        failedResults.forEach((result) => {
-          const error = result.reason
-          const status = error?.response?.status
-
-          if (status === 409) {
-            console.error("이미 인벤토리에 존재하는 상품입니다.")
-            alert("일부 상품이 이미 인벤토리에 존재합니다.")
-          } else if (status === 404) {
-            console.error("상품을 찾을 수 없습니다.")
-            alert("일부 상품을 찾을 수 없습니다.")
-          } else {
-            console.error("상품 추가 중 오류가 발생했습니다:", error)
-            alert("상품 추가 중 오류가 발생했습니다.")
-          }
-        })
+        const failedNames = failedResults.map(({ product }) => `"${product.name}"`).join(", ")
+        errorMessages.push(`다음 상품 추가 중 오류가 발생했습니다:\n${failedNames}`)
       }
 
-      // 성공한 항목이 있으면 알림
-      if (successCount > 0) {
-        console.log(`${successCount}개의 상품이 인벤토리에 추가되었습니다.`)
+      // 결과 알림
+      if (successResults.length > 0 && (duplicateProducts.length > 0 || errorMessages.length > 0)) {
+        const messages = [`${successResults.length}개의 상품이 추가되었습니다.`]
+        if (duplicateProducts.length > 0) {
+          const duplicateNames = duplicateProducts.map(p => `"${p.name}"`).join(", ")
+          messages.push(`${duplicateProducts.length}개의 중복 상품은 제외되었습니다:\n${duplicateNames}`)
+        }
+        if (errorMessages.length > 0) {
+          messages.push(...errorMessages)
+        }
+        alert(messages.join("\n\n"))
+      } else if (successResults.length > 0) {
+        alert(`${successResults.length}개의 상품이 인벤토리에 추가되었습니다.`)
+      } else if (errorMessages.length > 0) {
+        alert(errorMessages.join("\n\n"))
       }
 
       // API 호출 후 데이터 재조회
