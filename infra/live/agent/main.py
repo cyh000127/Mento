@@ -89,48 +89,46 @@ async def entrypoint(ctx: JobContext):
             stt_stream.end_input()
 
         # STT 결과 수신 및 출력
+        # STT 결과 수신 및 출력 (+ Java 백엔드 전송)
         async def receive_text():
-            async for event in stt_stream:
-                if event.type == agents_stt.SpeechEventType.FINAL_TRANSCRIPT:
-                    # 최종 인식 결과 텍스트 추출
-                    text = event.alternatives[0].text.strip()
-                    if text:
-                        # 타임스탬프 생성 및 출력
-                        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-                        display_name = participant.identity[:-37] if len(participant.identity) > 37 else participant.identity
-                        print(f"[{timestamp}] [{display_name}]: {text}", flush=True)
+            # 동일 Docker 네트워크 내 Java 서비스 엔드포인트
+            endpoint = "http://backend:8080/api/v1/chat-logs"
 
-            '''
-            # 루프 밖에서 클라이언트를 생성하여 커넥션 풀 활용 (Java의 HttpClient Bean과 유사)
+            # 루프 밖에서 클라이언트를 생성하여 커넥션 풀 활용
             async with httpx.AsyncClient() as client:
                 async for event in stt_stream:
                     if event.type == agents_stt.SpeechEventType.FINAL_TRANSCRIPT:
+                        # 1. 텍스트 추출 및 정제
                         text = event.alternatives[0].text.strip()
-                        
-                        if text:
-                            timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-                            print(f"[{timestamp}] [{participant.identity}]: {text}", flush=True)
 
-                            # Java 백엔드로 전송할 데이터 패키징 (DTO)
+                        if text:
+                            # 2. 데이터 준비 (기존 로그 형식 유지)
+                            now = datetime.datetime.now()
+                            timestamp_log = now.strftime("%H:%M:%S")
+                            timestamp_java = now.strftime("%Y-%m-%d %H:%M:%S")
+                            display_name = participant.identity[:-37] if len(participant.identity) > 37 else participant.identity
+
+                            # 터미널 로그 출력 (기존 방식 유지)
+                            print(f"[{timestamp_log}] [{display_name}]: {text}", flush=True)
+
+                            # 3. Java 백엔드 전송 (ChatLogRequest Record 형식)
                             payload = {
-                                "roomId": ctx.room.name,        # Room 명칭
-                                "userId": participant.identity,  # 발화자 ID
-                                "content": text,                # 변환된 텍스트
-                                "timestamp": timestamp          # 발생 시각
+                                "roomId": str(ctx.room.name),
+                                "userId": str(participant.identity),
+                                "content": str(text),
+                                "timestamp": str(timestamp_java)
                             }
 
                             try:
-                                # 환경 변수에서 URL을 읽어와 비동기 전송
+                                # 비동기 전송 (결과가 올 때까지 기다리지 않고 다음 STT 처리 준비)
                                 await client.post(
-                                    os.getenv("JAVA_BACKEND_URL"), 
-                                    json=payload, 
+                                    endpoint,
+                                    json=payload,
                                     timeout=2.0
                                 )
                             except Exception as e:
-                                # 전송 실패 시에도 에이전트가 죽지 않도록 예외 처리 후 로그만 출력
-                                print(f"Java 전송 에러: {e}", flush=True)
-                
-            '''
+                                # 전송 실패 시에도 에이전트가 중단되지 않도록 예외 처리
+                                print(f" [Java 전송 에러]: {e}", flush=True)
         try:
             await asyncio.gather(push_audio(), receive_text())
         except Exception as e:
