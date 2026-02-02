@@ -1,0 +1,30 @@
+__pycache__
+*.pyc
+.git
+.gitignore
+.venv
+.env
+dataset
+temp_uploads
+# Ignore all checkpoints initially
+checkpoint
+# But we usually want to include specific ones, but .dockerignore whitelist is tricky.
+# We will COPY them explicitly in Dockerfile from the source context.
+# So we can ignore the root 'checkpoint' to prevent 'COPY .' from grabbing everything if we used that.
+# However, if we do 'COPY checkpoint/ ...', it must be in the context.
+# So we should NOT ignore checkpoint if we want to copy them.
+# But we want to exclude unused checkpoints if there are many.
+# The user's checkpoint folder seems to only have what we verified? 
+# No, verifying earlier showed 'regression/1st_coat/save_model/...'
+# If there are other heavy models we don't need, we should be careful.
+# For safety, allow checkpoint folder but rely on COPY selecting specific subfolders.
+wandb
+test_api.py
+verify_distribution.py
+analyze_service_scores.py
+performance_eda.ipynb
+summary.md
+codebase_summary.md
+service_logic_proposal.md
+implementation_plan.md
+walkthrough.md

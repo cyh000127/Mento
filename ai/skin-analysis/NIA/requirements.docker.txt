@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+httpx
+python-multipart
+# AI Core
+torch>=2.0.0
+torchvision
+timm
+mediapipe
+# Image Processing
+opencv-python-headless
+numpy
+pillow
