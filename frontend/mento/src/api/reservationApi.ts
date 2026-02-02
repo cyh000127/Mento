@@ -5,6 +5,7 @@ import type {
   ReservationListParams,
   ReservationListResponse,
 } from "@/types/reservationList"
+import type { ReservationDetailData, ReservationDetailResponse } from "../types/reservationDetail"
 
 export async function createReservationDraft(
   payload: ReservationDraftRequest
@@ -73,4 +74,20 @@ export async function getReservationList(
   }
 
   return normalizedPayload
+}
+
+export async function getReservationDetail(
+  reservationId: number
+): Promise<ReservationDetailData> {
+  const response = await api.get<ReservationDetailResponse>(
+    `/reservations/${reservationId}`
+  )
+
+  if (!response.data.success || !response.data.data) {
+    throw new Error(
+      response.data.error?.message ?? "예약 상세 조회에 실패했습니다."
+    )
+  }
+
+  return response.data.data
 }

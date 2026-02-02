@@ -5,10 +5,11 @@ import { ConsultationCategoryFilter } from "@/components/mypage/consultation-cat
 import { ConsultationList } from "@/components/mypage/consultation-list";
 import { ConsultationEmpty } from "@/components/mypage/consultation-empty";
 import { ConsultationDetail } from "@/components/mypage/consultation-detail";
-import { getReservationList } from "@/api/reservationApi";
+import { getReservationDetail, getReservationList } from "@/api/reservationApi";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { Consultation, PeriodFilter, ConsultationStatus } from "@/types/consultation";
+import type { Consultation, PeriodFilter, ConsultationStatus, PreConsultationQA } from "@/types/consultation";
 import type { ReservationListItem, ReservationListParams } from "@/types/reservationList";
+import type { ReservationDetailData } from "@/types/reservationDetail";
 
 const pageSize = 10;
 
@@ -40,6 +41,44 @@ const mapReservationStatusToConsultationStatus = (status: string): ConsultationS
   return "scheduled";
 };
 
+const normalizeScheduledDateTime = (scheduledDate: string, scheduledTime?: string) => {
+  if (scheduledTime) {
+    const dateOnly = scheduledDate.includes("T")
+      ? scheduledDate.split("T")[0]
+      : scheduledDate.includes(" ")
+        ? scheduledDate.split(" ")[0]
+        : scheduledDate;
+
+    return { date: dateOnly, time: scheduledTime };
+  }
+
+  return parseScheduledDateTime(scheduledDate);
+};
+
+const parseSurveyDataToQA = (surveyData?: string): PreConsultationQA[] | undefined => {
+  if (!surveyData) return undefined;
+
+  try {
+    const parsed = JSON.parse(surveyData) as
+      | { items?: { question: string; answer: string }[] }
+      | { question: string; answer: string }[];
+
+    const items = Array.isArray(parsed) ? parsed : parsed.items;
+    if (!items || items.length === 0) return undefined;
+
+    const normalized = items
+      .filter((item) => item && typeof item.question === "string")
+      .map((item) => ({
+        question: item.question,
+        answer: typeof item.answer === "string" ? item.answer : "",
+      }));
+
+    return normalized.length > 0 ? normalized : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 const mapReservationToConsultation = (reservation: ReservationListItem): Consultation => {
   const { date, time } = parseScheduledDateTime(reservation.scheduledDate);
   const scheduledTime = reservation.scheduledTime ?? time;
@@ -54,10 +93,39 @@ const mapReservationToConsultation = (reservation: ReservationListItem): Consult
   };
 };
 
+const mapReservationDetailToConsultation = (reservation: ReservationDetailData): Consultation => {
+  const { date, time } = normalizeScheduledDateTime(
+    reservation.scheduledDate,
+    reservation.scheduledTime
+  );
+  const preConsultationQA = parseSurveyDataToQA(reservation.surveyData);
+
+  const consultation: Consultation = {
+    id: reservation.reservationId.toString(),
+    scheduledDate: date,
+    scheduledTime: time,
+    status: reservation.reservationStatus as ConsultationStatus,
+    preConsultationQA,
+  };
+
+  if (reservation.mentorInfo) {
+    consultation.expertName = reservation.mentorInfo.mentorName;
+  }
+
+  if (reservation.mentorTypeInfo) {
+    consultation.mentorTypeName = reservation.mentorTypeInfo.mentorTypeName;
+    consultation.memo = reservation.mentorTypeInfo.mentorTypeDescription;
+  }
+
+  return consultation;
+};
+
 export default function ConsultationManagementPage() {
   const { user, accessToken } = useAuthStore();
   const lastRequestKeyRef = useRef<string | null>(null);
   const isFetchingRef = useRef(false);
+  const detailFetchingIdRef = useRef<number | null>(null);
+  const detailCacheRef = useRef<Map<number, Consultation>>(new Map());
   // View state
   const [selectedConsultation, setSelectedConsultation] = useState<Consultation | null>(null);
 
@@ -241,8 +309,35 @@ export default function ConsultationManagementPage() {
     });
   };
 
-  const handleViewDetail = (consultation: Consultation) => {
-    setSelectedConsultation(consultation);
+  const handleViewDetail = async (consultation: Consultation) => {
+    const reservationId = Number(consultation.id);
+    if (!Number.isFinite(reservationId)) {
+      return;
+    }
+
+    const cached = detailCacheRef.current.get(reservationId);
+    if (cached) {
+      setSelectedConsultation(cached);
+      return;
+    }
+
+    if (detailFetchingIdRef.current === reservationId) {
+      return;
+    }
+
+    detailFetchingIdRef.current = reservationId;
+
+    try {
+      const detail = await getReservationDetail(reservationId);
+      const mapped = mapReservationDetailToConsultation(detail);
+      detailCacheRef.current.set(reservationId, mapped);
+      setSelectedConsultation(mapped);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(message);
+    } finally {
+      detailFetchingIdRef.current = null;
+    }
   };
 
   const handleBackToList = () => {
