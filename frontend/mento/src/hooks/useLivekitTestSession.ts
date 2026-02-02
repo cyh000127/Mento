@@ -126,6 +126,7 @@ export function useLivekitTestSession(): UseLivekitTestSessionReturn {
               newRoom.disconnect();
               return;
           }
+          setRemoteParticipants(remoteHumans);
         });
 
 
@@ -148,7 +149,7 @@ export function useLivekitTestSession(): UseLivekitTestSessionReturn {
         // 원격 참가자 입장
         newRoom.on(RoomEvent.ParticipantConnected, (participant) => {
           console.log("✅ 원격 참가자 연결:", participant.identity);
-
+          /*
           setRemoteParticipants((prev) => {
             // 참가자 수 제한 체크 (로컬 1명 + 원격 최대 1명 = 총 2명)
             if (prev.length >= 1) {
@@ -160,6 +161,26 @@ export function useLivekitTestSession(): UseLivekitTestSessionReturn {
 
             return [...prev, participant];
           });
+           */
+            // 1. 에이전트면 로그만 찍고 상태(UI)에는 추가하지 않음
+            if (participant.identity.includes('agent')) {
+                console.log("🤖 에이전트 입장 감지 (UI 표시 생략)");
+                return;
+            }
+
+            // 2. 사람이면 리스트에 추가 (단, 2인 제한 로직 유지)
+            setRemoteParticipants((prev) => {
+                // prev.filter(p => !p.identity.includes('agent'))를 통해
+                // 혹시라도 섞여있을지 모를 에이전트를 제외하고 사람 수만 체크
+                const remoteHumans = prev.filter(p => !p.identity.includes('agent'));
+
+                if (remoteHumans.length >= 1) {
+                    console.error("❌ 사람이 이미 가득 차서 추가 입장을 UI에서 무시합니다.");
+                    return prev;
+                }
+
+                return [...prev, participant];
+            });
         });
 
         // 트랙 구독 이벤트 (원격 참가자의 트랙이 사용 가능해질 때)
