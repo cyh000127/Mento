@@ -9,6 +9,7 @@ import {
   mapApiItemToProduct,
   mapUiStatusToApiStatus,
   mapUiSortToApiSort,
+  addInventoryItem,
 } from "@/api/inventory"
 
 export default function InventoryPage() {
@@ -120,10 +121,50 @@ export default function InventoryPage() {
   }
 
   const handleProductsAdded = async (selectedProducts: Product[]) => {
-    // TODO: 제품 추가 API 구현 예정
-    console.log("Products added to inventory:", selectedProducts)
-    // API 호출 후 데이터 재조회
-    await fetchInventory()
+    try {
+      // 각 선택된 상품을 인벤토리에 추가
+      const results = await Promise.allSettled(
+        selectedProducts.map((product) =>
+          addInventoryItem({
+            productId: parseInt(product.id),
+          })
+        )
+      )
+
+      // 성공/실패 결과 확인
+      const successCount = results.filter((r) => r.status === "fulfilled").length
+      const failedResults = results.filter((r) => r.status === "rejected") as PromiseRejectedResult[]
+
+      // 에러 메시지 처리
+      if (failedResults.length > 0) {
+        failedResults.forEach((result) => {
+          const error = result.reason
+          const status = error?.response?.status
+
+          if (status === 409) {
+            console.error("이미 인벤토리에 존재하는 상품입니다.")
+            alert("일부 상품이 이미 인벤토리에 존재합니다.")
+          } else if (status === 404) {
+            console.error("상품을 찾을 수 없습니다.")
+            alert("일부 상품을 찾을 수 없습니다.")
+          } else {
+            console.error("상품 추가 중 오류가 발생했습니다:", error)
+            alert("상품 추가 중 오류가 발생했습니다.")
+          }
+        })
+      }
+
+      // 성공한 항목이 있으면 알림
+      if (successCount > 0) {
+        console.log(`${successCount}개의 상품이 인벤토리에 추가되었습니다.`)
+      }
+
+      // API 호출 후 데이터 재조회
+      await fetchInventory()
+    } catch (error) {
+      console.error("상품 추가 중 예상치 못한 오류:", error)
+      alert("상품 추가 중 오류가 발생했습니다.")
+    }
   }
 
   return (
