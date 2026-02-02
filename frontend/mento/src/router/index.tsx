@@ -3,6 +3,9 @@ import Layout from "@/components/layouts/Layout";
 import HomePage from "@/pages/home/HomePage";
 import AiCarePage from "@/pages/ai-care/AiCarePage";
 import ConsultationPage from "@/pages/consultation/ConsultationPage";
+import PaymentRedirectPage from "@/pages/consultation/PaymentRedirectPage";
+import PaymentCallbackPage from "@/pages/consultation/PaymentCallbackPage";
+import PaymentFailPage from "@/pages/consultation/PaymentFailPage";
 import { ConsultationRoomPage } from "@/pages/consultation/ConsultationRoomPage";
 import { LivekitTestPage } from "@/pages/consultation/LiveKitTestPage";
 import GuidePage from "@/pages/guide/GuidePage";
@@ -12,7 +15,6 @@ import RecommendPage from "@/pages/recommend/RecommendPage";
 import InventoryPage from "@/pages/inventory/InventoryPage";
 import ConsultationManagementPage from "@/pages/mypage/ConsultationManagementPage";
 import AiSkincareHistoryPage from "@/pages/mypage/AiSkincareHistoryPage";
-import AccountWithdrawalPage from "@/pages/mypage/AccountWithdrawalPage";
 import KakaoCallback from "@/pages/auth/KakaoCallback";
 
 const router = createBrowserRouter([
@@ -31,6 +33,18 @@ const router = createBrowserRouter([
       {
         path: "consultation",
         element: <ConsultationPage />,
+      },
+      {
+        path: "consultation/payment-redirect",
+        element: <PaymentRedirectPage />,
+      },
+      {
+        path: "payments/redirect",
+        element: <PaymentCallbackPage />,
+      },
+      {
+        path: "payments/fail",
+        element: <PaymentFailPage />,
       },
       {
         path: "guide",
@@ -59,10 +73,6 @@ const router = createBrowserRouter([
       {
         path: "/mypage/ai-skincare",
         element: <AiSkincareHistoryPage />,
-      },
-      {
-        path: "/mypage/account-withdrawal",
-        element: <AccountWithdrawalPage />,
       },
       {
         path: "/login/oauth2/callback",

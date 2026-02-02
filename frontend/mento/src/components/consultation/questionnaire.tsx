@@ -23,14 +23,7 @@ const questionsByCategory: Record<NonNullable<ConsultationCategory>, string[]> =
   hair: ["현재 헤어 스타일에서 불만족스러운 점이 있나요?", "선호하는 헤어 스타일이나 참고 이미지가 있나요?", "두피나 모발 관련 고민이 있다면 알려주세요."],
 };
 
-export function Questionnaire({
-  answers,
-  selectedCategory,
-  onAnswerChange,
-  onSubmitSurvey,
-  onPrev,
-  canProceed,
-}: QuestionnaireProps) {
+export function Questionnaire({ answers, selectedCategory, onAnswerChange, onSubmitSurvey, onPrev, canProceed }: QuestionnaireProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const questions = selectedCategory ? questionsByCategory[selectedCategory] : [];
   const totalQuestions = questions.length;
@@ -39,6 +32,9 @@ export function Questionnaire({
   const CategoryIcon = categoryInfo?.icon;
 
   const handleNextQuestion = () => {
+    if (!currentAnswer.trim()) {
+      return;
+    }
     if (currentQuestion < totalQuestions - 1) {
       window.scrollTo({ top: 0, behavior: "smooth" });
       setCurrentQuestion((prev) => prev + 1);
@@ -66,9 +62,7 @@ export function Questionnaire({
     if (!saved) return;
 
     try {
-      const parsed = JSON.parse(saved) as
-        | { category: ConsultationCategory | null; items: { question: string; answer: string }[] }
-        | { question: string; answer: string }[];
+      const parsed = JSON.parse(saved) as { category: ConsultationCategory | null; items: { question: string; answer: string }[] } | { question: string; answer: string }[];
       const items = Array.isArray(parsed) ? parsed : parsed.items;
 
       items.forEach((item, index) => {
@@ -178,7 +172,10 @@ export function Questionnaire({
           <button
             type="button"
             onClick={handleNextQuestion}
-            className="flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-3 text-base font-semibold text-dark-bg shadow-lg shadow-primary-500/30 transition-all hover:bg-primary-400"
+            disabled={!currentAnswer.trim()}
+            className={`flex items-center gap-2 rounded-xl px-8 py-3 text-base font-semibold transition-all ${
+              currentAnswer.trim() ? "bg-primary-500 text-dark-bg shadow-lg shadow-primary-500/30 hover:bg-primary-400" : "cursor-not-allowed bg-muted text-muted-foreground"
+            }`}
           >
             다음 질문
           </button>

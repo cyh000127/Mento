@@ -1,10 +1,10 @@
 import { CreditCard, CheckCircle2 } from "lucide-react";
 
 interface SurveyCompleteProps {
-  onNext: () => void;
+  onGoToPayment: () => void;
 }
 
-export function SurveyComplete({ onNext }: SurveyCompleteProps) {
+export function SurveyComplete({ onGoToPayment }: SurveyCompleteProps) {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center">
       {/* Success Icon */}
@@ -32,7 +32,7 @@ export function SurveyComplete({ onNext }: SurveyCompleteProps) {
       {/* CTA Button */}
       <button
         type="button"
-        onClick={onNext}
+        onClick={onGoToPayment}
         className="mt-10 flex items-center gap-2 rounded-xl bg-primary-500 px-10 py-4 text-lg font-semibold text-dark-bg shadow-lg shadow-primary-500/30 transition-all hover:bg-primary-400"
       >
         결제하러 가기

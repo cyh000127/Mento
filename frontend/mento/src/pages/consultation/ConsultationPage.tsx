@@ -1,21 +1,40 @@
-import { useState } from "react"
-import { CategorySelection } from "@/components/consultation/category-selection"
-import { DateTimeSelection } from "@/components/consultation/date-time-selection"
-import { Questionnaire } from "@/components/consultation/questionnaire"
-import { SurveyComplete } from "@/components/consultation/survey-complete"
-import { Payment } from "@/components/consultation/payment"
-import { BookingComplete } from "@/components/consultation/booking-complete"
-import { StepIndicator } from "@/components/consultation/step-indicator"
-import type { ConsultationCategory } from "@/types/consultation"
-import { createReservationDraft } from "@/api/reservationApi"
-import { updateReservationSurvey } from "@/api/reservationSurveyApi"
+import { useState } from "react";
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { CategorySelection } from "@/components/consultation/category-selection";
+import { DateTimeSelection } from "@/components/consultation/date-time-selection";
+import { Questionnaire } from "@/components/consultation/questionnaire";
+import { SurveyComplete } from "@/components/consultation/survey-complete";
+import { Payment } from "@/components/consultation/payment";
+import { BookingComplete } from "@/components/consultation/booking-complete";
+import { StepIndicator } from "@/components/consultation/step-indicator";
+import type { ConsultationCategory } from "@/types/consultation";
+import { createReservationDraft } from "@/api/reservationApi";
+import { updateReservationSurvey } from "@/api/reservationSurveyApi";
+import { requestPaymentReady } from "@/api/paymentApi";
+import type { ReservationDraftSlotInfo } from "@/types/reservation";
+import type { ReservationSurveyData } from "@/types/reservationSurvey";
 
 interface BookingData {
-  category: ConsultationCategory | null
-  date: Date | null
-  time: string
-  slotId: number | null
-  reservationId: number | null
+  category: ConsultationCategory | null;
+  date: Date | null;
+  time: string;
+  slotId: number | null;
+  reservationId: number | null;
+  draftSlotInfo: ReservationDraftSlotInfo | null;
+  surveyInfo: ReservationSurveyData | null;
+  paymentId: number | null;
+}
+
+interface StoredBookingData {
+  category: ConsultationCategory | null;
+  date: string | null;
+  time: string;
+  slotId: number | null;
+  reservationId: number | null;
+  draftSlotInfo: ReservationDraftSlotInfo | null;
+  surveyInfo: ReservationSurveyData | null;
+  paymentId: number | null;
 }
 
 const steps = [
@@ -24,99 +43,185 @@ const steps = [
   { id: 3, label: "설문 작성" },
   { id: 4, label: "결제" },
   { id: 5, label: "예약 완료" },
-]
+];
 
 export default function ConsultationPage() {
-  const [currentStep, setCurrentStep] = useState(1)
-  const [showSurveyComplete, setShowSurveyComplete] = useState(false)
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [showSurveyComplete, setShowSurveyComplete] = useState(false);
   const [bookingData, setBookingData] = useState<BookingData>({
     category: null,
     date: null,
     time: "",
     slotId: null,
     reservationId: null,
-  })
+    draftSlotInfo: null,
+    surveyInfo: null,
+    paymentId: null,
+  });
+  const [answers, setAnswers] = useState<string[]>([]);
+
+  const resetSurveyState = () => {
+    setAnswers([]);
+    setShowSurveyComplete(false);
+    localStorage.removeItem("consultationPreQuestions");
+  };
+
+  useEffect(() => {
+    const state = location.state as { step?: number } | null;
+    if (state?.step === 5) {
+      setCurrentStep(5);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem("consultationBookingData");
+    if (!stored) return;
+
+    try {
+      const parsed = JSON.parse(stored) as StoredBookingData;
+      setBookingData({
+        category: parsed.category ?? null,
+        date: parsed.date ? new Date(parsed.date) : null,
+        time: parsed.time ?? "",
+        slotId: parsed.slotId ?? null,
+        reservationId: parsed.reservationId ?? null,
+        draftSlotInfo: parsed.draftSlotInfo ?? null,
+        surveyInfo: parsed.surveyInfo ?? null,
+        paymentId: parsed.paymentId ?? null,
+      });
+    } catch {
+      // ignore invalid stored data
+    }
+  }, []);
 
   const handleCategorySelect = (category: ConsultationCategory | null) => {
-    setBookingData((prev) => ({ ...prev, category }))
-  }
+    resetSurveyState();
+    setBookingData((prev) => ({ ...prev, category }));
+  };
 
   // 260126 kjm - 사용하지 않고 있어서 빌드 에러 잡느라 지웁니다
-  //              예약 붙일 때 함수 필요하면 살리기 
+  //              예약 붙일 때 함수 필요하면 살리기
   // const handleDateTimeSelect = (date: Date | null, time: string) => {
   //   setBookingData((prev) => ({ ...prev, date, time }))
   // }
 
   const handleNext = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" })
-    setCurrentStep((prev) => Math.min(prev + 1, steps.length))
-  }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length));
+  };
 
   const handleNextFromDateTime = async () => {
     if (!bookingData.date || !bookingData.time || !bookingData.slotId) {
-      return
+      return;
     }
 
     try {
-      const data = await createReservationDraft({ slotId: bookingData.slotId })
-      setBookingData((prev) => ({ ...prev, reservationId: data.reservationId }))
-      handleNext()
+      const data = await createReservationDraft({ slotId: bookingData.slotId });
+      setBookingData((prev) => ({
+        ...prev,
+        reservationId: data.reservationId,
+        draftSlotInfo: data.timetableSlotInfoDto,
+      }));
+      handleNext();
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      console.error(message)
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(message);
     }
-  }
+  };
 
   const handleBack = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" })
-    setCurrentStep((prev) => Math.max(prev - 1, 1))
-  }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setCurrentStep((prev) => {
+      const nextStep = Math.max(prev - 1, 1);
+      if (nextStep === 1) {
+        resetSurveyState();
+      }
+      return nextStep;
+    });
+  };
 
   const handleQuestionnaireComplete = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" })
-    setShowSurveyComplete(true)
-  }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShowSurveyComplete(true);
+  };
 
   const handleSurveySubmit = async (surveyData: string) => {
     if (!bookingData.reservationId) {
-      return
+      return;
     }
 
     try {
-      await updateReservationSurvey(bookingData.reservationId, { surveyData })
-      handleQuestionnaireComplete()
+      const data = await updateReservationSurvey(bookingData.reservationId, { surveyData });
+      setBookingData((prev) => ({ ...prev, surveyInfo: data }));
+      handleQuestionnaireComplete();
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      console.error(message)
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(message);
     }
-  }
+  };
 
-  const handleSurveyCompleteNext = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" })
-    setShowSurveyComplete(false)
-    handleNext()
-  }
+  const handleGoToPayment = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    handleNext();
+  };
+
+  const handlePaymentReady = async () => {
+    const reservationId = bookingData.reservationId;
+    const itemName = bookingData.category;
+    const totalAmount = bookingData.draftSlotInfo?.price;
+
+    if (!reservationId || !itemName || !totalAmount || totalAmount <= 0) {
+      console.error("[결제 준비] 필수 데이터 누락", {
+        reservationId,
+        itemName,
+        totalAmount,
+      });
+      return;
+    }
+
+    try {
+      const data = await requestPaymentReady({
+        reservationId,
+        itemName,
+        totalAmount,
+      });
+      setBookingData((prev) => ({ ...prev, paymentId: data.paymentId }));
+      const bookingDataSnapshot: StoredBookingData = {
+        category: bookingData.category,
+        date: bookingData.date ? bookingData.date.toISOString() : null,
+        time: bookingData.time,
+        slotId: bookingData.slotId,
+        reservationId: bookingData.reservationId,
+        draftSlotInfo: bookingData.draftSlotInfo,
+        surveyInfo: bookingData.surveyInfo,
+        paymentId: data.paymentId,
+      };
+      sessionStorage.setItem("consultationBookingData", JSON.stringify(bookingDataSnapshot));
+      localStorage.setItem("paymentId", String(data.paymentId));
+      navigate("/consultation/payment-redirect", {
+        state: { redirectUrl: data.redirectUrl },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("[결제 준비] 요청 실패:", message);
+    }
+  };
 
   const handleBackFromPayment = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" })
-    setShowSurveyComplete(true)
-    handleBack()
-  }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShowSurveyComplete(true);
+    handleBack();
+  };
 
-  const handlePaymentComplete = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" })
-    handleNext() // Step 5 (예약 완료)로 이동
-  }
-
-  const [answers, setAnswers] = useState<string[]>([])
   const handleAnswerChange = (index: number, answer: string) => {
     setAnswers((prev) => {
-      const next = [...prev]
-      next[index] = answer
-      return next
-    })
-  }
-  
+      const next = [...prev];
+      next[index] = answer;
+      return next;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background py-12">
@@ -126,14 +231,7 @@ export default function ConsultationPage() {
 
         {/* Step Content */}
         <div className="mt-12">
-          {currentStep === 1 && (
-            <CategorySelection
-              selectedCategory={bookingData.category}
-              onSelect={handleCategorySelect}
-              onNext={handleNext}
-              canProceed={bookingData.category !== null}
-            />
-          )}
+          {currentStep === 1 && <CategorySelection selectedCategory={bookingData.category} onSelect={handleCategorySelect} onNext={handleNext} canProceed={bookingData.category !== null} />}
 
           {currentStep === 2 && (
             <DateTimeSelection
@@ -145,6 +243,9 @@ export default function ConsultationPage() {
                   ...prev,
                   date,
                   reservationId: null,
+                  draftSlotInfo: null,
+                  surveyInfo: null,
+                  paymentId: null,
                 }))
               }
               onTimeSelect={(time, slotId) =>
@@ -153,6 +254,9 @@ export default function ConsultationPage() {
                   time,
                   slotId,
                   reservationId: null,
+                  draftSlotInfo: null,
+                  surveyInfo: null,
+                  paymentId: null,
                 }))
               }
               onNext={handleNextFromDateTime}
@@ -172,23 +276,13 @@ export default function ConsultationPage() {
             />
           )}
 
-          {currentStep === 3 && showSurveyComplete && (
-            <SurveyComplete onNext={handleSurveyCompleteNext} />
-          )}
+          {currentStep === 3 && showSurveyComplete && <SurveyComplete onGoToPayment={handleGoToPayment} />}
 
-          {currentStep === 4 && (
-            <Payment
-              bookingData={bookingData}
-              onPrev={handleBackFromPayment}
-              onPaymentComplete={handlePaymentComplete}
-            />
-          )}
+          {currentStep === 4 && <Payment bookingData={bookingData} onPrev={handleBackFromPayment} onPaymentReady={handlePaymentReady} />}
 
-          {currentStep === 5 && (
-            <BookingComplete bookingData={bookingData} />
-          )}
+          {currentStep === 5 && <BookingComplete bookingData={bookingData} />}
         </div>
       </div>
     </div>
-  )
+  );
 }
