@@ -13,6 +13,7 @@ export interface Consultation {
   scheduledDate: string // ISO format
   scheduledTime: string // e.g., "14:00"
   status: ConsultationStatus
+  mentorTypeName?: string
   expertName?: string
   expertTitle?: string
   preConsultationQA?: PreConsultationQA[]

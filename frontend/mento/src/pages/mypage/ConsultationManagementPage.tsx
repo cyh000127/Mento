@@ -59,6 +59,7 @@ const mapReservationToConsultation = (reservation: ReservationListItem): Consult
     scheduledDate: date,
     scheduledTime: time,
     status: mapReservationStatusToConsultationStatus(reservation.status),
+    mentorTypeName: reservation.mentorType.name,
     memo: reservation.mentorType.description,
   }
 }
