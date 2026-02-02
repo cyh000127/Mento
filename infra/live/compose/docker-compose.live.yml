@@ -65,6 +65,16 @@ services:
       options:
         max-size: "100m"
 
+  livekit-cli:
+    image: livekit/livekit-cli:latest
+    container_name: livekit-cli
+    networks:
+      - live-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    entrypoint: /bin/sh
+    tty: true
+
 networks:
   live-network:
     external: true
