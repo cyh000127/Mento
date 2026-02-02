@@ -373,4 +373,73 @@ class ItemQueryServiceTest {
 				.findAllByUserIdWithFilters(userId, null, null, null, pageable);
 		}
 	}
+
+	@Nested
+	@DisplayName("만료 예정 아이템 조회 테스트")
+	class FindItemsExpiringBetweenTest {
+
+		@Test
+		@DisplayName("기간_내_만료_예정_아이템_조회_성공")
+		void 기간_내_만료_예정_아이템_조회_성공() {
+			// given
+			LocalDate today = LocalDate.now();
+			LocalDate oneWeekLater = today.plusDays(7);
+
+			Item item1 = createItem(1L, testUser, testProduct, ItemStatus.OWNED, false, 1);
+			Item item2 = createItem(2L, testUser, testProduct, ItemStatus.OWNED, false, 1);
+			List<Item> expiringItems = List.of(item1, item2);
+
+			given(itemRepository.findItemsExpiringBetween(today, oneWeekLater))
+				.willReturn(expiringItems);
+
+			// when
+			List<Item> result = itemQueryService.findItemsExpiringBetween(today, oneWeekLater);
+
+			// then
+			assertThat(result)
+				.hasSize(2)
+				.containsExactly(item1, item2);
+			then(itemRepository).should(times(1)).findItemsExpiringBetween(today, oneWeekLater);
+		}
+
+		@Test
+		@DisplayName("만료_예정_아이템_없음")
+		void 만료_예정_아이템_없음() {
+			// given
+			LocalDate today = LocalDate.now();
+			LocalDate oneWeekLater = today.plusDays(7);
+
+			given(itemRepository.findItemsExpiringBetween(today, oneWeekLater))
+				.willReturn(List.of());
+
+			// when
+			List<Item> result = itemQueryService.findItemsExpiringBetween(today, oneWeekLater);
+
+			// then
+			assertThat(result).isEmpty();
+			then(itemRepository).should(times(1)).findItemsExpiringBetween(today, oneWeekLater);
+		}
+
+		@Test
+		@DisplayName("OWNED 상태 아이템만 조회")
+		void owned_상태_아이템만_조회() {
+			// given
+			LocalDate today = LocalDate.now();
+			LocalDate oneWeekLater = today.plusDays(7);
+
+			Item ownedItem = createItem(1L, testUser, testProduct, ItemStatus.OWNED, false, 1);
+			List<Item> items = List.of(ownedItem);
+
+			given(itemRepository.findItemsExpiringBetween(today, oneWeekLater))
+				.willReturn(items);
+
+			// when
+			List<Item> result = itemQueryService.findItemsExpiringBetween(today, oneWeekLater);
+
+			// then
+			assertThat(result).hasSize(1);
+			assertThat(result.get(0).getStatus()).isEqualTo(ItemStatus.OWNED);
+			then(itemRepository).should(times(1)).findItemsExpiringBetween(today, oneWeekLater);
+		}
+	}
 }

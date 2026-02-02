@@ -191,7 +191,7 @@ class ItemHistoryQueryServiceTest {
 
 		@Test
 		@DisplayName("빈 결과 조회 성공")
-		void 빈_결과_조회_성공() {
+		void 빈결과_조회_성공() {
 			// given
 			Long userId = testUser.getId();
 			Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
