@@ -97,7 +97,8 @@ async def entrypoint(ctx: JobContext):
                     if text:
                         # 타임스탬프 생성 및 출력
                         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-                        print(f"[{timestamp}] [{participant.identity}]: {text}", flush=True)
+                        display_name = participant.identity[:-37] if len(participant.identity) > 37 else participant.identity
+                        print(f"[{timestamp}] [{display_name}]: {text}", flush=True)
 
             '''
             # 루프 밖에서 클라이언트를 생성하여 커넥션 풀 활용 (Java의 HttpClient Bean과 유사)
