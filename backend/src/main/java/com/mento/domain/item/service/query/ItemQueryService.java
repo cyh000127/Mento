@@ -24,5 +24,7 @@ public interface ItemQueryService {
 
 	List<Item> findOverdueItems(LocalDate today);
 
+	List<Item> findItemsExpiringBetween(LocalDate startDate, LocalDate endDate);
+
 	Item findByIdWithDetail(Long id);
 }

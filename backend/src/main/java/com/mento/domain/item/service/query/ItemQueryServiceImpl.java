@@ -62,4 +62,12 @@ public class ItemQueryServiceImpl implements ItemQueryService {
 	public List<Item> findOverdueItems(final LocalDate today) {
 		return itemRepository.findOverdueItems(today);
 	}
+
+	@Override
+	public List<Item> findItemsExpiringBetween(final LocalDate startDate, final LocalDate endDate) {
+		List<Item> items = itemRepository.findItemsExpiringBetween(startDate, endDate);
+		log.info("[Item] 만료 예정 아이템 조회 완료 {startDate: {}, endDate: {}, count: {}}", 
+			startDate, endDate, items.size());
+		return items;
+	}
 }

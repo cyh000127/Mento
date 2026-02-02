@@ -32,7 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class NotificationScheduleService {
 
-	// TODO: 아이템 만료 알림 구현 필요
 	// TODO: 컨설팅 리포트 생성 알림 구현 필요
 
 	private final NotificationFacadeService notificationFacadeService;
@@ -42,7 +41,7 @@ public class NotificationScheduleService {
 	/**
 	 * 5분 단위의 스케줄러가 상담 시작 전 알림을 발송합니다.
 	 */
-	@Scheduled(cron = "0 0/5 * * * *")
+	@Scheduled(cron = "0 0/5 8-17 * * *")
 	@Transactional
 	public void scheduleConsultationReminders() {
 		LocalDateTime now = TimeUtils.nowAsLocalDateTime().truncatedTo(ChronoUnit.MINUTES);
