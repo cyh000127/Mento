@@ -51,6 +51,7 @@ services:
       - app-network
     volumes:
       - ../egress/config.yml:/etc/egress/egress_config.yml:ro
+      - ../egress/records:/records
     environment:
       - EGRESS_CONFIG_FILE=/etc/egress/egress_config.yml
       - EGRESS_S3_ENDPOINT=${CLOUDFLARE_ENDPOINT}
