@@ -1,7 +1,6 @@
 package com.mento.domain.notification.service;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -9,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.notification.converter.NotificationConverter;
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.dto.response.NotificationResDto;
@@ -55,7 +55,7 @@ public class NotificationFacadeService {
 				.data("connected!"));
 
 			List<Notification> unreadNotifications = notificationRepository
-				.findActiveNotifications(userId, LocalDateTime.now());
+				.findActiveNotifications(userId, TimeUtils.nowAsLocalDateTime());
 
 			if (!unreadNotifications.isEmpty()) {
 				List<NotificationResDto> initialData = unreadNotifications.stream()

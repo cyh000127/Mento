@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.service.NotificationFacadeService;
@@ -44,7 +45,7 @@ public class NotificationScheduleService {
 	@Scheduled(cron = "0 0/5 * * * *")
 	@Transactional
 	public void scheduleConsultationReminders() {
-		LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
+		LocalDateTime now = TimeUtils.nowAsLocalDateTime().truncatedTo(ChronoUnit.MINUTES);
 
 		int minute = now.getMinute();
 		LocalTime nextHour = now.toLocalTime().plusHours(1).truncatedTo(ChronoUnit.HOURS);
