@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { MyPageSidebar } from "@/components/mypage/mypage-sidebar"
 import { PeriodDateFilters } from "@/components/mypage/consultation-filters"
 import { ConsultationCategoryFilter } from "@/components/mypage/consultation-category-filter"
@@ -6,6 +6,7 @@ import { ConsultationList } from "@/components/mypage/consultation-list"
 import { ConsultationEmpty } from "@/components/mypage/consultation-empty"
 import { ConsultationDetail } from "@/components/mypage/consultation-detail"
 import { getReservationList } from "@/api/reservationApi"
+import { useAuthStore } from "@/stores/useAuthStore"
 import type {
   Consultation,
   ConsultationCategory,
@@ -63,6 +64,9 @@ const mapReservationToConsultation = (reservation: ReservationListItem): Consult
 }
 
 export default function ConsultationManagementPage() {
+  const { user, accessToken } = useAuthStore()
+  const lastRequestKeyRef = useRef<string | null>(null)
+  const isFetchingRef = useRef(false)
   // View state
   const [selectedConsultation, setSelectedConsultation] = useState<Consultation | null>(null)
 
@@ -137,21 +141,48 @@ export default function ConsultationManagementPage() {
   }, [startYear, startMonth, startDay, endYear, endMonth, endDay])
 
   useEffect(() => {
-    if (!searchParams) return
-
     const fetchReservations = async () => {
-      const params: ReservationListParams = {
-        startDate: searchParams.startDate,
-        endDate: searchParams.endDate,
-        page: currentPage + 1,
-        size: pageSize,
-      }
-
-      if (searchParams.status) {
-        params.status = searchParams.status
-      }
-
       try {
+        if (!accessToken && !user) {
+          return
+        }
+
+        const currentUser = user
+        if (!currentUser) {
+          return
+        }
+
+        const params: ReservationListParams = searchParams
+          ? {
+              startDate: searchParams.startDate,
+              endDate: searchParams.endDate,
+              page: currentPage,
+              size: pageSize,
+              status: searchParams.status,
+            }
+          : {
+              startDate: "",
+              endDate: "",
+              page: currentPage,
+              size: pageSize,
+            }
+
+        const requestKey = JSON.stringify({
+          startDate: params.startDate,
+          endDate: params.endDate,
+          status: params.status ?? null,
+          page: params.page ?? null,
+          size: params.size ?? null,
+          userId: currentUser?.id ?? null,
+        })
+
+        if (requestKey === lastRequestKeyRef.current || isFetchingRef.current) {
+          return
+        }
+
+        isFetchingRef.current = true
+        lastRequestKeyRef.current = requestKey
+
         const data = await getReservationList(params)
 
         setConsultations(data.content.map(mapReservationToConsultation))
@@ -164,6 +195,7 @@ export default function ConsultationManagementPage() {
           isFirst: data.isFirst,
           isLast: data.isLast,
         })
+        setIsSearched(true)
 
         if (data.page !== currentPage) {
           setCurrentPage(data.page)
@@ -171,11 +203,13 @@ export default function ConsultationManagementPage() {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         console.error(message)
+      } finally {
+        isFetchingRef.current = false
       }
     }
 
     fetchReservations()
-  }, [currentPage, searchParams])
+  }, [currentPage, searchParams, accessToken, user])
 
   useEffect(() => {
     if (currentPage > pagination.page) {

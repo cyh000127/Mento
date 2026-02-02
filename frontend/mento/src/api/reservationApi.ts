@@ -14,15 +14,23 @@ export async function createReservationDraft(
 }
 
 export async function getReservationList(
-  params: ReservationListParams
+  params?: ReservationListParams
 ): Promise<ReservationListData> {
-  const response = await api.get<ReservationListResponse>("/reservations", {
-    params,
-  })
+  const response = await api.get<ReservationListResponse | ReservationListData>(
+    "/reservations",
+    params ? { params } : undefined
+  )
 
-  if (!response.data.data) {
-    throw new Error(response.data.error?.message ?? "예약 목록 조회에 실패했습니다.")
+  const payload = "data" in response.data ? response.data.data : response.data
+
+  if (!payload) {
+    const errorMessage =
+      "data" in response.data
+        ? response.data.error?.message
+        : undefined
+
+    throw new Error(errorMessage ?? "예약 목록 조회에 실패했습니다.")
   }
 
-  return response.data.data
+  return payload as ReservationListData
 }
