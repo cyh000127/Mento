@@ -1,55 +1,41 @@
-import { ArrowLeft, CalendarDays, Clock, Droplets, Sparkles, Scissors, CreditCard } from "lucide-react"
-import type { ConsultationCategory } from "@/types/consultation"
+import { ArrowLeft, CalendarDays, Clock, Droplets, Sparkles, Scissors, CreditCard } from "lucide-react";
+import type { ConsultationCategory } from "@/types/consultation";
 
 interface PaymentProps {
   bookingData: {
-    category: ConsultationCategory | null
-    date: Date | null
-    time: string
-  }
-  onPrev: () => void
-  onPaymentComplete: () => void
+    category: ConsultationCategory | null;
+    date: Date | null;
+    time: string;
+  };
+  onPrev: () => void;
+  onPaymentReady: () => void;
 }
 
 const categoryLabels: Record<NonNullable<ConsultationCategory>, { label: string; icon: typeof Droplets; price: string }> = {
-  skincare: { label: "스킨 케어", icon: Droplets, price: "30,000" },
+  skincare: { label: "스킨 케어", icon: Droplets, price: "35,000" },
   beauty: { label: "뷰티", icon: Sparkles, price: "35,000" },
-  hair: { label: "헤어", icon: Scissors, price: "40,000" },
-}
+  hair: { label: "헤어", icon: Scissors, price: "35,000" },
+};
 
-export function Payment({ bookingData, onPrev, onPaymentComplete }: PaymentProps) {
-  const categoryInfo = bookingData.category ? categoryLabels[bookingData.category] : null
-  const CategoryIcon = categoryInfo?.icon
+export function Payment({ bookingData, onPrev, onPaymentReady }: PaymentProps) {
+  const categoryInfo = bookingData.category ? categoryLabels[bookingData.category] : null;
+  const CategoryIcon = categoryInfo?.icon;
 
   const formatDate = (date: Date | null) => {
-    if (!date) return ""
-    const year = date.getFullYear()
-    const month = date.getMonth() + 1
-    const day = date.getDate()
-    const dayOfWeek = ["일", "월", "화", "수", "목", "금", "토"][date.getDay()]
-    return `${year}년 ${month}월 ${day}일 (${dayOfWeek})`
-  }
-
-  const handlePayment = () => {
-    // TODO: 실제 카카오페이 API 연동
-    // 현재는 시뮬레이션으로 바로 완료 처리
-    // 실제로는 카카오페이 결제창으로 리다이렉트 후, 결제 성공 콜백에서 onPaymentComplete 호출
-    alert("카카오페이 결제 페이지로 이동합니다.\n(실제 결제 연동은 추후 구현 예정)")
-    
-    // 결제 성공 시 완료 화면으로 이동
-    onPaymentComplete()
-  }
+    if (!date) return "";
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const dayOfWeek = ["일", "월", "화", "수", "목", "금", "토"][date.getDay()];
+    return `${year}년 ${month}월 ${day}일 (${dayOfWeek})`;
+  };
 
   return (
     <div className="flex flex-col">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-text-primary">
-          결제 정보를 확인해 주세요
-        </h1>
-        <p className="mt-2 text-text-secondary">
-          결제 완료 후 상담 예약이 확정됩니다
-        </p>
+        <h1 className="text-2xl font-bold text-text-primary">결제 정보를 확인해 주세요</h1>
+        <p className="mt-2 text-text-secondary">결제 완료 후 상담 예약이 확정됩니다</p>
       </div>
 
       {/* Main Content */}
@@ -58,7 +44,7 @@ export function Payment({ bookingData, onPrev, onPaymentComplete }: PaymentProps
         <div className="lg:col-span-3">
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <h2 className="mb-6 text-lg font-bold text-text-primary">상담 예약 정보</h2>
-            
+
             <div className="space-y-4">
               {/* Category */}
               {categoryInfo && CategoryIcon && (
@@ -124,7 +110,7 @@ export function Payment({ bookingData, onPrev, onPaymentComplete }: PaymentProps
         <div className="lg:col-span-2">
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <h2 className="mb-6 text-lg font-bold text-text-primary">결제 수단</h2>
-            
+
             {/* KakaoPay Payment Option */}
             <button
               type="button"
@@ -141,18 +127,8 @@ export function Payment({ bookingData, onPrev, onPaymentComplete }: PaymentProps
                   </div>
                 </div>
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-500">
-                  <svg
-                    className="h-4 w-4 text-dark-bg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={3}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5 13l4 4L19 7"
-                    />
+                  <svg className="h-4 w-4 text-dark-bg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
               </div>
@@ -182,18 +158,14 @@ export function Payment({ bookingData, onPrev, onPaymentComplete }: PaymentProps
 
       {/* Navigation Buttons */}
       <div className="mt-12 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={onPrev}
-          className="flex items-center gap-2 rounded-xl border border-border px-6 py-3 text-base font-semibold text-text-primary transition-colors hover:bg-muted"
-        >
+        <button type="button" onClick={onPrev} className="flex items-center gap-2 rounded-xl border border-border px-6 py-3 text-base font-semibold text-text-primary transition-colors hover:bg-muted">
           <ArrowLeft className="h-5 w-5" />
           이전 단계
         </button>
 
         <button
           type="button"
-          onClick={handlePayment}
+          onClick={onPaymentReady}
           className="flex items-center gap-2 rounded-xl bg-primary-500 px-10 py-4 text-lg font-semibold text-dark-bg shadow-lg shadow-primary-500/30 transition-all hover:bg-primary-400"
         >
           <CreditCard className="h-5 w-5" />
@@ -201,5 +173,5 @@ export function Payment({ bookingData, onPrev, onPaymentComplete }: PaymentProps
         </button>
       </div>
     </div>
-  )
+  );
 }
