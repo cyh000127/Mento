@@ -56,3 +56,24 @@ export interface InventoryFilters {
   isFavorite?: boolean
   sort?: ApiSortOption
 }
+
+// 인벤토리 아이템 추가 요청 타입
+export interface AddInventoryItemRequest {
+  productId: number
+  purchaseDate?: string // YYYY-MM-DD
+}
+
+// 인벤토리 아이템 추가 응답 타입
+export interface AddInventoryItemResponse {
+  success: boolean
+  data: {
+    id: number
+    productId: number
+    status: ApiProductStatus
+    isFavorite: boolean
+    purchaseDate: string
+    expectedExpiryDate: string
+    createdAt: string
+    updatedAt: string
+  }
+}

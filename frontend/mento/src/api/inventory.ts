@@ -8,6 +8,8 @@ import type {
   ApiProductStatus,
   ApiSortOption,
   SortOption,
+  AddInventoryItemRequest,
+  AddInventoryItemResponse,
 } from "@/types/inventory"
 
 /**
@@ -84,4 +86,21 @@ export function mapApiItemToProduct(apiItem: ApiItem): Product {
     purchaseLink: apiItem.purchaseLink,
     isFavorite: apiItem.isFavorite,
   }
+}
+
+/**
+ * 인벤토리 아이템 추가 API
+ */
+export async function addInventoryItem(request: AddInventoryItemRequest): Promise<AddInventoryItemResponse> {
+  const body: AddInventoryItemRequest = {
+    productId: request.productId,
+  }
+
+  // purchaseDate가 제공된 경우에만 포함
+  if (request.purchaseDate) {
+    body.purchaseDate = request.purchaseDate
+  }
+
+  const response = await api.post<AddInventoryItemResponse>("/items", body)
+  return response.data
 }
