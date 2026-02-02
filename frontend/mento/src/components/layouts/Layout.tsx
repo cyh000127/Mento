@@ -3,8 +3,8 @@ import { Outlet } from "react-router-dom"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { useAuthStore } from "@/stores/useAuthStore"
-import { authApi } from "@/api/auth"
-import { userApi } from "@/api/user"
+import { authApi } from "@/api/authApi"
+import { userApi } from "@/api/userApi"
 
 export default function Layout() {
   const { accessToken, user, setUser, logoutTriggered } = useAuthStore()

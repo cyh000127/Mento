@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@/components/ui/pagination";
-import { getProducts } from "@/api/products";
+import { getProducts } from "@/api/productsApi";
 import type { ApiProduct } from "@/types/product";
 import type { Product } from "@/types/inventory";
 

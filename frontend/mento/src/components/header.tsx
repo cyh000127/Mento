@@ -5,7 +5,7 @@ import { LoginModal } from "./login-modal";
 import { LogoutConfirmModal } from "./logout-confirm-modal";
 import { NotificationModal, type Notification } from "./notification-modal";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { authApi } from "@/api/auth";
+import { authApi } from "@/api/authApi";
 
 const navItems = [
   // { label: "추천", href: "/recommend" }, // 260128 kjm 아직 구현 여부가 결정되지 않아서 주석 처리

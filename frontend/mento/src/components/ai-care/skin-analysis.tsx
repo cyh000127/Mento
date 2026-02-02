@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Upload, Sparkles, ChevronRight, X, Loader2, Droplets, Search, Minus, Sun, Dumbbell } from "lucide-react";
-import { userApi } from "@/api/user";
+import { userApi } from "@/api/userApi";
 
 interface UploadedImage {
   file: File;

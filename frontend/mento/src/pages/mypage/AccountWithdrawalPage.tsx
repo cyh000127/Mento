@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { MyPageSidebar } from "@/components/mypage/mypage-sidebar"
-import { userApi } from "@/api/user"
+import { userApi } from "@/api/userApi"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { AlertTriangle, X } from "lucide-react"
 
