@@ -33,3 +33,22 @@ export interface ConsultationFilters {
   endDate?: string
   category: ConsultationCategory | "all"
 }
+
+// 상담 세션 생성 API 관련 타입
+export type ParticipantRole = "MENTOR" | "USER"
+
+export interface ConsultationSessionData {
+  timetableId: number
+  roomToken: string
+  roomName: string
+  livekitUrl: string
+  participantRole: ParticipantRole
+  enteredAt: string
+}
+
+export interface ConsultationSessionResponse {
+  success: boolean
+  data: ConsultationSessionData
+  error: null | { message: string }
+  timestamp: string
+}
