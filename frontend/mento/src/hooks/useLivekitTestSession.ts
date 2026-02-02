@@ -98,6 +98,7 @@ export function useLivekitTestSession(): UseLivekitTestSessionReturn {
           setLocalParticipant(newRoom.localParticipant);
 
           // 기존 참가자 확인 (이미 방에 있던 사람들)
+          /*
           const existingParticipants = Array.from(newRoom.remoteParticipants.values());
           console.log(`📊 현재 방에 ${existingParticipants.length}명의 원격 참가자가 있습니다.`);
 
@@ -110,7 +111,23 @@ export function useLivekitTestSession(): UseLivekitTestSessionReturn {
           }
 
           setRemoteParticipants(existingParticipants);
+          */
+
+          // 임시 수정: 전체 참가자가 아닌 '사람'만 필터링, livekit-agent는 제외
+          const remoteParticipants = Array.from(newRoom.remoteParticipants.values());
+          const remoteHumans = remoteParticipants.filter(p => !p.identity.includes('agent'));
+
+          console.log(`📊 현재 방 인원: 전체 ${remoteParticipants.length}명 (사람: ${remoteHumans.length}명)`);
+
+          // 사람만 기준으로 1명 초과(즉, 내가 들어가면 3명째가 되는 상황)면 막기
+          if (remoteHumans.length > 1) {
+              console.error("❌ 방이 가득 찼습니다. (사람 2명 제한)");
+              setError("방이 가득 찼습니다. 나중에 다시 시도해주세요.");
+              newRoom.disconnect();
+              return;
+          }
         });
+
 
         // 로컬 트랙 publish 이벤트 (카메라/마이크 활성화 시)
         newRoom.on(RoomEvent.LocalTrackPublished, (publication, participant) => {
