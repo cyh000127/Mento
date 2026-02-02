@@ -1,15 +1,24 @@
-// API 상품 정보 타입
+// API 상품 정보 타입 (백엔드 응답 형식)
 export interface ApiProduct {
-  id: number
-  name: string
-  brand: string
+  productId: number
+  oliveyoungGoodsNo: string
+  brandId: number
+  brandName: string
   categoryMedium: string
   categorySmall: string
-  price: number
+  name: string
   volume: string
+  description?: string
+  ingredients?: string
+  price: number
   imageUrl: string
   productUrl: string
+  skinTypes?: string  // JSON 배열 문자열
+  relatedConditions?: string  // JSON 배열 문자열
+  benefits?: string  // JSON 배열 문자열
+  defaultUsageDays?: number
   createdAt: string
+  updatedAt?: string
 }
 
 // 페이지네이션 응답 타입

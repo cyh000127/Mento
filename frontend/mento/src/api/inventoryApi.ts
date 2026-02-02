@@ -4,6 +4,7 @@ import type {
   InventoryFilters,
   ApiItem,
   Product,
+  ProductCategory,
   ProductStatus,
   ApiProductStatus,
   ApiSortOption,
@@ -73,17 +74,26 @@ export function mapUiSortToApiSort(uiSort: SortOption): ApiSortOption {
  * API 아이템을 Product 타입으로 변환
  */
 export function mapApiItemToProduct(apiItem: ApiItem): Product {
+  // categoryMedium을 UI category로 매핑
+  const categoryMap: Record<string, ProductCategory> = {
+    "스킨케어": "skin",
+    "메이크업": "beauty",
+    "헤어케어": "hair",
+  }
+  
+  const category = apiItem.categoryMedium ? (categoryMap[apiItem.categoryMedium] || "skin") : "skin"
+  
   return {
-    id: apiItem.itemId.toString(),
-    name: apiItem.name,
-    brand: apiItem.brand,
-    category: apiItem.category.toLowerCase() as Product["category"],
-    image: apiItem.imageUrl,
-    purchaseDate: apiItem.purchaseDate,
-    expirationDate: apiItem.expirationDate,
-    repurchaseCount: apiItem.repurchaseCount,
+    id: apiItem.id.toString(),
+    name: apiItem.productName,
+    brand: apiItem.brandName,
+    category: category,
+    image: apiItem.productImageUrl || "https://via.placeholder.com/150",
+    purchaseDate: apiItem.purchaseDate || "",
+    expirationDate: apiItem.expectedExpiryDate || "",
+    repurchaseCount: 0, // API에 없는 필드, 기본값 사용
     status: mapApiStatusToUiStatus(apiItem.status),
-    purchaseLink: apiItem.purchaseLink,
+    purchaseLink: "", // API에 없는 필드, 기본값 사용
     isFavorite: apiItem.isFavorite,
   }
 }
@@ -101,6 +111,18 @@ export async function addInventoryItem(request: AddInventoryItemRequest): Promis
     body.purchaseDate = request.purchaseDate
   }
 
-  const response = await api.post<AddInventoryItemResponse>("/items", body)
-  return response.data
+  try {
+    const response = await api.post<AddInventoryItemResponse["data"]>("/items", body)
+    console.log("인벤토리 추가 API 응답:", response.data, "상태:", response.status)
+    
+    return {
+      success: true,
+      data: response.data
+    }
+  } catch (error: any) {
+    console.error("인벤토리 추가 에러:", error)
+    console.error("에러 상태:", error.response?.status)
+    console.error("에러 응답:", error.response?.data)
+    throw error
+  }
 }

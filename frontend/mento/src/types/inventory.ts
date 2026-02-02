@@ -24,19 +24,21 @@ export interface Product {
   isFavorite: boolean
 }
 
-// API 응답 타입
+// API 응답 타입 (백엔드 응답 형식)
 export interface ApiItem {
-  itemId: number
-  name: string
-  brand: string
-  category: string
-  imageUrl: string
-  purchaseDate: string
-  expirationDate: string
-  repurchaseCount: number
+  id: number
+  productName: string
+  productImageUrl: string
+  brandName: string
   status: ApiProductStatus
-  purchaseLink: string
   isFavorite: boolean
+  categoryMedium?: string
+  categorySmall?: string
+  purchaseDate?: string
+  expectedExpiryDate?: string
+  daysUntilExpiry?: number
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface InventoryResponse {
@@ -46,6 +48,8 @@ export interface InventoryResponse {
   totalElements: number
   totalPages: number
   hasNext: boolean
+  isFirst: boolean
+  isLast: boolean
 }
 
 export interface InventoryFilters {
