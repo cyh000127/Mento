@@ -25,6 +25,10 @@ public class PaymentConverter {
 	}
 
 	public PaymentInfoDto toPaymentResDto(final Payment payment) {
+		if (payment == null) {
+			return null;
+		}
+
 		return PaymentInfoDto.builder()
 			.paymentId(payment.getPaymentId())
 			.reservationId(payment.getReservation() != null ? payment.getReservation().getId() : null)
