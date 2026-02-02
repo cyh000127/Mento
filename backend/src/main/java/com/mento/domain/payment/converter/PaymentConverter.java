@@ -1,8 +1,8 @@
 package com.mento.domain.payment.converter;
 
 import com.mento.domain.payment.dto.response.PaymentApproveResDto;
+import com.mento.domain.payment.dto.response.PaymentInfoDto;
 import com.mento.domain.payment.dto.response.PaymentReadyResDto;
-import com.mento.domain.payment.dto.response.PaymentResDto;
 import com.mento.domain.payment.entity.Payment;
 
 import lombok.experimental.UtilityClass;
@@ -24,8 +24,12 @@ public class PaymentConverter {
 			.build();
 	}
 
-	public PaymentResDto toPaymentResDto(final Payment payment) {
-		return PaymentResDto.builder()
+	public PaymentInfoDto toPaymentResDto(final Payment payment) {
+		if (payment == null) {
+			return null;
+		}
+
+		return PaymentInfoDto.builder()
 			.paymentId(payment.getPaymentId())
 			.reservationId(payment.getReservation() != null ? payment.getReservation().getId() : null)
 			.amount(payment.getAmount())

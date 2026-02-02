@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
 @Builder
-public record PaymentResDto(
+public record PaymentInfoDto(
 	@Schema(description = "결제 ID", example = "1234567890123456")
 	Long paymentId,
 

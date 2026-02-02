@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.PaymentException;
 import com.mento.domain.payment.converter.PaymentConverter;
-import com.mento.domain.payment.dto.response.PaymentResDto;
+import com.mento.domain.payment.dto.response.PaymentInfoDto;
 import com.mento.domain.payment.entity.Payment;
 import com.mento.domain.payment.repository.PaymentRepository;
 
@@ -29,7 +29,7 @@ public class PaymentQueryServiceImpl implements PaymentQueryService {
 	}
 
 	@Override
-	public PaymentResDto findPaymentById(final Long id) {
+	public PaymentInfoDto findPaymentById(final Long id) {
 		Payment payment = findById(id);
 		return PaymentConverter.toPaymentResDto(payment);
 	}

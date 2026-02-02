@@ -10,8 +10,8 @@ import com.mento.domain.mentor.service.query.MentorQueryService;
 import com.mento.domain.payment.dto.request.PaymentApproveReqDto;
 import com.mento.domain.payment.dto.request.PaymentReadyReqDto;
 import com.mento.domain.payment.dto.response.PaymentApproveResDto;
+import com.mento.domain.payment.dto.response.PaymentInfoDto;
 import com.mento.domain.payment.dto.response.PaymentReadyResDto;
-import com.mento.domain.payment.dto.response.PaymentResDto;
 import com.mento.domain.payment.entity.Payment;
 import com.mento.domain.payment.service.command.PaymentCommandService;
 import com.mento.domain.payment.service.query.PaymentQueryService;
@@ -42,7 +42,7 @@ public class PaymentFacadeService {
 		return paymentCommandService.approve(request, userId);
 	}
 
-	public PaymentResDto findPaymentById(final Long paymentId) {
+	public PaymentInfoDto findPaymentById(final Long paymentId) {
 		return paymentQueryService.findPaymentById(paymentId);
 	}
 

@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mento.common.response.BaseResponse;
 import com.mento.common.util.ResponseUtils;
-import com.mento.domain.payment.dto.response.PaymentResDto;
+import com.mento.domain.payment.dto.response.PaymentInfoDto;
 import com.mento.domain.payment.service.facade.PaymentFacadeService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,11 +31,11 @@ class PaymentQueryController {
 			+ "결제 금액, 결제 수단, 결제 상태, 예약 정보 등을 포함합니다."
 	)
 	@GetMapping("/{id}")
-	public ResponseEntity<BaseResponse<PaymentResDto>> findById(
+	public ResponseEntity<BaseResponse<PaymentInfoDto>> findById(
 		@Schema(description = "결제 ID", example = "1234567890123456")
 		@PathVariable final Long id
 	) {
-		PaymentResDto response = paymentFacadeService.findPaymentById(id);
+		PaymentInfoDto response = paymentFacadeService.findPaymentById(id);
 		return ResponseUtils.ok(response);
 	}
 }

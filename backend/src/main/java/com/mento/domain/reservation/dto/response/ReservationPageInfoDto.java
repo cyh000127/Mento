@@ -19,6 +19,9 @@ public record ReservationPageInfoDto(
 	@DateTimeFormat(pattern = "yyyy-MM-dd")
 	LocalDate scheduledDate,
 
+	@Schema(description = "예약 시간", example = "09:00")
+	String scheduledTime,
+
 	@Schema(description = "상담 유형")
 	MentoTypeInfoDto mentorType,
 
