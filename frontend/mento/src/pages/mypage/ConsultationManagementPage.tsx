@@ -9,14 +9,12 @@ import { getReservationList } from "@/api/reservationApi"
 import { useAuthStore } from "@/stores/useAuthStore"
 import type {
   Consultation,
-  ConsultationCategory,
   PeriodFilter,
   ConsultationStatus,
 } from "@/types/consultation"
 import type {
   ReservationListItem,
   ReservationListParams,
-  ReservationStatus,
 } from "@/types/reservationList"
 
 const pageSize = 10
@@ -79,12 +77,11 @@ export default function ConsultationManagementPage() {
   const [endYear, setEndYear] = useState("")
   const [endMonth, setEndMonth] = useState("")
   const [endDay, setEndDay] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState<ConsultationCategory | "all">("all")
+  const [selectedCategory, setSelectedCategory] = useState<string | "all">("all")
   const [isSearched, setIsSearched] = useState(false)
   const [searchParams, setSearchParams] = useState<{
     startDate: string
     endDate: string
-    status?: ReservationStatus
   } | null>(null)
 
   // Data state
@@ -141,6 +138,17 @@ export default function ConsultationManagementPage() {
     }
   }, [startYear, startMonth, startDay, endYear, endMonth, endDay])
 
+  const mentorTypeOptions = useMemo(() => {
+    return ["스킨케어", "뷰티", "헤어"]
+  }, [])
+
+  useEffect(() => {
+    if (selectedCategory === "all") return
+    if (!mentorTypeOptions.includes(selectedCategory)) {
+      setSelectedCategory("all")
+    }
+  }, [mentorTypeOptions, selectedCategory])
+
   useEffect(() => {
     const fetchReservations = async () => {
       try {
@@ -159,7 +167,6 @@ export default function ConsultationManagementPage() {
               endDate: searchParams.endDate,
               page: currentPage,
               size: pageSize,
-              status: searchParams.status,
             }
           : {
               startDate: "",
@@ -171,7 +178,6 @@ export default function ConsultationManagementPage() {
         const requestKey = JSON.stringify({
           startDate: params.startDate,
           endDate: params.endDate,
-          status: params.status ?? null,
           page: params.page ?? null,
           size: params.size ?? null,
           userId: currentUser?.id ?? null,
@@ -222,10 +228,15 @@ export default function ConsultationManagementPage() {
   const sortedConsultations = useMemo(() => {
     if (!isSearched) return []
 
-    return [...consultations].sort((a, b) => {
+    const filtered =
+      selectedCategory === "all"
+        ? consultations
+        : consultations.filter((consultation) => consultation.mentorTypeName === selectedCategory)
+
+    return [...filtered].sort((a, b) => {
       return new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime()
     })
-  }, [consultations, isSearched])
+  }, [consultations, isSearched, selectedCategory])
 
   // Handlers
   const handleSearch = () => {
@@ -238,7 +249,6 @@ export default function ConsultationManagementPage() {
     setSearchParams({
       startDate: dateRange.start,
       endDate: dateRange.end,
-      status: selectedCategory === "all" ? undefined : (selectedCategory as ReservationStatus),
     })
   }
 
@@ -318,6 +328,7 @@ export default function ConsultationManagementPage() {
 
             <div className="mt-6 pt-6 border-t border-border">
               <ConsultationCategoryFilter
+                options={mentorTypeOptions}
                 selectedCategory={selectedCategory}
                 onCategoryChange={setSelectedCategory}
               />
