@@ -27,6 +27,7 @@ import com.mento.common.livekit.LiveKitManager;
 import com.mento.common.livekit.dto.LiveKitSessionResponse;
 import com.mento.domain.mentor.entity.Mentor;
 import com.mento.domain.mentor.entity.MentorType;
+import com.mento.domain.reservation.dto.request.ReservationHistoryReqDto;
 import com.mento.domain.reservation.dto.response.ReservationDetailResDto;
 import com.mento.domain.reservation.dto.response.ReservationDraftResDto;
 import com.mento.domain.reservation.dto.response.ReservationPageInfoDto;
@@ -313,27 +314,27 @@ class ReservationFacadeServiceTest {
 	void 사용자_ID와_날짜_범위로_예약_목록_조회_성공() {
 		// Given
 		Long userId = 1L;
-		ReservationStatus status = ReservationStatus.CONFIRMED;
-		LocalDate startDate = LocalDate.of(2026, 1, 1);
-		LocalDate endDate = LocalDate.of(2026, 1, 31);
-		int page = 1;
-		int size = 10;
+		ReservationHistoryReqDto reqDto = ReservationHistoryReqDto.builder()
+			.startDate(LocalDate.of(2026, 1, 1))
+			.endDate(LocalDate.of(2026, 1, 31))
+			.status(ReservationStatus.CONFIRMED)
+			.page(0)
+			.size(10)
+			.build();
 
 		List<Reservation> reservations = List.of(
 			createReservationWithFullDetails(1L, userId),
 			createReservationWithFullDetails(2L, userId)
 		);
-		Page<Reservation> reservationPage = new PageImpl<>(reservations, PageRequest.of(0, size),
+		Page<Reservation> reservationPage = new PageImpl<>(reservations, PageRequest.of(0, 10),
 			reservations.size());
 
 		given(reservationQueryService.findAllByUserIdAndStatusWithPageable(
-			eq(userId), eq(status), eq(startDate), eq(endDate), any()
+			eq(userId), eq(reqDto.status()), eq(reqDto.startDate()), eq(reqDto.endDate()), any()
 		)).willReturn(reservationPage);
 
 		// When
-		Page<ReservationPageInfoDto> result = reservationFacadeService.findAllByUserIdAndDateRange(
-			userId, status, startDate, endDate, page, size
-		);
+		Page<ReservationPageInfoDto> result = reservationFacadeService.findAllByUserIdAndDateRange(userId, reqDto);
 
 		// Then
 		assertThat(result).isNotNull();
@@ -347,7 +348,44 @@ class ReservationFacadeServiceTest {
 		assertThat(first.status()).isEqualTo(ReservationStatus.CONFIRMED);
 
 		then(reservationQueryService).should().findAllByUserIdAndStatusWithPageable(
-			eq(userId), eq(status), eq(startDate), eq(endDate), any()
+			eq(userId), eq(reqDto.status()), eq(reqDto.startDate()), eq(reqDto.endDate()), any()
+		);
+	}
+
+	@Test
+	@DisplayName("파라미터_없이_예약_목록_조회_성공_전체조회_최신순")
+	void 파라미터_없이_예약_목록_조회_성공_전체조회_최신순() {
+		// Given
+		Long userId = 1L;
+		ReservationHistoryReqDto reqDto = ReservationHistoryReqDto.builder().build();
+
+		List<Reservation> reservations = List.of(
+			createReservationWithFullDetails(3L, userId),
+			createReservationWithFullDetails(2L, userId),
+			createReservationWithFullDetails(1L, userId)
+		);
+		Page<Reservation> reservationPage = new PageImpl<>(reservations, PageRequest.of(0, 10),
+			reservations.size());
+
+		given(reservationQueryService.findAllByUserIdAndStatusWithPageable(
+			eq(userId), isNull(), isNull(), isNull(), any()
+		)).willReturn(reservationPage);
+
+		// When
+		Page<ReservationPageInfoDto> result = reservationFacadeService.findAllByUserIdAndDateRange(userId, reqDto);
+
+		// Then
+		assertThat(result).isNotNull();
+		assertThat(result.getContent()).hasSize(3);
+		assertThat(result.getTotalElements()).isEqualTo(3);
+
+		// ID 내림차순 확인 (최신순)
+		assertThat(result.getContent().get(0).reservationId()).isEqualTo(3L);
+		assertThat(result.getContent().get(1).reservationId()).isEqualTo(2L);
+		assertThat(result.getContent().get(2).reservationId()).isEqualTo(1L);
+
+		then(reservationQueryService).should().findAllByUserIdAndStatusWithPageable(
+			eq(userId), isNull(), isNull(), isNull(), any()
 		);
 	}
 
