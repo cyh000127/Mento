@@ -88,13 +88,13 @@ class NotificationFacadeServiceTest {
 			.content("60")
 			.build();
 
-		given(notificationCommandService.send(reqDto)).willReturn(notification);
+		given(notificationCommandService.save(any(Notification.class))).willReturn(notification);
 
 		// when
 		notificationFacadeService.sendNotification(reqDto);
 
 		// then
-		verify(notificationCommandService).send(reqDto);
+		verify(notificationCommandService).save(any(Notification.class));
 		verify(eventPublisher).publishEvent(any(NotificationEvent.class));
 	}
 

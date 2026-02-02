@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 public class NotificationFacadeService {
 
 	private static final Long DEFAULT_TIMEOUT = 60L * 1000 * 60;
+	private static final Integer EXPIRE_DATE = 90;
 
 	private final NotificationCommandService notificationCommandService;
 	private final NotificationQueryService notificationQueryService;
@@ -77,19 +78,17 @@ public class NotificationFacadeService {
 
 	@Transactional
 	public void sendNotification(final NotificationSendReqDto dto) {
-		Notification notification = notificationCommandService.send(dto);
-
-		eventPublisher.publishEvent(new NotificationEvent(this, notification));
-	}
-
-	@Transactional
-	public void sendNotifications(final List<NotificationSendReqDto> dtos) {
-		List<Notification> notifications = notificationCommandService.sendAll(dtos);
-
-		for (Notification notification : notifications) {
-			eventPublisher.publishEvent(new NotificationEvent(this, notification));
+		LocalDateTime expiredAt = LocalDateTime.now().plusDays(EXPIRE_DATE);
+		if (dto.expiredAt() != null) {
+			expiredAt = dto.expiredAt();
 		}
+		Notification notification = NotificationConverter.toEntity(dto, expiredAt);
+		Notification savedNotification = notificationCommandService.save(notification);
+
+		eventPublisher.publishEvent(new NotificationEvent(this, savedNotification));
 	}
+
+
 
 	@Transactional(readOnly = true)
 	public List<NotificationResDto> getNotifications(final Long userId) {

@@ -13,7 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.service.query.ItemQueryService;
-import com.mento.domain.notification.dto.request.NotificationSendReqDto;
+import com.mento.domain.notification.converter.NotificationConverter;
+import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.service.command.NotificationCommandService;
 
@@ -57,18 +58,17 @@ public class ItemExpiryNotificationScheduleService {
 
 		LocalDateTime nextScheduleTime = LocalDateTime.of(today.plusDays(1), LocalTime.of(12, 0));
 
-		List<NotificationSendReqDto> notifications = userItemCountMap.entrySet().stream()
-			.map(entry -> NotificationSendReqDto.builder()
-				.targetMemberId(entry.getKey())
-				.type(NotificationType.INVENTORY_EXPIRY)
-				.content(String.valueOf(entry.getValue()))
-				.expiredAt(nextScheduleTime)
-				.build()
-			)
+		List<Notification> notifications = userItemCountMap.entrySet().stream()
+			.map(entry -> NotificationConverter.toEntity(
+				entry.getKey(),
+				NotificationType.INVENTORY_EXPIRY,
+				String.valueOf(entry.getValue()),
+				nextScheduleTime
+			))
 			.toList();
 
 		try {
-			notificationCommandService.sendAll(notifications);
+			notificationCommandService.saveAll(notifications);
 			log.info("[ItemExpiryNotification] 만료 예정 알림 저장 완료 {userCount: {}, totalItems: {}}", 
 				userItemCountMap.size(), expiringItems.size());
 		} catch (Exception e) {

@@ -19,12 +19,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import com.mento.common.util.TimeUtils;
 import com.mento.domain.mentor.entity.MentorType;
-import com.mento.domain.notification.dto.request.NotificationSendReqDto;
+import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.entity.NotificationType;
-import com.mento.domain.notification.service.NotificationFacadeService;
+import com.mento.domain.notification.event.NotificationEvent;
+import com.mento.domain.notification.service.command.NotificationCommandService;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.service.query.ReservationQueryService;
 import com.mento.domain.timetable.entity.Timetable;
@@ -39,7 +41,10 @@ class NotificationScheduleServiceTest {
 	private NotificationScheduleService notificationScheduleService;
 
 	@Mock
-	private NotificationFacadeService notificationFacadeService;
+	private NotificationCommandService notificationCommandService;
+
+	@Mock
+	private ApplicationEventPublisher eventPublisher;
 
 	@Mock
 	private TimetableQueryService timetableQueryService;
@@ -48,7 +53,7 @@ class NotificationScheduleServiceTest {
 	private ReservationQueryService reservationQueryService;
 
 	@Captor
-	private ArgumentCaptor<List<NotificationSendReqDto>> captor;
+	private ArgumentCaptor<List<Notification>> captor;
 
 	private MockedStatic<TimeUtils> timeUtilsMock;
 
@@ -107,20 +112,23 @@ class NotificationScheduleServiceTest {
 		given(reservationQueryService.findAllByTimetableIds(List.of(1L)))
 			.willReturn(List.of(reservation));
 
+		given(notificationCommandService.saveAll(anyList())).willAnswer(invocation -> invocation.getArgument(0));
+
 		// when
 		notificationScheduleService.scheduleConsultationReminders();
 
 		// then
-		then(notificationFacadeService).should(times(1)).sendNotifications(captor.capture());
+		then(notificationCommandService).should(times(1)).saveAll(captor.capture());
+		then(eventPublisher).should(times(1)).publishEvent(any(NotificationEvent.class));
 
-		List<NotificationSendReqDto> reqDtos = captor.getValue();
+		List<Notification> reqDtos = captor.getValue();
 		assertThat(reqDtos).hasSize(1);
-		NotificationSendReqDto reqDto = reqDtos.get(0);
+		Notification reqDto = reqDtos.get(0);
 
-		assertThat(reqDto.type()).isEqualTo(NotificationType.RESERVATION_REMINDER);
-		assertThat(reqDto.content()).isEqualTo("60");
+		assertThat(reqDto.getType()).isEqualTo(NotificationType.RESERVATION_REMINDER);
+		assertThat(reqDto.getContent()).isEqualTo("60");
 		LocalDateTime expectedExpiredAt = LocalDateTime.of(today, scheduledTime).minusMinutes(30);
-		assertThat(reqDto.expiredAt()).isEqualTo(expectedExpiredAt);
+		assertThat(reqDto.getExpiredAt()).isEqualTo(expectedExpiredAt);
 	}
 
 	@Test
@@ -167,20 +175,23 @@ class NotificationScheduleServiceTest {
 		given(reservationQueryService.findAllByTimetableIds(List.of(1L)))
 			.willReturn(List.of(reservation));
 
+		given(notificationCommandService.saveAll(anyList())).willAnswer(invocation -> invocation.getArgument(0));
+
 		// when
 		notificationScheduleService.scheduleConsultationReminders();
 
 		// then
-		then(notificationFacadeService).should(times(1)).sendNotifications(captor.capture());
+		then(notificationCommandService).should(times(1)).saveAll(captor.capture());
+		then(eventPublisher).should(times(1)).publishEvent(any(NotificationEvent.class));
 
-		List<NotificationSendReqDto> reqDtos = captor.getValue();
+		List<Notification> reqDtos = captor.getValue();
 		assertThat(reqDtos).hasSize(1);
-		NotificationSendReqDto reqDto = reqDtos.get(0);
+		Notification reqDto = reqDtos.get(0);
 
-		assertThat(reqDto.type()).isEqualTo(NotificationType.RESERVATION_REMINDER);
-		assertThat(reqDto.content()).isEqualTo("30");
+		assertThat(reqDto.getType()).isEqualTo(NotificationType.RESERVATION_REMINDER);
+		assertThat(reqDto.getContent()).isEqualTo("30");
 		LocalDateTime expectedExpiredAt = LocalDateTime.of(today, scheduledTime).minusMinutes(10);
-		assertThat(reqDto.expiredAt()).isEqualTo(expectedExpiredAt);
+		assertThat(reqDto.getExpiredAt()).isEqualTo(expectedExpiredAt);
 	}
 
 	@Test
@@ -227,20 +238,23 @@ class NotificationScheduleServiceTest {
 		given(reservationQueryService.findAllByTimetableIds(List.of(1L)))
 			.willReturn(List.of(reservation));
 
+		given(notificationCommandService.saveAll(anyList())).willAnswer(invocation -> invocation.getArgument(0));
+
 		// when
 		notificationScheduleService.scheduleConsultationReminders();
 
 		// then
-		then(notificationFacadeService).should(times(1)).sendNotifications(captor.capture());
+		then(notificationCommandService).should(times(1)).saveAll(captor.capture());
+		then(eventPublisher).should(times(1)).publishEvent(any(NotificationEvent.class));
 
-		List<NotificationSendReqDto> reqDtos = captor.getValue();
+		List<Notification> reqDtos = captor.getValue();
 		assertThat(reqDtos).hasSize(1);
-		NotificationSendReqDto reqDto = reqDtos.get(0);
+		Notification reqDto = reqDtos.get(0);
 
-		assertThat(reqDto.type()).isEqualTo(NotificationType.CONSULTING_STARTED);
-		assertThat(reqDto.content()).isEqualTo("0");
+		assertThat(reqDto.getType()).isEqualTo(NotificationType.CONSULTING_STARTED);
+		assertThat(reqDto.getContent()).isEqualTo("0");
 		LocalDateTime expectedExpiredAt = LocalDateTime.of(today, scheduledTime).plusMinutes(10);
-		assertThat(reqDto.expiredAt()).isEqualTo(expectedExpiredAt);
+		assertThat(reqDto.getExpiredAt()).isEqualTo(expectedExpiredAt);
 	}
 
 }

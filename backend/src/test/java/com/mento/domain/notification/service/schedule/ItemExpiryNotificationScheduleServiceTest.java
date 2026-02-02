@@ -24,7 +24,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.enums.ItemStatus;
 import com.mento.domain.item.service.query.ItemQueryService;
-import com.mento.domain.notification.dto.request.NotificationSendReqDto;
+import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.service.command.NotificationCommandService;
 import com.mento.domain.product.entity.Product;
@@ -43,7 +43,7 @@ class ItemExpiryNotificationScheduleServiceTest {
 	private ItemExpiryNotificationScheduleService scheduleService;
 
 	@Captor
-	private ArgumentCaptor<List<NotificationSendReqDto>> notificationCaptor;
+	private ArgumentCaptor<List<Notification>> notificationCaptor;
 
 	private User user1;
 	private User user2;
@@ -97,27 +97,27 @@ class ItemExpiryNotificationScheduleServiceTest {
 		scheduleService.checkAndNotifyExpiringItems();
 
 		// Then
-		then(notificationCommandService).should(times(1)).sendAll(notificationCaptor.capture());
+		then(notificationCommandService).should(times(1)).saveAll(notificationCaptor.capture());
 
-		List<NotificationSendReqDto> capturedNotifications = notificationCaptor.getValue();
+		List<Notification> capturedNotifications = notificationCaptor.getValue();
 		assertThat(capturedNotifications).hasSize(2); // 2명의 사용자
 		
 		// user1은 2개 아이템
-		NotificationSendReqDto user1Notification = capturedNotifications.stream()
-			.filter(n -> n.targetMemberId().equals(1L))
+		Notification user1Notification = capturedNotifications.stream()
+			.filter(n -> n.getUserId().equals(1L))
 			.findFirst()
 			.orElseThrow();
-		assertThat(user1Notification.type()).isEqualTo(NotificationType.INVENTORY_EXPIRY);
-		assertThat(user1Notification.content()).isEqualTo("2");
-		assertThat(user1Notification.expiredAt()).isAfter(LocalDateTime.now());
+		assertThat(user1Notification.getType()).isEqualTo(NotificationType.INVENTORY_EXPIRY);
+		assertThat(user1Notification.getContent()).isEqualTo("2");
+		assertThat(user1Notification.getExpiredAt()).isAfter(LocalDateTime.now());
 
 		// user2는 1개 아이템
-		NotificationSendReqDto user2Notification = capturedNotifications.stream()
-			.filter(n -> n.targetMemberId().equals(2L))
+		Notification user2Notification = capturedNotifications.stream()
+			.filter(n -> n.getUserId().equals(2L))
 			.findFirst()
 			.orElseThrow();
-		assertThat(user2Notification.type()).isEqualTo(NotificationType.INVENTORY_EXPIRY);
-		assertThat(user2Notification.content()).isEqualTo("1");
+		assertThat(user2Notification.getType()).isEqualTo(NotificationType.INVENTORY_EXPIRY);
+		assertThat(user2Notification.getContent()).isEqualTo("1");
 	}
 
 	@Test
@@ -131,7 +131,7 @@ class ItemExpiryNotificationScheduleServiceTest {
 		scheduleService.checkAndNotifyExpiringItems();
 
 		// Then
-		then(notificationCommandService).should(never()).sendAll(anyList());
+		then(notificationCommandService).should(never()).saveAll(anyList());
 	}
 
 	@Test
@@ -152,11 +152,11 @@ class ItemExpiryNotificationScheduleServiceTest {
 		scheduleService.checkAndNotifyExpiringItems();
 
 		// Then
-		then(notificationCommandService).should(times(1)).sendAll(notificationCaptor.capture());
+		then(notificationCommandService).should(times(1)).saveAll(notificationCaptor.capture());
 
-		List<NotificationSendReqDto> capturedNotifications = notificationCaptor.getValue();
+		List<Notification> capturedNotifications = notificationCaptor.getValue();
 		assertThat(capturedNotifications).hasSize(1);
-		assertThat(capturedNotifications.get(0).expiredAt()).isEqualTo(expectedExpiry);
+		assertThat(capturedNotifications.get(0).getExpiredAt()).isEqualTo(expectedExpiry);
 	}
 
 	@Test

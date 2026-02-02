@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,8 +18,11 @@ import org.springframework.util.CollectionUtils;
 
 import com.mento.common.util.TimeUtils;
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
+import com.mento.domain.notification.converter.NotificationConverter;
+import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.entity.NotificationType;
-import com.mento.domain.notification.service.NotificationFacadeService;
+import com.mento.domain.notification.event.NotificationEvent;
+import com.mento.domain.notification.service.command.NotificationCommandService;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.service.query.ReservationQueryService;
 import com.mento.domain.timetable.entity.Timetable;
@@ -34,9 +38,10 @@ public class NotificationScheduleService {
 
 	// TODO: 컨설팅 리포트 생성 알림 구현 필요
 
-	private final NotificationFacadeService notificationFacadeService;
+	private final NotificationCommandService notificationCommandService;
 	private final TimetableQueryService timetableQueryService;
 	private final ReservationQueryService reservationQueryService;
+	private final ApplicationEventPublisher eventPublisher;
 
 	/**
 	 * 5분 단위의 스케줄러가 상담 시작 전 알림을 발송합니다.
@@ -87,7 +92,7 @@ public class NotificationScheduleService {
 		Map<Long, Timetable> timetableMap = timetables.stream()
 			.collect(Collectors.toMap(Timetable::getId, Function.identity()));
 
-		List<NotificationSendReqDto> notificationDtos = reservations.stream()
+		List<Notification> notifications = reservations.stream()
 			.map(reservation -> {
 				Timetable timetable = timetableMap.get(reservation.getSlot().getTimetable().getId());
 				if (timetable == null) {
@@ -98,20 +103,23 @@ public class NotificationScheduleService {
 					timetable.getScheduledTime());
 				LocalDateTime expiredAt = scheduledDateTime.plusMinutes(expiryOffsetMinutes);
 
-				return NotificationSendReqDto.builder()
-					.targetMemberId(reservation.getUser().getId())
-					.type(type)
-					.content(content)
-					.expiredAt(expiredAt)
-					.build();
+				return NotificationConverter.toEntity(
+					reservation.getUser().getId(),
+					type,
+					content,
+					expiredAt
+				);
 			})
 			.filter(Objects::nonNull)
 			.toList();
 
-		if (!CollectionUtils.isEmpty(notificationDtos)) {
+		if (!CollectionUtils.isEmpty(notifications)) {
 			try {
-				notificationFacadeService.sendNotifications(notificationDtos);
-				log.info("[Notification] 알림 일괄 전송 성공 {count: {}, type: {}}", notificationDtos.size(), type);
+				List<Notification> savedNotifications = notificationCommandService.saveAll(notifications);
+				savedNotifications.forEach(notification ->
+					eventPublisher.publishEvent(new NotificationEvent(this, notification))
+				);
+				log.info("[Notification] 알림 일괄 전송 성공 {count: {}, type: {}}", savedNotifications.size(), type);
 			} catch (Exception e) {
 				log.error("[Notification] 알림 일괄 전송 실패 {type: {}}", type, e);
 			}
