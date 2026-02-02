@@ -11,6 +11,10 @@ keys:
 
 redis:
   address: localhost:6380
+
+prometheus:
+  port: 8003
+  bind_address: "0.0.0.0"
 turn:
   enabled: true
   udp_port: 8002
