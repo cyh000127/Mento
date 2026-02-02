@@ -37,6 +37,19 @@ async def entrypoint(ctx: JobContext):
     # LiveKit 서버에 연결
     await ctx.connect()
 
+    # local_participant를 제외한 나머지 참가자 중 'agent' 키워드가 포함된 참가자가 있는지 확인
+    # 만약 있다면, 이 워커는 중복 실행된 것이므로 즉시 종료합니다.
+    existing_agents = [
+        p for p in ctx.room.remote_participants.values()
+        if "agent" in (p.identity or "").lower()
+    ]
+
+    if len(existing_agents) > 0:
+        print(f" [Room: {ctx.room.name}] 이미 에이전트가 존재. (기존 SID: {existing_agents[0].sid})")
+        print(f" 현재 세션(Job ID: {ctx.job.id})을 즉시 종료하고 퇴장.")
+        await ctx.disconnect() # 방에서 나감
+        return # 함수 종료 (아래 STT 설정 로직 등을 실행하지 않음)
+
     # 1. STT 엔진 설정 (한국어 고정)
     whisper_stt = openai.STT(
         base_url="https://gms.ssafy.io/gmsapi/api.openai.com/v1",
