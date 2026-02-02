@@ -20,6 +20,7 @@ const statusLabels: Record<ProductStatus, string> = {
   unavailable: "사용불가",
   purchasing: "구매중",
   recommended: "추천받음",
+  "over-dated": "기한만료",
 }
 
 const statusColors: Record<ProductStatus, string> = {
@@ -27,6 +28,7 @@ const statusColors: Record<ProductStatus, string> = {
   unavailable: "bg-gray-100 text-gray-600 border-gray-200",
   purchasing: "bg-pastel-purple-100 text-purple-600 border-pastel-purple-200",
   recommended: "bg-pastel-green-100 text-green-600 border-pastel-green-200",
+  "over-dated": "bg-red-100 text-red-600 border-red-200",
 }
 
 export function ProductDetail({
