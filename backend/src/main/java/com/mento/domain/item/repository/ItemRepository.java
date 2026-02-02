@@ -2,6 +2,7 @@ package com.mento.domain.item.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -50,4 +51,13 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 		AND i.deletedAt IS NULL
 		""")
 	int updateOverdueItemsToExpired(@Param("today") LocalDate today);
+
+	@Query("""
+		SELECT i
+		FROM Item i
+		JOIN FETCH i.product
+		JOIN FETCH i.user
+		WHERE i.id = :itemId
+		""")
+	Optional<Item> findWithDetailsById(Long itemId);
 }

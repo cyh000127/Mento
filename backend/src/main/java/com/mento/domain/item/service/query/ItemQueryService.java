@@ -23,4 +23,6 @@ public interface ItemQueryService {
 	);
 
 	List<Item> findOverdueItems(LocalDate today);
+
+	Item findByIdWithDetail(Long id);
 }

@@ -110,8 +110,10 @@ public class ItemFacadeService {
 		return items.map(ItemConverter::toItemPageResDto);
 	}
 
-	public ItemInfoDetailResDto findById(final Long userId, final Long itemId) {
-		Item item = findAndValidateUserItem(userId, itemId);
+	@Transactional(readOnly = true)
+	public ItemInfoDetailResDto findByIdWithDetail(final Long userId, final Long itemId) {
+		Item item = itemQueryService.findByIdWithDetail(itemId);
+		itemValidator.validate(userId, item);
 		return ItemConverter.toItemInfoDetailResDto(item);
 	}
 
