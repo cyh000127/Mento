@@ -6,7 +6,6 @@ import org.springframework.data.domain.Page;
 
 import com.mento.common.file.dto.FileInfo;
 import com.mento.domain.mentor.converter.MentorConverter;
-import com.mento.domain.payment.converter.PaymentConverter;
 import com.mento.domain.reservation.dto.common.ReservationSurveyDto;
 import com.mento.domain.reservation.dto.response.MediaUploadResDto;
 import com.mento.domain.reservation.dto.response.ReservationDetailResDto;
@@ -41,7 +40,7 @@ public class ReservationConverter {
 			.scheduledDate(reservation.getSlot().getTimetable().getScheduledDate())
 			.scheduledTime(reservation.getSlot().getTimetable().getScheduledTime().toString())
 			.reservationStatus(reservation.getStatus().name())
-			.paymentInfo(PaymentConverter.toPaymentResDto(reservation.getPayment()))
+			.paymentId(reservation.getPayment() != null ? reservation.getPayment().getPaymentId() : null)
 			.surveyInfo(toReservationSurveyDto(reservation.getSurveyData()))
 			.createdAt(reservation.getCreatedAt())
 			.updatedAt(reservation.getUpdatedAt())

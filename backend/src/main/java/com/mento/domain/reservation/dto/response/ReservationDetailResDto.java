@@ -7,7 +7,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import com.mento.domain.mentor.dto.common.MentoTypeInfoDto;
 import com.mento.domain.mentor.dto.common.MentorInfoDto;
-import com.mento.domain.payment.dto.response.PaymentInfoDto;
 import com.mento.domain.reservation.dto.common.ReservationSurveyDto;
 import com.mento.domain.user.dto.common.UserInfoDto;
 
@@ -45,8 +44,8 @@ public record ReservationDetailResDto(
 	@Schema(description = "설문 정보")
 	ReservationSurveyDto surveyInfo,
 
-	@Schema(description = "결제 정보")
-	PaymentInfoDto paymentInfo,
+	@Schema(description = "결제 정보 ID")
+	Long paymentId,
 
 	@Schema(description = "예약 생성일시", example = "2025-01-29T10:00:00")
 	LocalDateTime createdAt,
