@@ -126,3 +126,17 @@ export async function addInventoryItem(request: AddInventoryItemRequest): Promis
     throw error
   }
 }
+
+/**
+ * 인벤토리 아이템 삭제 API (Soft Delete)
+ */
+export async function deleteInventoryItem(itemId: string): Promise<void> {
+  try {
+    await api.post(`/items/${itemId}`)
+  } catch (error: any) {
+    console.error("인벤토리 삭제 에러:", error)
+    console.error("에러 상태:", error.response?.status)
+    console.error("에러 응답:", error.response?.data)
+    throw error
+  }
+}
