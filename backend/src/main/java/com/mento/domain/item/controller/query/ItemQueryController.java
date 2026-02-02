@@ -76,7 +76,7 @@ public class ItemQueryController {
 		@AuthenticationPrincipal final AuthenticatedUser authUser,
 		@PathVariable final Long id
 	) {
-		ItemInfoDetailResDto response = itemFacadeService.findById(authUser.getId(), id);
+		ItemInfoDetailResDto response = itemFacadeService.findByIdWithDetail(authUser.getId(), id);
 		return ResponseUtils.ok(response);
 	}
 

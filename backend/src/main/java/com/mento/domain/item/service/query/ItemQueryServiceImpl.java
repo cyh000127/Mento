@@ -30,6 +30,14 @@ public class ItemQueryServiceImpl implements ItemQueryService {
 	public Item findById(final Long itemId) {
 		Item item = itemRepository.findById(itemId)
 			.orElseThrow(() -> new ItemException(ErrorCode.ITEM_NOT_FOUND));
+		log.info("[Item] 아이템 조회 완료 {itemID : {}}", item.getId());
+		return item;
+	}
+
+	@Override
+	public Item findByIdWithDetail(final Long itemId) {
+		Item item = itemRepository.findWithDetailsById(itemId)
+			.orElseThrow(() -> new ItemException(ErrorCode.ITEM_NOT_FOUND));
 		log.info("[Item] 아이템 상세 조회 완료 {itemID : {}}", item.getId());
 		return item;
 	}
