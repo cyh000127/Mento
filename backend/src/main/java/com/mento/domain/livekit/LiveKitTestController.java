@@ -37,8 +37,10 @@ public class LiveKitTestController {
 			return ResponseEntity.status(403).body("해당 방은 이미 2명이 참여 중입니다.");
 		}
 
-		//String userId = UUID.randomUUID().toString();
-		String userId = String.format("%s(%s)", userName, role.name());
+		String uniqueId = String.format("%s(%s)-%s",
+			userName,
+			role.name(),
+			UUID.randomUUID().toString());
 
 		long ttlSeconds = 3600;
 
