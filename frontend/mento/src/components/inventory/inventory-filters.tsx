@@ -31,7 +31,8 @@ const categoryLabels: Record<ProductCategory | "all", string> = {
 
 const sortLabels: Record<SortOption, string> = {
   recent: "최근 등록한 순",
-  alphabetical: "가나다 순",
+  alphabetical: "오래된 순",
+  expiring: "기한 임박 순",
 }
 
 const statusLabels: Record<ProductStatus | "all", string> = {
@@ -40,6 +41,7 @@ const statusLabels: Record<ProductStatus | "all", string> = {
   unavailable: "사용불가",
   purchasing: "구매중",
   recommended: "추천받음",
+  "over-dated": "기한만료",
 }
 
 export function InventoryFilters({

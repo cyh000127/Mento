@@ -1,148 +1,129 @@
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { ProductGrid } from "@/components/inventory/product-grid"
 import { ProductDetail } from "@/components/inventory/product-detail"
 import { InventoryFilters } from "@/components/inventory/inventory-filters"
 import { InventoryRegisterModal } from "@/components/inventory/inventory-register-modal"
 import type { Product, ProductCategory, ProductStatus, SortOption } from "@/types/inventory"
-
-// Mock data
-const mockProducts: Product[] = [
-  {
-    id: "1",
-    name: "수분 크림",
-    brand: "라로슈포제",
-    category: "skin",
-    image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop",
-    purchaseDate: "2024-01-15",
-    expirationDate: "2025-01-15",
-    repurchaseCount: 3,
-    status: "in-use",
-    purchaseLink: "https://example.com",
-    isFavorite: true,
-  },
-  {
-    id: "2",
-    name: "립스틱 #201",
-    brand: "맥",
-    category: "beauty",
-    image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=400&h=400&fit=crop",
-    purchaseDate: "2024-02-10",
-    expirationDate: "2025-02-10",
-    repurchaseCount: 1,
-    status: "in-use",
-    purchaseLink: "https://example.com",
-    isFavorite: false,
-  },
-  {
-    id: "3",
-    name: "샴푸 모이스처",
-    brand: "케라스타즈",
-    category: "hair",
-    image: "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=400&h=400&fit=crop",
-    purchaseDate: "2023-12-20",
-    expirationDate: "2024-12-20",
-    repurchaseCount: 5,
-    status: "unavailable",
-    purchaseLink: "https://example.com",
-    isFavorite: true,
-  },
-  {
-    id: "4",
-    name: "선크림 SPF50+",
-    brand: "비오템",
-    category: "skin",
-    image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop",
-    purchaseDate: "2024-03-01",
-    expirationDate: "2025-03-01",
-    repurchaseCount: 2,
-    status: "purchasing",
-    purchaseLink: "https://example.com",
-    isFavorite: false,
-  },
-  {
-    id: "5",
-    name: "아이섀도우 팔레트",
-    brand: "어반디케이",
-    category: "beauty",
-    image: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400&h=400&fit=crop",
-    purchaseDate: "2024-01-20",
-    expirationDate: "2026-01-20",
-    repurchaseCount: 0,
-    status: "recommended",
-    purchaseLink: "https://example.com",
-    isFavorite: false,
-  },
-  {
-    id: "6",
-    name: "헤어 에센스",
-    brand: "모로칸오일",
-    category: "hair",
-    image: "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=400&h=400&fit=crop",
-    purchaseDate: "2024-02-15",
-    expirationDate: "2025-02-15",
-    repurchaseCount: 4,
-    status: "in-use",
-    purchaseLink: "https://example.com",
-    isFavorite: true,
-  },
-]
+import {
+  getInventoryItems,
+  mapApiItemToProduct,
+  mapUiStatusToApiStatus,
+  mapUiSortToApiSort,
+} from "@/api/inventory"
 
 export default function InventoryPage() {
-  const [products] = useState<Product[]>(mockProducts)
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(products[0] || null)
+  const [products, setProducts] = useState<Product[]>([])
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [hasNext, setHasNext] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | "all">("all")
   const [sortOption, setSortOption] = useState<SortOption>("recent")
   const [selectedStatus, setSelectedStatus] = useState<ProductStatus | "all">("all")
+  const [favoriteFilter, setFavoriteFilter] = useState<boolean | undefined>(undefined)
   const [registerModalOpen, setRegisterModalOpen] = useState(false)
 
-  // Filter and sort products
-  const filteredProducts = products
-    .filter((product) => {
-      // Search filter
-      if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return false
+  // API 데이터 가져오기
+  const fetchInventory = useCallback(async () => {
+    setLoading(true)
+    try {
+      const filters: any = {
+        page: currentPage,
+        size: 20,
       }
-      // Category filter
-      if (selectedCategory !== "all" && product.category !== selectedCategory) {
-        return false
+
+      // 카테고리 필터 적용
+      if (selectedCategory !== "all") {
+        filters.category = selectedCategory.toUpperCase()
       }
-      // Status filter
-      if (selectedStatus !== "all" && product.status !== selectedStatus) {
-        return false
+
+      // 상태 필터 적용
+      if (selectedStatus !== "all") {
+        filters.status = mapUiStatusToApiStatus(selectedStatus)
       }
-      return true
-    })
-    .sort((a, b) => {
-      if (sortOption === "recent") {
-        return new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime()
+
+      // 즐겨찾기 필터 적용
+      if (favoriteFilter !== undefined) {
+        filters.isFavorite = favoriteFilter
       }
-      return a.name.localeCompare(b.name, "ko")
-    })
+
+      // 정렬 옵션 적용
+      filters.sort = mapUiSortToApiSort(sortOption)
+
+      const response = await getInventoryItems(filters)
+
+      const mappedProducts = response.content.map(mapApiItemToProduct)
+      setProducts(mappedProducts)
+      setTotalPages(response.totalPages)
+      setHasNext(response.hasNext)
+
+      // 선택된 제품이 없으면 첫 번째 제품 선택
+      if (mappedProducts.length > 0) {
+        setSelectedProduct((prev) => {
+          if (!prev) return mappedProducts[0]
+          // 현재 선택된 제품이 새 목록에 있는지 확인
+          const stillExists = mappedProducts.find((p) => p.id === prev.id)
+          return stillExists || mappedProducts[0]
+        })
+      } else {
+        setSelectedProduct(null)
+      }
+    } catch (error) {
+      console.error("Failed to fetch inventory:", error)
+      setProducts([])
+      setSelectedProduct(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [currentPage, selectedCategory, selectedStatus, favoriteFilter, sortOption])
+
+  // 초기 로드 및 필터/정렬 변경 시 데이터 재조회
+  useEffect(() => {
+    fetchInventory()
+  }, [fetchInventory])
+
+  // 필터가 변경되면 첫 페이지로 이동
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [selectedCategory, selectedStatus, favoriteFilter, sortOption])
+
+  // 검색 필터 (클라이언트 사이드)
+  const filteredProducts = products.filter((product) => {
+    if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false
+    }
+    return true
+  })
 
   const handleProductSelect = (product: Product) => {
     setSelectedProduct(product)
   }
 
-  const handleToggleFavorite = (productId: string) => {
-    // In real app, this would update the backend
+  const handleToggleFavorite = async (productId: string) => {
+    // TODO: 즐겨찾기 토글 API 구현 예정
     console.log("Toggle favorite:", productId)
+    // API 호출 후 데이터 재조회
+    await fetchInventory()
   }
 
-  const handleDelete = (productId: string) => {
-    // In real app, this would delete from backend
+  const handleDelete = async (productId: string) => {
+    // TODO: 제품 삭제 API 구현 예정
     console.log("Delete product:", productId)
+    // API 호출 후 데이터 재조회
+    await fetchInventory()
   }
 
   const handleAddProduct = () => {
     setRegisterModalOpen(true)
   }
 
-  const handleProductsAdded = (selectedProducts: Product[]) => {
-    // In real app, this would call API to add products to inventory
+  const handleProductsAdded = async (selectedProducts: Product[]) => {
+    // TODO: 제품 추가 API 구현 예정
     console.log("Products added to inventory:", selectedProducts)
-    // TODO: Implement API call and state update
-    // Example: mutate() or refetch() to refresh the product list
+    // API 호출 후 데이터 재조회
+    await fetchInventory()
   }
 
   return (
