@@ -5,6 +5,7 @@ import static com.mento.common.auth.constant.AuthConstant.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
@@ -71,6 +72,7 @@ public class JwtTokenProvider {
 	private String generateToken(final User user, final String tokenType, final Long expiration) {
 		Claims claims = Jwts.claims()
 			.subject(String.valueOf(user.getId()))
+			.id(UUID.randomUUID().toString())
 			.add(TYPE, tokenType)
 			.add(KEY_ID, user.getId())
 			.add(KEY_EMAIL, user.getEmail())
