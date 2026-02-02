@@ -63,6 +63,7 @@ public class ReservationConverter {
 		return ReservationPageInfoDto.builder()
 			.reservationId(reservation.getId())
 			.scheduledDate(reservation.getSlot().getTimetable().getScheduledDate())
+			.scheduledTime(reservation.getSlot().getTimetable().getScheduledTime().toString())
 			.mentorType(MentorConverter.toMentorTypeInfoDto(reservation.getSlot().getMentorType()))
 			.status(reservation.getStatus())
 			.build();
