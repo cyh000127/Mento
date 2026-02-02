@@ -9,12 +9,13 @@ export type PeriodFilter = "1month" | "3months" | "6months" | "12months"
 // 실제 상담 도메인 모델
 export interface Consultation {
   id: string
-  category: ConsultationCategory
+  category?: ConsultationCategory
   scheduledDate: string // ISO format
   scheduledTime: string // e.g., "14:00"
   status: ConsultationStatus
-  expertName: string
-  expertTitle: string
+  mentorTypeName?: string
+  expertName?: string
+  expertTitle?: string
   preConsultationQA?: PreConsultationQA[]
   roomUrl?: string
   memo?: string
