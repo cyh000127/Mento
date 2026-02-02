@@ -164,12 +164,11 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
   // 페이지 크기
   const itemsPerPage = 10;
 
-  // API에서 상품 목록 조회
+  // API에서 상품 목록 조회 (전체 조회 후 클라이언트에서 필터링)
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await getProducts({
-        brand: searchQuery || undefined,
         sort_key: "name",
         order: "asc",
         page: currentPage - 1, // API는 0부터 시작
@@ -177,8 +176,18 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
       });
 
       if (response.success && response.data) {
-        // API 상품을 그대로 사용
-        setApiProducts(response.data.content);
+        // 검색어가 있으면 클라이언트에서 필터링
+        let filteredProducts = response.data.content;
+        
+        if (searchQuery.trim()) {
+          const query = searchQuery.toLowerCase().trim();
+          filteredProducts = filteredProducts.filter((product) => 
+            product.name.toLowerCase().includes(query) ||
+            product.brand.toLowerCase().includes(query)
+          );
+        }
+        
+        setApiProducts(filteredProducts);
         setTotalPages(response.data.totalPages);
       } else {
         console.error("상품 목록 조회 실패:", response.error);
