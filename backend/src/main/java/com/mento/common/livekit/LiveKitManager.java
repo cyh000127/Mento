@@ -1,5 +1,7 @@
 package com.mento.common.livekit;
 
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 
 import com.mento.domain.user.entity.Role;
@@ -9,6 +11,7 @@ import io.livekit.server.CanPublishData;
 import io.livekit.server.RoomAdmin;
 import io.livekit.server.RoomJoin;
 import io.livekit.server.RoomName;
+import io.livekit.server.RoomServiceClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,6 +21,35 @@ import lombok.extern.slf4j.Slf4j;
 public class LiveKitManager {
 
 	private final LiveKitProperties liveKitProperties;
+
+	private RoomServiceClient getRoomServiceClient() {
+		return RoomServiceClient.create(
+			liveKitProperties.getUrl(),
+			liveKitProperties.getApiKey(),
+			liveKitProperties.getSecret()
+		);
+	}
+
+	public boolean isRoomFull(String roomName, int limit) {
+		try {
+			RoomServiceClient client = getRoomServiceClient();
+
+			var response = client.listRooms(List.of(roomName)).execute();
+
+			if (response.isSuccessful() && response.body() != null) {
+				var rooms = response.body();
+				if (!rooms.isEmpty()) {
+					int participantCount = rooms.get(0).getNumParticipants();
+					log.info("[LiveKit] 방 인원 체크: {} -> {}/{}", roomName, participantCount, limit);
+					return participantCount >= limit;
+				}
+			}
+		} catch (Exception e) {
+			// 방이 아직 생성되지 않았거나 서버 통신 실패 시 로그 남김
+			log.warn("[LiveKit] 방 인원 조회 실패(방이 없거나 연결 오류): {}", e.getMessage());
+		}
+		return false;
+	}
 
 	public String createToken(
 		String userId,

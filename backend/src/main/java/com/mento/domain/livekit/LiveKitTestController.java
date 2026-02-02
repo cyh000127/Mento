@@ -28,12 +28,18 @@ public class LiveKitTestController {
 
 	@Operation(summary = "LiveKit 테스트 토큰 발급", description = "인증 절차 없이 테스트용 토큰을 발급합니다.")
 	@GetMapping("/token")
-	public ResponseEntity<LiveKitSessionResponse> createTestToken(
+	public ResponseEntity<?> createTestToken(
 		@RequestParam(required = false, defaultValue = "test-room") String roomName,
 		@RequestParam(required = false, defaultValue = "test-user") String userName,
 		@RequestParam(required = false, defaultValue = "MENTOR") Role role
 	) {
-		String userId = UUID.randomUUID().toString();
+		if (liveKitManager.isRoomFull(roomName, 2)) {
+			return ResponseEntity.status(403).body("해당 방은 이미 2명이 참여 중입니다.");
+		}
+
+		//String userId = UUID.randomUUID().toString();
+		String userId = String.format("%s(%s)", userName, role.name());
+
 		long ttlSeconds = 3600;
 
 		String token = liveKitManager.createToken(userId, userName, roomName, role, ttlSeconds);
