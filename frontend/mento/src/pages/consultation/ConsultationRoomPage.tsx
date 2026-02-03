@@ -21,7 +21,7 @@ export function ConsultationRoomPage() {
     isMicEnabled,
     isCameraEnabled,
   } = useConsultationSession()
-  const { selectedMaskArea } = useConsultationStore()
+  const { selectedMaskArea, setActiveTab } = useConsultationStore()
 
   const hasConnected = useRef(false)
 
@@ -81,6 +81,13 @@ export function ConsultationRoomPage() {
   const sidePanelTabs = isMentor
     ? (["share", "inventory", "mask", "record"] as const)
     : (["share", "inventory"] as const)
+
+  // USER 접근 시 숨겨진 탭이 활성화되지 않도록 초기화
+  useEffect(() => {
+    if (sessionData?.participantRole === "USER") {
+      setActiveTab("share")
+    }
+  }, [sessionData?.participantRole, setActiveTab])
 
   return (
     <div className="relative h-screen bg-gray-950 overflow-hidden">
