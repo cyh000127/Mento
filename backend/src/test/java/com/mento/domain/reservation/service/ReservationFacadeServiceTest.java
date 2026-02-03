@@ -25,7 +25,6 @@ import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.ReservationException;
 import com.mento.common.livekit.LiveKitManager;
 import com.mento.common.livekit.dto.LiveKitSessionResponse;
-import com.mento.domain.mentor.entity.Mentor;
 import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.reservation.dto.request.ReservationHistoryReqDto;
 import com.mento.domain.reservation.dto.response.ReservationDetailResDto;
@@ -44,7 +43,7 @@ import com.mento.domain.timetable.service.query.TimetableQueryService;
 import com.mento.domain.timetable.service.query.TimetableSlotQueryService;
 import com.mento.domain.user.entity.Role;
 import com.mento.domain.user.entity.User;
-import com.mento.domain.user.service.query.UserQueryService;
+import com.mento.domain.user.service.query.UserQueryServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 class ReservationFacadeServiceTest {
@@ -65,7 +64,7 @@ class ReservationFacadeServiceTest {
 	private TimetableSlotQueryService timetableSlotQueryService;
 
 	@Mock
-	private UserQueryService userQueryService;
+	private UserQueryServiceImpl userQueryService;
 
 	@Mock
 	private LiveKitManager liveKitManager;
@@ -92,7 +91,7 @@ class ReservationFacadeServiceTest {
 			.build();
 
 		User user = createUser(userId);
-		Mentor mentor = createMentor(mentorId);
+		User mentor = createMentorUser(mentorId);
 		Timetable timetable = createTimetable(timetableId, LocalDate.now(), LocalTime.now().plusMinutes(5));
 		TimetableSlot slot = createSlot(1L, timetable);
 		Reservation reservation = createReservation(reservationId, user, mentor, slot, ReservationStatus.CONFIRMED);
@@ -138,7 +137,7 @@ class ReservationFacadeServiceTest {
 			.build();
 
 		User user = createUser(userId);
-		Mentor mentor = createMentor(mentorId);
+		User mentor = createMentorUser(mentorId);
 		Timetable timetable = createTimetable(timetableId, LocalDate.now(), LocalTime.now().plusMinutes(5));
 		TimetableSlot slot = createSlot(1L, timetable);
 		Reservation reservation = createReservation(reservationId, user, mentor, slot, ReservationStatus.CONFIRMED);
@@ -235,7 +234,7 @@ class ReservationFacadeServiceTest {
 			.build();
 
 		User user = createUser(userId);
-		Mentor mentor = createMentor(mentorId);
+		User mentor = createMentorUser(mentorId);
 		Timetable timetable = createTimetable(timetableId, LocalDate.now().minusDays(1), LocalTime.now());
 		TimetableSlot slot = createSlot(1L, timetable);
 		Reservation reservation = createReservation(reservationId, user, mentor, slot, ReservationStatus.COMPLETED);
@@ -264,7 +263,7 @@ class ReservationFacadeServiceTest {
 			.build();
 
 		User user = createUser(userId);
-		Mentor mentor = createMentor(mentorId);
+		User mentor = createMentorUser(mentorId);
 		Timetable timetable = createTimetable(timetableId, LocalDate.now(), LocalTime.now().minusMinutes(15));
 		TimetableSlot slot = createSlot(1L, timetable);
 		Reservation reservation = createReservation(reservationId, user, mentor, slot, ReservationStatus.CONFIRMED);
@@ -564,11 +563,15 @@ class ReservationFacadeServiceTest {
 		return user;
 	}
 
-	private Mentor createMentor(final Long mentorId) {
-		Mentor mentor = Mentor.builder()
+	private User createMentorUser(final Long mentorId) {
+		MentorType mentorType = createMentorType(1L, "스킨케어");
+		User mentor = User.builder()
 			.name("테스트 멘토")
-			.loginId("mentor_login")
+			.email("mentor@test.com")
 			.password("password")
+			.kakaoId("mentor_kakao")
+			.role(Role.MENTOR)
+			.mentorType(mentorType)
 			.build();
 		ReflectionTestUtils.setField(mentor, "id", mentorId);
 		return mentor;
@@ -621,7 +624,7 @@ class ReservationFacadeServiceTest {
 	private Reservation createReservationWithExpiry(
 		final Long reservationId,
 		final User user,
-		final Mentor mentor,
+		final User mentor,
 		final TimetableSlot slot,
 		final ReservationStatus status,
 		final LocalDateTime expiresAt
@@ -640,7 +643,7 @@ class ReservationFacadeServiceTest {
 	private Reservation createReservation(
 		final Long reservationId,
 		final User user,
-		final Mentor mentor,
+		final User mentor,
 		final TimetableSlot slot,
 		final ReservationStatus status
 	) {
@@ -656,7 +659,7 @@ class ReservationFacadeServiceTest {
 
 	private Reservation createReservationWithFullDetails(final Long reservationId, final Long userId) {
 		User user = createUser(userId);
-		Mentor mentor = createMentor(1L);
+		User mentor = createMentorUser(1L);
 
 		MentorType mentorType = MentorType.builder()
 			.typeName("스킨케어")

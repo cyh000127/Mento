@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import com.mento.domain.mentor.dto.common.MentoTypeInfoDto;
-import com.mento.domain.mentor.dto.common.MentorInfoDto;
 import com.mento.domain.reservation.dto.common.ReservationSurveyDto;
 import com.mento.domain.user.dto.common.UserInfoDto;
 
@@ -23,7 +22,7 @@ public record ReservationDetailResDto(
 	UserInfoDto userInfo,
 
 	@Schema(description = "멘토 정보")
-	MentorInfoDto mentorInfo,
+	UserInfoDto mentorInfo,
 
 	@Schema(description = "멘토링 타입 정보")
 	MentoTypeInfoDto mentorTypeInfo,

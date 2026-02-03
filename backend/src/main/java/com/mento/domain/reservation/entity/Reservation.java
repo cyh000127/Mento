@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
-import com.mento.domain.mentor.entity.Mentor;
 import com.mento.domain.payment.entity.Payment;
 import com.mento.domain.reservation.enums.ReservationStatus;
 import com.mento.domain.reservation.exception.ReservationException;
@@ -55,7 +54,7 @@ public class Reservation extends BaseEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "mentor_id")
-	private Mentor mentor;
+	private User mentor;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false)
@@ -70,7 +69,7 @@ public class Reservation extends BaseEntity {
 	@Column(name = "survey_data", columnDefinition = "TEXT")
 	private String surveyData;
 
-	public void assignMentor(final Mentor mentor) {
+	public void assignMentor(final User mentor) {
 		if (mentor == null) {
 			throw new ReservationException(ErrorCode.MISSING_MENTOR);
 		}

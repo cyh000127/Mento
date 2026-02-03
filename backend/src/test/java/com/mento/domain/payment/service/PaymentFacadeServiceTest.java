@@ -18,9 +18,7 @@ import com.mento.common.error.exception.PaymentException;
 import com.mento.domain.consulting.entity.Consulting;
 import com.mento.domain.consulting.factory.ConsultingFactory;
 import com.mento.domain.consulting.service.command.ConsultingCommandServiceImpl;
-import com.mento.domain.mentor.entity.Mentor;
 import com.mento.domain.mentor.entity.MentorType;
-import com.mento.domain.mentor.service.query.MentorQueryService;
 import com.mento.domain.payment.dto.request.PaymentApproveReqDto;
 import com.mento.domain.payment.dto.response.PaymentApproveResDto;
 import com.mento.domain.payment.entity.Payment;
@@ -34,7 +32,9 @@ import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.enums.ReservationStatus;
 import com.mento.domain.timetable.entity.Timetable;
 import com.mento.domain.timetable.entity.TimetableSlot;
+import com.mento.domain.user.entity.Role;
 import com.mento.domain.user.entity.User;
+import com.mento.domain.user.service.query.UserQueryServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentFacadeServiceTest {
@@ -46,7 +46,7 @@ class PaymentFacadeServiceTest {
 	private PaymentQueryService paymentQueryService;
 
 	@Mock
-	private MentorQueryService mentorQueryService;
+	private UserQueryServiceImpl userQueryService;
 
 	@Mock
 	private ConsultingFactory consultingFactory;
@@ -91,10 +91,13 @@ class PaymentFacadeServiceTest {
 			.build();
 		ReflectionTestUtils.setField(slot, "id", 1L);
 
-		Mentor mentor = Mentor.builder()
+		User mentor = User.builder()
 			.name("테스트 멘토")
-			.loginId("mentor01")
+			.email("mentor@test.com")
 			.password("test1234")
+			.kakaoId("mentor_kakao")
+			.role(Role.MENTOR)
+			.mentorType(mentorType)
 			.build();
 		ReflectionTestUtils.setField(mentor, "id", 10L);
 
@@ -139,7 +142,7 @@ class PaymentFacadeServiceTest {
 			.willReturn(approveResDto);
 		given(paymentQueryService.findById(paymentId))
 			.willReturn(payment);
-		given(mentorQueryService.findRandomMentorByTypeId(any(Long.class)))
+		given(userQueryService.findById(1L))
 			.willReturn(reservation.getMentor());
 		given(consultingFactory.createConsulting(anyLong()))
 			.willReturn(consulting);
@@ -152,7 +155,7 @@ class PaymentFacadeServiceTest {
 		assertThat(result.reservationId()).isEqualTo(1L);
 		then(paymentCommandService).should(times(1)).approve(request, userId);
 		then(paymentQueryService).should(times(1)).findById(paymentId);
-		then(mentorQueryService).should(times(1)).findRandomMentorByTypeId(any(Long.class));
+		then(userQueryService).should(times(1)).findById(1L);
 		then(consultingFactory).should(times(1)).createConsulting(anyLong());
 		then(consultingCommandService).should(times(1)).saveDraftConsulting(consulting);
 	}

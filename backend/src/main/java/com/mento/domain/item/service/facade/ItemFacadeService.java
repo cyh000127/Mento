@@ -30,7 +30,7 @@ import com.mento.domain.item.validator.ItemValidator;
 import com.mento.domain.product.entity.Product;
 import com.mento.domain.product.service.query.ProductQueryService;
 import com.mento.domain.user.entity.User;
-import com.mento.domain.user.service.query.UserQueryService;
+import com.mento.domain.user.service.query.UserQueryServiceImpl;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +46,7 @@ public class ItemFacadeService {
 	private final ItemHistoryQueryService itemHistoryQueryService;
 	private final ItemHistoryCommandService itemHistoryCommandService;
 	private final ProductQueryService productQueryService;
-	private final UserQueryService userQueryService;
+	private final UserQueryServiceImpl userQueryService;
 
 	private final ItemFactory itemFactory;
 	private final ItemHistoryFactory itemHistoryFactory;

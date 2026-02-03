@@ -21,7 +21,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.mento.common.error.ErrorCode;
-import com.mento.domain.mentor.entity.Mentor;
 import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.enums.ReservationStatus;
@@ -29,6 +28,7 @@ import com.mento.domain.reservation.exception.ReservationException;
 import com.mento.domain.reservation.repository.ReservationRepository;
 import com.mento.domain.timetable.entity.Timetable;
 import com.mento.domain.timetable.entity.TimetableSlot;
+import com.mento.domain.user.entity.Role;
 import com.mento.domain.user.entity.User;
 
 @ExtendWith(MockitoExtension.class)
@@ -164,17 +164,20 @@ class ReservationQueryServiceImplTest {
 			.build();
 		ReflectionTestUtils.setField(user, "id", 1L);
 
-		Mentor mentor = Mentor.builder()
-			.name("테스트 멘토")
-			.loginId("mentor_login")
-			.password("password")
-			.build();
-		ReflectionTestUtils.setField(mentor, "id", 1L);
-
 		MentorType mentorType = MentorType.builder()
 			.typeName("스킨케어")
 			.build();
 		ReflectionTestUtils.setField(mentorType, "id", 1L);
+
+		User mentor = User.builder()
+			.name("테스트 멘토")
+			.email("mentor@test.com")
+			.password("password")
+			.kakaoId("mentor_kakao")
+			.role(Role.MENTOR)
+			.mentorType(mentorType)
+			.build();
+		ReflectionTestUtils.setField(mentor, "id", 1L);
 
 		Timetable timetable = Timetable.builder()
 			.scheduledDate(LocalDate.now())
