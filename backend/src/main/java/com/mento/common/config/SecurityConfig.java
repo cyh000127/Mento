@@ -38,7 +38,10 @@ public class SecurityConfig {
 		"/api/v1/auth/login/mentor",
 		
 		// Test
-		"/api/v1/test/**"
+		"/api/v1/test/**",
+
+		//livekit
+		"/api/v1/consulting/session/**"
 	};
 	private final CorsConfig corsFilter;
 	private final CustomOAuth2UserService customOAuth2UserService;
