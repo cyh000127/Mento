@@ -15,6 +15,7 @@ import {
   getInventoryItemDetail,
   updateInventoryItemStatus,
   getStatusUpdateErrorMessage,
+  toggleInventoryItemFavorite,
 } from "@/api/inventoryApi"
 import type { ItemStatus } from "@/types/inventory"
 import {
@@ -34,6 +35,7 @@ export default function InventoryPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [favoriteLoading, setFavoriteLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [hasNext, setHasNext] = useState(false)
@@ -176,10 +178,27 @@ export default function InventoryPage() {
   }
 
   const handleToggleFavorite = async (productId: string) => {
-    // TODO: 즐겨찾기 토글 API 구현 예정
-    console.log("Toggle favorite:", productId)
-    // API 호출 후 데이터 재조회
-    await fetchInventory()
+    // 중복 요청 방지
+    if (favoriteLoading) return
+
+    setFavoriteLoading(true)
+    try {
+      // API 호출하여 즐겨찾기 토글
+      const result = await toggleInventoryItemFavorite(productId)
+
+      // 서버 응답의 isFavorite 값으로 UI 업데이트
+      setProducts((prev) =>
+        prev.map((p) => (p.id === productId ? { ...p, isFavorite: result.isFavorite } : p))
+      )
+
+      if (selectedProduct?.id === productId) {
+        setSelectedProduct((prev) => (prev ? { ...prev, isFavorite: result.isFavorite } : null))
+      }
+    } catch (error) {
+      console.error("즐겨찾기 토글 실패:", error)
+    } finally {
+      setFavoriteLoading(false)
+    }
   }
 
   const handleDelete = (productId: string) => {

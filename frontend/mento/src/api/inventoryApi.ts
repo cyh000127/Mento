@@ -196,6 +196,23 @@ export async function getInventoryItemDetail(itemId: string): Promise<InventoryI
 }
 
 /**
+ * 인벤토리 아이템 즐겨찾기 토글 API
+ */
+export async function toggleInventoryItemFavorite(itemId: string): Promise<{ id: number; isFavorite: boolean }> {
+  try {
+    const response = await api.post<{ success: boolean; data: { id: number; isFavorite: boolean } }>(
+      `/items/${itemId}/favorite`
+    )
+    return response.data.data
+  } catch (error: any) {
+    console.error("즐겨찾기 토글 에러:", error)
+    console.error("에러 상태:", error.response?.status)
+    console.error("에러 응답:", error.response?.data)
+    throw error
+  }
+}
+
+/**
  * 재고 아이템 상태 업데이트 API
  */
 export async function updateInventoryItemStatus(
