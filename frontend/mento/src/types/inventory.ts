@@ -90,11 +90,14 @@ export interface InventoryItemDetailResponse {
   data: {
     id: number
     userId: number
+    categoryMedium?: string
     productInfoDto: {
       id: number
       name: string
       imageUrl: string
       productUrl: string
+      categoryMedium?: string
+      brandName?: string
     }
     status: "OWNED" | "IN_USE" | "OVER_DATED"
     isFavorite: boolean
