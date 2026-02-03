@@ -76,14 +76,12 @@ export function Questionnaire({ answers, selectedCategory, onAnswerChange, onSub
   }, [answers, onAnswerChange, questions]);
 
   const handleSubmitAnswers = () => {
-    const payload = {
-      category: selectedCategory,
-      items: questions.map((question, index) => ({
-        question,
-        answer: answers[index] ?? "",
-      })),
-    };
+    const payload = questions.map((question, index) => ({
+      question,
+      answer: answers[index] ?? "",
+    }));
     const surveyData = JSON.stringify(payload);
+    console.log("여기?", surveyData);
     localStorage.setItem(storageKey, surveyData);
     onSubmitSurvey(surveyData);
   };
