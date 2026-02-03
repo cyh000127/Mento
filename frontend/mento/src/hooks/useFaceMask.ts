@@ -89,68 +89,47 @@ function drawUZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLandm
  * Nose zone 마스크 그리기 (코 주변)
  */
 function drawNoseZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLandmarkList, canvas: HTMLCanvasElement) {
-  // 코 브릿지
-  const noseBridgeTop = landmarks[6];
-
-  // 코 측면
-  const noseLeftTop = landmarks[129];
-  const noseRightTop = landmarks[358];
-
-  // 코 날개
-  const noseLeftWing = landmarks[219];
-  const noseRightWing = landmarks[439];
-
-  // 코 끝
-  const noseTip = landmarks[4];
-  const noseBottom = landmarks[19];
+  // 삼각형 코 마스크 포인트
+  const noseTop = landmarks[6]; // 코 브릿지 상단
+  const noseLeft = landmarks[219]; // 왼쪽 코 날개
+  const noseRight = landmarks[439]; // 오른쪽 코 날개
 
   ctx.beginPath();
-
-  ctx.moveTo(noseBridgeTop.x * canvas.width, noseBridgeTop.y * canvas.height);
-  ctx.lineTo(noseRightTop.x * canvas.width, noseRightTop.y * canvas.height);
-  ctx.lineTo(noseRightWing.x * canvas.width, noseRightWing.y * canvas.height);
-  ctx.lineTo(noseBottom.x * canvas.width, noseBottom.y * canvas.height);
-  ctx.lineTo(noseTip.x * canvas.width, noseTip.y * canvas.height);
-  ctx.lineTo(noseLeftWing.x * canvas.width, noseLeftWing.y * canvas.height);
-  ctx.lineTo(noseLeftTop.x * canvas.width, noseLeftTop.y * canvas.height);
+  ctx.moveTo(noseTop.x * canvas.width, noseTop.y * canvas.height);
+  ctx.lineTo(noseRight.x * canvas.width, noseRight.y * canvas.height);
+  ctx.lineTo(noseLeft.x * canvas.width, noseLeft.y * canvas.height);
 
   ctx.closePath();
   ctx.fill();
 }
 
 /**
- * Apple zone 마스크 그리기 (사과 존 - 볼 상단)
+ * Apple zone 마스크 그리기 (사과 존 - 원형)
  */
 function drawAppleZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLandmarkList, canvas: HTMLCanvasElement) {
-  // 왼쪽 사과 존
-  const leftAppleTop = landmarks[50];
-  const leftAppleOuter = landmarks[117];
-  const leftAppleBottom = landmarks[36];
-  const leftAppleInner = landmarks[205];
+  // 왼쪽 애플 존 기준 포인트
+  const leftTop = landmarks[50];
+  const leftBottom = landmarks[36];
 
-  // 오른쪽 사과 존
-  const rightAppleTop = landmarks[280];
-  const rightAppleOuter = landmarks[346];
-  const rightAppleBottom = landmarks[266];
-  const rightAppleInner = landmarks[425];
+  // 오른쪽 애플 존 기준 포인트
+  const rightTop = landmarks[280];
+  const rightBottom = landmarks[266];
 
-  // 왼쪽 사과 존
-  ctx.beginPath();
-  ctx.moveTo(leftAppleTop.x * canvas.width, leftAppleTop.y * canvas.height);
-  ctx.lineTo(leftAppleOuter.x * canvas.width, leftAppleOuter.y * canvas.height);
-  ctx.lineTo(leftAppleBottom.x * canvas.width, leftAppleBottom.y * canvas.height);
-  ctx.lineTo(leftAppleInner.x * canvas.width, leftAppleInner.y * canvas.height);
-  ctx.closePath();
-  ctx.fill();
+  const drawCircle = (top: any, bottom: any) => {
+    const centerX = ((top.x + bottom.x) / 2) * canvas.width;
+    const centerY = ((top.y + bottom.y) / 2) * canvas.height;
 
-  // 오른쪽 사과 존
-  ctx.beginPath();
-  ctx.moveTo(rightAppleTop.x * canvas.width, rightAppleTop.y * canvas.height);
-  ctx.lineTo(rightAppleOuter.x * canvas.width, rightAppleOuter.y * canvas.height);
-  ctx.lineTo(rightAppleBottom.x * canvas.width, rightAppleBottom.y * canvas.height);
-  ctx.lineTo(rightAppleInner.x * canvas.width, rightAppleInner.y * canvas.height);
-  ctx.closePath();
-  ctx.fill();
+    const radius = Math.hypot((top.x - bottom.x) * canvas.width, (top.y - bottom.y) * canvas.height) * 0.6; // 크기 조절 계수
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.fill();
+  };
+
+  // 왼쪽 / 오른쪽 애플 존 그리기
+  drawCircle(leftTop, leftBottom);
+  drawCircle(rightTop, rightBottom);
 }
 
 /**
@@ -166,7 +145,7 @@ const MASK_CONFIGS: Record<NonNullable<MaskType>, MaskConfig> = {
     drawMask: drawUZoneMask,
   },
   "Nose zone": {
-    color: "rgba(255, 100, 150, 0.35)", // 핑크색
+    color: "rgba(100, 255, 150, 0.35)", // 초록색
     drawMask: drawNoseZoneMask,
   },
   "Apple zone": {
