@@ -15,6 +15,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.PaymentException;
+import com.mento.domain.consulting.entity.Consulting;
+import com.mento.domain.consulting.factory.ConsultingFactory;
+import com.mento.domain.consulting.service.command.ConsultingCommandServiceImpl;
 import com.mento.domain.mentor.entity.Mentor;
 import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.mentor.service.query.MentorQueryService;
@@ -44,6 +47,12 @@ class PaymentFacadeServiceTest {
 
 	@Mock
 	private MentorQueryService mentorQueryService;
+
+	@Mock
+	private ConsultingFactory consultingFactory;
+
+	@Mock
+	private ConsultingCommandServiceImpl consultingCommandService;
 
 	@InjectMocks
 	private PaymentFacadeService paymentFacadeService;
@@ -122,12 +131,18 @@ class PaymentFacadeServiceTest {
 			.paidAt(java.time.LocalDateTime.now())
 			.build();
 
+		Consulting consulting = Consulting.builder()
+			.roomId("room_1")
+			.build();
+
 		given(paymentCommandService.approve(any(PaymentApproveReqDto.class), any(Long.class)))
 			.willReturn(approveResDto);
 		given(paymentQueryService.findById(paymentId))
 			.willReturn(payment);
 		given(mentorQueryService.findRandomMentorByTypeId(any(Long.class)))
 			.willReturn(reservation.getMentor());
+		given(consultingFactory.createConsulting(anyLong()))
+			.willReturn(consulting);
 
 		// When
 		ReservationDetailResDto result = paymentFacadeService.approvePaymentAndConfirmReservation(request, userId);
@@ -138,6 +153,8 @@ class PaymentFacadeServiceTest {
 		then(paymentCommandService).should(times(1)).approve(request, userId);
 		then(paymentQueryService).should(times(1)).findById(paymentId);
 		then(mentorQueryService).should(times(1)).findRandomMentorByTypeId(any(Long.class));
+		then(consultingFactory).should(times(1)).createConsulting(anyLong());
+		then(consultingCommandService).should(times(1)).saveDraftConsulting(consulting);
 	}
 
 	@Test

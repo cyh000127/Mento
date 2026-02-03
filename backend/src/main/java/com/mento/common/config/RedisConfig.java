@@ -6,12 +6,18 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mento.common.config.properties.RedisProperties;
+import com.mento.common.config.serializer.GzipRedisSerializer;
+import com.mento.domain.consulting.vo.ChatLogEntryVo;
 import com.mento.domain.notification.service.RedisSubscriber;
 
 import lombok.RequiredArgsConstructor;
@@ -23,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 public class RedisConfig {
 
 	private final RedisProperties redisProperties;
+	private final ObjectMapper objectMapper;
 
 	@Bean
 	public RedisConnectionFactory redisConnectionFactory() {
@@ -49,5 +56,22 @@ public class RedisConfig {
 	@Bean
 	public MessageListenerAdapter listenerAdapter(RedisSubscriber subscriber) {
 		return new MessageListenerAdapter(subscriber, "onMessage");
+	}
+
+	@Bean
+	public RedisTemplate<String, ChatLogEntryVo> chatLogEntryRedisTemplate() {
+		return createGzipJsonRedisTemplate(objectMapper, new TypeReference<>() {
+		});
+	}
+
+	private <V> RedisTemplate<String, V> createGzipJsonRedisTemplate(
+		ObjectMapper objectMapper,
+		TypeReference<V> typeRef
+	) {
+		RedisTemplate<String, V> redisTemplate = new RedisTemplate<>();
+		redisTemplate.setConnectionFactory(redisConnectionFactory());
+		redisTemplate.setKeySerializer(new StringRedisSerializer());
+		redisTemplate.setValueSerializer(new GzipRedisSerializer<>(objectMapper, typeRef));
+		return redisTemplate;
 	}
 }

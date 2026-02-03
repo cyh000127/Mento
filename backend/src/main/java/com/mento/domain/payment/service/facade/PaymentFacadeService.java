@@ -5,6 +5,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.PaymentException;
+import com.mento.domain.consulting.entity.Consulting;
+import com.mento.domain.consulting.factory.ConsultingFactory;
+import com.mento.domain.consulting.service.command.ConsultingCommandService;
 import com.mento.domain.mentor.entity.Mentor;
 import com.mento.domain.mentor.service.query.MentorQueryService;
 import com.mento.domain.payment.dto.request.PaymentApproveReqDto;
@@ -30,7 +33,11 @@ public class PaymentFacadeService {
 
 	private final PaymentCommandService paymentCommandService;
 	private final PaymentQueryService paymentQueryService;
+
 	private final MentorQueryService mentorQueryService;
+
+	private final ConsultingCommandService consultingCommandService;
+	private final ConsultingFactory consultingFactory;
 
 	@Transactional
 	public PaymentReadyResDto preparePayment(final PaymentReadyReqDto request, final Long userId) {
@@ -70,6 +77,9 @@ public class PaymentFacadeService {
 
 		log.info("[Payment] 결제 승인 및 예약 확정 완료 {paymentId: {}, reservationId: {}, mentorId: {}}",
 			payment.getPaymentId(), reservation.getId(), randomMentor.getId());
+
+		Consulting consulting = consultingFactory.createConsulting(reservation.getId());
+		consultingCommandService.saveDraftConsulting(consulting);
 
 		return ReservationConverter.toReservationDetailResDto(reservation);
 	}

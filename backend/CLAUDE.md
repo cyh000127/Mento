@@ -124,8 +124,9 @@ com.mento
     ├── converter/{Domain}Converter.java
     ├── repository/{Domain}Repository.java
     ├── entity/{Domain}.java
-    ├── vo/ (선택: Value Object)
-    ├── factory/ (선택: Entity 생성 팩토리)
+    ├── vo/ (선택: Value Object - 비즈니스 로직 캡슐화, Redis 저장)
+    ├── factory/ (선택: Entity/VO 생성 팩토리)
+    ├── event/ (선택: Spring Event 클래스 및 EventListener)
     └── exception/ (선택: 도메인별 예외)
 ```
 
@@ -182,6 +183,43 @@ public class UserConverter {
     }
 }
 ```
+
+### VO (Value Object)
+- **record 클래스** 사용 (불변 객체)
+- **@Builder** 필수
+- **용도**: 비즈니스 로직 캡슐화, 타입 안정성
+- **Redis 저장용 VO**: `implements Serializable` 필수
+- **설계 원칙**: 필요한 데이터만 저장 (중복 제거, 메모리 최적화)
+
+```java
+// 비즈니스 로직 캡슐화 (Timetable)
+@Builder
+public record DateRange(
+    @NotNull LocalDate startDate,
+    @NotNull LocalDate endDate
+) {
+    public List<LocalDate> getAllDates() {
+        return startDate.datesUntil(endDate.plusDays(1))
+            .toList();
+    }
+}
+
+// Redis 저장용 VO (Consulting - 단순화)
+@Builder
+public record ChatLogEntryVo(
+    String role,      // USER or MENTOR
+    String content    // 메시지 내용만
+) implements Serializable {}
+```
+
+**VO vs Entity:**
+- Entity: JPA 관리, 영속성 컨텍스트, DB 테이블 매핑
+- VO: 불변 객체, 비즈니스 로직 캡슐화, Redis/메모리 저장
+
+**Redis VO 최적화:**
+- Key에 포함된 데이터는 Value에서 제거 (예: roomId)
+- timestamp 등 불필요한 메타데이터 제거
+- 필수 필드만 포함하여 메모리 사용량 최소화
 
 ### Validation 2단계 전략
 
@@ -315,6 +353,60 @@ log.info("[User] 생성 완료 {id: {}, email: {}}", user.getId(), user.getEmail
 - **복잡한 쿼리**: `@Query` 어노테이션 (QueryDSL 사용 안 함)
 - **페이징**: `Page<T>` 또는 `Slice<T>` → `PageResponse<T>`로 변환
 
+### JPA AttributeConverter
+**목적**: Entity 필드와 DB 컬럼 간 자동 변환 (암호화, JSON 직렬화 등)
+
+**구현 패턴:**
+```java
+@Converter
+public class ChatLogListConverter implements AttributeConverter<List<ChatLogEntryVo>, String> {
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Override
+    public String convertToDatabaseColumn(List<ChatLogEntryVo> attribute) {
+        // List → JSON String
+        try {
+            objectMapper.registerModule(new JavaTimeModule());
+            return objectMapper.writeValueAsString(attribute);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("JSON 변환 실패", e);
+        }
+    }
+
+    @Override
+    public List<ChatLogEntryVo> convertToEntityAttribute(String dbData) {
+        // JSON String → List
+        if (dbData == null || dbData.isEmpty()) {
+            return List.of();  // ⚠️ null 체크 필수
+        }
+        try {
+            objectMapper.registerModule(new JavaTimeModule());
+            return objectMapper.readValue(dbData, new TypeReference<>() {});
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("JSON 파싱 실패", e);
+        }
+    }
+}
+
+// Entity 적용
+@Entity
+public class Consulting extends BaseEntity {
+    @Column(name = "chat_logs", columnDefinition = "longtext")
+    @Convert(converter = ChatLogListConverter.class)
+    private List<ChatLogEntryVo> chatLogs;
+}
+```
+
+**주의사항:**
+- **null 처리**: `convertToEntityAttribute`에서 null/empty 체크 필수 (신규 엔티티는 컬럼이 null)
+- **JavaTimeModule**: `LocalDateTime` 등 Java 8 시간 타입 사용 시 필요
+- **ObjectMapper 설정**: 매번 `registerModule()` 호출하거나 생성자에서 한 번만 설정
+- **columnDefinition**: JSON 데이터는 `longtext` 권장 (최대 4GB)
+
+**사용 사례:**
+- `AesConverter`: AES-256 암호화/복호화 (Payment.kakaoTid)
+- `ChatLogListConverter`: JSON 직렬화/역직렬화 (Consulting.chatLogs)
+
 ### Common 모듈 주요 컴포넌트
 
 **파일 관리:**
@@ -334,6 +426,16 @@ log.info("[User] 생성 완료 {id: {}, email: {}}", user.getId(), user.getEmail
 **데이터 보안:**
 - `AesConverter`: JPA AttributeConverter, AES-256 암호화/복호화
 - 사용처: 민감한 문자열 필드 (예: Payment.kakaoTid)
+
+**데이터 변환:**
+- `ChatLogListConverter`: JPA AttributeConverter, `List<ChatLogEntryVo>` ↔ JSON 변환
+- 사용처: Consulting.chatLogs (복잡한 객체를 JSON으로 DB 저장)
+
+**Redis:**
+- `RedisConfig`: Redis 연결 설정 및 커스텀 RedisTemplate 빈 등록
+- `GzipRedisSerializer`: 2KB 이상 데이터 자동 Gzip 압축/해제 (성능 최적화)
+- `RedisMessageListenerContainer`: Pub/Sub 메시지 리스너 컨테이너
+- `chatLogRedisTemplate`: 채팅 로그 전용 RedisTemplate (Gzip 압축 사용)
 
 ## Security Configuration
 
@@ -365,6 +467,11 @@ log.info("[User] 생성 완료 {id: {}, email: {}}", user.getId(), user.getEmail
 - 환경변수: `ENCRYPTION_SECRET_KEY`
 - 사용처: Payment.kakaoTid (`@Convert(converter = AesConverter.class)`)
 
+### Redis
+- 용도: JWT 블랙리스트, 채팅 로그 저장, Pub/Sub 알림
+- 환경변수: `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`
+- 프로파일별 설정 권장 (로컬/운영 분리)
+
 ## Code Quality
 
 ### Checkstyle
@@ -384,6 +491,8 @@ log.info("[User] 생성 완료 {id: {}, email: {}}", user.getId(), user.getEmail
 - **Mentor**: 멘토 관리 (타입별 랜덤 조회, 인터페이스+Impl)
 - **Brand**: 브랜드 관리 (인터페이스+Impl)
 - **Product**: 상품 관리 (구현체만 사용)
+- **Consulting**: 상담 관리 (채팅 로그 Redis 저장, Gzip 압축, 인터페이스+Impl)
+- **Notification**: 알림 관리 (SSE, Redis Pub/Sub, Spring Event, 인터페이스+Impl)
 
 ### Timetable 도메인 특징
 - **VO (Value Object)**: `DateRange` - 날짜 범위 객체로 비즈니스 로직 캡슐화
@@ -405,6 +514,32 @@ log.info("[User] 생성 완료 {id: {}, email: {}}", user.getId(), user.getEmail
 - **양방향 관계**: `Payment` ↔ `Reservation` (OneToOne)
 - **TSID 사용**: paymentId 생성
 
+### Consulting 도메인 특징
+- **VO (Value Object)**: `ChatLogEntryVo` - 채팅 로그 불변 객체 (role + content만 저장)
+- **Factory 패턴**: `ChatLogFactory` - 채팅 로그 VO 생성 (DTO → VO)
+- **Redis 저장**: `RedisTemplate<String, ChatLogEntryVo>` - 채팅 로그를 Redis List에 저장
+- **Gzip 압축**: `GzipRedisSerializer` - 2KB 이상 데이터 자동 압축 (메모리 절약)
+- **Custom RedisTemplate**: `chatLogEntryRedisTemplate` 빈 - VO 직렬화/역직렬화
+- **JPA AttributeConverter**: `ChatLogListConverter` - `List<ChatLogEntryVo>` ↔ JSON 자동 변환
+- **TTL 관리**: 첫 메시지 저장 시 24시간 TTL 자동 설정
+- **단순화된 구조**: timestamp 제거, role 기반 메시지 구분 (USER/MENTOR)
+- **워크플로우**:
+  1. 채팅 메시지 → Redis List에 `ChatLogEntryVo` 저장 (role + content만, Gzip 압축)
+  2. 세션 종료 → Redis에서 조회 후 Consulting 엔티티 업데이트
+  3. JPA 저장 시 `ChatLogListConverter`가 자동으로 JSON 직렬화하여 DB 저장
+
+### Notification 도메인 특징
+- **SSE (Server-Sent Events)**: 실시간 알림 전송
+- **Redis Pub/Sub**: `RedisSubscriber` - 분산 환경에서 알림 브로드캐스팅
+- **Spring Event**: `NotificationEvent` + `NotificationEventListener` - 이벤트 기반 알림 발행
+- **Emitter 관리**: `SseEmitterRepository` - SSE 연결 관리 (메모리 저장소)
+- **Scheduling Service**: `NotificationScheduleService` - 만료된 알림 자동 삭제
+- **이벤트 워크플로우**:
+  1. 도메인 서비스에서 `ApplicationEventPublisher.publishEvent()` 호출
+  2. `NotificationEventListener`가 이벤트 수신 후 알림 생성
+  3. Redis Pub/Sub으로 알림 브로드캐스트
+  4. `RedisSubscriber`가 메시지 수신 후 SSE로 클라이언트에 전송
+
 ## 새 도메인 추가 체크리스트
 
 ### 필수 컴포넌트
@@ -418,12 +553,102 @@ log.info("[User] 생성 완료 {id: {}, email: {}}", user.getId(), user.getEmail
 
 ### 선택 컴포넌트
 - **Exception** - BusinessException 상속, ErrorCode (도메인별 prefix)
-- **VO** - 불변 객체, 비즈니스 로직 캡슐화 (예: DateRange)
-- **Factory** - 복잡한 Entity 생성 로직 분리 (예: PaymentFactory, TimetableFactory)
+- **VO** - 불변 객체, 비즈니스 로직 캡슐화 (예: DateRange, ChatLogVo)
+- **Factory** - 복잡한 Entity 생성 로직 분리 (예: PaymentFactory, TimetableFactory, ChatLogFactory)
 - **Strategy** - 알고리즘 패턴 분리
 - **Scheduling Service** - 스케줄링 작업 분리
 - **외부 API Service** - 외부 API 통합 서비스 (예: KakaoPaymentService)
-- **Converter** - 데이터 변환 (예: AesConverter for 암호화)
+- **JPA AttributeConverter** - 데이터 자동 변환 (예: AesConverter for 암호화, ChatLogListConverter for JSON 직렬화)
+- **Event** - Spring Event 기반 도메인 이벤트 (예: NotificationEvent)
+- **EventListener** - 이벤트 핸들러 (예: NotificationEventListener)
+- **Redis Subscriber** - Redis Pub/Sub 메시지 구독자 (예: RedisSubscriber)
+
+## Redis Usage Patterns
+
+### 1. Entity Repository (BlackList)
+- `@RedisHash` 사용
+- `CrudRepository` 상속
+- TTL 설정: `@TimeToLive`
+- 사용처: JWT 토큰 블랙리스트
+
+### 2. Custom RedisTemplate (ChatLog)
+- **목적**: VO 객체를 Redis에 저장 (RDB 부하 감소)
+- **Serializer**: `GzipRedisSerializer` - 2KB 이상 자동 압축
+- **Key**: `String` (예: `chat:log:{roomId}`)
+- **Value**: `ChatLogEntryVo` (record + Serializable + @Builder)
+- **설정**: `RedisConfig`에서 `chatLogEntryRedisTemplate` 빈 등록
+- **VO 설계**: Redis 저장용 VO는 중복 데이터 제거 및 최소화
+  - roomId: key에만 저장 (value에서 제거)
+  - timestamp: 제거 (불필요한 데이터)
+  - role: USER/MENTOR 구분용
+  - content: 채팅 메시지 내용만 저장
+
+```java
+// RedisConfig.java
+@Bean
+public RedisTemplate<String, ChatLogEntryVo> chatLogEntryRedisTemplate() {
+    return createGzipJsonRedisTemplate(objectMapper, new TypeReference<>() {});
+}
+
+// VO 구조 (단순화)
+@Builder
+public record ChatLogEntryVo(
+    String role,      // USER or MENTOR
+    String content    // 메시지 내용
+) implements Serializable {}
+```
+
+### 3. Redis Pub/Sub (Notification)
+- **Publisher**: `RedisTemplate.convertAndSend(topic, message)`
+- **Subscriber**: `RedisSubscriber` - `@Component` + `onMessage()` 메서드
+- **Listener Container**: `RedisMessageListenerContainer` 빈 설정
+- **Topic**: `ChannelTopic("notificationTopic")`
+- **용도**: 분산 환경에서 SSE 알림 브로드캐스팅
+
+## Event-Driven Architecture
+
+### Spring Event 패턴
+**목적**: 도메인 간 결합도 감소, 비동기 처리
+
+**구조:**
+1. **이벤트 클래스**: `record` 타입 권장
+2. **이벤트 발행**: `ApplicationEventPublisher.publishEvent(event)`
+3. **이벤트 리스너**: `@EventListener` 또는 `@TransactionalEventListener`
+
+**예시 (Notification):**
+```java
+// 이벤트 정의
+public record NotificationEvent(Long userId, String message) {}
+
+// 이벤트 발행 (도메인 서비스)
+eventPublisher.publishEvent(new NotificationEvent(userId, "예약 확정"));
+
+// 이벤트 리스너
+@Component
+public class NotificationEventListener {
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleNotificationEvent(NotificationEvent event) {
+        // 알림 생성 및 전송
+    }
+}
+```
+
+**주의사항:**
+- `@TransactionalEventListener` 사용 시 트랜잭션 커밋 후 실행 보장
+- 이벤트 리스너는 `service/` 또는 `event/` 패키지에 배치
+
+## SSE (Server-Sent Events) Pattern
+
+### 구현 구조
+1. **Emitter 저장소**: `SseEmitterRepository` - 메모리 기반 (ConcurrentHashMap)
+2. **구독 엔드포인트**: `GET /api/v1/notifications/subscribe`
+3. **SSE 전송**: `SseEmitter.send()`
+4. **타임아웃**: 30분 권장 (클라이언트 재연결 고려)
+
+### 주의사항
+- Emitter는 직렬화 불가능 → 로컬 메모리에만 저장
+- 분산 환경: Redis Pub/Sub으로 서버 간 메시지 전달 필요
+- Timeout/Error 핸들링: `onTimeout()`, `onError()`, `onCompletion()` 콜백 등록
 
 ## Additional Notes
 
@@ -445,3 +670,30 @@ log.info("[User] 생성 완료 {id: {}, email: {}}", user.getId(), user.getEmail
    - 타임테이블 슬롯 용량 증가
    - 예약 상태 CONFIRMED로 변경
    - 단일 트랜잭션 처리 (롤백 보장)
+
+### Consulting 채팅 로그 Redis 저장 + DB 영속화
+1. **채팅 로그 저장** (`POST /api/v1/consulting/session/chat-log`)
+   - 요청 DTO: `{roomId, role, content}` (timestamp 불필요)
+   - `ChatLogEntryVo` 생성 (Factory 패턴)
+   - Redis List에 저장 (Gzip 압축, 24시간 TTL)
+   - Key: `chat:log:{roomId}`
+
+2. **세션 종료** (`POST /api/v1/consulting/session/{roomId}/end`)
+   - Redis에서 `List<ChatLogEntryVo>` 조회
+   - Consulting 엔티티 업데이트
+   - JPA 저장 시 `ChatLogListConverter`가 자동으로 JSON 직렬화
+   - Redis 데이터 삭제
+
+**특징:**
+- **메모리 최적화**: roomId, timestamp 제거 (~30% 절약)
+- **단순화된 구조**: role + content만 저장
+- **Gzip 압축**: 2KB 이상 자동 압축
+- **null 안전성**: `ChatLogListConverter`에서 null/empty 체크
+- **타입 안전성**: 커스텀 RedisTemplate 빈 사용
+- **role 기반 구분**: USER/MENTOR 역할 구분으로 채팅 흐름 파악
+
+### Notification SSE + Redis Pub/Sub
+- **SSE**: 실시간 알림 전송 (클라이언트 구독)
+- **Redis Pub/Sub**: 분산 환경 대응 (여러 서버 인스턴스)
+- **Spring Event**: 도메인 이벤트 기반 알림 발행 (결합도 감소)
+- **스케줄링**: 만료된 알림 자동 삭제
