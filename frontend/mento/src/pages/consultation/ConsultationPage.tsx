@@ -80,7 +80,6 @@ export default function ConsultationPage() {
       
       // 중복 로딩 방지
       if (paymentLoadingRef.current) {
-        console.log(`[중복 방지] 이미 로딩 중`);
         return;
       }
       
@@ -90,14 +89,11 @@ export default function ConsultationPage() {
         
         try {
           const { getReservationDetail } = await import("@/api/reservationApi");
-          console.log(`[결제 정보 로드] 예약 ID: ${targetReservationId}`);
           const detail = await getReservationDetail(targetReservationId);
-          console.log(`[예약 상세 정보]`, detail);
           
           // 카테고리 매핑 (mentorTypeName -> ConsultationCategory)
           let category: ConsultationCategory | null = null;
           const mentorTypeName = detail.mentorTypeInfo?.mentorTypeName?.toLowerCase() || "";
-          console.log(`[멘토 타입 이름]`, mentorTypeName);
           
           if (mentorTypeName.includes("스킨케어") || mentorTypeName.includes("skincare") || mentorTypeName.includes("스킨")) {
             category = "skincare";
@@ -112,8 +108,6 @@ export default function ConsultationPage() {
             console.warn(`[카테고리 매핑 실패] mentorTypeName: ${mentorTypeName}, 기본값 'general' (멘토 상담 상품) 사용`);
             category = "general";
           }
-          
-          console.log(`[매핑된 카테고리]`, category);
           
           setBookingData((prev) => ({
             ...prev,
@@ -134,7 +128,6 @@ export default function ConsultationPage() {
           }));
           setIsPaymentDataReady(true);
           setCurrentStep(4);
-          console.log(`[결제 정보 로드 완료] category: ${category}, price: 35000`);
         } catch (error) {
           console.error("예약 정보 로드 실패:", error);
           navigate("/mypage/consultations");
@@ -242,19 +235,10 @@ export default function ConsultationPage() {
     handleNext();
   };
 
-  const handlePaymentReady = async () => {
-    console.log("[결제 준비 시작] bookingData:", bookingData);
-    
+  const handlePaymentReady = async () => {    
     const reservationId = bookingData.reservationId;
     const itemName = bookingData.category;
     const totalAmount = bookingData.draftSlotInfo?.price;
-
-    console.log("[결제 데이터 확인]", {
-      reservationId,
-      itemName,
-      totalAmount,
-      bookingData,
-    });
 
     if (!reservationId || !itemName || !totalAmount || totalAmount <= 0) {
       console.error("[결제 준비] 필수 데이터 누락", {
