@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom"
 import { Sparkles, Scissors, Droplets, ArrowRight, CalendarCheck } from "lucide-react"
 
-type ConsultationCategory = "skincare" | "beauty" | "hair" | null
+type ConsultationCategory = "skincare" | "beauty" | "hair" | "general" | null
 
 interface CategorySelectionProps {
   selectedCategory: ConsultationCategory

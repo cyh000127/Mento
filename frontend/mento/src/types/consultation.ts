@@ -1,4 +1,4 @@
-export type ConsultationCategory = "skincare" | "beauty" | "hair" // 순수 도메인 카테고리 
+export type ConsultationCategory = "skincare" | "beauty" | "hair" | "general" // 순수 도메인 카테고리 
 
 export type ConsultationCategoryValue = ConsultationCategory | null  //UI / 선택 상태용 카테고리
 

@@ -15,6 +15,7 @@ const categoryLabels: Record<NonNullable<ConsultationCategory>, { label: string;
   skincare: { label: "스킨 케어", icon: Droplets },
   beauty: { label: "뷰티", icon: Sparkles },
   hair: { label: "헤어", icon: Scissors },
+  general: { label: "멘토 상담 상품", icon: CreditCard },
 };
 
 export function Payment({ bookingData, onPrev, onPaymentReady }: PaymentProps) {
