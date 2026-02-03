@@ -1,21 +1,13 @@
 import { useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
-import { X, Package, Video } from "lucide-react"
-
-export type NotificationType = "expiration" | "consultation"
-
-export interface Notification {
-  id: string
-  type: NotificationType
-  message: string
-  timestamp: Date
-}
+import { X, Package, Video, Calendar, FileText, AlertCircle } from "lucide-react"
+import type { NotificationResDto, NotificationType } from "@/types/notification"
 
 interface NotificationModalProps {
   isOpen: boolean
   onClose: () => void
-  notifications: Notification[]
-  onRemoveNotification: (id: string) => void
+  notifications: NotificationResDto[]
+  onRemoveNotification: (id: number) => void
 }
 
 export function NotificationModal({
@@ -55,39 +47,80 @@ export function NotificationModal({
     return () => document.removeEventListener("keydown", handleEscape)
   }, [isOpen, onClose])
 
-  const handleAction = (notification: Notification) => {
-    if (notification.type === "expiration") {
-      navigate("/inventory")
-    } else if (notification.type === "consultation") {
-      navigate("/consultation-room")
+  const handleAction = (notification: NotificationResDto) => {
+    switch (notification.type) {
+      case "INVENTORY_EXPIRY":
+        navigate("/inventory")
+        break
+      case "CONSULTING_STARTED":
+        navigate("/consultation-room")
+        break
+      case "RESERVATION_CONFIRMED":
+      case "RESERVATION_REMINDER":
+      case "RESERVATION_CANCELLED":
+        navigate("/mypage/consultations")
+        break
+      case "REPORT_READY":
+        navigate("/mypage/reports") // 리포트 페이지 경로 확인 필요
+        break
+      default:
+        break
     }
     onClose()
   }
 
   const getNotificationIcon = (type: NotificationType) => {
-    if (type === "expiration") {
-      return <Package className="h-5 w-5 text-primary-500" />
+    switch (type) {
+      case "INVENTORY_EXPIRY":
+        return <Package className="h-5 w-5 text-primary-500" />
+      case "CONSULTING_STARTED":
+        return <Video className="h-5 w-5 text-primary-500" />
+      case "RESERVATION_CONFIRMED":
+      case "RESERVATION_REMINDER":
+        return <Calendar className="h-5 w-5 text-primary-500" />
+      case "RESERVATION_CANCELLED":
+        return <AlertCircle className="h-5 w-5 text-red-500" />
+      case "REPORT_READY":
+        return <FileText className="h-5 w-5 text-primary-500" />
+      default:
+        return <Package className="h-5 w-5 text-primary-500" />
     }
-    return <Video className="h-5 w-5 text-primary-500" />
+  }
+
+  const getNotificationMessage = (type: NotificationType, content: string) => {
+    switch (type) {
+      case "RESERVATION_REMINDER":
+        return `상담 시작 ${content}분 전입니다!`;
+      case "CONSULTING_STARTED":
+        return "상담 입장이 가능합니다!";
+      case "RESERVATION_CONFIRMED":
+        return `${content} 예약이 확정되었습니다.`;
+      case "RESERVATION_CANCELLED":
+        return "예약이 취소되었습니다.";
+      case "REPORT_READY":
+        return "새로운 리포트가 도착했습니다.";
+      case "INVENTORY_EXPIRY":
+        return `${content} 아이템이 곧 만료됩니다.`;
+      default:
+        return content;
+    }
   }
 
   const getActionButtonText = (type: NotificationType) => {
-    if (type === "expiration") {
-      return (
-        <>
-          인벤토리
-          <br />
-          보기
-        </>
-      )
+    switch (type) {
+      case "INVENTORY_EXPIRY":
+        return <>인벤토리<br />보기</>
+      case "CONSULTING_STARTED":
+        return <>상담실<br />입장</>
+      case "RESERVATION_CONFIRMED":
+      case "RESERVATION_REMINDER":
+      case "RESERVATION_CANCELLED":
+        return <>예약<br />확인</>
+      case "REPORT_READY":
+        return <>리포트<br />보기</>
+      default:
+        return <>확인</>
     }
-    return (
-      <>
-        상담실
-        <br />
-        입장
-      </>
-    )
   }
 
   if (!isOpen) return null
@@ -113,7 +146,7 @@ export function NotificationModal({
       </div>
 
       {/* 알림 목록 */}
-      <div className="space-y-3">
+      <div className="space-y-3 max-h-[400px] overflow-y-auto">
         {notifications.length === 0 ? (
           <div className="py-12 text-center">
             <p className="text-sm text-gray-400">알림이 없습니다.</p>
@@ -121,7 +154,7 @@ export function NotificationModal({
         ) : (
           notifications.map((notification) => (
             <div
-              key={notification.id}
+              key={notification.notificationId}
               className="group relative rounded-lg border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-4 transition-all hover:border-primary-200 hover:shadow-md"
             >
               <div className="flex items-center gap-3">
@@ -132,7 +165,7 @@ export function NotificationModal({
 
                 {/* 메시지 텍스트 */}
                 <p className="flex-1 text-sm leading-relaxed text-gray-700">
-                  {notification.message}
+                  {getNotificationMessage(notification.type, notification.content)}
                 </p>
 
                 {/* CTA 버튼 */}
@@ -145,7 +178,7 @@ export function NotificationModal({
 
                 {/* 개별 알림 닫기 버튼 */}
                 <button
-                  onClick={() => onRemoveNotification(notification.id)}
+                  onClick={() => onRemoveNotification(notification.notificationId)}
                   className="flex-shrink-0 rounded-full p-1 text-gray-300 opacity-0 transition-all hover:bg-gray-100 hover:text-gray-500 group-hover:opacity-100"
                   aria-label="알림 삭제"
                 >
@@ -156,7 +189,7 @@ export function NotificationModal({
               {/* 타임스탬프 */}
               <div className="mt-2 text-right">
                 <span className="text-xs text-gray-400">
-                  {formatTimestamp(notification.timestamp)}
+                  {formatTimestamp(new Date(notification.createdAt))}
                 </span>
               </div>
             </div>
