@@ -9,13 +9,55 @@ ON DUPLICATE KEY UPDATE `type_name`   = VALUES(`type_name`),
 
 INSERT INTO mentors (login_id, password, name, type_id, created_at, updated_at)
 VALUES
+    -- 타입 1: 스킨케어 (5명)
     ('skincare01', 'test1234', '김스킨', 1, NOW(), NOW()),
+    ('skincare02', 'test1234', '이장벽', 1, NOW(), NOW()),
+    ('skincare03', 'test1234', '박보습', 1, NOW(), NOW()),
+    ('skincare04', 'test1234', '최진정', 1, NOW(), NOW()),
+    ('skincare05', 'test1234', '정모공', 1, NOW(), NOW()),
+    -- 타입 2: 뷰티/메이크업 (5명)
     ('beauty01', 'test1234', '강뷰티', 2, NOW(), NOW()),
-    ('hair01', 'test1234', '서헤어', 3, NOW(), NOW())
-ON DUPLICATE KEY UPDATE `login_id` = VALUES(`login_id`),
-                        `password` = VALUES(`password`),
-                        `name` = VALUES(`name`),
-                        `updated_at`  = NOW(6);
+    ('beauty02', 'test1234', '조화장', 2, NOW(), NOW()),
+    ('beauty03', 'test1234', '윤컬러', 2, NOW(), NOW()),
+    ('beauty04', 'test1234', '임색조', 2, NOW(), NOW()),
+    ('beauty05', 'test1234', '한베이스', 2, NOW(), NOW()),
+    -- 타입 3: 헤어 (5명)
+    ('hair01', 'test1234', '서헤어', 3, NOW(), NOW()),
+    ('hair02', 'test1234', '고커트', 3, NOW(), NOW()),
+    ('hair03', 'test1234', '문펌', 3, NOW(), NOW()),
+    ('hair04', 'test1234', '양염색', 3, NOW(), NOW()),
+    ('hair05', 'test1234', '손두피', 3, NOW(), NOW())
+    ON DUPLICATE KEY UPDATE `login_id` = VALUES(`login_id`),
+    `password` = VALUES(`password`),
+                         `name` = VALUES(`name`),
+                         `updated_at`  = NOW(6);
+
+INSERT INTO `users` (`email`, `password`, `name`, `kakao_id`, `role`, `created_at`, `updated_at`)
+VALUES
+    -- MENTOR 그룹 1
+    ('skincare01@example.com', 'test1234', '김스킨', 'kakao_skin01', 'MENTOR', NOW(6), NOW(6)),
+    ('skincare02@example.com', 'test1234', '이장벽', 'kakao_skin02', 'MENTOR', NOW(6), NOW(6)),
+    ('skincare03@example.com', 'test1234', '박보습', 'kakao_skin03', 'MENTOR', NOW(6), NOW(6)),
+    ('skincare04@example.com', 'test1234', '최진정', 'kakao_skin04', 'MENTOR', NOW(6), NOW(6)),
+    ('skincare05@example.com', 'test1234', '정모공', 'kakao_skin05', 'MENTOR', NOW(6), NOW(6)),
+    -- MENTOR 그룹 2
+    ('beauty01@example.com', 'test1234', '강뷰티', 'kakao_beauty01', 'MENTOR', NOW(6), NOW(6)),
+    ('beauty02@example.com', 'test1234', '조화장', 'kakao_beauty02', 'MENTOR', NOW(6), NOW(6)),
+    ('beauty03@example.com', 'test1234', '윤컬러', 'kakao_beauty03', 'MENTOR', NOW(6), NOW(6)),
+    ('beauty04@example.com', 'test1234', '임색조', 'kakao_beauty04', 'MENTOR', NOW(6), NOW(6)),
+    ('beauty05@example.com', 'test1234', '한베이스', 'kakao_beauty05', 'MENTOR', NOW(6), NOW(6)),
+    -- MENTOR 그룹 3
+    ('hair01@example.com', 'test1234', '서헤어', 'kakao_hair01', 'MENTOR', NOW(6), NOW(6)),
+    ('hair02@example.com', 'test1234', '고커트', 'kakao_hair02', 'MENTOR', NOW(6), NOW(6)),
+    ('hair03@example.com', 'test1234', '문펌', 'kakao_hair03', 'MENTOR', NOW(6), NOW(6)),
+    ('hair04@example.com', 'test1234', '양염색', 'kakao_hair04', 'MENTOR', NOW(6), NOW(6)),
+    ('hair05@example.com', 'test1234', '손두피', 'kakao_hair05', 'MENTOR', NOW(6), NOW(6))
+    ON DUPLICATE KEY UPDATE `name` = VALUES(`name`),
+    `password` = VALUES(`password`),
+                         `role` = VALUES(`role`),
+                         `updated_at` = NOW(6);
+
+
 
 INSERT IGNORE INTO `brands` (`name`) VALUES
 ('아이디얼포맨'),
