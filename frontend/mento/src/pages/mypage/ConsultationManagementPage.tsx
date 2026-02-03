@@ -55,6 +55,21 @@ const normalizeScheduledDateTime = (scheduledDate: string, scheduledTime?: strin
   return parseScheduledDateTime(scheduledDate);
 };
 
+const normalizeSurveyItems = (
+  items?: { question: string; answer: string }[]
+): PreConsultationQA[] | undefined => {
+  if (!items || items.length === 0) return undefined;
+
+  const normalized = items
+    .filter((item) => item && typeof item.question === "string")
+    .map((item) => ({
+      question: item.question,
+      answer: typeof item.answer === "string" ? item.answer : "",
+    }));
+
+  return normalized.length > 0 ? normalized : undefined;
+};
+
 const parseSurveyDataToQA = (surveyData?: string): PreConsultationQA[] | undefined => {
   if (!surveyData) return undefined;
 
@@ -64,16 +79,7 @@ const parseSurveyDataToQA = (surveyData?: string): PreConsultationQA[] | undefin
       | { question: string; answer: string }[];
 
     const items = Array.isArray(parsed) ? parsed : parsed.items;
-    if (!items || items.length === 0) return undefined;
-
-    const normalized = items
-      .filter((item) => item && typeof item.question === "string")
-      .map((item) => ({
-        question: item.question,
-        answer: typeof item.answer === "string" ? item.answer : "",
-      }));
-
-    return normalized.length > 0 ? normalized : undefined;
+    return normalizeSurveyItems(items);
   } catch {
     return undefined;
   }
@@ -98,7 +104,9 @@ const mapReservationDetailToConsultation = (reservation: ReservationDetailData):
     reservation.scheduledDate,
     reservation.scheduledTime
   );
-  const preConsultationQA = parseSurveyDataToQA(reservation.surveyData);
+  const preConsultationQA =
+    normalizeSurveyItems(reservation.surveyInfo?.surveys) ??
+    parseSurveyDataToQA(reservation.surveyData);
 
   const consultation: Consultation = {
     id: reservation.reservationId.toString(),
@@ -106,6 +114,7 @@ const mapReservationDetailToConsultation = (reservation: ReservationDetailData):
     scheduledTime: time,
     status: reservation.reservationStatus as ConsultationStatus,
     preConsultationQA,
+    surveyInfo: preConsultationQA ? { surveys: preConsultationQA } : undefined,
   };
 
   if (reservation.mentorInfo) {

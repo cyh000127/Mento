@@ -20,6 +20,8 @@ export function ConsultationDetail({
   const formatDateTime = (dateStr: string, timeStr: string) => {
     return `${dateStr.replace(/-/g, ".")} ${timeStr}`
   }
+  const surveyItems =
+    consultation.surveyInfo?.surveys ?? consultation.preConsultationQA
 
   return (
     <div className="bg-background py-8">
@@ -60,11 +62,11 @@ export function ConsultationDetail({
             </div>
 
             {/* Pre-Consultation Q&A */}
-            {consultation.preConsultationQA && consultation.preConsultationQA.length > 0 && (
+            {surveyItems && surveyItems.length > 0 && (
               <div className="flex items-start gap-20">
                 <span className="text-sm font-medium text-foreground min-w-[80px]">사전정보</span>
                 <div className="flex-1 space-y-4">
-                  {consultation.preConsultationQA.map((qa, index) => (
+                  {surveyItems.map((qa, index) => (
                     <div key={index} className="bg-primary-100 rounded-lg p-4 space-y-2">
                       <div>
                         <p className="text-sm font-medium text-foreground mb-1">질문</p>

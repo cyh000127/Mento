@@ -14,6 +14,15 @@ export interface ReservationDetailMentorTypeInfo {
   mentorTypeDescription: string
 }
 
+export interface ReservationDetailSurveyItem {
+  question: string
+  answer: string
+}
+
+export interface ReservationDetailSurveyInfo {
+  surveys?: ReservationDetailSurveyItem[]
+}
+
 export interface ReservationDetailData {
   reservationId: number
   userInfo: ReservationDetailUserInfo
@@ -26,6 +35,7 @@ export interface ReservationDetailData {
   createdAt: string
   updatedAt: string
   surveyData?: string
+  surveyInfo?: ReservationDetailSurveyInfo
 }
 
 export interface ReservationDetailError {

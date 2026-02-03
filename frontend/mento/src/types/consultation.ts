@@ -17,6 +17,7 @@ export interface Consultation {
   expertName?: string
   expertTitle?: string
   preConsultationQA?: PreConsultationQA[]
+  surveyInfo?: ConsultationSurveyInfo
   roomUrl?: string
   memo?: string
 }
@@ -24,6 +25,10 @@ export interface Consultation {
 export interface PreConsultationQA {
   question: string
   answer: string
+}
+
+export interface ConsultationSurveyInfo {
+  surveys: PreConsultationQA[]
 }
 
 // 필터 전용 타입 (UI 관점)
