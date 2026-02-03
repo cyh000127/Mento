@@ -30,6 +30,7 @@ export interface UseConsultationSessionReturn {
   sendMaskUpdate: (maskType: MaskType) => void;
   sendMediaShare: (files: SharedMediaFile[]) => void;
   sendImageShare: (imageUrl: string) => void;
+  sendImageClear: () => void;
   sendDrawCommand: (command: DrawCommand) => void;
   sendClearWhiteboard: () => void;
 
@@ -119,6 +120,17 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     } catch (error) {
       console.warn("⚠️ 이미지 공유 데이터 파싱 실패:", error);
       return undefined;
+    }
+  };
+
+  const parseImageClear = (payload: Uint8Array): boolean => {
+    try {
+      const text = new TextDecoder().decode(payload);
+      const data = JSON.parse(text) as { type?: string };
+      return data?.type === "IMAGE_CLEAR";
+    } catch (error) {
+      console.warn("⚠️ 이미지 초기화 데이터 파싱 실패:", error);
+      return false;
     }
   };
 
@@ -279,6 +291,12 @@ export function useConsultationSession(): UseConsultationSessionReturn {
             return;
           }
 
+        if (parseImageClear(payload)) {
+          setSharedImageUrl(null);
+          setDrawCommands([]);
+          return;
+        }
+
           if (parseWhiteboardClear(payload)) {
             setDrawCommands([]);
             return;
@@ -394,6 +412,15 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     [room]
   );
 
+  const sendImageClear = useCallback(() => {
+    setSharedImageUrl(null);
+    setDrawCommands([]);
+    if (!room) return;
+    const payload = { type: "IMAGE_CLEAR" };
+    const data = new TextEncoder().encode(JSON.stringify(payload));
+    room.localParticipant.publishData(data, { reliable: true });
+  }, [room]);
+
   /**
    * 드로잉 데이터 전송 (DataChannel)
    */
@@ -481,6 +508,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     sendMaskUpdate,
     sendMediaShare,
     sendImageShare,
+    sendImageClear,
     sendDrawCommand,
     sendClearWhiteboard,
     toggleMic,

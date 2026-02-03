@@ -25,6 +25,7 @@ export function ConsultationRoomPage() {
     sendMaskUpdate,
     sendMediaShare,
     sendImageShare,
+    sendImageClear,
     sendDrawCommand,
     sendClearWhiteboard,
     toggleMic,
@@ -69,6 +70,8 @@ export function ConsultationRoomPage() {
 
   // 연결 해제 핸들러
   const handleDisconnect = () => {
+    sendImageClear();
+    sendClearWhiteboard();
     disconnect();
     navigate("/mypage/consultations");
   };
@@ -103,6 +106,31 @@ export function ConsultationRoomPage() {
     onClearWhiteboard: sendClearWhiteboard,
     canDraw: isMentor,
   };
+
+  useEffect(() => {
+    const handleUnload = () => {
+      sessionStorage.setItem("consultation:clearOnReconnect", "1");
+      sendImageClear();
+      sendClearWhiteboard();
+    };
+
+    window.addEventListener("beforeunload", handleUnload);
+    window.addEventListener("pagehide", handleUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+      window.removeEventListener("pagehide", handleUnload);
+    };
+  }, [sendImageClear, sendClearWhiteboard]);
+
+  useEffect(() => {
+    if (connectionState !== "connected") return;
+    const shouldClear = sessionStorage.getItem("consultation:clearOnReconnect") === "1";
+    if (!shouldClear) return;
+    sessionStorage.removeItem("consultation:clearOnReconnect");
+    sendImageClear();
+    sendClearWhiteboard();
+  }, [connectionState, sendImageClear, sendClearWhiteboard]);
 
   // USER 접근 시 숨겨진 탭이 활성화되지 않도록 초기화
   useEffect(() => {
