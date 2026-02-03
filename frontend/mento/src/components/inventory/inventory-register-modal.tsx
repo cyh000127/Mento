@@ -170,7 +170,7 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
   const [totalPages, setTotalPages] = useState(0);
 
   // 페이지 크기
-  const itemsPerPage = 10;
+  const itemsPerPage = 6;
 
   // API에서 상품 목록 조회 (전체 조회 후 클라이언트에서 필터링)
   const fetchProducts = useCallback(async () => {
@@ -296,7 +296,7 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
                 </div>
 
                 {/* 제품 목록 */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="overflow-y-auto">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {apiProducts.map((product) => (
                       <ProductSearchCard
@@ -318,7 +318,7 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
 
                 {/* 페이지네이션 */}
                 {totalPages > 1 && (
-                  <Pagination className="flex-shrink-0 mt-3">
+                  <Pagination className="flex-shrink-0 mt-4">
                     <PaginationContent>
                       <PaginationItem>
                         <button
