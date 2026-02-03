@@ -64,7 +64,7 @@ services:
       - '--url_base_prefix=/cadvisor'
       - '--housekeeping_interval=30s'
       - '--docker_only=true'
-      - '--disable_metrics=disk,diskIO'
+      - '--disable_metrics=disk,diskIO,tcp,udp,percpu,sched,memory_numa'
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:rw
