@@ -43,3 +43,9 @@ spring:
           provider_disables_autocommit: true
         jdbc:
           time_zone: UTC
+
+kakaopay:
+  redirect-urls:
+    approval: https://i14a704.p.ssafy.io/payments/redirect
+    fail: https://i14a704.p.ssafy.io/localhost:5173/payments/fail
+    cancel: https://i14a704.p.ssafy.io/localhost:5173/payments/fail
