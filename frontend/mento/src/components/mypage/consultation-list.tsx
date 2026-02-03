@@ -5,18 +5,13 @@ import type { Consultation } from "@/types/consultation";
 interface ConsultationListProps {
   consultations: Consultation[];
   onViewDetail: (consultation: Consultation) => void;
-  onCancelConsultation: (consultationId: string) => void;
-  onEnterRoom: (roomUrl: string) => void;
+  onEnterRoom: (reservationId: number) => void;
   onGoToPayment: (consultation: Consultation) => void;
 }
 
-export function ConsultationList({ consultations, onViewDetail, onCancelConsultation, onEnterRoom, onGoToPayment }: ConsultationListProps) {
+export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onGoToPayment }: ConsultationListProps) {
   const formatDateTime = (dateStr: string, timeStr: string) => {
     return `${dateStr.replace(/-/g, ".")} ${timeStr}`;
-  };
-
-  const isToday = (dateStr: string) => {
-    return new Date(dateStr).toDateString() === new Date().toDateString();
   };
 
   return (
@@ -63,27 +58,22 @@ export function ConsultationList({ consultations, onViewDetail, onCancelConsulta
               )}
               {consultation.status === "scheduled" && (
                 <>
-                  <Button size="sm" variant="outline" className="bg-muted text-foreground hover:bg-muted/80">
+                  <Button size="sm" variant="outline" className="bg-muted text-foreground hover:bg-muted/80" disabled>
                     예약 완료
                   </Button>
-                  {isToday(consultation.scheduledDate) && consultation.roomUrl && (
-                    <Button size="sm" onClick={() => onEnterRoom(consultation.roomUrl!)} className="bg-muted text-foreground hover:bg-muted/80">
-                      상담 방 이동
-                    </Button>
-                  )}
-                  <Button size="sm" variant="outline" onClick={() => onCancelConsultation(consultation.id)} className="bg-muted text-foreground hover:bg-muted/80">
-                    예약 취소
+                  <Button 
+                    size="sm" 
+                    onClick={() => onEnterRoom(consultation.reservationId!)} 
+                    className="bg-muted text-foreground hover:bg-muted/80"
+                    disabled={!consultation.reservationId}
+                  >
+                    상담 방 이동
                   </Button>
                 </>
               )}
               {consultation.status === "completed" && (
                 <Button size="sm" variant="outline" className="bg-muted text-foreground hover:bg-muted/80">
                   상담 완료
-                </Button>
-              )}
-              {consultation.status === "cancelled" && (
-                <Button size="sm" variant="outline" className="bg-muted text-muted-foreground" disabled>
-                  예약 취소됨
                 </Button>
               )}
             </div>
