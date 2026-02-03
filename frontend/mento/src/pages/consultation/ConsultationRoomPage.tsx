@@ -59,23 +59,24 @@ export function ConsultationRoomPage() {
     navigate("/mypage/consultations")
   }
 
-  // role에 따라 비디오 배치 결정
+  // participantRole 기준으로 항상 MENTOR는 상단, USER는 하단
   const isMentor = sessionData?.participantRole === "MENTOR"
+  const mentorParticipant = isMentor ? localParticipant : remoteParticipants[0]
+  const userParticipant = isMentor ? remoteParticipants[0] : localParticipant
 
-  // MENTOR: 본인이 컨설턴트(위), 상대방이 고객(아래)
-  // USER: 상대방이 컨설턴트(위), 본인이 고객(아래)
-  const topParticipant = isMentor ? localParticipant : remoteParticipants[0]
-  const bottomParticipant = isMentor ? remoteParticipants[0] : localParticipant
+  const topParticipant = mentorParticipant
+  const bottomParticipant = userParticipant
+
   const topLabel = isMentor
-    ? `컨설턴트 (나)`
-    : remoteParticipants[0]
-      ? `컨설턴트 (${remoteParticipants[0].identity})`
+    ? "컨설턴트 (나)"
+    : mentorParticipant
+      ? `컨설턴트 (${mentorParticipant.identity})`
       : "컨설턴트"
   const bottomLabel = isMentor
-    ? remoteParticipants[0]
-      ? `고객 (${remoteParticipants[0].identity})`
+    ? userParticipant
+      ? `고객 (${userParticipant.identity})`
       : "고객"
-    : `고객 (나)`
+    : "고객 (나)"
 
   return (
     <div className="relative h-screen bg-gray-950 overflow-hidden">
