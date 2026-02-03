@@ -78,6 +78,10 @@ export function ConsultationRoomPage() {
       : "고객"
     : "고객 (나)"
 
+  const sidePanelTabs = isMentor
+    ? (["share", "inventory", "mask", "record"] as const)
+    : (["share", "inventory"] as const)
+
   return (
     <div className="relative h-screen bg-gray-950 overflow-hidden">
       {/* 메인 컨텐츠 영역 */}
@@ -280,7 +284,7 @@ export function ConsultationRoomPage() {
       </div>
 
       {/* 오른쪽 사이드 패널 */}
-      <SidePanel />
+      <SidePanel allowedTabs={sidePanelTabs} />
     </div>
   )
 }
