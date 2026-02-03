@@ -4,17 +4,18 @@ import { SidePanelTabs } from './SidePanelTabs';
 import { SharePanel } from './SharePanel';
 import { InventoryPanel } from './InventoryPanel';
 import { MaskPanel } from './MaskPanel';
-import { RecordPanel } from './RecordPanel';
+import { RecordPanel, type RecordPanelProps } from './RecordPanel';
 
 type TabType = 'share' | 'inventory' | 'mask' | 'record';
 
 interface SidePanelProps {
   allowedTabs?: ReadonlyArray<TabType>;
+  recordProps?: RecordPanelProps;
 }
 
 const defaultTabs: TabType[] = ['share', 'inventory', 'mask', 'record'];
 
-export function SidePanel({ allowedTabs }: SidePanelProps) {
+export function SidePanel({ allowedTabs, recordProps }: SidePanelProps) {
   const { activeTab, setActiveTab } = useConsultationStore();
   const visibleTabs = allowedTabs ?? defaultTabs;
 
@@ -35,7 +36,7 @@ export function SidePanel({ allowedTabs }: SidePanelProps) {
       case 'mask':
         return <MaskPanel />;
       case 'record':
-        return <RecordPanel />;
+        return <RecordPanel {...recordProps} />;
       default:
         return null;
     }
