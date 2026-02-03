@@ -185,10 +185,21 @@ const MASK_CONFIGS: Record<NonNullable<MaskType>, MaskConfig> = {
 export function useFaceMask(videoElement: HTMLVideoElement | null, canvasRef: React.RefObject<HTMLCanvasElement | null>, maskType: MaskType) {
   const faceMeshRef = useRef<FaceMesh | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const maskTypeRef = useRef<MaskType>(maskType);
+
+  useEffect(() => {
+    maskTypeRef.current = maskType;
+    if (!maskType && canvasRef.current) {
+      const ctx = canvasRef.current.getContext("2d");
+      if (ctx) {
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+    }
+  }, [maskType, canvasRef]);
 
   useEffect(() => {
     // 마스크가 선택되지 않았거나 필수 요소가 없으면 종료
-    if (!videoElement || !canvasRef.current || !maskType) {
+    if (!videoElement || !canvasRef.current) {
       return;
     }
 
@@ -200,7 +211,7 @@ export function useFaceMask(videoElement: HTMLVideoElement | null, canvasRef: Re
       return;
     }
 
-    console.log(`🎭 FaceMesh 초기화 시작 - ${maskType}`);
+    console.log(`🎭 FaceMesh 초기화 시작`);
 
     // MediaPipe FaceMesh 초기화
     const faceMesh = new FaceMesh({
@@ -222,14 +233,26 @@ export function useFaceMask(videoElement: HTMLVideoElement | null, canvasRef: Re
     faceMesh.onResults((results: Results) => {
       if (!canvas || !ctx) return;
 
+      const videoWidth = videoElement.videoWidth || videoElement.clientWidth;
+      const videoHeight = videoElement.videoHeight || videoElement.clientHeight;
+
+      if (!videoWidth || !videoHeight) {
+        return;
+      }
+
       // 캔버스 크기를 비디오 크기와 동기화
-      if (canvas.width !== videoElement.videoWidth || canvas.height !== videoElement.videoHeight) {
-        canvas.width = videoElement.videoWidth;
-        canvas.height = videoElement.videoHeight;
+      if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
+        canvas.width = videoWidth;
+        canvas.height = videoHeight;
       }
 
       // 이전 프레임 지우기
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const activeMaskType = maskTypeRef.current;
+      if (!activeMaskType) {
+        return;
+      }
 
       // 얼굴이 감지되지 않으면 리턴
       if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
@@ -237,7 +260,7 @@ export function useFaceMask(videoElement: HTMLVideoElement | null, canvasRef: Re
       }
 
       const landmarks = results.multiFaceLandmarks[0];
-      const config = MASK_CONFIGS[maskType];
+      const config = MASK_CONFIGS[activeMaskType];
 
       if (!config) return;
 
@@ -253,23 +276,36 @@ export function useFaceMask(videoElement: HTMLVideoElement | null, canvasRef: Re
     /**
      * requestAnimationFrame을 사용한 실시간 처리 루프
      */
+    let isCancelled = false;
+    let isProcessing = false;
+
     const processFrame = async () => {
+      if (isCancelled) return;
       if (!videoElement || videoElement.readyState < 2) {
         animationFrameRef.current = requestAnimationFrame(processFrame);
         return;
       }
 
       try {
+        if (isProcessing) {
+          animationFrameRef.current = requestAnimationFrame(processFrame);
+          return;
+        }
+        isProcessing = true;
         await faceMesh.send({ image: videoElement });
       } catch (error) {
-        console.error("FaceMesh 처리 중 오류:", error);
+        if (!isCancelled) {
+          console.error("FaceMesh 처리 중 오류:", error);
+        }
+      } finally {
+        isProcessing = false;
       }
 
       animationFrameRef.current = requestAnimationFrame(processFrame);
     };
 
     const startProcessing = () => {
-      console.log(`✅ FaceMesh 처리 시작 - ${maskType}`, {
+      console.log(`✅ FaceMesh 처리 시작`, {
         videoWidth: videoElement.videoWidth,
         videoHeight: videoElement.videoHeight,
       });
@@ -284,7 +320,8 @@ export function useFaceMask(videoElement: HTMLVideoElement | null, canvasRef: Re
 
     // 클린업
     return () => {
-      console.log(`🧹 FaceMesh 클린업 - ${maskType}`);
+      console.log(`🧹 FaceMesh 클린업`);
+      isCancelled = true;
 
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -292,8 +329,13 @@ export function useFaceMask(videoElement: HTMLVideoElement | null, canvasRef: Re
       }
 
       if (faceMeshRef.current) {
-        faceMeshRef.current.close();
-        faceMeshRef.current = null;
+        try {
+          faceMeshRef.current.close();
+        } catch (error) {
+          console.warn("⚠️ FaceMesh 종료 중 오류:", error);
+        } finally {
+          faceMeshRef.current = null;
+        }
       }
 
       videoElement.removeEventListener("loadeddata", startProcessing);
@@ -303,7 +345,7 @@ export function useFaceMask(videoElement: HTMLVideoElement | null, canvasRef: Re
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
     };
-  }, [videoElement, canvasRef, maskType]);
+  }, [videoElement, canvasRef]);
 
   return faceMeshRef;
 }

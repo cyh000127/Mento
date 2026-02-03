@@ -4,6 +4,7 @@ import { useConsultationSession } from "@/hooks/useConsultationSession"
 import { VideoTrack } from "@/components/consultation/VideoTrack"
 import { SidePanel } from "@/components/consultation/side-panel"
 import { useConsultationStore } from "@/stores/useConsultationStore"
+import type { MaskType } from "@/hooks/useFaceMask"
 
 export function ConsultationRoomPage() {
   const { reservationId } = useParams<{ reservationId: string }>()
@@ -23,9 +24,10 @@ export function ConsultationRoomPage() {
     isMicEnabled,
     isCameraEnabled,
   } = useConsultationSession()
-  const { selectedMaskArea, setActiveTab } = useConsultationStore()
+  const { selectedMaskArea, setActiveTab, setSelectedMaskArea } = useConsultationStore()
 
   const hasConnected = useRef(false)
+  const lastRemoteMaskTypeRef = useRef<MaskType | null>(null)
 
   // 컴포넌트 마운트 시 자동으로 상담 세션 생성 및 LiveKit 연결
   useEffect(() => {
@@ -68,7 +70,7 @@ export function ConsultationRoomPage() {
 
   const topParticipant = mentorParticipant
   const bottomParticipant = userParticipant
-  const bottomMaskType = isMentor ? selectedMaskArea : remoteMaskType
+  const sharedMaskType = selectedMaskArea
 
   const topLabel = isMentor
     ? "컨설턴트 (나)"
@@ -92,12 +94,21 @@ export function ConsultationRoomPage() {
     }
   }, [sessionData?.participantRole, setActiveTab])
 
-  // 멘토가 선택한 마스크를 DataChannel로 전송
+  // 원격에서 받은 마스크를 로컬 상태에 반영 (단일 소스 유지)
+  useEffect(() => {
+    lastRemoteMaskTypeRef.current = remoteMaskType
+    setSelectedMaskArea(remoteMaskType)
+  }, [remoteMaskType, setSelectedMaskArea])
+
+  // 마스크 변경을 DataChannel로 전송 (역방향 에코 방지)
   useEffect(() => {
     if (connectionState !== "connected") return
-    if (!isMentor) return
+    if (lastRemoteMaskTypeRef.current === selectedMaskArea) {
+      lastRemoteMaskTypeRef.current = null
+      return
+    }
     sendMaskUpdate(selectedMaskArea)
-  }, [connectionState, isMentor, selectedMaskArea, sendMaskUpdate])
+  }, [connectionState, selectedMaskArea, sendMaskUpdate])
 
   return (
     <div className="relative h-screen bg-gray-950 overflow-hidden">
@@ -133,9 +144,14 @@ export function ConsultationRoomPage() {
             <div className="aspect-video bg-gray-800 rounded-lg shadow-2xl border border-gray-700 overflow-hidden relative">
               {topParticipant ? (
                 <>
-                  <VideoTrack participant={topParticipant} maskType={null} />
+                  <VideoTrack participant={topParticipant} maskType={sharedMaskType} />
                   <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm">
                     {topLabel}
+                    {sharedMaskType && (
+                      <span className="ml-2 text-xs text-cyan-300">
+                        🎭 {sharedMaskType} 분석 중
+                      </span>
+                    )}
                   </div>
                 </>
               ) : (
@@ -150,17 +166,17 @@ export function ConsultationRoomPage() {
             </div>
           </div>
 
-          {/* 고객 비디오 영역 (하단) - 사이드 패널에서 선택한 마스크 적용 */}
+          {/* 고객 비디오 영역 (하단) */}
           <div className="w-full max-w-2xl">
             <div className="aspect-video bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden relative">
               {bottomParticipant ? (
                 <>
-                  <VideoTrack participant={bottomParticipant} maskType={bottomMaskType} />
+                  <VideoTrack participant={bottomParticipant} maskType={sharedMaskType} />
                   <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm">
                     {bottomLabel}
-                    {bottomMaskType && (
+                    {sharedMaskType && (
                       <span className="ml-2 text-xs text-cyan-300">
-                        🎭 {bottomMaskType} 분석 중
+                        🎭 {sharedMaskType} 분석 중
                       </span>
                     )}
                   </div>
