@@ -12,7 +12,9 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create
+    defer-datasource-initialization: true
+
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
@@ -27,3 +29,10 @@ spring:
           provider_disables_autocommit: true
         jdbc:
           time_zone: UTC
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:sql/init.sql
+      encoding: UTF-8
+      separator: ;
+      continue-on-error: false

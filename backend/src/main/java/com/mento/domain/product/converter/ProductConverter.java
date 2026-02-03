@@ -33,7 +33,7 @@ public class ProductConverter {
 
 	public ProductResDto toProductResDto(final Product entity) {
 		return ProductResDto.builder()
-			.id(entity.getId())
+			.productId(entity.getId())
 			.brandId(entity.getBrand().getId())
 			.brandName(entity.getBrand().getBrandName())
 			.oliveyoungGoodsNo(entity.getOliveyoungGoodsNo())
@@ -46,9 +46,9 @@ public class ProductConverter {
 			.price(entity.getPrice())
 			.imageUrl(entity.getImageUrl())
 			.productUrl(entity.getProductUrl())
-			.skinTypes(entity.getSkinTypes())
-			.relatedConditions(entity.getRelatedConditions())
-			.benefits(entity.getBenefits())
+			.skinTypes(JsonStringConverter.toJsonArray(entity.getSkinTypes()))
+			.relatedConditions(JsonStringConverter.toJsonArray(entity.getRelatedConditions()))
+			.benefits(JsonStringConverter.toJsonArray(entity.getBenefits()))
 			.defaultUsageDays(entity.getDefaultUsageDays())
 			.createdAt(entity.getCreatedAt())
 			.updatedAt(entity.getUpdatedAt())

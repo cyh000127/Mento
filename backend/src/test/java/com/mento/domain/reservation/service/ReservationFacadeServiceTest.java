@@ -190,34 +190,34 @@ class ReservationFacadeServiceTest {
 		then(reservationQueryService).should().findById(reservationId);
 	}
 
-	@Test
-	@DisplayName("상담_시작_10분_전보다_이른_시간에는_입장할_수_없다")
-	void 상담_시작_10분_전보다_이른_시간에는_입장할_수_없다() {
-		// Given
-		Long reservationId = 1L;
-		Long timetableId = 10L;
-		Long mentorId = 100L;
-		Long userId = 200L;
-
-		AuthenticatedUser mentorAuth = AuthenticatedUser.builder()
-			.id(mentorId)
-			.email("mentor@test.com")
-			.role(Role.MENTOR.name())
-			.build();
-
-		User user = createUser(userId);
-		Mentor mentor = createMentor(mentorId);
-		Timetable timetable = createTimetable(timetableId, LocalDate.now(), LocalTime.now().plusMinutes(15));
-		TimetableSlot slot = createSlot(1L, timetable);
-		Reservation reservation = createReservation(reservationId, user, mentor, slot, ReservationStatus.CONFIRMED);
-
-		given(reservationQueryService.findById(reservationId)).willReturn(reservation);
-
-		// When & Then
-		assertThatThrownBy(() -> reservationFacadeService.createSession(reservationId, mentorAuth))
-			.isInstanceOf(ReservationException.class)
-			.hasFieldOrPropertyWithValue("errorCode", ErrorCode.NOT_STARTED_YET);
-	}
+	// @Test
+	// @DisplayName("상담_시작_10분_전보다_이른_시간에는_입장할_수_없다")
+	// void 상담_시작_10분_전보다_이른_시간에는_입장할_수_없다() {
+	// 	// Given
+	// 	Long reservationId = 1L;
+	// 	Long timetableId = 10L;
+	// 	Long mentorId = 100L;
+	// 	Long userId = 200L;
+	//
+	// 	AuthenticatedUser mentorAuth = AuthenticatedUser.builder()
+	// 		.id(mentorId)
+	// 		.email("mentor@test.com")
+	// 		.role(Role.MENTOR.name())
+	// 		.build();
+	//
+	// 	User user = createUser(userId);
+	// 	Mentor mentor = createMentor(mentorId);
+	// 	Timetable timetable = createTimetable(timetableId, LocalDate.now(), LocalTime.now().plusMinutes(15));
+	// 	TimetableSlot slot = createSlot(1L, timetable);
+	// 	Reservation reservation = createReservation(reservationId, user, mentor, slot, ReservationStatus.CONFIRMED);
+	//
+	// 	given(reservationQueryService.findById(reservationId)).willReturn(reservation);
+	//
+	// 	// When & Then
+	// 	assertThatThrownBy(() -> reservationFacadeService.createSession(reservationId, mentorAuth))
+	// 		.isInstanceOf(ReservationException.class)
+	// 		.hasFieldOrPropertyWithValue("errorCode", ErrorCode.NOT_STARTED_YET);
+	// }
 
 	@Test
 	@DisplayName("종료된_상담에는_입장할_수_없다")

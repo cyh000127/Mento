@@ -105,8 +105,8 @@ class ProductFacadeServiceTest {
 		// given
 		Long productId = 1L;
 		Brand brand = Brand.builder().id(1L).brandName("이니스프리").build();
-		List<String> skinTypes = List.of("지성", "복합성");
-		List<String> benefits = List.of("진정", "수분");
+		String skinTypes = "지성, 복합성";
+		String benefits = "진정, 수분";
 
 		Product product = Product.builder()
 			.id(productId)
@@ -132,13 +132,13 @@ class ProductFacadeServiceTest {
 		ProductResDto result = productFacadeService.getProduct(productId);
 
 		// then
-		assertThat(result.id()).isEqualTo(productId);
+		assertThat(result.productId()).isEqualTo(productId);
 		assertThat(result.brandName()).isEqualTo("이니스프리");
 		assertThat(result.name()).isEqualTo("그린티 씨드 세럼");
 		assertThat(result.price()).isEqualTo(30000);
 		assertThat(result.categoryMedium()).isEqualTo("스킨케어");
-		assertThat(result.skinTypes()).containsExactly("지성", "복합성");
-		assertThat(result.benefits()).containsExactly("진정", "수분");
+		assertThat(result.skinTypes()).isEqualTo("[\"지성\",\"복합성\"]");
+		assertThat(result.benefits()).isEqualTo("[\"진정\",\"수분\"]");
 		assertThat(result.ingredients()).isEqualTo("정제수, 녹차추출물");
 
 		then(productQueryService).should(times(1)).findById(productId);

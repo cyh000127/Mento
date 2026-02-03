@@ -4,9 +4,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.brand.entity.Brand;
@@ -63,7 +60,7 @@ public class Product extends BaseEntity {
 	@Column(nullable = false, length = 500)
 	private String name;
 
-	@Column(length = 255)
+	@Column
 	private String volume;
 
 	@Column(length = 1000)
@@ -82,17 +79,14 @@ public class Product extends BaseEntity {
 	@Column(name = "product_url", length = 1000)
 	private String productUrl;
 
-	@JdbcTypeCode(SqlTypes.JSON)
-	@Column(name = "skin_types", columnDefinition = "json")
-	private List<String> skinTypes;
+	@Column(name = "skin_types", columnDefinition = "longtext")
+	private String skinTypes;
 
-	@JdbcTypeCode(SqlTypes.JSON)
-	@Column(name = "related_conditions", columnDefinition = "json")
-	private List<String> relatedConditions;
+	@Column(name = "related_conditions", columnDefinition = "longtext")
+	private String relatedConditions;
 
-	@JdbcTypeCode(SqlTypes.JSON)
-	@Column(name = "benefits", columnDefinition = "json")
-	private List<String> benefits;
+	@Column(name = "benefits", columnDefinition = "longtext")
+	private String benefits;
 
 	@Column(name = "default_usage_days", nullable = false)
 	@Builder.Default
