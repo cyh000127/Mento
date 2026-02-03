@@ -11,6 +11,7 @@ import type {
   SortOption,
   AddInventoryItemRequest,
   AddInventoryItemResponse,
+  InventoryItemDetailResponse,
 } from "@/types/inventory"
 
 /**
@@ -135,6 +136,21 @@ export async function deleteInventoryItem(itemId: string): Promise<void> {
     await api.post(`/items/${itemId}`)
   } catch (error: any) {
     console.error("인벤토리 삭제 에러:", error)
+    console.error("에러 상태:", error.response?.status)
+    console.error("에러 응답:", error.response?.data)
+    throw error
+  }
+}
+
+/**
+ * 인벤토리 아이템 상세 정보 조회 API
+ */
+export async function getInventoryItemDetail(itemId: string): Promise<InventoryItemDetailResponse> {
+  try {
+    const response = await api.get<InventoryItemDetailResponse>(`/items/${itemId}`)
+    return response.data
+  } catch (error: any) {
+    console.error("인벤토리 상세 조회 에러:", error)
     console.error("에러 상태:", error.response?.status)
     console.error("에러 응답:", error.response?.data)
     throw error

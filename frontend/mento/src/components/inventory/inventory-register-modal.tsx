@@ -39,19 +39,23 @@ interface ProductSearchCardProps {
 }
 
 function ProductSearchCard({ product, isSelected, onToggleSelect }: ProductSearchCardProps) {
+  const handleCardClick = () => {
+    onToggleSelect(product.productId);
+  };
+
   return (
     <div
-      className={`group relative rounded-lg border-2 bg-white p-2.5 transition-all hover:shadow-md ${
-        isSelected ? "border-primary-500 bg-primary-100/30" : "border-border hover:border-primary-400/50"
-      }`}
+      onClick={handleCardClick}
+      className={`group relative rounded-lg border-2 bg-white p-2.5 transition-all hover:shadow-md w-full max-w-full cursor-pointer ${isSelected ? "border-primary-500 bg-primary-100/30" : "border-border hover:border-primary-400/50"
+        }`}
     >
-      <div className="flex gap-2.5">
+      <div className="flex gap-2.5 w-full max-w-full">
         {/* 체크박스 */}
         <div className="flex items-start pt-0.5">
-          <Checkbox 
-            checked={isSelected} 
-            onCheckedChange={() => onToggleSelect(product.productId)} 
-            className="data-[state=checked]:bg-primary-500 data-[state=checked]:border-primary-500" 
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onToggleSelect(product.productId)}
+            className="data-[state=checked]:bg-primary-500 data-[state=checked]:border-primary-500"
           />
         </div>
 
@@ -61,14 +65,14 @@ function ProductSearchCard({ product, isSelected, onToggleSelect }: ProductSearc
         </div>
 
         {/* 제품 정보 */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 overflow-hidden">
           <div className="mb-0.5">
             <span className="inline-block rounded-full bg-pastel-blue-200 px-2 py-0.5 text-xs font-medium text-text-primary">
               {product.categoryMedium}
             </span>
           </div>
-          <h4 className="mb-0.5 text-sm font-semibold text-text-primary truncate">{product.name}</h4>
-          <p className="text-xs text-text-secondary">{product.brandName}</p>
+          <h4 className="mb-0.5 text-sm font-semibold text-text-primary truncate" title={product.name}>{product.name}</h4>
+          <p className="text-xs text-text-secondary truncate" title={product.brandName}>{product.brandName}</p>
         </div>
       </div>
     </div>
@@ -82,16 +86,16 @@ interface SelectedProductItemProps {
 
 function SelectedProductItem({ product, onRemove }: SelectedProductItemProps) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-white p-2 transition-all hover:shadow-sm">
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-white p-2 transition-all hover:shadow-sm w-full max-w-full">
       {/* 제품 이미지 */}
       <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded">
         <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
       </div>
 
       {/* 제품 정보 */}
-      <div className="flex-1 min-w-0">
-        <h4 className="text-sm font-medium text-text-primary truncate">{product.name}</h4>
-        <p className="text-xs text-text-secondary">{product.brand}</p>
+      <div className="flex-1 min-w-0 overflow-hidden">
+        <h4 className="text-sm font-medium text-text-primary truncate" title={product.name}>{product.name}</h4>
+        <p className="text-xs text-text-secondary truncate" title={product.brand}>{product.brand}</p>
       </div>
 
       {/* 제거 버튼 */}
@@ -117,17 +121,17 @@ function ConfirmAddModal({ open, onOpenChange, selectedProducts, onConfirm }: Co
           <DialogTitle>제품 추가</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-hidden">
           {/* 선택된 제품 요약 */}
-          <div className="space-y-2 max-h-60 overflow-y-auto">
+          <div className="space-y-2 max-h-60 overflow-y-auto overflow-x-hidden">
             {selectedProducts.map((product) => (
-              <div key={product.id} className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
+              <div key={product.id} className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3 w-full max-w-full">
                 <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded">
                   <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-medium text-text-primary truncate">{product.name}</h4>
-                  <p className="text-xs text-text-secondary">{product.brand}</p>
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <h4 className="text-sm font-medium text-text-primary truncate" title={product.name}>{product.name}</h4>
+                  <p className="text-xs text-text-secondary truncate" title={product.brand}>{product.brand}</p>
                 </div>
               </div>
             ))}
@@ -166,7 +170,7 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
   const [totalPages, setTotalPages] = useState(0);
 
   // 페이지 크기
-  const itemsPerPage = 10;
+  const itemsPerPage = 6;
 
   // API에서 상품 목록 조회 (전체 조회 후 클라이언트에서 필터링)
   const fetchProducts = useCallback(async () => {
@@ -182,15 +186,15 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
       if (response.success && response.data) {
         // 검색어가 있으면 클라이언트에서 필터링
         let filteredProducts = response.data.content;
-        
+
         if (searchQuery.trim()) {
           const query = searchQuery.toLowerCase().trim();
-          filteredProducts = filteredProducts.filter((product) => 
+          filteredProducts = filteredProducts.filter((product) =>
             product.name.toLowerCase().includes(query) ||
             product.brandName.toLowerCase().includes(query)
           );
         }
-        
+
         setApiProducts(filteredProducts);
         setTotalPages(response.data.totalPages);
       } else {
@@ -220,7 +224,7 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
 
     const productIdStr = productId.toString();
     const isAlreadySelected = selectedProducts.some((p) => p.id === productIdStr);
-    
+
     if (isAlreadySelected) {
       setSelectedProducts((prev) => prev.filter((p) => p.id !== productIdStr));
     } else {
@@ -292,14 +296,14 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
                 </div>
 
                 {/* 제품 목록 */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="overflow-y-auto">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {apiProducts.map((product) => (
-                      <ProductSearchCard 
-                        key={product.productId} 
-                        product={product} 
-                        isSelected={selectedProducts.some((p) => p.id === product.productId.toString())} 
-                        onToggleSelect={handleToggleSelect} 
+                      <ProductSearchCard
+                        key={product.productId}
+                        product={product}
+                        isSelected={selectedProducts.some((p) => p.id === product.productId.toString())}
+                        onToggleSelect={handleToggleSelect}
                       />
                     ))}
                   </div>
@@ -314,15 +318,14 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
 
                 {/* 페이지네이션 */}
                 {totalPages > 1 && (
-                  <Pagination className="flex-shrink-0 mt-3">
+                  <Pagination className="flex-shrink-0 mt-4">
                     <PaginationContent>
                       <PaginationItem>
                         <button
                           onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                           disabled={currentPage === 1}
-                          className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9 ${
-                            currentPage === 1 ? "opacity-50" : "cursor-pointer"
-                          }`}
+                          className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9 ${currentPage === 1 ? "opacity-50" : "cursor-pointer"
+                            }`}
                           aria-label="이전 페이지"
                         >
                           <ChevronLeft className="h-4 w-4" />
@@ -369,9 +372,8 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
                         <button
                           onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                           disabled={currentPage === totalPages}
-                          className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9 ${
-                            currentPage === totalPages ? "opacity-50" : "cursor-pointer"
-                          }`}
+                          className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9 ${currentPage === totalPages ? "opacity-50" : "cursor-pointer"
+                            }`}
                           aria-label="다음 페이지"
                         >
                           <ChevronRight className="h-4 w-4" />

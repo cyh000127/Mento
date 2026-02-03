@@ -11,6 +11,7 @@ import {
   mapUiSortToApiSort,
   addInventoryItem,
   deleteInventoryItem,
+  getInventoryItemDetail,
 } from "@/api/inventoryApi"
 import {
   AlertDialog,
@@ -28,6 +29,7 @@ export default function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(false)
+  const [detailLoading, setDetailLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [hasNext, setHasNext] = useState(false)
@@ -113,8 +115,60 @@ export default function InventoryPage() {
     return true
   })
 
-  const handleProductSelect = (product: Product) => {
+  const handleProductSelect = async (product: Product) => {
     setSelectedProduct(product)
+    setDetailLoading(true)
+    
+    try {
+      const response = await getInventoryItemDetail(product.id)
+      const data = response.data
+      
+      // 만료일까지 남은 일수 계산
+      let daysUntilExpiry: number | undefined = undefined
+      if (data.expectedExpiry) {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const expiryDate = new Date(data.expectedExpiry)
+        expiryDate.setHours(0, 0, 0, 0)
+        const diffTime = expiryDate.getTime() - today.getTime()
+        daysUntilExpiry = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      }
+      
+      const detailedProduct: Product = {
+        id: data.id.toString(),
+        name: data.productInfoDto.name,
+        brand: product.brand,
+        category: product.category,
+        image: data.productInfoDto.imageUrl,
+        purchaseDate: data.purchaseDate,
+        expirationDate: data.expectedExpiry,
+        repurchaseCount: data.purchaseCount,
+        status: mapDetailStatusToUI(data.status),
+        purchaseLink: data.productInfoDto.productUrl,
+        isFavorite: data.isFavorite,
+        daysUntilExpiry: daysUntilExpiry,
+      }
+      
+      setSelectedProduct(detailedProduct)
+    } catch (error) {
+      console.error("Failed to fetch item detail:", error)
+      toast({
+        title: "상세 정보 로드 실패",
+        description: "기본 정보만 표시됩니다.",
+        variant: "destructive",
+      })
+    } finally {
+      setDetailLoading(false)
+    }
+  }
+  
+  const mapDetailStatusToUI = (status: "OWNED" | "IN_USE" | "EXPIRED"): ProductStatus => {
+    const statusMap = {
+      "OWNED": "in-use" as ProductStatus,
+      "IN_USE": "in-use" as ProductStatus,
+      "EXPIRED": "over-dated" as ProductStatus,
+    }
+    return statusMap[status] || "in-use"
   }
 
   const handleToggleFavorite = async (productId: string) => {
@@ -307,6 +361,7 @@ export default function InventoryPage() {
                 product={selectedProduct}
                 onToggleFavorite={handleToggleFavorite}
                 onDelete={handleDelete}
+                loading={detailLoading}
               />
             )}
           </div>
