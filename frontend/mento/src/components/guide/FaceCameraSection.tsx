@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { Camera, CameraOff } from "lucide-react"
+import { useFaceMask, type MaskType } from "@/hooks/useFaceMask"
 
 interface FaceCameraSectionProps {
   selectedArea: string
@@ -25,8 +26,27 @@ export function FaceCameraSection({
   const [cameraOn, setCameraOn] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string>("")
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+
+  const maskType = useMemo<MaskType>(() => {
+    switch (selectedArea) {
+      case "t-zone":
+        return "T-zone"
+      case "u-zone":
+        return "U-zone"
+      case "nose":
+        return "Nose zone"
+      case "apple":
+        return "Apple zone"
+      default:
+        return null
+    }
+  }, [selectedArea])
+
+  useFaceMask(videoElement, canvasRef, maskType)
 
   // Stop camera
   const stopCamera = useCallback(() => {
@@ -43,6 +63,7 @@ export function FaceCameraSection({
 
     setCameraOn(false)
     setError("")
+    setVideoElement(null)
   }, [])
 
   // Start camera
@@ -72,6 +93,7 @@ export function FaceCameraSection({
 
       videoRef.current.srcObject = stream
       streamRef.current = stream
+      setVideoElement(videoRef.current)
       
       // Wait for video to be ready and play
       await new Promise<void>((resolve, reject) => {
@@ -161,6 +183,7 @@ export function FaceCameraSection({
 
           {/* Canvas overlay for future FaceMesh */}
           <canvas
+            ref={canvasRef}
             className="absolute inset-0 w-full h-full pointer-events-none"
             style={{ transform: "scaleX(-1)" }}
           />
