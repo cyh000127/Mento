@@ -1,4 +1,4 @@
-package com.mento.domain.product.converter;
+package com.mento.common.converter;
 
 import java.util.Arrays;
 import java.util.List;
