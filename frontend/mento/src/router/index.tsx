@@ -15,6 +15,8 @@ import RecommendPage from "@/pages/recommend/RecommendPage";
 import InventoryPage from "@/pages/inventory/InventoryPage";
 import ConsultationManagementPage from "@/pages/mypage/ConsultationManagementPage";
 import AiSkincareHistoryPage from "@/pages/mypage/AiSkincareHistoryPage";
+import InventoryHistoryPage from "@/pages/mypage/InventoryHistoryPage";
+import AccountWithdrawalPage from "@/pages/mypage/AccountWithdrawalPage";
 import KakaoCallback from "@/pages/auth/KakaoCallback";
 import TestLoginPage from "@/pages/test/TestLoginPage";
 
@@ -74,6 +76,14 @@ const router = createBrowserRouter([
       {
         path: "/mypage/ai-skincare",
         element: <AiSkincareHistoryPage />,
+      },
+      {
+        path: "/mypage/inventory-history",
+        element: <InventoryHistoryPage />,
+      },
+      {
+        path: "/mypage/account-withdrawal",
+        element: <AccountWithdrawalPage />,
       },
       {
         path: "/login/oauth2/callback",
