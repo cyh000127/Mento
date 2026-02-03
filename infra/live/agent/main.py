@@ -105,18 +105,21 @@ async def entrypoint(ctx: JobContext):
                             # 2. 데이터 준비 (기존 로그 형식 유지)
                             now = datetime.datetime.now()
                             timestamp_log = now.strftime("%H:%M:%S")
-                            timestamp_java = now.strftime("%Y-%m-%d %H:%M:%S")
                             display_name = participant.identity[:-37] if len(participant.identity) > 37 else participant.identity
-
+                            if "USER" in display_name:
+                                role = "USER"
+                            elif "MENTOR" in display_name:
+                                role = "MENTOR"
+                            else:
+                                role = "UNKNOWN"
                             # 터미널 로그 출력 (기존 방식 유지)
                             print(f"[{timestamp_log}] [{display_name}]: {text}", flush=True)
 
                             # 3. Java 백엔드 전송 (ChatLogRequest Record 형식)
                             payload = {
                                 "roomId": str(ctx.room.name),
-                                "userId": str(participant.identity),
+                                "role": role,
                                 "content": str(text),
-                                "timestamp": str(timestamp_java)
                             }
 
                             try:
