@@ -17,6 +17,18 @@ ON DUPLICATE KEY UPDATE `login_id` = VALUES(`login_id`),
                         `name` = VALUES(`name`),
                         `updated_at`  = NOW(6);
 
+INSERT INTO `users` (`email`, `password`, `name`, `kakao_id`, `role`, `created_at`, `updated_at`)
+VALUES
+    ('skincare01@example.com', 'test1234', '김스킨', 'kakao_skin01', 'MENTOR', NOW(6), NOW(6)),
+    ('beauty01@example.com', 'test1234', '강뷰티', 'kakao_beauty01', 'MENTOR', NOW(6), NOW(6)),
+    ('hair01@example.com', 'test1234', '서헤어', 'kakao_hair01', 'MENTOR', NOW(6), NOW(6))
+ON DUPLICATE KEY UPDATE `name` = VALUES(`name`),
+                        `password` = VALUES(`password`),
+                        `role` = VALUES(`role`),
+                        `updated_at` = NOW(6);
+
+
+
 INSERT IGNORE INTO `brands` (`name`) VALUES
 ('아이디얼포맨'),
 ('비오템'),

@@ -34,7 +34,8 @@ public class SecurityConfig {
 
 		// OAuth2
 		"/login/oauth/**",
-		"/api/v1/auth/**",
+		"/api/v1/auth/reissue",
+		"/api/v1/auth/login/mentor",
 		
 		// Test
 		"/api/v1/test/**"

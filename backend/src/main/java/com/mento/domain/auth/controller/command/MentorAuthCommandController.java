@@ -7,13 +7,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mento.common.auth.dto.Token;
+import com.mento.common.auth.jwt.JwtProperties;
 import com.mento.common.response.BaseResponse;
+import com.mento.common.util.CookieUtil;
 import com.mento.common.util.ResponseUtils;
 import com.mento.domain.auth.dto.request.MentorLoginReqDto;
 import com.mento.domain.auth.service.command.MentorAuthCommandService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -24,11 +27,19 @@ import lombok.RequiredArgsConstructor;
 public class MentorAuthCommandController {
 
 	private final MentorAuthCommandService mentorAuthCommandService;
+	private final JwtProperties jwtProperties;
 
 	@Operation(summary = "멘토 로그인 (테스트/시연용)", description = "멘토 ID와 비밀번호로 로그인하여 토큰을 발급받습니다.")
 	@PostMapping("/login/mentor")
-	public ResponseEntity<BaseResponse<Token>> login(@Valid @RequestBody MentorLoginReqDto reqDto) {
+	public ResponseEntity<BaseResponse<Token>> login(
+		@Valid @RequestBody MentorLoginReqDto reqDto,
+		HttpServletResponse response
+	) {
 		Token token = mentorAuthCommandService.login(reqDto);
+
+		CookieUtil.addCookie(response, "refreshToken", token.refreshToken(),
+			(int)(jwtProperties.refreshTokenExpiration() / 1000));
+
 		return ResponseUtils.ok(token);
 	}
 }
