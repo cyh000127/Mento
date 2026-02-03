@@ -10,13 +10,13 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mento.domain.item.converter.ItemConverter;
 import com.mento.domain.item.dto.common.ItemInfoResDto;
 import com.mento.domain.item.dto.request.ItemHistoryReqDto;
+import com.mento.domain.item.dto.request.ItemSearchReqDto;
 import com.mento.domain.item.dto.request.UserItemAddReqDto;
 import com.mento.domain.item.dto.response.ItemHistoryResDto;
 import com.mento.domain.item.dto.response.ItemInfoDetailResDto;
 import com.mento.domain.item.dto.response.ItemPageResDto;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.entity.ItemHistory;
-import com.mento.domain.item.enums.ItemCategory;
 import com.mento.domain.item.enums.ItemHistoryAction;
 import com.mento.domain.item.enums.ItemStatus;
 import com.mento.domain.item.enums.SortType;
@@ -94,17 +94,12 @@ public class ItemFacadeService {
 	@Transactional(readOnly = true)
 	public Page<ItemPageResDto> findAllItemsByUserId(
 		final Long userId,
-		final ItemStatus status,
-		final ItemCategory category,
-		final Boolean isFavorite,
-		final SortType sortType,
-		final int page,
-		final int size
+		final ItemSearchReqDto reqDto
 	) {
-		Pageable pageable = PageRequest.of(page, size, sortType.getSort());
+		Pageable pageable = PageRequest.of(reqDto.page(), reqDto.size(), SortType.from(reqDto.sort()).getSort());
 
 		Page<Item> items = itemQueryService.findAllByUserIdWithFilters(
-			userId, status, category, isFavorite, pageable
+			userId, reqDto.status(), reqDto.category(), reqDto.isFavorite(), pageable
 		);
 
 		return items.map(ItemConverter::toItemPageResDto);
