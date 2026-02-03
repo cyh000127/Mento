@@ -7,10 +7,12 @@ import type {
   ProductCategory,
   ProductStatus,
   ApiProductStatus,
+  ItemStatus,
   ApiSortOption,
   SortOption,
   AddInventoryItemRequest,
   AddInventoryItemResponse,
+  InventoryItemDetailResponse,
 } from "@/types/inventory"
 
 /**
@@ -28,6 +30,43 @@ export async function getInventoryItems(filters: InventoryFilters = {}): Promise
 
   const response = await api.get<InventoryResponse>(`/items?${params.toString()}`)
   return response.data
+}
+
+/**
+ * 상태 전환 규칙 정의
+ */
+export const STATUS_TRANSITION_RULES: Record<ItemStatus, ItemStatus[]> = {
+  OWNED: ["UNAVAILABLE", "PURCHASING", "OVER_DATED"],
+  UNAVAILABLE: ["OWNED"],
+  PURCHASING: ["OWNED"],
+  RECOMMENDED: ["OWNED", "PURCHASING"],
+  OVER_DATED: ["OWNED"],
+}
+
+/**
+ * 한국어 상태 라벨 매핑
+ */
+export const STATUS_LABELS: Record<ItemStatus, string> = {
+  OWNED: "보유 중",
+  UNAVAILABLE: "사용 불가",
+  PURCHASING: "구매 중",
+  RECOMMENDED: "추천 제품",
+  OVER_DATED: "사용 완료",
+}
+
+/**
+ * 상태 전환 가능 여부 검증
+ */
+export function canTransitionStatus(currentStatus: ItemStatus, newStatus: ItemStatus): boolean {
+  const allowedTransitions = STATUS_TRANSITION_RULES[currentStatus]
+  return allowedTransitions?.includes(newStatus) ?? false
+}
+
+/**
+ * 현재 상태에서 전환 가능한 상태 목록 반환
+ */
+export function getAllowedStatusTransitions(currentStatus: ItemStatus): ItemStatus[] {
+  return STATUS_TRANSITION_RULES[currentStatus] || []
 }
 
 /**
@@ -80,9 +119,9 @@ export function mapApiItemToProduct(apiItem: ApiItem): Product {
     "메이크업": "beauty",
     "헤어케어": "hair",
   }
-  
+
   const category = apiItem.categoryMedium ? (categoryMap[apiItem.categoryMedium] || "skin") : "skin"
-  
+
   return {
     id: apiItem.id.toString(),
     name: apiItem.productName,
@@ -114,7 +153,7 @@ export async function addInventoryItem(request: AddInventoryItemRequest): Promis
   try {
     const response = await api.post<AddInventoryItemResponse["data"]>("/items", body)
     console.log("인벤토리 추가 API 응답:", response.data, "상태:", response.status)
-    
+
     return {
       success: true,
       data: response.data
@@ -139,4 +178,70 @@ export async function deleteInventoryItem(itemId: string): Promise<void> {
     console.error("에러 응답:", error.response?.data)
     throw error
   }
+}
+
+/**
+ * 인벤토리 아이템 상세 정보 조회 API
+ */
+export async function getInventoryItemDetail(itemId: string): Promise<InventoryItemDetailResponse> {
+  try {
+    const response = await api.get<InventoryItemDetailResponse>(`/items/${itemId}`)
+    return response.data
+  } catch (error: any) {
+    console.error("인벤토리 상세 조회 에러:", error)
+    console.error("에러 상태:", error.response?.status)
+    console.error("에러 응답:", error.response?.data)
+    throw error
+  }
+}
+
+/**
+ * 재고 아이템 상태 업데이트 API
+ */
+export async function updateInventoryItemStatus(
+  itemId: number,
+  itemStatus: ItemStatus
+): Promise<void> {
+  try {
+    await api.put(`/items/${itemId}`, null, {
+      params: { itemStatus }
+    })
+  } catch (error: any) {
+    console.error("상태 업데이트 에러:", error)
+    console.error("에러 상태:", error.response?.status)
+    console.error("에러 응답:", error.response?.data)
+    throw error
+  }
+}
+
+/**
+ * 상태 업데이트 에러 메시지 변환
+ */
+export function getStatusUpdateErrorMessage(error: any): string {
+  const status = error.response?.status
+  const errorCode = error.response?.data?.code || error.response?.data?.error
+
+  if (status === 400) {
+    if (errorCode === "INVALID_STATUS") {
+      return "유효하지 않은 상태입니다."
+    }
+    if (errorCode === "INVALID_STATUS_TRANSITION") {
+      return "현재 상태에서 선택한 상태로 변경할 수 없습니다."
+    }
+    return "잘못된 요청입니다."
+  }
+
+  if (status === 401) {
+    return "로그인이 필요합니다."
+  }
+
+  if (status === 403) {
+    return "권한이 없습니다."
+  }
+
+  if (status === 404) {
+    return "아이템을 찾을 수 없습니다."
+  }
+
+  return "상태 변경 중 오류가 발생했습니다."
 }

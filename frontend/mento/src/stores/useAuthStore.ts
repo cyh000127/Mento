@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware"; // 추가
-import type { User } from "@/types/user";
+import { create } from "zustand"
+import { persist } from "zustand/middleware"
+import type { User } from "@/types/user"
 
 interface AuthState {
   accessToken: string | null;
@@ -41,8 +41,7 @@ export const useAuthStore = create<AuthState>()(
         }),
     }),
     {
-      name: "auth-storage", // 저장될 키 이름
-      // accessToken과 기본적인 로그인 상태만 유지하도록 설정 가능
+      name: "auth-storage",
     }
   )
-);
+)
