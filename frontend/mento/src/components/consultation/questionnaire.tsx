@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, Droplets, Sparkles, Scissors } from "lucide-react";
+import { ArrowLeft, Check, Droplets, Sparkles, Scissors, CreditCard } from "lucide-react";
 import type { ConsultationCategory } from "@/types/consultation";
 
 interface QuestionnaireProps {
@@ -15,12 +15,14 @@ const categoryLabels: Record<NonNullable<ConsultationCategory>, { label: string;
   skincare: { label: "스킨 케어", icon: Droplets },
   beauty: { label: "뷰티", icon: Sparkles },
   hair: { label: "헤어", icon: Scissors },
+  general: { label: "멘토 상담 상품", icon: CreditCard },
 };
 
 const questionsByCategory: Record<NonNullable<ConsultationCategory>, string[]> = {
   skincare: ["현재 피부 고민이나 관심사가 무엇인가요?", "현재 사용 중인 스킨케어 제품이 있다면 알려주세요.", "피부 관련 알레르기나 민감한 성분이 있나요?"],
   beauty: ["평소 메이크업 스타일이나 선호하는 룩이 있나요?", "퍼스널 컬러 진단을 받아보신 적이 있나요?", "메이크업 관련해서 가장 어려운 점이 무엇인가요?"],
   hair: ["현재 헤어 스타일에서 불만족스러운 점이 있나요?", "선호하는 헤어 스타일이나 참고 이미지가 있나요?", "두피나 모발 관련 고민이 있다면 알려주세요."],
+  general: ["현재 고민이나 관심사가 무엇인가요?", "상담을 통해 얻고 싶은 것이 무엇인가요?", "추가로 공유하고 싶은 정보가 있다면 알려주세요."],
 };
 
 export function Questionnaire({ answers, selectedCategory, onAnswerChange, onSubmitSurvey, onPrev, canProceed }: QuestionnaireProps) {
@@ -76,13 +78,10 @@ export function Questionnaire({ answers, selectedCategory, onAnswerChange, onSub
   }, [answers, onAnswerChange, questions]);
 
   const handleSubmitAnswers = () => {
-    const payload = {
-      category: selectedCategory,
-      items: questions.map((question, index) => ({
-        question,
-        answer: answers[index] ?? "",
-      })),
-    };
+    const payload = questions.map((question, index) => ({
+      question,
+      answer: answers[index] ?? "",
+    }));
     const surveyData = JSON.stringify(payload);
     localStorage.setItem(storageKey, surveyData);
     onSubmitSurvey(surveyData);

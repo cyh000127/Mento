@@ -34,7 +34,6 @@ export default function PaymentCallbackPage() {
 
     ensureToken()
       .then(() => {
-        console.log("[결제 승인] payload:", { paymentId, pgToken });
         return approvePaymentReservation({ paymentId, pgToken });
       })
       .then((data) => {

@@ -1,8 +1,8 @@
-export type ConsultationCategory = "skincare" | "beauty" | "hair" // 순수 도메인 카테고리 
+export type ConsultationCategory = "skincare" | "beauty" | "hair" | "general" // 순수 도메인 카테고리 
 
 export type ConsultationCategoryValue = ConsultationCategory | null  //UI / 선택 상태용 카테고리
 
-export type ConsultationStatus = "scheduled" | "completed" | "cancelled"
+export type ConsultationStatus = "pending" | "scheduled" | "completed" | "cancelled"
 
 export type PeriodFilter = "1month" | "3months" | "6months" | "12months"
 
@@ -17,13 +17,20 @@ export interface Consultation {
   expertName?: string
   expertTitle?: string
   preConsultationQA?: PreConsultationQA[]
+  surveyInfo?: ConsultationSurveyInfo
   roomUrl?: string
   memo?: string
+  reservationId?: number
+  paymentId?: number
 }
 
 export interface PreConsultationQA {
   question: string
   answer: string
+}
+
+export interface ConsultationSurveyInfo {
+  surveys: PreConsultationQA[]
 }
 
 // 필터 전용 타입 (UI 관점)
