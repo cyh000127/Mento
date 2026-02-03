@@ -3,13 +3,13 @@ import { persist } from "zustand/middleware"
 import type { User } from "@/types/user"
 
 interface AuthState {
-  accessToken: string | null
-  isLoggedIn: boolean
-  user: User | null
-  logoutTriggered: boolean
-  setAccessToken: (token: string) => void
-  setUser: (user: User) => void
-  logout: () => void
+  accessToken: string | null;
+  isLoggedIn: boolean;
+  user: User | null;
+  logoutTriggered: boolean;
+  setAccessToken: (token: string) => void;
+  setUser: (user: User) => void;
+  logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(

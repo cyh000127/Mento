@@ -7,12 +7,19 @@ const tabs = [
   { id: 'record' as const, label: '녹화' },
 ];
 
-export function SidePanelTabs() {
+type TabType = typeof tabs[number]['id'];
+
+interface SidePanelTabsProps {
+  allowedTabs?: ReadonlyArray<TabType>;
+}
+
+export function SidePanelTabs({ allowedTabs }: SidePanelTabsProps) {
   const { activeTab, setActiveTab } = useConsultationStore();
+  const visibleTabs = allowedTabs ? tabs.filter((tab) => allowedTabs.includes(tab.id)) : tabs;
 
   return (
     <div className="flex w-full border-b border-gray-700">
-      {tabs.map((tab) => (
+      {visibleTabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => setActiveTab(tab.id)}

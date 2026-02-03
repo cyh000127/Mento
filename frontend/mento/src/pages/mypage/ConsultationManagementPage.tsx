@@ -382,15 +382,9 @@ export default function ConsultationManagementPage() {
     setSelectedConsultation(null);
   };
 
-  const handleCancelConsultation = (consultationId: string) => {
-    // In real app, this would call API to cancel consultation
-    console.log("Cancel consultation:", consultationId);
-  };
-
-  const handleEnterRoom = (roomUrl: string) => {
-    // In real app, this would navigate to video consultation room
-    console.log("Enter consultation room:", roomUrl);
-    window.open(roomUrl, "_blank");
+  const handleEnterRoom = (reservationId: number) => {
+    // Navigate to video consultation room
+    navigate(`/consultation-room/${reservationId}`);
   };
 
   const handleBookConsultation = () => {
@@ -465,7 +459,7 @@ export default function ConsultationManagementPage() {
             {/* Consultation List or Empty State */}
             {isSearched ? (
               sortedConsultations.length > 0 ? (
-                <ConsultationList consultations={sortedConsultations} onViewDetail={handleViewDetail} onCancelConsultation={handleCancelConsultation} onEnterRoom={handleEnterRoom} onGoToPayment={handleGoToPayment} />
+                <ConsultationList consultations={sortedConsultations} onViewDetail={handleViewDetail} onEnterRoom={handleEnterRoom} onGoToPayment={handleGoToPayment} />
               ) : (
                 <ConsultationEmpty onBookConsultation={handleBookConsultation} />
               )
