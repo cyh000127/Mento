@@ -61,6 +61,7 @@ pipeline {
                             if (line.startsWith("infra/monitor/")) {
                                 targets << 'monitor'
                             }
+
                         }
 
                         def finalTargets = targets.unique()
@@ -111,6 +112,33 @@ pipeline {
                             sh "docker push ${DOCKERHUB_REPO}:livekit-agent"
                         }
                         sh "docker rmi ${DOCKERHUB_REPO}:livekit-agent || true"
+                    }
+                }
+            }
+        }
+
+        stage('Docker Build & Push (OCR)') {
+            when {
+                expression {
+                    return env.RUN_CD == 'true' && env.EFFECTIVE_TARGET_SERVICES.contains('app')
+                }
+            }
+            steps {
+                echo "===== DOCKERIZING OCR SERVICE ====="
+                script {
+                    dir('infra/ocr') {
+
+                        // 1. Docker 이미지 빌드 (태그: ocr)
+                        sh "docker build -t ${DOCKERHUB_REPO}:ocr ."
+
+                        // 2. Docker Hub 로그인 및 푸시
+                        withCredentials([usernamePassword(credentialsId: "${env.DOCKER_CREDENTIAL_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                            sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+                            sh "docker push ${DOCKERHUB_REPO}:ocr"
+                        }
+
+                        // 3. 로컬에 남은 이미지 삭제 (서버 용량 관리)
+                        sh "docker rmi ${DOCKERHUB_REPO}:ocr || true"
                     }
                 }
             }

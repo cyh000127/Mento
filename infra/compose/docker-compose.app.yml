@@ -187,6 +187,63 @@ services:
       # (3) 운영 데이터: 인증서 저장소
       - /home/ubuntu/app/infra/infra-runtime/certbot/conf:/etc/letsencrypt:ro
 
+  ocr:
+    container_name: ocr
+    image: ${OCR_IMAGE:-ejjem/s14p11a704:ocr}
+    restart: unless-stopped
+    expose:
+      - "1000"
+    env_file:
+      - .env
+    environment:
+      NAVER_OCR_URL: ${NAVER_OCR_URL}
+      NAVER_SECRET_KEY: ${NAVER_SECRET_KEY}
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'    # 이미지 처리 및 API 통신을 고려하여 1.0 할당
+          memory: 2G     # Pillow 등 이미지 처리 라이브러리 메모리 고려
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      # FastAPI가 1000번 포트에서 떠있는지 확인 (curl이 없을 경우를 대비해 python으로 체크 가능)
+      test: [ "CMD-SHELL", "timeout 5s bash -c '< /dev/tcp/127.0.0.1/1000' || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    # 외부 포트 매핑(9200:9200)을 제거하여 외부 노출 차단
+    expose:
+      - "9200"
+    networks:
+      - app-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.0
+    container_name: kibana
+    expose:
+      - "5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - SERVER_BASEPATH="/kibana"
+      - SERVER_REWRITEBASEPATH="false"
+    depends_on:
+      - elasticsearch
+    networks:
+      - app-network
+
 volumes:
   mysql_data:
   redis_data:
