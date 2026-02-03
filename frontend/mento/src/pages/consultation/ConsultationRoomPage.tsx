@@ -19,10 +19,14 @@ export function ConsultationRoomPage() {
     remoteMaskType,
     remoteMaskUpdateSeq,
     sharedMediaFiles,
+    sharedImageUrl,
+    drawCommands,
     connect,
     disconnect,
     sendMaskUpdate,
     sendMediaShare,
+    sendImageShare,
+    sendDrawCommand,
     toggleMic,
     toggleCamera,
     isMicEnabled,
@@ -93,6 +97,11 @@ export function ConsultationRoomPage() {
     reservationId: Number.isNaN(reservationIdNumber ?? NaN) ? null : reservationIdNumber,
     onShare: sendMediaShare,
     incomingSharedFiles: sharedMediaFiles,
+    sharedImageUrl,
+    drawCommands,
+    onShareImage: sendImageShare,
+    onDrawCommand: sendDrawCommand,
+    canDraw: isMentor,
   };
 
   // USER 접근 시 숨겨진 탭이 활성화되지 않도록 초기화

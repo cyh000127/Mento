@@ -7,6 +7,18 @@ export interface SharedMediaFile {
   size?: number;
 }
 
+export interface DrawPoint {
+  x: number;
+  y: number;
+}
+
+export interface DrawCommand {
+  tool: "pen";
+  color: string;
+  lineWidth: number;
+  points: DrawPoint[];
+}
+
 export const MAX_SINGLE_FILE_BYTES = 100 * 1024 * 1024;
 export const MAX_TOTAL_BYTES = 500 * 1024 * 1024;
 export const ALLOWED_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"] as const;

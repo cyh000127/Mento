@@ -3,7 +3,7 @@ import { Room, RoomEvent, RemoteParticipant, LocalParticipant } from "livekit-cl
 import { createConsultationSession } from "@/api/consultationSessionApi";
 import type { ConsultationSessionData } from "@/types/consultation";
 import type { MaskType } from "@/hooks/useFaceMask";
-import type { MediaFileType, SharedMediaFile } from "@/types/consultationMedia";
+import type { MediaFileType, SharedMediaFile, DrawCommand } from "@/types/consultationMedia";
 
 export type ConnectionState = "disconnected" | "connecting" | "connected" | "error";
 
@@ -21,12 +21,16 @@ export interface UseConsultationSessionReturn {
   remoteMaskType: MaskType;
   remoteMaskUpdateSeq: number;
   sharedMediaFiles: SharedMediaFile[];
+  sharedImageUrl: string | null;
+  drawCommands: DrawCommand[];
 
   // 연결 제어
   connect: (reservationId: number) => Promise<void>;
   disconnect: () => void;
   sendMaskUpdate: (maskType: MaskType) => void;
   sendMediaShare: (files: SharedMediaFile[]) => void;
+  sendImageShare: (imageUrl: string) => void;
+  sendDrawCommand: (command: DrawCommand) => void;
 
   // 미디어 제어
   toggleMic: () => Promise<void>;
@@ -53,6 +57,8 @@ export function useConsultationSession(): UseConsultationSessionReturn {
   const [remoteMaskType, setRemoteMaskType] = useState<MaskType>(null);
   const [remoteMaskUpdateSeq, setRemoteMaskUpdateSeq] = useState(0);
   const [sharedMediaFiles, setSharedMediaFiles] = useState<SharedMediaFile[]>([]);
+  const [sharedImageUrl, setSharedImageUrl] = useState<string | null>(null);
+  const [drawCommands, setDrawCommands] = useState<DrawCommand[]>([]);
   const [isMicEnabled, setIsMicEnabled] = useState(true);
   const [isCameraEnabled, setIsCameraEnabled] = useState(true);
 
@@ -98,6 +104,43 @@ export function useConsultationSession(): UseConsultationSessionReturn {
       return files.length > 0 ? files : undefined;
     } catch (error) {
       console.warn("⚠️ 미디어 데이터 파싱 실패:", error);
+      return undefined;
+    }
+  };
+
+  const parseImageShare = (payload: Uint8Array): string | undefined => {
+    try {
+      const text = new TextDecoder().decode(payload);
+      const data = JSON.parse(text) as { type?: string; imageUrl?: unknown };
+      if (data?.type !== "IMAGE_SHARED") return undefined;
+      if (typeof data.imageUrl !== "string") return undefined;
+      return data.imageUrl;
+    } catch (error) {
+      console.warn("⚠️ 이미지 공유 데이터 파싱 실패:", error);
+      return undefined;
+    }
+  };
+
+  const parseDrawCommand = (payload: Uint8Array): DrawCommand | undefined => {
+    try {
+      const text = new TextDecoder().decode(payload);
+      const data = JSON.parse(text) as { type?: string; tool?: unknown; color?: unknown; lineWidth?: unknown; points?: unknown };
+      if (data?.type !== "DRAW") return undefined;
+      if (data.tool !== "pen") return undefined;
+      if (typeof data.color !== "string") return undefined;
+      if (typeof data.lineWidth !== "number") return undefined;
+      if (!Array.isArray(data.points)) return undefined;
+      const points = data.points
+        .map((point) => {
+          const record = point as { x?: unknown; y?: unknown };
+          if (typeof record.x !== "number" || typeof record.y !== "number") return null;
+          return { x: record.x, y: record.y };
+        })
+        .filter((point): point is { x: number; y: number } => Boolean(point));
+      if (points.length < 2) return undefined;
+      return { tool: "pen", color: data.color, lineWidth: data.lineWidth, points };
+    } catch (error) {
+      console.warn("⚠️ 드로잉 데이터 파싱 실패:", error);
       return undefined;
     }
   };
@@ -202,18 +245,31 @@ export function useConsultationSession(): UseConsultationSessionReturn {
           }
 
           const sharedFiles = parseMediaShare(payload);
-          if (!sharedFiles) return;
-          setSharedMediaFiles((prev) => {
-            const existing = new Set(prev.map((file) => file.fileUrl));
-            const merged = [...prev];
-            sharedFiles.forEach((file) => {
-              if (!existing.has(file.fileUrl)) {
-                existing.add(file.fileUrl);
-                merged.push(file);
-              }
+          if (sharedFiles) {
+            setSharedMediaFiles((prev) => {
+              const existing = new Set(prev.map((file) => file.fileUrl));
+              const merged = [...prev];
+              sharedFiles.forEach((file) => {
+                if (!existing.has(file.fileUrl)) {
+                  existing.add(file.fileUrl);
+                  merged.push(file);
+                }
+              });
+              return merged;
             });
-            return merged;
-          });
+            return;
+          }
+
+          const imageUrl = parseImageShare(payload);
+          if (imageUrl) {
+            setSharedImageUrl(imageUrl);
+            setDrawCommands([]);
+            return;
+          }
+
+          const drawCommand = parseDrawCommand(payload);
+          if (!drawCommand) return;
+          setDrawCommands((prev) => [...prev, drawCommand]);
         });
 
         // 원격 참가자 퇴장
@@ -256,6 +312,8 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         setRemoteMaskType(null);
         setRemoteMaskUpdateSeq(0);
         setSharedMediaFiles([]);
+        setSharedImageUrl(null);
+        setDrawCommands([]);
 
         isConnecting.current = false;
         console.log("✅ 상담 세션 연결 완료");
@@ -284,6 +342,8 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     setConnectionState("disconnected");
     setSessionData(null);
     setSharedMediaFiles([]);
+    setSharedImageUrl(null);
+    setDrawCommands([]);
     setError(null);
     isConnecting.current = false;
     processedReservationId.current = null;
@@ -296,6 +356,34 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     (maskType: MaskType) => {
       if (!room) return;
       const payload = { type: "MASK_UPDATE", value: maskType };
+      const data = new TextEncoder().encode(JSON.stringify(payload));
+      room.localParticipant.publishData(data, { reliable: true });
+    },
+    [room]
+  );
+
+  /**
+   * 이미지 공유 데이터 전송 (DataChannel)
+   */
+  const sendImageShare = useCallback(
+    (imageUrl: string) => {
+      setSharedImageUrl(imageUrl);
+      setDrawCommands([]);
+      if (!room) return;
+      const payload = { type: "IMAGE_SHARED", imageUrl };
+      const data = new TextEncoder().encode(JSON.stringify(payload));
+      room.localParticipant.publishData(data, { reliable: true });
+    },
+    [room]
+  );
+
+  /**
+   * 드로잉 데이터 전송 (DataChannel)
+   */
+  const sendDrawCommand = useCallback(
+    (command: DrawCommand) => {
+      if (!room) return;
+      const payload = { type: "DRAW", ...command };
       const data = new TextEncoder().encode(JSON.stringify(payload));
       room.localParticipant.publishData(data, { reliable: true });
     },
@@ -358,10 +446,14 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     remoteMaskType,
     remoteMaskUpdateSeq,
     sharedMediaFiles,
+    sharedImageUrl,
+    drawCommands,
     connect,
     disconnect,
     sendMaskUpdate,
     sendMediaShare,
+    sendImageShare,
+    sendDrawCommand,
     toggleMic,
     toggleCamera,
     isMicEnabled,

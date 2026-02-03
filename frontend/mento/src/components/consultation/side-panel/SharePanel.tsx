@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, type ChangeEvent } from "react";
+import { useRef, useState, useEffect, type ChangeEvent, type PointerEvent } from "react";
 import { uploadConsultationMedia } from "@/api/consultationMediaApi";
 import {
   ALLOWED_IMAGE_EXTENSIONS,
@@ -6,12 +6,19 @@ import {
   MAX_SINGLE_FILE_BYTES,
   MAX_TOTAL_BYTES,
   type SharedMediaFile,
+  type DrawCommand,
+  type DrawPoint,
 } from "@/types/consultationMedia";
 
 export interface SharePanelProps {
   reservationId: number | null;
   onShare: (files: Array<Pick<SharedMediaFile, "fileUrl" | "fileType">>) => void;
   incomingSharedFiles: SharedMediaFile[];
+  sharedImageUrl: string | null;
+  drawCommands: DrawCommand[];
+  onShareImage: (imageUrl: string) => void;
+  onDrawCommand: (command: DrawCommand) => void;
+  canDraw?: boolean;
 }
 
 const getFileExtension = (name: string) => {
@@ -56,8 +63,29 @@ const mergeSharedItems = (current: SharedMediaFile[], incoming: SharedMediaFile[
   return next;
 };
 
-export function SharePanel({ reservationId, onShare, incomingSharedFiles }: SharePanelProps) {
+const PEN_COLOR = "#ff3b30";
+const PEN_LINE_WIDTH = 4;
+const SEND_INTERVAL_MS = 60;
+
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
+export function SharePanel({
+  reservationId,
+  onShare,
+  incomingSharedFiles,
+  sharedImageUrl,
+  drawCommands,
+  onShareImage,
+  onDrawCommand,
+  canDraw = false,
+}: SharePanelProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const isDrawingRef = useRef(false);
+  const pendingPointsRef = useRef<DrawPoint[]>([]);
+  const lastSendAtRef = useRef(0);
+  const processedDrawIndexRef = useRef(0);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -66,6 +94,86 @@ export function SharePanel({ reservationId, onShare, incomingSharedFiles }: Shar
   useEffect(() => {
     setSharedItems((prev) => mergeSharedItems(prev, incomingSharedFiles));
   }, [incomingSharedFiles]);
+
+  useEffect(() => {
+    processedDrawIndexRef.current = 0;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }, [sharedImageUrl]);
+
+  const drawCommandOnCanvas = (command: DrawCommand) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    if (command.points.length < 2) return;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    ctx.strokeStyle = command.color;
+    ctx.lineWidth = command.lineWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    ctx.beginPath();
+    command.points.forEach((point, index) => {
+      const x = point.x * rect.width;
+      const y = point.y * rect.height;
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  };
+
+  const renderAllCommands = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawCommands.forEach(drawCommandOnCanvas);
+    processedDrawIndexRef.current = drawCommands.length;
+  };
+
+  useEffect(() => {
+    if (!sharedImageUrl) return;
+    const newCommands = drawCommands.slice(processedDrawIndexRef.current);
+    if (newCommands.length === 0) return;
+    newCommands.forEach(drawCommandOnCanvas);
+    processedDrawIndexRef.current = drawCommands.length;
+  }, [drawCommands, sharedImageUrl]);
+
+  useEffect(() => {
+    const image = imageRef.current;
+    const canvas = canvasRef.current;
+    if (!image || !canvas) return;
+
+    const updateCanvasSize = () => {
+      const rect = image.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      canvas.width = Math.floor(rect.width * dpr);
+      canvas.height = Math.floor(rect.height * dpr);
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        renderAllCommands();
+      }
+    };
+
+    updateCanvasSize();
+    const observer = new ResizeObserver(updateCanvasSize);
+    observer.observe(image);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [sharedImageUrl, drawCommands]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
@@ -119,7 +227,8 @@ export function SharePanel({ reservationId, onShare, incomingSharedFiles }: Shar
           return { fileUrl: item, fileType, name: selectedFiles[index]?.name, size: selectedFiles[index]?.size };
         }
         const record = item as { fileUrl?: string };
-        const fileUrl = record.fileUrl ?? "";
+        const rawUrl = record.fileUrl ?? "";
+        const fileUrl = rawUrl ? rawUrl.replace(/^.*?(?=\/reservations)/, "https://pub-e67da594a346412f91ba6f351d463038.r2.dev") : "";
         const fileType = resolveFileType(selectedFiles[index]) ?? "IMAGE";
         return { fileUrl, fileType, name: selectedFiles[index]?.name, size: selectedFiles[index]?.size };
       });
@@ -131,6 +240,10 @@ export function SharePanel({ reservationId, onShare, incomingSharedFiles }: Shar
 
       setSharedItems((prev) => mergeSharedItems(prev, validItems));
       onShare(validItems.map(({ fileUrl, fileType }) => ({ fileUrl, fileType })));
+      const firstImage = validItems.find((item) => item.fileType === "IMAGE");
+      if (firstImage) {
+        onShareImage(firstImage.fileUrl);
+      }
       setSelectedFiles([]);
       if (inputRef.current) {
         inputRef.current.value = "";
@@ -145,6 +258,73 @@ export function SharePanel({ reservationId, onShare, incomingSharedFiles }: Shar
 
   const handleBrowseClick = () => {
     inputRef.current?.click();
+  };
+
+  const getNormalizedPoint = (event: PointerEvent<HTMLCanvasElement>): DrawPoint => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      return { x: 0, y: 0 };
+    }
+    const x = clamp((event.clientX - rect.left) / rect.width, 0, 1);
+    const y = clamp((event.clientY - rect.top) / rect.height, 0, 1);
+    return { x, y };
+  };
+
+  const drawLocalSegment = (from: DrawPoint, to: DrawPoint) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    ctx.strokeStyle = PEN_COLOR;
+    ctx.lineWidth = PEN_LINE_WIDTH;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(from.x * rect.width, from.y * rect.height);
+    ctx.lineTo(to.x * rect.width, to.y * rect.height);
+    ctx.stroke();
+  };
+
+  const flushPendingPoints = (force = false) => {
+    if (pendingPointsRef.current.length < 2) return;
+    const now = Date.now();
+    if (!force && now - lastSendAtRef.current < SEND_INTERVAL_MS) return;
+    const points = [...pendingPointsRef.current];
+    onDrawCommand({
+      tool: "pen",
+      color: PEN_COLOR,
+      lineWidth: PEN_LINE_WIDTH,
+      points,
+    });
+    lastSendAtRef.current = now;
+    pendingPointsRef.current = [points[points.length - 1]];
+  };
+
+  const handlePointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (!canDraw || !sharedImageUrl) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    isDrawingRef.current = true;
+    const point = getNormalizedPoint(event);
+    pendingPointsRef.current = [point];
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current || !canDraw || !sharedImageUrl) return;
+    const point = getNormalizedPoint(event);
+    const prevPoint = pendingPointsRef.current[pendingPointsRef.current.length - 1];
+    pendingPointsRef.current.push(point);
+    drawLocalSegment(prevPoint, point);
+    flushPendingPoints();
+  };
+
+  const finishDrawing = () => {
+    if (!isDrawingRef.current) return;
+    isDrawingRef.current = false;
+    flushPendingPoints(true);
+    pendingPointsRef.current = [];
   };
 
   return (
@@ -274,6 +454,32 @@ export function SharePanel({ reservationId, onShare, incomingSharedFiles }: Shar
               />
             </svg>
             <p className="text-sm text-red-300">{errorMessage}</p>
+          </div>
+        )}
+
+        {/* 공유 이미지 + 캔버스 */} 
+        {sharedImageUrl ? (
+          <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-3 space-y-2">
+            <div className="relative w-full">
+              <img ref={imageRef} src={sharedImageUrl} alt="shared" className="w-full rounded-md" />
+              <canvas
+                ref={canvasRef}
+                className={`absolute top-0 left-0 rounded-md ${canDraw ? "cursor-crosshair" : "pointer-events-none"}`}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={finishDrawing}
+                onPointerLeave={finishDrawing}
+                onPointerCancel={finishDrawing}
+              />
+            </div>
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span>실시간 드로잉 공유</span>
+              <span>{canDraw ? "그리기 가능" : "보기 전용"}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-gray-800 bg-gray-900/30 p-3 text-xs text-gray-500">
+            공유된 이미지가 없습니다.
           </div>
         )}
       </div>
