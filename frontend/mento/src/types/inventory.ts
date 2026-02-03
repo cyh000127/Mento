@@ -103,3 +103,43 @@ export interface InventoryItemDetailResponse {
     purchaseCount: number
   }
 }
+
+// 인벤토리 히스토리 액션 타입
+export type ActionType = "CREATED" | "EXPIRED" | "DELETED"
+
+// 인벤토리 히스토리 아이템
+export interface InventoryHistoryItem {
+  historyId: number
+  userId: number
+  productId: number
+  productName: string
+  brandName: string
+  imageUrl: string
+  actionType: ActionType
+  actionDescription: string
+  createdAt: string
+}
+
+// 인벤토리 히스토리 응답 타입
+export interface InventoryHistoryResponse {
+  success: boolean
+  data: {
+    content: InventoryHistoryItem[]
+    page: number
+    size: number
+    totalElements: number
+    totalPages: number
+    hasNext: boolean
+    isFirst: boolean
+    isLast: boolean
+  }
+}
+
+// 인벤토리 히스토리 필터 타입
+export interface InventoryHistoryFilters {
+  page?: number
+  size?: number
+  productId?: number
+  startDate?: string // YYYY-MM-DD
+  endDate?: string // YYYY-MM-DD
+}

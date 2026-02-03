@@ -13,6 +13,9 @@ import type {
   AddInventoryItemRequest,
   AddInventoryItemResponse,
   InventoryItemDetailResponse,
+  InventoryHistoryFilters,
+  InventoryHistoryResponse,
+  ActionType,
 } from "@/types/inventory"
 
 /**
@@ -264,3 +267,43 @@ export function getStatusUpdateErrorMessage(error: any): string {
 
   return "상태 변경 중 오류가 발생했습니다."
 }
+
+/**
+ * 액션 타입 한국어 라벨 매핑
+ */
+export const ACTION_TYPE_LABELS: Record<ActionType, string> = {
+  CREATED: "인벤토리에 추가됨",
+  EXPIRED: "사용 기간 만료",
+  DELETED: "인벤토리에서 제거됨",
+}
+
+/**
+ * 인벤토리 히스토리 조회 API
+ */
+export async function getInventoryHistories(
+  filters: InventoryHistoryFilters = {}
+): Promise<InventoryHistoryResponse> {
+  const params = new URLSearchParams()
+
+  if (filters.page !== undefined) params.append("page", filters.page.toString())
+  if (filters.size !== undefined) params.append("size", filters.size.toString())
+  if (filters.productId !== undefined) params.append("productId", filters.productId.toString())
+  if (filters.startDate) params.append("startDate", filters.startDate)
+  if (filters.endDate) params.append("endDate", filters.endDate)
+
+  try {
+    const response = await api.get<InventoryHistoryResponse["data"]>(
+      `/items/histories?${params.toString()}`
+    )
+    return {
+      success: true,
+      data: response.data,
+    }
+  } catch (error: any) {
+    console.error("인벤토리 히스토리 조회 에러:", error)
+    console.error("에러 상태:", error.response?.status)
+    console.error("에러 응답:", error.response?.data)
+    throw error
+  }
+}
+
