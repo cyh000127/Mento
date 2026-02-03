@@ -36,6 +36,28 @@ export async function getInventoryItems(filters: InventoryFilters = {}): Promise
 }
 
 /**
+ * 고객 인벤토리 목록 조회 API
+ */
+export async function getCustomerInventory(
+  userId: number,
+  filters: InventoryFilters = {}
+): Promise<InventoryResponse> {
+  const params = new URLSearchParams()
+
+  if (filters.page !== undefined) params.append("page", filters.page.toString())
+  if (filters.size !== undefined) params.append("size", filters.size.toString())
+  if (filters.category) params.append("category", filters.category)
+  if (filters.status) params.append("status", filters.status)
+  if (filters.isFavorite !== undefined) params.append("isFavorite", filters.isFavorite.toString())
+  if (filters.sort) params.append("sort", filters.sort)
+
+  const response = await api.get<InventoryResponse>(
+    `/users/${userId}/items?${params.toString()}`
+  )
+  return response.data
+}
+
+/**
  * 상태 전환 규칙 정의
  */
 export const STATUS_TRANSITION_RULES: Record<ItemStatus, ItemStatus[]> = {
