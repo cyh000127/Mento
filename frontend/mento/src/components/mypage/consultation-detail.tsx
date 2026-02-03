@@ -5,9 +5,11 @@ import type { Consultation, ConsultationStatus } from "@/types/consultation"
 interface ConsultationDetailProps {
   consultation: Consultation
   onBack: () => void
+  onGoToPayment?: (consultation: Consultation) => void
 }
 
 const statusLabels: Record<ConsultationStatus, string> = {
+  pending: "결제 대기 중",
   scheduled: "예약 완료",
   completed: "상담 완료",
   cancelled: "예약 취소됨",
@@ -16,6 +18,7 @@ const statusLabels: Record<ConsultationStatus, string> = {
 export function ConsultationDetail({
   consultation,
   onBack,
+  onGoToPayment,
 }: ConsultationDetailProps) {
   const formatDateTime = (dateStr: string, timeStr: string) => {
     return `${dateStr.replace(/-/g, ".")} ${timeStr}`
@@ -56,9 +59,20 @@ export function ConsultationDetail({
             {/* Status Row */}
             <div className="flex items-start gap-20">
               <span className="text-sm font-medium text-foreground min-w-[80px]">상태</span>
-              <span className="text-sm text-foreground">
-                {statusLabels[consultation.status]}
-              </span>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-foreground">
+                  {statusLabels[consultation.status]}
+                </span>
+                {consultation.status === "pending" && onGoToPayment && (
+                  <Button 
+                    size="sm" 
+                    onClick={() => onGoToPayment(consultation)} 
+                    className="bg-primary-500 text-white hover:bg-primary-600"
+                  >
+                    결제하기
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Pre-Consultation Q&A */}

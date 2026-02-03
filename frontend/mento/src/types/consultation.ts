@@ -2,7 +2,7 @@ export type ConsultationCategory = "skincare" | "beauty" | "hair" // 순수 도�
 
 export type ConsultationCategoryValue = ConsultationCategory | null  //UI / 선택 상태용 카테고리
 
-export type ConsultationStatus = "scheduled" | "completed" | "cancelled"
+export type ConsultationStatus = "pending" | "scheduled" | "completed" | "cancelled"
 
 export type PeriodFilter = "1month" | "3months" | "6months" | "12months"
 
@@ -20,6 +20,8 @@ export interface Consultation {
   surveyInfo?: ConsultationSurveyInfo
   roomUrl?: string
   memo?: string
+  reservationId?: number
+  paymentId?: number
 }
 
 export interface PreConsultationQA {

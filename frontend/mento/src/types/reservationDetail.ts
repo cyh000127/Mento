@@ -12,6 +12,7 @@ export interface ReservationDetailMentorTypeInfo {
   mentorTypeId: number
   mentorTypeName: string
   mentorTypeDescription: string
+  price?: number
 }
 
 export interface ReservationDetailSurveyItem {

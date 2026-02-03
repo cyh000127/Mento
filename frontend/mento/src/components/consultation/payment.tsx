@@ -11,10 +11,10 @@ interface PaymentProps {
   onPaymentReady: () => void;
 }
 
-const categoryLabels: Record<NonNullable<ConsultationCategory>, { label: string; icon: typeof Droplets; price: string }> = {
-  skincare: { label: "스킨 케어", icon: Droplets, price: "35,000" },
-  beauty: { label: "뷰티", icon: Sparkles, price: "35,000" },
-  hair: { label: "헤어", icon: Scissors, price: "35,000" },
+const categoryLabels: Record<NonNullable<ConsultationCategory>, { label: string; icon: typeof Droplets }> = {
+  skincare: { label: "스킨 케어", icon: Droplets },
+  beauty: { label: "뷰티", icon: Sparkles },
+  hair: { label: "헤어", icon: Scissors },
 };
 
 export function Payment({ bookingData, onPrev, onPaymentReady }: PaymentProps) {
@@ -60,7 +60,7 @@ export function Payment({ bookingData, onPrev, onPaymentReady }: PaymentProps) {
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-text-secondary">상담료</p>
-                    <p className="text-lg font-bold text-text-primary">{categoryInfo.price}원</p>
+                    <p className="text-lg font-bold text-text-primary">35,000원</p>
                   </div>
                 </div>
               )}
@@ -92,7 +92,7 @@ export function Payment({ bookingData, onPrev, onPaymentReady }: PaymentProps) {
             <div className="mt-6 space-y-3 border-t border-border pt-6">
               <div className="flex items-center justify-between text-text-secondary">
                 <span>상담료</span>
-                <span className="font-medium">{categoryInfo?.price}원</span>
+                <span className="font-medium">35,000원</span>
               </div>
               <div className="flex items-center justify-between text-text-secondary">
                 <span>할인</span>
@@ -100,7 +100,7 @@ export function Payment({ bookingData, onPrev, onPaymentReady }: PaymentProps) {
               </div>
               <div className="flex items-center justify-between border-t border-border pt-3 text-lg font-bold text-text-primary">
                 <span>총 결제 금액</span>
-                <span className="text-primary-500">{categoryInfo?.price}원</span>
+                <span className="text-primary-500">35,000원</span>
               </div>
             </div>
           </div>

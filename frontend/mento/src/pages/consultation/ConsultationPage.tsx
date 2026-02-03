@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CategorySelection } from "@/components/consultation/category-selection";
 import { DateTimeSelection } from "@/components/consultation/date-time-selection";
@@ -61,6 +60,7 @@ export default function ConsultationPage() {
     paymentId: null,
   });
   const [answers, setAnswers] = useState<string[]>([]);
+  const paymentLoadingRef = useRef(false);
 
   const resetSurveyState = () => {
     setAnswers([]);
@@ -69,11 +69,72 @@ export default function ConsultationPage() {
   };
 
   useEffect(() => {
-    const state = location.state as { step?: number } | null;
+    const state = location.state as { step?: number; reservationId?: number } | null;
     if (state?.step === 5) {
       setCurrentStep(5);
+      return;
     }
-  }, [location.state]);
+    if (state?.step === 4 && state?.reservationId) {
+      const targetReservationId = state.reservationId;
+      
+      // 중복 로딩 방지
+      if (paymentLoadingRef.current) {
+        console.log(`[중복 방지] 이미 로딩 중`);
+        return;
+      }
+      
+      // 결제 페이지로 바로 진입 시 예약 정보 로드
+      const loadReservationForPayment = async () => {
+        paymentLoadingRef.current = true;
+        
+        try {
+          const { getReservationDetail } = await import("@/api/reservationApi");
+          console.log(`[결제 정보 로드] 예약 ID: ${targetReservationId}`);
+          const detail = await getReservationDetail(targetReservationId);
+          
+          // 카테고리 매핑 (mentorTypeName -> ConsultationCategory)
+          let category: ConsultationCategory | null = null;
+          const mentorTypeName = detail.mentorTypeInfo?.mentorTypeName?.toLowerCase();
+          if (mentorTypeName?.includes("스킨케어") || mentorTypeName?.includes("skincare")) {
+            category = "skincare";
+          } else if (mentorTypeName?.includes("뷰티") || mentorTypeName?.includes("beauty")) {
+            category = "beauty";
+          } else if (mentorTypeName?.includes("헤어") || mentorTypeName?.includes("hair")) {
+            category = "hair";
+          }
+          
+          setBookingData((prev) => ({
+            ...prev,
+            category,
+            reservationId: detail.reservationId,
+            date: detail.scheduledDate ? new Date(detail.scheduledDate) : null,
+            time: detail.scheduledTime ?? "",
+            draftSlotInfo: {
+              timetableId: detail.timetableId,
+              slotId: 0, // 실제 slotId는 예약에 포함되어 있지 않음
+              scheduledTime: detail.scheduledTime ?? "",
+              price: detail.mentorTypeInfo?.price ?? 10000, // 기본값 또는 API에서 받아온 가격
+              maxCapacity: 1,
+              currentCapacity: 1,
+              availableCapacity: 0,
+              status: "CONFIRMED",
+            },
+          }));
+          setCurrentStep(4);
+          console.log(`[결제 정보 로드 완료]`);
+        } catch (error) {
+          console.error("예약 정보 로드 실패:", error);
+          navigate("/mypage/consultations");
+        } finally {
+          // 다음 프레임에서 플래그 해제 (상태 업데이트 완료 후)
+          setTimeout(() => {
+            paymentLoadingRef.current = false;
+          }, 100);
+        }
+      };
+      loadReservationForPayment();
+    }
+  }, [location.state, navigate]);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("consultationBookingData");

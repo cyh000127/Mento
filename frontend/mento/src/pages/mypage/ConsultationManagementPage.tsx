@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { MyPageSidebar } from "@/components/mypage/mypage-sidebar";
 import { PeriodDateFilters } from "@/components/mypage/consultation-filters";
 import { ConsultationCategoryFilter } from "@/components/mypage/consultation-category-filter";
@@ -36,6 +37,14 @@ const mapReservationStatusToConsultationStatus = (status: string): ConsultationS
 
   if (normalizedStatus.includes("complete")) {
     return "completed";
+  }
+
+  if (normalizedStatus.includes("in_progress") || normalizedStatus.includes("inprogress")) {
+    return "pending";
+  }
+
+  if (normalizedStatus.includes("confirmed")) {
+    return "scheduled";
   }
 
   return "scheduled";
@@ -96,6 +105,7 @@ const mapReservationToConsultation = (reservation: ReservationListItem): Consult
     status: mapReservationStatusToConsultationStatus(reservation.status),
     mentorTypeName: reservation.mentorType.name,
     memo: reservation.mentorType.description,
+    reservationId: reservation.reservationId,
   };
 };
 
@@ -112,9 +122,10 @@ const mapReservationDetailToConsultation = (reservation: ReservationDetailData):
     id: reservation.reservationId.toString(),
     scheduledDate: date,
     scheduledTime: time,
-    status: reservation.reservationStatus as ConsultationStatus,
+    status: mapReservationStatusToConsultationStatus(reservation.reservationStatus),
     preConsultationQA,
     surveyInfo: preConsultationQA ? { surveys: preConsultationQA } : undefined,
+    reservationId: reservation.reservationId,
   };
 
   if (reservation.mentorInfo) {
@@ -130,6 +141,7 @@ const mapReservationDetailToConsultation = (reservation: ReservationDetailData):
 };
 
 export default function ConsultationManagementPage() {
+  const navigate = useNavigate();
   const { user, accessToken } = useAuthStore();
   const lastRequestKeyRef = useRef<string | null>(null);
   const isFetchingRef = useRef(false);
@@ -327,6 +339,14 @@ export default function ConsultationManagementPage() {
     const cached = detailCacheRef.current.get(reservationId);
     if (cached) {
       setSelectedConsultation(cached);
+      // 캐시된 데이터로 목록도 업데이트
+      setConsultations((prev) =>
+        prev.map((item) =>
+          item.id === consultation.id
+            ? { ...item, status: cached.status }
+            : item
+        )
+      );
       return;
     }
 
@@ -341,6 +361,15 @@ export default function ConsultationManagementPage() {
       const mapped = mapReservationDetailToConsultation(detail);
       detailCacheRef.current.set(reservationId, mapped);
       setSelectedConsultation(mapped);
+
+      // 목록의 해당 항목도 업데이트 (status 동기화)
+      setConsultations((prev) =>
+        prev.map((item) =>
+          item.id === consultation.id
+            ? { ...item, status: mapped.status }
+            : item
+        )
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error(message);
@@ -369,6 +398,20 @@ export default function ConsultationManagementPage() {
     console.log("Navigate to booking page");
   };
 
+  const handleGoToPayment = (consultation: Consultation) => {
+    if (!consultation.reservationId) {
+      console.error("예약 ID가 없습니다");
+      return;
+    }
+    // 결제 페이지로 이동 - 예약 ID와 함께 상담 예약 페이지로 이동
+    navigate("/consultation", { 
+      state: { 
+        reservationId: consultation.reservationId,
+        step: 4 // 결제 단계
+      } 
+    });
+  };
+
   // Show detail view if consultation is selected
   if (selectedConsultation) {
     return (
@@ -376,7 +419,7 @@ export default function ConsultationManagementPage() {
         <div className="flex w-full max-w-[1200px]">
           <MyPageSidebar />
           <div className="flex-1">
-            <ConsultationDetail consultation={selectedConsultation} onBack={handleBackToList} />
+            <ConsultationDetail consultation={selectedConsultation} onBack={handleBackToList} onGoToPayment={handleGoToPayment} />
           </div>
         </div>
       </div>
@@ -422,7 +465,7 @@ export default function ConsultationManagementPage() {
             {/* Consultation List or Empty State */}
             {isSearched ? (
               sortedConsultations.length > 0 ? (
-                <ConsultationList consultations={sortedConsultations} onViewDetail={handleViewDetail} onCancelConsultation={handleCancelConsultation} onEnterRoom={handleEnterRoom} />
+                <ConsultationList consultations={sortedConsultations} onViewDetail={handleViewDetail} onCancelConsultation={handleCancelConsultation} onEnterRoom={handleEnterRoom} onGoToPayment={handleGoToPayment} />
               ) : (
                 <ConsultationEmpty onBookConsultation={handleBookConsultation} />
               )
