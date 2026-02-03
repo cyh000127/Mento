@@ -1,5 +1,6 @@
 package com.mento.domain.product.converter;
 
+import com.mento.common.converter.JsonStringConverter;
 import com.mento.domain.brand.entity.Brand;
 import com.mento.domain.product.dto.common.ProductInfoDto;
 import com.mento.domain.product.dto.request.ProductCreateReqDto;
