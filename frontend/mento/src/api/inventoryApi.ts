@@ -17,6 +17,7 @@ import type {
   InventoryHistoryResponse,
   ActionType,
 } from "@/types/inventory"
+import type { ApiResponse, ProductListItem } from "@/types/product"
 
 /**
  * 인벤토리 목록 조회 API
@@ -165,6 +166,25 @@ export async function addInventoryItem(request: AddInventoryItemRequest): Promis
     console.error("인벤토리 추가 에러:", error)
     console.error("에러 상태:", error.response?.status)
     console.error("에러 응답:", error.response?.data)
+    throw error
+  }
+}
+
+/**
+ * 이미지 기반 상품 인식 API
+ */
+export async function recognizeProductByImage(
+  imageUrl: string
+): Promise<ApiResponse<ProductListItem>> {
+  try {
+    const response = await api.post<ApiResponse<ProductListItem>>("/products/recognize", {
+      imageUrl,
+    })
+    return response.data
+  } catch (error: any) {
+    if (error.response?.data) {
+      return error.response.data
+    }
     throw error
   }
 }
