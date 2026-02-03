@@ -60,6 +60,7 @@ services:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: cadvisor
     restart: unless-stopped
+    privileged: true
     command:
       - '--url_base_prefix=/cadvisor'
       - '--housekeeping_interval=30s'
@@ -67,12 +68,12 @@ services:
       - '--disable_metrics=disk,diskIO,tcp,udp,percpu,sched,memory_numa'
     volumes:
       - /:/rootfs:ro
-      - /var/run:/var/run:rw
+      - /var/run:/var/run:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
     devices:
-      - /dev/kmsg
+      - /dev/kmsg:/dev/kmsg
     networks:
       - monitoring-network
       - app-network
