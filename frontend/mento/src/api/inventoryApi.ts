@@ -106,7 +106,9 @@ export function mapUiSortToApiSort(uiSort: SortOption): ApiSortOption {
     alphabetical: "OLDEST",
     expiring: "EXPIRING_SOON",
   }
-  return sortMap[uiSort]
+  const apiSort = sortMap[uiSort]
+  console.log(`Mapping UI sort "${uiSort}" to API sort "${apiSort}"`)
+  return apiSort
 }
 
 /**
@@ -189,6 +191,23 @@ export async function getInventoryItemDetail(itemId: string): Promise<InventoryI
     return response.data
   } catch (error: any) {
     console.error("인벤토리 상세 조회 에러:", error)
+    console.error("에러 상태:", error.response?.status)
+    console.error("에러 응답:", error.response?.data)
+    throw error
+  }
+}
+
+/**
+ * 인벤토리 아이템 즐겨찾기 토글 API
+ */
+export async function toggleInventoryItemFavorite(itemId: string): Promise<{ id: number; isFavorite: boolean }> {
+  try {
+    const response = await api.post<{ success: boolean; data: { id: number; isFavorite: boolean } }>(
+      `/items/${itemId}/favorite`
+    )
+    return response.data.data
+  } catch (error: any) {
+    console.error("즐겨찾기 토글 에러:", error)
     console.error("에러 상태:", error.response?.status)
     console.error("에러 응답:", error.response?.data)
     throw error
