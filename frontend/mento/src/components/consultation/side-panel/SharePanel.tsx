@@ -63,8 +63,9 @@ const mergeSharedItems = (current: SharedMediaFile[], incoming: SharedMediaFile[
   return next;
 };
 
-const PEN_COLOR = "#ff3b30";
-const PEN_LINE_WIDTH = 4;
+const DEFAULT_PEN_COLOR = "#ff3b30";
+const DEFAULT_PEN_LINE_WIDTH = 4;
+const PEN_COLORS = ["#ff3b30", "#ff9500", "#ffcc00", "#34c759", "#0a84ff", "#5e5ce6", "#ffffff"] as const;
 const SEND_INTERVAL_MS = 60;
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
@@ -90,6 +91,8 @@ export function SharePanel({
   const [uploading, setUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [sharedItems, setSharedItems] = useState<SharedMediaFile[]>([]);
+  const [penColor, setPenColor] = useState<string>(DEFAULT_PEN_COLOR);
+  const [penLineWidth, setPenLineWidth] = useState<number>(DEFAULT_PEN_LINE_WIDTH);
 
   useEffect(() => {
     setSharedItems((prev) => mergeSharedItems(prev, incomingSharedFiles));
@@ -278,8 +281,8 @@ export function SharePanel({
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
 
-    ctx.strokeStyle = PEN_COLOR;
-    ctx.lineWidth = PEN_LINE_WIDTH;
+    ctx.strokeStyle = penColor;
+    ctx.lineWidth = penLineWidth;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
@@ -295,8 +298,8 @@ export function SharePanel({
     const points = [...pendingPointsRef.current];
     onDrawCommand({
       tool: "pen",
-      color: PEN_COLOR,
-      lineWidth: PEN_LINE_WIDTH,
+      color: penColor,
+      lineWidth: penLineWidth,
       points,
     });
     lastSendAtRef.current = now;
@@ -472,6 +475,38 @@ export function SharePanel({
                 onPointerCancel={finishDrawing}
               />
             </div>
+            {canDraw && (
+              <div className="space-y-3 rounded-md border border-gray-800 bg-gray-900/60 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">펜 색상</span>
+                  <div className="flex items-center gap-2">
+                    {PEN_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setPenColor(color)}
+                        className={`h-5 w-5 rounded-full border ${penColor === color ? "border-white" : "border-gray-700"}`}
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-500">굵기</span>
+                  <input
+                    type="range"
+                    min={2}
+                    max={12}
+                    step={1}
+                    value={penLineWidth}
+                    onChange={(event) => setPenLineWidth(Number(event.target.value))}
+                    className="flex-1 accent-cyan-500"
+                  />
+                  <span className="text-xs text-gray-400 w-6 text-right">{penLineWidth}</span>
+                </div>
+              </div>
+            )}
             <div className="flex items-center justify-between text-xs text-gray-500">
               <span>실시간 드로잉 공유</span>
               <span>{canDraw ? "그리기 가능" : "보기 전용"}</span>
