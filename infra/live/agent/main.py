@@ -143,8 +143,36 @@ async def entrypoint(ctx: JobContext):
         except Exception as e:
             print(f"--- [STT 에러] {e} ---", flush=True)
 
-    while ctx.room.connection_state == rtc.ConnectionState.CONN_CONNECTED:
-        await asyncio.sleep(1)
+    try:
+        while ctx.room.connection_state == rtc.ConnectionState.CONN_CONNECTED:
+            await asyncio.sleep(1)
+    except Exception as e:
+        print(f"--- [루프 에러] {e} ---", flush=True)
+    finally:
+        # 방이 종료되거나 연결이 끊기면 무조건 실행되는 구역입니다.
+        print(f"--- [Room: {ctx.room.name}] 방 종료 감지. 종료 API를 호출합니다. ---", flush=True)
+        # 새로운 종료 API 경로
+        finish_endpoint = "http://backend:8080/api/v1/consulting/session/end"
+        finish_payload = {
+            "roomId": str(ctx.room.name),
+        }
+        async def send_finish_signal():
+            async with httpx.AsyncClient() as client:
+                try:
+                    response = await client.post(
+                        finish_endpoint,
+                        json=finish_payload,
+                        timeout=5.0 # 종료 신호는 중요하므로 타임아웃을 넉넉히 줍니다.
+                    )
+                    if response.status_code >= 200 and response.status_code < 300:
+                        print(f"✅ [종료 신호 전송 성공] Status: {response.status_code}", flush=True)
+                    else:
+                        print(f"⚠️ [종료 신호 응답 오류] Status: {response.status_code}", flush=True)
+                except Exception as e:
+                    print(f"❌ [종료 신호 전송 실패]: {e}", flush=True)
+
+        # 비동기로 종료 신호 실행
+        await send_finish_signal()
 
 if __name__ == "__main__":
     cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint, worker_type=WorkerType.ROOM))
