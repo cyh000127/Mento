@@ -81,7 +81,6 @@ export function Questionnaire({ answers, selectedCategory, onAnswerChange, onSub
       answer: answers[index] ?? "",
     }));
     const surveyData = JSON.stringify(payload);
-    console.log("여기?", surveyData);
     localStorage.setItem(storageKey, surveyData);
     onSubmitSurvey(surveyData);
   };
