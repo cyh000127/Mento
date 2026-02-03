@@ -60,8 +60,10 @@ public class ProductConverter {
 		return ProductInfoDto.builder()
 			.id(product.getId())
 			.name(product.getName())
+			.categoryMedium(product.getCategoryMedium())
 			.imageUrl(product.getImageUrl())
 			.productUrl(product.getProductUrl())
 			.build();
 	}
+
 }
