@@ -18,7 +18,6 @@ export function ConsultationRoomPage() {
     remoteParticipants,
     remoteMaskType,
     remoteMaskUpdateSeq,
-    sharedMediaFiles,
     sharedImageUrl,
     drawCommands,
     connect,
@@ -27,6 +26,7 @@ export function ConsultationRoomPage() {
     sendMediaShare,
     sendImageShare,
     sendDrawCommand,
+    sendClearWhiteboard,
     toggleMic,
     toggleCamera,
     isMicEnabled,
@@ -96,11 +96,11 @@ export function ConsultationRoomPage() {
   const shareProps = {
     reservationId: Number.isNaN(reservationIdNumber ?? NaN) ? null : reservationIdNumber,
     onShare: sendMediaShare,
-    incomingSharedFiles: sharedMediaFiles,
     sharedImageUrl,
     drawCommands,
     onShareImage: sendImageShare,
     onDrawCommand: sendDrawCommand,
+    onClearWhiteboard: sendClearWhiteboard,
     canDraw: isMentor,
   };
 
@@ -142,7 +142,7 @@ export function ConsultationRoomPage() {
   return (
     <div className="relative h-screen bg-gray-950 overflow-hidden">
       {/* 메인 컨텐츠 영역 */}
-      <div className="h-full pr-96">
+      <div className="h-full pr-[26rem]">
         <div className="h-full flex flex-col items-center justify-center p-8">
           {/* 연결 상태 표시 */}
           {connectionState === "connecting" && <div className="absolute top-4 left-4 bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-lg">연결 중...</div>}

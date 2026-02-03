@@ -13,11 +13,11 @@ import {
 export interface SharePanelProps {
   reservationId: number | null;
   onShare: (files: Array<Pick<SharedMediaFile, "fileUrl" | "fileType">>) => void;
-  incomingSharedFiles: SharedMediaFile[];
   sharedImageUrl: string | null;
   drawCommands: DrawCommand[];
   onShareImage: (imageUrl: string) => void;
   onDrawCommand: (command: DrawCommand) => void;
+  onClearWhiteboard: () => void;
   canDraw?: boolean;
 }
 
@@ -50,19 +50,6 @@ const normalizeUploadResponse = (data: unknown) => {
   return [];
 };
 
-const mergeSharedItems = (current: SharedMediaFile[], incoming: SharedMediaFile[]) => {
-  if (incoming.length === 0) return current;
-  const seen = new Set(current.map((item) => item.fileUrl));
-  const next = [...current];
-  incoming.forEach((item) => {
-    if (!seen.has(item.fileUrl)) {
-      seen.add(item.fileUrl);
-      next.push(item);
-    }
-  });
-  return next;
-};
-
 const DEFAULT_PEN_COLOR = "#ff3b30";
 const DEFAULT_PEN_LINE_WIDTH = 4;
 const PEN_COLORS = ["#ff3b30", "#ff9500", "#ffcc00", "#34c759", "#0a84ff", "#5e5ce6", "#ffffff"] as const;
@@ -73,11 +60,11 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
 export function SharePanel({
   reservationId,
   onShare,
-  incomingSharedFiles,
   sharedImageUrl,
   drawCommands,
   onShareImage,
   onDrawCommand,
+  onClearWhiteboard,
   canDraw = false,
 }: SharePanelProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -90,13 +77,8 @@ export function SharePanel({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [sharedItems, setSharedItems] = useState<SharedMediaFile[]>([]);
   const [penColor, setPenColor] = useState<string>(DEFAULT_PEN_COLOR);
   const [penLineWidth, setPenLineWidth] = useState<number>(DEFAULT_PEN_LINE_WIDTH);
-
-  useEffect(() => {
-    setSharedItems((prev) => mergeSharedItems(prev, incomingSharedFiles));
-  }, [incomingSharedFiles]);
 
   useEffect(() => {
     processedDrawIndexRef.current = 0;
@@ -143,6 +125,10 @@ export function SharePanel({
 
   useEffect(() => {
     if (!sharedImageUrl) return;
+    if (drawCommands.length < processedDrawIndexRef.current) {
+      renderAllCommands();
+      return;
+    }
     const newCommands = drawCommands.slice(processedDrawIndexRef.current);
     if (newCommands.length === 0) return;
     newCommands.forEach(drawCommandOnCanvas);
@@ -241,7 +227,6 @@ export function SharePanel({
         throw new Error("업로드된 파일 URL이 없습니다.");
       }
 
-      setSharedItems((prev) => mergeSharedItems(prev, validItems));
       onShare(validItems.map(({ fileUrl, fileType }) => ({ fileUrl, fileType })));
       const firstImage = validItems.find((item) => item.fileType === "IMAGE");
       if (firstImage) {
@@ -261,6 +246,17 @@ export function SharePanel({
 
   const handleBrowseClick = () => {
     inputRef.current?.click();
+  };
+
+  const handleClearWhiteboard = () => {
+    if (!canDraw) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setErrorMessage(null);
+    onClearWhiteboard();
   };
 
   const getNormalizedPoint = (event: PointerEvent<HTMLCanvasElement>): DrawPoint => {
@@ -352,8 +348,75 @@ export function SharePanel({
         </div>
       </div>
 
+      {sharedImageUrl && (
+        <div className="p-4 space-y-4">
+          {/* 공유 이미지 + 캔버스 */}
+          <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-3 space-y-2">
+            <div className="relative w-full">
+              <img ref={imageRef} src={sharedImageUrl} alt="shared" className="w-full rounded-md" />
+              <canvas
+                ref={canvasRef}
+                className={`absolute top-0 left-0 rounded-md ${canDraw ? "cursor-crosshair" : "pointer-events-none"}`}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={finishDrawing}
+                onPointerLeave={finishDrawing}
+                onPointerCancel={finishDrawing}
+              />
+            </div>
+            {canDraw && (
+              <div className="space-y-3 rounded-md border border-gray-800 bg-gray-900/60 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">펜 색상</span>
+                  <div className="flex items-center gap-2">
+                    {PEN_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setPenColor(color)}
+                        className={`h-5 w-5 rounded-full border ${penColor === color ? "border-white" : "border-gray-700"}`}
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-500">굵기</span>
+                  <input
+                    type="range"
+                    min={2}
+                    max={12}
+                    step={1}
+                    value={penLineWidth}
+                    onChange={(event) => setPenLineWidth(Number(event.target.value))}
+                    className="flex-1 accent-cyan-500"
+                  />
+                  <span className="text-xs text-gray-400 w-6 text-right">{penLineWidth}</span>
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span>실시간 드로잉 공유</span>
+              <div className="flex items-center gap-2">
+                {canDraw && (
+                  <button
+                    type="button"
+                    onClick={handleClearWhiteboard}
+                    className="px-2 py-1 rounded border border-gray-700 text-gray-300 hover:border-cyan-500 hover:text-cyan-300 transition-colors"
+                  >
+                    전체 지우기
+                  </button>
+                )}
+                <span>{canDraw ? "그리기 가능" : "보기 전용"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 업로드 영역 */}
-      <div className="p-4 space-y-4">
+      <div className={`p-4 space-y-4 ${sharedImageUrl ? "border-t border-gray-800" : ""}`}>
         {/* 파일 선택 영역 */}
         <div className="relative">
           <input
@@ -460,108 +523,7 @@ export function SharePanel({
           </div>
         )}
 
-        {/* 공유 이미지 + 캔버스 */} 
-        {sharedImageUrl ? (
-          <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-3 space-y-2">
-            <div className="relative w-full">
-              <img ref={imageRef} src={sharedImageUrl} alt="shared" className="w-full rounded-md" />
-              <canvas
-                ref={canvasRef}
-                className={`absolute top-0 left-0 rounded-md ${canDraw ? "cursor-crosshair" : "pointer-events-none"}`}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={finishDrawing}
-                onPointerLeave={finishDrawing}
-                onPointerCancel={finishDrawing}
-              />
-            </div>
-            {canDraw && (
-              <div className="space-y-3 rounded-md border border-gray-800 bg-gray-900/60 p-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">펜 색상</span>
-                  <div className="flex items-center gap-2">
-                    {PEN_COLORS.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        onClick={() => setPenColor(color)}
-                        className={`h-5 w-5 rounded-full border ${penColor === color ? "border-white" : "border-gray-700"}`}
-                        style={{ backgroundColor: color }}
-                        title={color}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-500">굵기</span>
-                  <input
-                    type="range"
-                    min={2}
-                    max={12}
-                    step={1}
-                    value={penLineWidth}
-                    onChange={(event) => setPenLineWidth(Number(event.target.value))}
-                    className="flex-1 accent-cyan-500"
-                  />
-                  <span className="text-xs text-gray-400 w-6 text-right">{penLineWidth}</span>
-                </div>
-              </div>
-            )}
-            <div className="flex items-center justify-between text-xs text-gray-500">
-              <span>실시간 드로잉 공유</span>
-              <span>{canDraw ? "그리기 가능" : "보기 전용"}</span>
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-lg border border-gray-800 bg-gray-900/30 p-3 text-xs text-gray-500">
-            공유된 이미지가 없습니다.
-          </div>
-        )}
       </div>
-
-      {/* 공유된 미디어 목록 */}
-      {sharedItems.length > 0 && (
-        <div className="flex-1 overflow-y-auto p-4 border-t border-gray-800">
-          <h4 className="text-xs font-semibold text-gray-500 uppercase mb-3">공유된 미디어 ({sharedItems.length})</h4>
-          <div className="grid grid-cols-2 gap-3">
-            {sharedItems.map((item) =>
-              item.fileType === "IMAGE" ? (
-                <div key={item.fileUrl} className="group relative aspect-square rounded-lg overflow-hidden bg-gray-800 border border-gray-700 hover:border-cyan-500 transition-all">
-                  <img src={item.fileUrl} alt={item.name ?? "shared"} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
-                    <svg
-                      className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              ) : (
-                <div key={item.fileUrl} className="group relative aspect-square rounded-lg overflow-hidden bg-gray-800 border border-gray-700 hover:border-cyan-500 transition-all">
-                  <video src={item.fileUrl} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              )
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

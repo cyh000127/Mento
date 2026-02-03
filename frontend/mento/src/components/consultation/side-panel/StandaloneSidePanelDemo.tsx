@@ -15,7 +15,7 @@ export function StandaloneSidePanelDemo() {
       </div>
 
       {/* 메인 컨텐츠 영역 - 오른쪽에 384px(w-96) 여백 */}
-      <div className="relative h-screen pr-96">
+      <div className="relative h-screen pr-[26rem]">
         <div className="h-full flex flex-col items-center justify-center p-8 gap-8">
           {/* 헤더 */}
           <div className="w-full max-w-4xl">
@@ -78,7 +78,7 @@ export function StandaloneSidePanelDemo() {
           </div>
 
           {/* 하단 컨트롤 바 */}
-          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 -translate-x-48">
+          <div className="fixed bottom-8 left-1/2 transform -translate-x-[calc(50%+12rem)]">
             <div className="bg-gray-800/90 backdrop-blur-md rounded-full px-6 py-4 shadow-2xl border border-gray-700 flex items-center gap-3">
               {/* 마이크 버튼 */}
               <button 

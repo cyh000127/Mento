@@ -44,7 +44,7 @@ export function SidePanel({ allowedTabs, recordProps, shareProps }: SidePanelPro
   };
 
   return (
-    <div className="fixed right-0 top-0 h-screen w-96 bg-gray-900 shadow-2xl flex flex-col">
+    <div className="fixed right-0 top-0 h-screen w-[26rem] bg-gray-900 shadow-2xl flex flex-col">
       <SidePanelTabs allowedTabs={visibleTabs} />
       <div className="flex-1 overflow-y-auto">
         {renderContent()}
