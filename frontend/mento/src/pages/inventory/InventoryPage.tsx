@@ -76,9 +76,7 @@ export default function InventoryPage() {
       // 정렬 옵션 적용
       filters.sort = mapUiSortToApiSort(sortOption)
 
-      console.log("Fetching inventory with filters:", filters)
       const response = await getInventoryItems(filters)
-      console.log("API Response:", response)
 
       const mappedProducts = response.content.map(mapApiItemToProduct)
       setProducts(mappedProducts)

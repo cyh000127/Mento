@@ -110,7 +110,6 @@ export function mapUiSortToApiSort(uiSort: SortOption): ApiSortOption {
     expiring: "EXPIRING_SOON",
   }
   const apiSort = sortMap[uiSort]
-  console.log(`Mapping UI sort "${uiSort}" to API sort "${apiSort}"`)
   return apiSort
 }
 
@@ -157,7 +156,6 @@ export async function addInventoryItem(request: AddInventoryItemRequest): Promis
 
   try {
     const response = await api.post<AddInventoryItemResponse["data"]>("/items", body)
-    console.log("인벤토리 추가 API 응답:", response.data, "상태:", response.status)
 
     return {
       success: true,
