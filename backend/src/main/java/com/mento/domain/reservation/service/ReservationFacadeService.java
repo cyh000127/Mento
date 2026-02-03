@@ -87,7 +87,11 @@ public class ReservationFacadeService {
 		long ttlSeconds = calculateTokenTtl(now, endTime);
 		String roomName = generateRoomName(reservationId);
 
-		String token = liveKitManager.createToken(String.valueOf(authuser.getId()), authuser.getEmail(), roomName, role,
+		String uniqueId = String.format("%s(%s)",
+			authuser.getId(),
+			authuser.getRole());
+
+		String token = liveKitManager.createToken(uniqueId, authuser.getEmail(), roomName, role,
 			ttlSeconds);
 
 		log.info("[Reservation] LiveKit 세션 생성 완료 {reservationId: {}, userId: {}, role: {}}", reservationId,
