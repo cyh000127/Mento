@@ -16,6 +16,7 @@ import InventoryPage from "@/pages/inventory/InventoryPage";
 import ConsultationManagementPage from "@/pages/mypage/ConsultationManagementPage";
 import AiSkincareHistoryPage from "@/pages/mypage/AiSkincareHistoryPage";
 import KakaoCallback from "@/pages/auth/KakaoCallback";
+import TestLoginPage from "@/pages/test/TestLoginPage";
 
 const router = createBrowserRouter([
   {
@@ -87,6 +88,10 @@ const router = createBrowserRouter([
   {
     path: "/livekit-test",
     element: <LivekitTestPage />,
+  },
+  {
+    path: "/test/testLogin",
+    element: <TestLoginPage />,
   },
 ]);
 

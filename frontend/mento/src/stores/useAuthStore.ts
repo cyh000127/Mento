@@ -1,4 +1,5 @@
 import { create } from "zustand"
+import { persist } from "zustand/middleware"
 import type { User } from "@/types/user"
 
 interface AuthState {
@@ -11,30 +12,36 @@ interface AuthState {
   logout: () => void
 }
 
-// 쿠키 기반 인증으로 변경 - localStorage 사용 안 함
-export const useAuthStore = create<AuthState>()((set) => ({
-  accessToken: null,
-  isLoggedIn: false,
-  user: null,
-  logoutTriggered: false,
-
-  setAccessToken: (token) =>
-    set({
-      accessToken: token,
-      isLoggedIn: true,
-      logoutTriggered: false,
-    }),
-
-  setUser: (user) =>
-    set({
-      user,
-    }),
-
-  logout: () =>
-    set({
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
       accessToken: null,
       isLoggedIn: false,
       user: null,
-      logoutTriggered: true,
+      logoutTriggered: false,
+
+      setAccessToken: (token) =>
+        set({
+          accessToken: token,
+          isLoggedIn: true,
+          logoutTriggered: false,
+        }),
+
+      setUser: (user) =>
+        set({
+          user,
+        }),
+
+      logout: () =>
+        set({
+          accessToken: null,
+          isLoggedIn: false,
+          user: null,
+          logoutTriggered: true,
+        }),
     }),
-}))
+    {
+      name: "auth-storage",
+    }
+  )
+)
