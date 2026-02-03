@@ -4,15 +4,18 @@ import type { Results, NormalizedLandmarkList } from "@mediapipe/face_mesh";
 
 export type MaskType = "T-zone" | "U-zone" | "Nose zone" | "Apple zone" | null;
 
+type Point = { x: number; y: number };
+type LandmarkMapper = (landmark: { x: number; y: number }) => Point;
+
 interface MaskConfig {
   color: string;
-  drawMask: (ctx: CanvasRenderingContext2D, landmarks: NormalizedLandmarkList, canvas: HTMLCanvasElement) => void;
+  drawMask: (ctx: CanvasRenderingContext2D, landmarks: NormalizedLandmarkList, mapPoint: LandmarkMapper) => void;
 }
 
 /**
  * T-zone 마스크 그리기 (이마 + 코)
  */
-function drawTZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLandmarkList, canvas: HTMLCanvasElement) {
+function drawTZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLandmarkList, mapPoint: LandmarkMapper) {
   // 이마 가로바 (Top Bar)
   const foreheadTop = landmarks[10];
   const foreheadLeft = landmarks[103];
@@ -34,16 +37,27 @@ function drawTZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLandm
   ctx.beginPath();
 
   // 시계 방향으로 T 모양 그리기
-  ctx.moveTo(foreheadLeft.x * canvas.width, foreheadLeft.y * canvas.height);
-  ctx.lineTo(foreheadTop.x * canvas.width, foreheadTop.y * canvas.height);
-  ctx.lineTo(foreheadRight.x * canvas.width, foreheadRight.y * canvas.height);
-  ctx.lineTo(templeRight.x * canvas.width, templeRight.y * canvas.height);
-  ctx.lineTo(browInnerRight.x * canvas.width, browInnerRight.y * canvas.height);
-  ctx.lineTo(noseBridgeRight.x * canvas.width, noseBridgeRight.y * canvas.height);
-  ctx.lineTo(noseTip.x * canvas.width, noseTip.y * canvas.height);
-  ctx.lineTo(noseBridgeLeft.x * canvas.width, noseBridgeLeft.y * canvas.height);
-  ctx.lineTo(browInnerLeft.x * canvas.width, browInnerLeft.y * canvas.height);
-  ctx.lineTo(templeLeft.x * canvas.width, templeLeft.y * canvas.height);
+  const foreheadLeftPoint = mapPoint(foreheadLeft);
+  const foreheadTopPoint = mapPoint(foreheadTop);
+  const foreheadRightPoint = mapPoint(foreheadRight);
+  const templeRightPoint = mapPoint(templeRight);
+  const browInnerRightPoint = mapPoint(browInnerRight);
+  const noseBridgeRightPoint = mapPoint(noseBridgeRight);
+  const noseTipPoint = mapPoint(noseTip);
+  const noseBridgeLeftPoint = mapPoint(noseBridgeLeft);
+  const browInnerLeftPoint = mapPoint(browInnerLeft);
+  const templeLeftPoint = mapPoint(templeLeft);
+
+  ctx.moveTo(foreheadLeftPoint.x, foreheadLeftPoint.y);
+  ctx.lineTo(foreheadTopPoint.x, foreheadTopPoint.y);
+  ctx.lineTo(foreheadRightPoint.x, foreheadRightPoint.y);
+  ctx.lineTo(templeRightPoint.x, templeRightPoint.y);
+  ctx.lineTo(browInnerRightPoint.x, browInnerRightPoint.y);
+  ctx.lineTo(noseBridgeRightPoint.x, noseBridgeRightPoint.y);
+  ctx.lineTo(noseTipPoint.x, noseTipPoint.y);
+  ctx.lineTo(noseBridgeLeftPoint.x, noseBridgeLeftPoint.y);
+  ctx.lineTo(browInnerLeftPoint.x, browInnerLeftPoint.y);
+  ctx.lineTo(templeLeftPoint.x, templeLeftPoint.y);
 
   ctx.closePath();
   ctx.fill();
@@ -52,7 +66,7 @@ function drawTZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLandm
 /**
  * U-zone 마스크 그리기 (볼 + 턱)
  */
-function drawUZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLandmarkList, canvas: HTMLCanvasElement) {
+function drawUZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLandmarkList, mapPoint: LandmarkMapper) {
   // 왼쪽 볼 영역
   const leftCheekTop = landmarks[116];
   const leftCheekOuter = landmarks[123];
@@ -71,15 +85,25 @@ function drawUZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLandm
   ctx.beginPath();
 
   // 왼쪽 볼에서 시작
-  ctx.moveTo(leftCheekTop.x * canvas.width, leftCheekTop.y * canvas.height);
-  ctx.lineTo(leftCheekOuter.x * canvas.width, leftCheekOuter.y * canvas.height);
-  ctx.lineTo(leftCheekBottom.x * canvas.width, leftCheekBottom.y * canvas.height);
-  ctx.lineTo(chinLeft.x * canvas.width, chinLeft.y * canvas.height);
-  ctx.lineTo(chinCenter.x * canvas.width, chinCenter.y * canvas.height);
-  ctx.lineTo(chinRight.x * canvas.width, chinRight.y * canvas.height);
-  ctx.lineTo(rightCheekBottom.x * canvas.width, rightCheekBottom.y * canvas.height);
-  ctx.lineTo(rightCheekOuter.x * canvas.width, rightCheekOuter.y * canvas.height);
-  ctx.lineTo(rightCheekTop.x * canvas.width, rightCheekTop.y * canvas.height);
+  const leftCheekTopPoint = mapPoint(leftCheekTop);
+  const leftCheekOuterPoint = mapPoint(leftCheekOuter);
+  const leftCheekBottomPoint = mapPoint(leftCheekBottom);
+  const chinLeftPoint = mapPoint(chinLeft);
+  const chinCenterPoint = mapPoint(chinCenter);
+  const chinRightPoint = mapPoint(chinRight);
+  const rightCheekBottomPoint = mapPoint(rightCheekBottom);
+  const rightCheekOuterPoint = mapPoint(rightCheekOuter);
+  const rightCheekTopPoint = mapPoint(rightCheekTop);
+
+  ctx.moveTo(leftCheekTopPoint.x, leftCheekTopPoint.y);
+  ctx.lineTo(leftCheekOuterPoint.x, leftCheekOuterPoint.y);
+  ctx.lineTo(leftCheekBottomPoint.x, leftCheekBottomPoint.y);
+  ctx.lineTo(chinLeftPoint.x, chinLeftPoint.y);
+  ctx.lineTo(chinCenterPoint.x, chinCenterPoint.y);
+  ctx.lineTo(chinRightPoint.x, chinRightPoint.y);
+  ctx.lineTo(rightCheekBottomPoint.x, rightCheekBottomPoint.y);
+  ctx.lineTo(rightCheekOuterPoint.x, rightCheekOuterPoint.y);
+  ctx.lineTo(rightCheekTopPoint.x, rightCheekTopPoint.y);
 
   ctx.closePath();
   ctx.fill();
@@ -88,16 +112,20 @@ function drawUZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLandm
 /**
  * Nose zone 마스크 그리기 (코 주변)
  */
-function drawNoseZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLandmarkList, canvas: HTMLCanvasElement) {
+function drawNoseZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLandmarkList, mapPoint: LandmarkMapper) {
   // 삼각형 코 마스크 포인트
   const noseTop = landmarks[6]; // 코 브릿지 상단
   const noseLeft = landmarks[219]; // 왼쪽 코 날개
   const noseRight = landmarks[439]; // 오른쪽 코 날개
 
   ctx.beginPath();
-  ctx.moveTo(noseTop.x * canvas.width, noseTop.y * canvas.height);
-  ctx.lineTo(noseRight.x * canvas.width, noseRight.y * canvas.height);
-  ctx.lineTo(noseLeft.x * canvas.width, noseLeft.y * canvas.height);
+  const noseTopPoint = mapPoint(noseTop);
+  const noseRightPoint = mapPoint(noseRight);
+  const noseLeftPoint = mapPoint(noseLeft);
+
+  ctx.moveTo(noseTopPoint.x, noseTopPoint.y);
+  ctx.lineTo(noseRightPoint.x, noseRightPoint.y);
+  ctx.lineTo(noseLeftPoint.x, noseLeftPoint.y);
 
   ctx.closePath();
   ctx.fill();
@@ -106,7 +134,7 @@ function drawNoseZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLa
 /**
  * Apple zone 마스크 그리기 (사과 존 - 원형)
  */
-function drawAppleZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLandmarkList, canvas: HTMLCanvasElement) {
+function drawAppleZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedLandmarkList, mapPoint: LandmarkMapper) {
   // 왼쪽 애플 존 기준 포인트
   const leftTop = landmarks[50];
   const leftBottom = landmarks[36];
@@ -116,10 +144,12 @@ function drawAppleZoneMask(ctx: CanvasRenderingContext2D, landmarks: NormalizedL
   const rightBottom = landmarks[266];
 
   const drawCircle = (top: any, bottom: any) => {
-    const centerX = ((top.x + bottom.x) / 2) * canvas.width;
-    const centerY = ((top.y + bottom.y) / 2) * canvas.height;
+    const topPoint = mapPoint(top);
+    const bottomPoint = mapPoint(bottom);
+    const centerX = (topPoint.x + bottomPoint.x) / 2;
+    const centerY = (topPoint.y + bottomPoint.y) / 2;
 
-    const radius = Math.hypot((top.x - bottom.x) * canvas.width, (top.y - bottom.y) * canvas.height) * 0.6; // 크기 조절 계수
+    const radius = Math.hypot(topPoint.x - bottomPoint.x, topPoint.y - bottomPoint.y) * 0.6; // 크기 조절 계수
 
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
@@ -219,14 +249,22 @@ export function useFaceMask(videoElement: HTMLVideoElement | null, canvasRef: Re
         return;
       }
 
-      // 캔버스 크기를 비디오 크기와 동기화
-      if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
-        canvas.width = videoWidth;
-        canvas.height = videoHeight;
+      // 캔버스 크기를 실제 렌더 크기와 동기화 (HiDPI 포함)
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const targetWidth = Math.max(1, Math.round(rect.width * dpr));
+      const targetHeight = Math.max(1, Math.round(rect.height * dpr));
+
+      if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
       }
 
+      // CSS 픽셀 기준으로 그리기
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
       // 이전 프레임 지우기
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, rect.width, rect.height);
 
       const activeMaskType = maskTypeRef.current;
       if (!activeMaskType) {
@@ -243,11 +281,22 @@ export function useFaceMask(videoElement: HTMLVideoElement | null, canvasRef: Re
 
       if (!config) return;
 
+      // object-fit: cover 기준으로 좌표 보정
+      const scale = Math.max(rect.width / videoWidth, rect.height / videoHeight);
+      const scaledWidth = videoWidth * scale;
+      const scaledHeight = videoHeight * scale;
+      const offsetX = (rect.width - scaledWidth) / 2;
+      const offsetY = (rect.height - scaledHeight) / 2;
+      const mapPoint: LandmarkMapper = (landmark) => ({
+        x: landmark.x * scaledWidth + offsetX,
+        y: landmark.y * scaledHeight + offsetY,
+      });
+
       // 마스크 색상 설정
       ctx.fillStyle = config.color;
 
       // 마스크 그리기
-      config.drawMask(ctx, landmarks, canvas);
+      config.drawMask(ctx, landmarks, mapPoint);
     });
 
     faceMeshRef.current = faceMesh;
