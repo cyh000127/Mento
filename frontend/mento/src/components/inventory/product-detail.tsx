@@ -7,6 +7,7 @@ interface ProductDetailProps {
   product: Product
   onToggleFavorite: (productId: string) => void
   onDelete: (productId: string) => void
+  loading?: boolean
 }
 
 const categoryLabels = {
@@ -35,6 +36,7 @@ export function ProductDetail({
   product,
   onToggleFavorite,
   onDelete,
+  loading = false,
 }: ProductDetailProps) {
   return (
     <Card className="sticky top-20 overflow-hidden shadow-sm">
@@ -46,6 +48,11 @@ export function ProductDetail({
             alt={product.name}
             className="h-full w-full object-cover"
           />
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/50">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
+            </div>
+          )}
         </div>
 
         {/* Product Info */}
@@ -78,6 +85,12 @@ export function ProductDetail({
             <DetailRow label="카테고리" value={categoryLabels[product.category]} />
             <DetailRow label="구매일" value={formatDate(product.purchaseDate)} />
             <DetailRow label="사용기한" value={formatDate(product.expirationDate)} />
+            {product.daysUntilExpiry !== undefined && (
+              <DetailRow 
+                label="만료까지" 
+                value={formatDaysUntilExpiry(product.daysUntilExpiry)} 
+              />
+            )}
             <DetailRow label="재구매 횟수" value={`${product.repurchaseCount}회`} />
           </div>
 
@@ -127,10 +140,25 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 }
 
 function formatDate(dateString: string): string {
+  if (!dateString) return "-"
+  
   const date = new Date(dateString)
+  
+  if (isNaN(date.getTime())) return "-"
+  
   return date.toLocaleDateString("ko-KR", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   })
+}
+
+function formatDaysUntilExpiry(days: number): string {
+  if (days < 0) {
+    return `만료됨 (${Math.abs(days)}일 경과)`
+  } else if (days === 0) {
+    return "오늘 만료"
+  } else {
+    return `D-${days}`
+  }
 }

@@ -22,6 +22,7 @@ export interface Product {
   status: ProductStatus
   purchaseLink: string
   isFavorite: boolean
+  daysUntilExpiry?: number
 }
 
 // API 응답 타입 (백엔드 응답 형식)
@@ -79,5 +80,25 @@ export interface AddInventoryItemResponse {
     expectedExpiryDate: string
     createdAt: string
     updatedAt: string
+  }
+}
+
+// 인벤토리 아이템 상세 조회 응답 타입
+export interface InventoryItemDetailResponse {
+  success: boolean
+  data: {
+    id: number
+    userId: number
+    productInfoDto: {
+      id: number
+      name: string
+      imageUrl: string
+      productUrl: string
+    }
+    status: "OWNED" | "IN_USE" | "EXPIRED"
+    isFavorite: boolean
+    purchaseDate: string
+    expectedExpiry: string
+    purchaseCount: number
   }
 }
