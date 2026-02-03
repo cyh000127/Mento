@@ -10,7 +10,19 @@ import {
   mapUiStatusToApiStatus,
   mapUiSortToApiSort,
   addInventoryItem,
+  deleteInventoryItem,
 } from "@/api/inventoryApi"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast"
 
 export default function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -25,6 +37,9 @@ export default function InventoryPage() {
   const [selectedStatus, setSelectedStatus] = useState<ProductStatus | "all">("all")
   const [favoriteFilter, setFavoriteFilter] = useState<boolean | undefined>(undefined)
   const [registerModalOpen, setRegisterModalOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null)
+  const { toast } = useToast()
 
   // API 데이터 가져오기
   const fetchInventory = useCallback(async () => {
@@ -109,11 +124,56 @@ export default function InventoryPage() {
     await fetchInventory()
   }
 
-  const handleDelete = async (productId: string) => {
-    // TODO: 제품 삭제 API 구현 예정
-    console.log("Delete product:", productId)
-    // API 호출 후 데이터 재조회
-    await fetchInventory()
+  const handleDelete = (productId: string) => {
+    const product = products.find((p) => p.id === productId)
+    if (product) {
+      setProductToDelete(product)
+      setDeleteDialogOpen(true)
+    }
+  }
+
+  const confirmDelete = async () => {
+    if (!productToDelete) return
+
+    // Optimistic UI를 위한 이전 상태 저장
+    const previousProducts = [...products]
+    const previousSelectedProduct = selectedProduct
+
+    try {
+      // UI에서 즉시 제거
+      setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id))
+      
+      // 선택된 제품이 삭제된 경우 다른 제품 선택
+      if (selectedProduct?.id === productToDelete.id) {
+        const remainingProducts = products.filter((p) => p.id !== productToDelete.id)
+        setSelectedProduct(remainingProducts.length > 0 ? remainingProducts[0] : null)
+      }
+
+      // API 호출
+      await deleteInventoryItem(productToDelete.id)
+
+      // 성공 알림
+      toast({
+        title: "삭제 완료",
+        description: "아이템이 인벤토리에서 제거되었습니다.",
+        variant: "default",
+      })
+
+      setDeleteDialogOpen(false)
+      setProductToDelete(null)
+    } catch (error: any) {
+      // 실패 시 원래 상태로 복원
+      setProducts(previousProducts)
+      setSelectedProduct(previousSelectedProduct)
+
+      // 에러 알림
+      const errorMessage = error.response?.data?.message || "아이템 삭제 중 오류가 발생했습니다."
+      toast({
+        title: "삭제 실패",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    }
   }
 
   const handleAddProduct = () => {
@@ -259,6 +319,34 @@ export default function InventoryPage() {
         onOpenChange={setRegisterModalOpen}
         onConfirm={handleProductsAdded}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>아이템 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              이 아이템을 인벤토리에서 제거하시겠습니까?
+              {productToDelete && (
+                <span className="mt-2 block font-medium text-foreground">
+                  {productToDelete.name}
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              삭제
+            </AlertDialogAction>
+            <AlertDialogCancel onClick={() => setProductToDelete(null)}>
+              취소
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

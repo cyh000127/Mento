@@ -7,15 +7,10 @@ interface ConsultationListProps {
   onViewDetail: (consultation: Consultation) => void;
   onCancelConsultation: (consultationId: string) => void;
   onEnterRoom: (roomUrl: string) => void;
+  onGoToPayment: (consultation: Consultation) => void;
 }
 
-const categoryLabels: Record<string, string> = {
-  skincare: "스킨케어",
-  beauty: "뷰티",
-  hair: "헤어",
-};
-
-export function ConsultationList({ consultations, onViewDetail, onCancelConsultation, onEnterRoom }: ConsultationListProps) {
+export function ConsultationList({ consultations, onViewDetail, onCancelConsultation, onEnterRoom, onGoToPayment }: ConsultationListProps) {
   const formatDateTime = (dateStr: string, timeStr: string) => {
     return `${dateStr.replace(/-/g, ".")} ${timeStr}`;
   };
@@ -56,6 +51,16 @@ export function ConsultationList({ consultations, onViewDetail, onCancelConsulta
 
             {/* Status Buttons */}
             <div className="col-span-4 flex items-center gap-2 justify-center">
+              {consultation.status === "pending" && (
+                <>
+                  <Button size="sm" variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-300">
+                    결제 대기 중
+                  </Button>
+                  <Button size="sm" onClick={() => onGoToPayment(consultation)} className="bg-primary-500 text-white hover:bg-primary-600">
+                    결제하기
+                  </Button>
+                </>
+              )}
               {consultation.status === "scheduled" && (
                 <>
                   <Button size="sm" variant="outline" className="bg-muted text-foreground hover:bg-muted/80">
