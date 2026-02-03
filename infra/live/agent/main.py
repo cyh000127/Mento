@@ -105,15 +105,14 @@ async def entrypoint(ctx: JobContext):
                             # 2. 데이터 준비 (기존 로그 형식 유지)
                             now = datetime.datetime.now()
                             timestamp_log = now.strftime("%H:%M:%S")
-                            display_name = participant.identity[:-37] if len(participant.identity) > 37 else participant.identity
-                            if "USER" in display_name:
+                            if "USER" in participant.identity:
                                 role = "USER"
-                            elif "MENTOR" in display_name:
+                            elif "MENTOR" in participant.identity:
                                 role = "MENTOR"
                             else:
                                 role = "UNKNOWN"
                             # 터미널 로그 출력 (기존 방식 유지)
-                            print(f"[{timestamp_log}] [{display_name}]: {text}", flush=True)
+                            print(f"[{timestamp_log}] [{participant.identity}]: {text}", flush=True)
 
                             # 3. Java 백엔드 전송 (ChatLogRequest Record 형식)
                             payload = {
@@ -123,12 +122,19 @@ async def entrypoint(ctx: JobContext):
                             }
 
                             try:
-                                # 비동기 전송 (결과가 올 때까지 기다리지 않고 다음 STT 처리 준비)
-                                await client.post(
+                                print(f"📡 [Backend 전송 시도] URL: {endpoint}", flush=True)
+
+                                response = await client.post(
                                     endpoint,
                                     json=payload,
                                     timeout=2.0
                                 )
+
+                                # 응답 상태 코드 확인 (200, 201 등이면 성공)
+                                if response.status_code >= 200 and response.status_code < 300:
+                                    print(f"✅ [Backend 전송 성공] Status: {response.status_code}", flush=True)
+                                else:
+                                    print(f"⚠️ [Backend 응답 오류] Status: {response.status_code}, 내용: {response.text}", flush=True)
                             except Exception as e:
                                 # 전송 실패 시에도 에이전트가 중단되지 않도록 예외 처리
                                 print(f" [Java 전송 에러]: {e}", flush=True)
