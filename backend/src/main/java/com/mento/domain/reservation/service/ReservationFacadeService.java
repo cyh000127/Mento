@@ -76,16 +76,17 @@ public class ReservationFacadeService {
 		return LiveKitConstants.RESERVATION_DIRECTORY + reservationId;
 	}
 
+	@Transactional(readOnly = true)
 	public LiveKitSessionResponse createSession(final Long reservationId, final AuthenticatedUser authuser) {
 		Reservation reservation = reservationQueryService.findById(reservationId);
 		Timetable timetable = reservation.getSlot().getTimetable();
 
 		LocalDateTime now = TimeUtils.nowAsLocalDateTime();
 		LocalDateTime startTime = calculateStartTime(timetable);
-		LocalDateTime entryStartTime = startTime.minusMinutes(LiveKitConstants.EARLY_ENTRY_MINUTES);
+		// LocalDateTime entryStartTime = startTime.minusMinutes(LiveKitConstants.EARLY_ENTRY_MINUTES);
 		LocalDateTime endTime = startTime.plusMinutes(LiveKitConstants.END_MINUTES);
 
-		validateSessionTiming(now, entryStartTime, endTime);
+		// validateSessionTiming(now, entryStartTime, endTime);
 		Role role = Role.fromString(authuser.getRole());
 
 		long ttlSeconds = calculateTokenTtl(now, endTime);
@@ -105,18 +106,18 @@ public class ReservationFacadeService {
 		return LocalDateTime.of(timetable.getScheduledDate(), timetable.getScheduledTime());
 	}
 
-	private void validateSessionTiming(
-		final LocalDateTime now,
-		final LocalDateTime entryStartTime,
-		final LocalDateTime endTime
-	) {
-		if (now.isBefore(entryStartTime)) {
-			throw new ReservationException(ErrorCode.NOT_STARTED_YET);
-		}
-		if (now.isAfter(endTime)) {
-			throw new ReservationException(ErrorCode.CONSULTING_ENDED);
-		}
-	}
+	// private void validateSessionTiming(
+	// 	final LocalDateTime now,
+	// 	final LocalDateTime entryStartTime,
+	// 	final LocalDateTime endTime
+	// ) {
+	// 	if (now.isBefore(entryStartTime)) {
+	// 		throw new ReservationException(ErrorCode.NOT_STARTED_YET);
+	// 	}
+	// 	if (now.isAfter(endTime)) {
+	// 		throw new ReservationException(ErrorCode.CONSULTING_ENDED);
+	// 	}
+	// }
 
 	private long calculateTokenTtl(final LocalDateTime now, final LocalDateTime endTime) {
 		long ttlSeconds = Duration.between(now, endTime).getSeconds();
