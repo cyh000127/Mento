@@ -4,10 +4,12 @@ import { useConsultationSession } from "@/hooks/useConsultationSession";
 import { VideoTrack } from "@/components/consultation/VideoTrack";
 import { SidePanel } from "@/components/consultation/side-panel";
 import { useConsultationStore } from "@/stores/useConsultationStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 export function ConsultationRoomPage() {
   const { reservationId } = useParams<{ reservationId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const {
     connectionState,
     error,
@@ -77,6 +79,13 @@ export function ConsultationRoomPage() {
   const bottomLabel = isMentor ? (userParticipant ? `고객 (${userParticipant.identity})` : "고객") : "고객 (나)";
 
   const sidePanelTabs = isMentor ? (["share", "inventory", "mask", "record"] as const) : (["share", "inventory"] as const);
+  const recordProps = {
+    isMentor,
+    roomId: sessionData?.roomName ?? null,
+    mentorId: user?.id ?? null,
+    localParticipant,
+    connectionState,
+  };
 
   // USER 접근 시 숨겨진 탭이 활성화되지 않도록 초기화
   useEffect(() => {
@@ -248,7 +257,7 @@ export function ConsultationRoomPage() {
       </div>
 
       {/* 오른쪽 사이드 패널 */}
-      <SidePanel allowedTabs={sidePanelTabs} />
+      <SidePanel allowedTabs={sidePanelTabs} recordProps={recordProps} />
     </div>
   );
 }
