@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useParams } from "react-router-dom"
 import { useAuthStore } from "@/stores/useAuthStore"
 import {
+  addInventoryItem,
   getCustomerInventory,
   getInventoryItems,
   STATUS_LABELS,
 } from "@/api/inventoryApi"
 import { getReservationDetail } from "@/api/reservationApi"
-import type { ApiItem } from "@/types/inventory"
+import { InventoryRegisterModal } from "@/components/inventory/inventory-register-modal"
+import type { ApiItem, Product } from "@/types/inventory"
 
 const FALLBACK_IMAGE_URL = "https://via.placeholder.com/80"
 
@@ -25,11 +27,10 @@ export function InventoryPanel() {
   const [items, setItems] = useState<ApiItem[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [registerModalOpen, setRegisterModalOpen] = useState(false)
 
-  useEffect(() => {
-    let isMounted = true
-
-    const fetchInventory = async () => {
+  const fetchInventory = useCallback(
+    async (canUpdate?: () => boolean) => {
       setLoading(true)
       setError(null)
 
@@ -48,20 +49,20 @@ export function InventoryPanel() {
             size: 20,
           })
 
-          if (isMounted) {
+          if (!canUpdate || canUpdate()) {
             setItems(inventory.content ?? [])
           }
+          return inventory.content ?? []
         }
         // ✅ 일반 사용자 → 본인 인벤토리
-        else {
-          const inventory = await getInventoryItems({ page: 0, size: 20 })
-          if (isMounted) {
-            setItems(inventory.content ?? [])
-          }
+        const inventory = await getInventoryItems({ page: 0, size: 20 })
+        if (!canUpdate || canUpdate()) {
+          setItems(inventory.content ?? [])
         }
+        return inventory.content ?? []
       } catch (err: any) {
         console.error("인벤토리 조회 실패:", err)
-        if (!isMounted) return
+        if (canUpdate && !canUpdate()) return []
 
         const status = err?.response?.status
         setError(
@@ -72,25 +73,133 @@ export function InventoryPanel() {
             : "인벤토리 정보를 불러오지 못했습니다."
         )
         setItems([])
+        return []
       } finally {
-        if (isMounted) setLoading(false)
+        if (!canUpdate || canUpdate()) setLoading(false)
       }
-    }
+    },
+    [isConsultant, reservationIdNumber]
+  )
 
-    fetchInventory()
+  useEffect(() => {
+    let isMounted = true
+    const canUpdate = () => isMounted
+
+    fetchInventory(canUpdate)
     return () => {
       isMounted = false
     }
-  }, [isConsultant, reservationIdNumber])
+  }, [fetchInventory])
+
+  const handleAddProduct = () => {
+    setRegisterModalOpen(true)
+  }
+
+  const handleProductsAdded = async (selectedProducts: Product[]) => {
+    try {
+      const latestItems = await fetchInventory()
+
+      const duplicateProducts: Product[] = []
+      const productsToAdd: Product[] = []
+
+      selectedProducts.forEach((selectedProduct) => {
+        const isDuplicate = latestItems.some(
+          (existingItem) => existingItem.productName === selectedProduct.name
+        )
+
+        if (isDuplicate) {
+          duplicateProducts.push(selectedProduct)
+        } else {
+          productsToAdd.push(selectedProduct)
+        }
+      })
+
+      if (duplicateProducts.length > 0) {
+        const duplicateNames = duplicateProducts.map((p) => `"${p.name}"`).join(", ")
+
+        if (productsToAdd.length > 0) {
+          const confirmMessage = `다음 상품은 이미 인벤토리에 존재합니다:\n${duplicateNames}\n\n나머지 ${productsToAdd.length}개 상품을 추가하시겠습니까?`
+
+          if (!confirm(confirmMessage)) {
+            return
+          }
+        } else {
+          alert(`선택한 모든 상품이 이미 인벤토리에 존재합니다:\n${duplicateNames}`)
+          return
+        }
+      }
+
+      if (productsToAdd.length === 0) {
+        return
+      }
+
+      const results = await Promise.allSettled(
+        productsToAdd.map((product) =>
+          addInventoryItem({
+            productId: parseInt(product.id),
+          })
+            .then(() => ({ product, success: true }))
+            .catch((error) => ({ product, success: false, error }))
+        )
+      )
+
+      const successResults = results
+        .filter((r) => r.status === "fulfilled" && r.value.success)
+        .map((r) => (r as PromiseFulfilledResult<any>).value.product)
+
+      const failedResults = results
+        .filter((r) => r.status === "fulfilled" && !r.value.success)
+        .map((r) => (r as PromiseFulfilledResult<any>).value)
+
+      const errorMessages: string[] = []
+
+      if (failedResults.length > 0) {
+        const failedNames = failedResults.map(({ product }) => `"${product.name}"`).join(", ")
+        errorMessages.push(`다음 상품 추가 중 오류가 발생했습니다:\n${failedNames}`)
+      }
+
+      if (successResults.length > 0 && (duplicateProducts.length > 0 || errorMessages.length > 0)) {
+        const messages = [`${successResults.length}개의 상품이 추가되었습니다.`]
+        if (duplicateProducts.length > 0) {
+          const duplicateNames = duplicateProducts.map((p) => `"${p.name}"`).join(", ")
+          messages.push(`${duplicateProducts.length}개의 중복 상품은 제외되었습니다:\n${duplicateNames}`)
+        }
+        if (errorMessages.length > 0) {
+          messages.push(...errorMessages)
+        }
+        alert(messages.join("\n\n"))
+      } else if (successResults.length > 0) {
+        alert(`${successResults.length}개의 상품이 인벤토리에 추가되었습니다.`)
+      } else if (errorMessages.length > 0) {
+        alert(errorMessages.join("\n\n"))
+      }
+
+      await fetchInventory()
+    } catch (error) {
+      console.error("상품 추가 중 예상치 못한 오류:", error)
+      alert("상품 추가 중 오류가 발생했습니다.")
+    }
+  }
 
   return (
     <div className="flex h-full flex-col p-4 text-gray-200">
-      <div className="mb-3">
-        <h3 className="text-sm font-semibold text-gray-300">
-          {isConsultant ? "고객 인벤토리" : "인벤토리"}
-        </h3>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-300">
+            {isConsultant ? "고객 인벤토리" : "인벤토리"}
+          </h3>
+          {!isConsultant && (
+            <p className="text-xs text-gray-400">상담 중 보유 제품 목록</p>
+          )}
+        </div>
         {!isConsultant && (
-          <p className="text-xs text-gray-400">상담 중 보유 제품 목록</p>
+          <button
+            type="button"
+            onClick={handleAddProduct}
+            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200 transition-colors hover:bg-gray-700"
+          >
+            제품 등록
+          </button>
         )}
       </div>
 
@@ -155,6 +264,14 @@ export function InventoryPanel() {
             </div>
           ))}
         </div>
+      )}
+
+      {!isConsultant && (
+        <InventoryRegisterModal
+          open={registerModalOpen}
+          onOpenChange={setRegisterModalOpen}
+          onConfirm={handleProductsAdded}
+        />
       )}
     </div>
   )
