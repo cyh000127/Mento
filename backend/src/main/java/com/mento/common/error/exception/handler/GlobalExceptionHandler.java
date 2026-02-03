@@ -24,6 +24,7 @@ import com.mento.common.error.exception.PaymentException;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.response.ErrorResponse;
 import com.mento.common.util.LoggingUtils;
+import com.mento.domain.consulting.exception.ConsultingException;
 import com.mento.domain.mentor.exception.MentorException;
 import com.mento.domain.reservation.exception.ReservationException;
 import com.mento.domain.timetable.exception.TimetableException;
@@ -219,6 +220,16 @@ public class GlobalExceptionHandler {
 		HttpServletRequest request
 	) {
 		LoggingUtils.logException("PaymentException 발생 ", ex, request);
+		ErrorResponse response = ErrorResponse.of(ex.getErrorCode(), request);
+		return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(BaseResponse.fail(response));
+	}
+
+	@ExceptionHandler(ConsultingException.class)
+	public ResponseEntity<BaseResponse<ErrorResponse>> handleConsultingException(
+		ConsultingException ex,
+		HttpServletRequest request
+	) {
+		LoggingUtils.logException("ConsultingException 발생 ", ex, request);
 		ErrorResponse response = ErrorResponse.of(ex.getErrorCode(), request);
 		return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(BaseResponse.fail(response));
 	}

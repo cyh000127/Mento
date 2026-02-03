@@ -120,6 +120,13 @@ public enum ErrorCode {
 	ITEM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "UI-003", "아이템에 접근할 권한이 없습니다."),
 
 	/**
+	 * Consulting Error (CON-xxx)
+	 */
+	CONSULTING_NOT_FOUND(HttpStatus.NOT_FOUND, "CON-001", "상담 정보를 찾을 수 없습니다."),
+	CHATLOG_EMPTY(HttpStatus.BAD_REQUEST, "CON-002", "Redis에 저장된 채팅 로그가 없습니다."),
+	CHATLOG_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CON-003", "채팅 로그 저장에 실패했습니다."),
+
+	/**
 	 * Notification Error (N-xxx)
 	 */
 	NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "N-001", "알림을 찾을 수 없습니다."),
