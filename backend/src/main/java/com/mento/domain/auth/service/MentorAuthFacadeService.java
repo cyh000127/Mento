@@ -27,9 +27,9 @@ public class MentorAuthFacadeService {
 		User dummyUser = User.builder()
 			.id(mentor.getId())
 			.name(mentor.getName())
-			.email(mentor.getLoginId() + "@mentor.com") // Dummy email for token
+			.email(mentor.getLoginId() + "@mentor.com")
 			.role(Role.MENTOR)
-			.password(mentor.getPassword()) // Not really needed for token but consistent with previous code
+			.password(mentor.getPassword()) 
 			.kakaoId("mentor_" + mentor.getId())
 			.build();
 
