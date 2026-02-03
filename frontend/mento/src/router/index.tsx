@@ -7,7 +7,6 @@ import PaymentRedirectPage from "@/pages/consultation/PaymentRedirectPage";
 import PaymentCallbackPage from "@/pages/consultation/PaymentCallbackPage";
 import PaymentFailPage from "@/pages/consultation/PaymentFailPage";
 import { ConsultationRoomPage } from "@/pages/consultation/ConsultationRoomPage";
-import { LivekitTestPage } from "@/pages/consultation/LiveKitTestPage";
 import GuidePage from "@/pages/guide/GuidePage";
 import GuideDetailPage from "@/pages/guide/GuideDetailPage";
 import MentoringPage from "@/pages/mentoring/MentoringPage";
@@ -94,10 +93,6 @@ const router = createBrowserRouter([
   {
     path: "/consultation-room/:reservationId",
     element: <ConsultationRoomPage />,
-  },
-  {
-    path: "/livekit-test",
-    element: <LivekitTestPage />,
   },
   {
     path: "/test/testLogin",

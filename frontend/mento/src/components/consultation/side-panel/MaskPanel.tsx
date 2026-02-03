@@ -50,6 +50,13 @@ export function MaskPanel() {
         ))}
       </div>
 
+      <button
+        onClick={() => setSelectedMaskArea(null)}
+        className="mt-4 w-full rounded-lg border border-gray-700 bg-gray-800 py-3 text-sm text-gray-200 transition-colors hover:bg-gray-700"
+      >
+        마스크 제거
+      </button>
+
       {selectedMaskArea && (
         <div className="mt-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
           <p className="text-sm text-gray-300">

@@ -302,15 +302,14 @@ export function VideoTrack({ participant, maskType = null }: VideoTrackProps) {
       <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted={isLocal} />
       
       {/* 얼굴 마스크 오버레이 캔버스 */}
-      {maskType && (
-        <canvas
-          ref={canvasRef}
-          className="absolute top-0 left-0 w-full h-full pointer-events-none"
-          style={{
-            objectFit: "cover",
-          }}
-        />
-      )}
+      <canvas
+        ref={canvasRef}
+        className="absolute top-0 left-0 w-full h-full pointer-events-none"
+        style={{
+          objectFit: "cover",
+          opacity: maskType ? 1 : 0,
+        }}
+      />
       
       {/* 오디오 엘리먼트 (원격 참가자의 소리를 재생) */}
       <audio ref={audioRef} autoPlay playsInline />
