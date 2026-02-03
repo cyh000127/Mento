@@ -14,8 +14,10 @@ export function ConsultationRoomPage() {
     sessionData,
     localParticipant,
     remoteParticipants,
+    remoteMaskType,
     connect,
     disconnect,
+    sendMaskUpdate,
     toggleMic,
     toggleCamera,
     isMicEnabled,
@@ -66,6 +68,7 @@ export function ConsultationRoomPage() {
 
   const topParticipant = mentorParticipant
   const bottomParticipant = userParticipant
+  const bottomMaskType = isMentor ? selectedMaskArea : remoteMaskType
 
   const topLabel = isMentor
     ? "컨설턴트 (나)"
@@ -88,6 +91,13 @@ export function ConsultationRoomPage() {
       setActiveTab("share")
     }
   }, [sessionData?.participantRole, setActiveTab])
+
+  // 멘토가 선택한 마스크를 DataChannel로 전송
+  useEffect(() => {
+    if (connectionState !== "connected") return
+    if (!isMentor) return
+    sendMaskUpdate(selectedMaskArea)
+  }, [connectionState, isMentor, selectedMaskArea, sendMaskUpdate])
 
   return (
     <div className="relative h-screen bg-gray-950 overflow-hidden">
@@ -145,12 +155,12 @@ export function ConsultationRoomPage() {
             <div className="aspect-video bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden relative">
               {bottomParticipant ? (
                 <>
-                  <VideoTrack participant={bottomParticipant} maskType={selectedMaskArea} />
+                  <VideoTrack participant={bottomParticipant} maskType={bottomMaskType} />
                   <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm">
                     {bottomLabel}
-                    {selectedMaskArea && (
+                    {bottomMaskType && (
                       <span className="ml-2 text-xs text-cyan-300">
-                        🎭 {selectedMaskArea} 분석 중
+                        🎭 {bottomMaskType} 분석 중
                       </span>
                     )}
                   </div>

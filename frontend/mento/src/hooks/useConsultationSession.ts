@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { Room, RoomEvent, RemoteParticipant, LocalParticipant } from "livekit-client";
 import { createConsultationSession } from "@/api/consultationSessionApi";
 import type { ConsultationSessionData } from "@/types/consultation";
+import type { MaskType } from "@/hooks/useFaceMask";
 
 export type ConnectionState = "disconnected" | "connecting" | "connected" | "error";
 
@@ -16,10 +17,12 @@ export interface UseConsultationSessionReturn {
   // 참가자 정보
   localParticipant: LocalParticipant | null;
   remoteParticipants: RemoteParticipant[];
+  remoteMaskType: MaskType;
 
   // 연결 제어
   connect: (reservationId: number) => Promise<void>;
   disconnect: () => void;
+  sendMaskUpdate: (maskType: MaskType) => void;
 
   // 미디어 제어
   toggleMic: () => Promise<void>;
@@ -43,12 +46,30 @@ export function useConsultationSession(): UseConsultationSessionReturn {
   const [sessionData, setSessionData] = useState<ConsultationSessionData | null>(null);
   const [localParticipant, setLocalParticipant] = useState<LocalParticipant | null>(null);
   const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipant[]>([]);
+  const [remoteMaskType, setRemoteMaskType] = useState<MaskType>(null);
   const [isMicEnabled, setIsMicEnabled] = useState(true);
   const [isCameraEnabled, setIsCameraEnabled] = useState(true);
 
   // 중복 연결 및 API 호출 방지를 위한 ref
   const isConnecting = useRef(false);
   const processedReservationId = useRef<number | null>(null);
+
+  const isValidMaskType = (value: unknown): value is MaskType => {
+    return value === null || value === "T-zone" || value === "U-zone" || value === "Nose zone" || value === "Apple zone";
+  };
+
+  const parseMaskUpdate = (payload: Uint8Array): MaskType | undefined => {
+    try {
+      const text = new TextDecoder().decode(payload);
+      const data = JSON.parse(text) as { type?: string; value?: unknown };
+      if (data?.type !== "MASK_UPDATE") return undefined;
+      if (!("value" in data)) return undefined;
+      return isValidMaskType(data.value) ? data.value : undefined;
+    } catch (error) {
+      console.warn("⚠️ 마스크 데이터 파싱 실패:", error);
+      return undefined;
+    }
+  };
 
   /**
    * 상담 세션 생성 및 LiveKit 연결
@@ -140,6 +161,17 @@ export function useConsultationSession(): UseConsultationSessionReturn {
           setRemoteParticipants((prev) => [...prev]);
         });
 
+        // 데이터 채널 수신 (마스크 동기화)
+        newRoom.on(RoomEvent.DataReceived, (payload, participant) => {
+          const nextMaskType = parseMaskUpdate(payload);
+          if (nextMaskType === undefined) return;
+          console.log("📨 마스크 데이터 수신:", {
+            from: participant?.identity ?? "unknown",
+            maskType: nextMaskType,
+          });
+          setRemoteMaskType(nextMaskType);
+        });
+
         // 원격 참가자 퇴장
         newRoom.on(RoomEvent.ParticipantDisconnected, (participant) => {
           console.log("❌ 원격 참가자 연결 해제:", participant.identity);
@@ -177,6 +209,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         // 8. 미디어 상태 업데이트
         setIsMicEnabled(true);
         setIsCameraEnabled(true);
+        setRemoteMaskType(null);
 
         isConnecting.current = false;
         console.log("✅ 상담 세션 연결 완료");
@@ -201,12 +234,27 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     setRoom(null);
     setLocalParticipant(null);
     setRemoteParticipants([]);
+    setRemoteMaskType(null);
     setConnectionState("disconnected");
     setSessionData(null);
     setError(null);
     isConnecting.current = false;
     processedReservationId.current = null;
   }, [room]);
+
+  /**
+   * 마스크 상태 전송 (DataChannel)
+   */
+  const sendMaskUpdate = useCallback(
+    (maskType: MaskType) => {
+      if (!room) return;
+      const payload = { type: "MASK_UPDATE", value: maskType };
+      const data = new TextEncoder().encode(JSON.stringify(payload));
+      room.localParticipant.publishData(data, { reliable: true });
+      console.log("📤 마스크 데이터 전송:", payload);
+    },
+    [room]
+  );
 
   /**
    * 마이크 토글
@@ -248,8 +296,10 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     sessionData,
     localParticipant,
     remoteParticipants,
+    remoteMaskType,
     connect,
     disconnect,
+    sendMaskUpdate,
     toggleMic,
     toggleCamera,
     isMicEnabled,
