@@ -92,7 +92,7 @@ async def entrypoint(ctx: JobContext):
         # STT 결과 수신 및 출력 (+ Java 백엔드 전송)
         async def receive_text():
             # 동일 Docker 네트워크 내 Java 서비스 엔드포인트
-            endpoint = "http://backend:8080/api/v1/chat-logs"
+            endpoint = "http://backend:8080/api/v1/consulting/session/chat-log"
 
             # 루프 밖에서 클라이언트를 생성하여 커넥션 풀 활용
             async with httpx.AsyncClient() as client:
