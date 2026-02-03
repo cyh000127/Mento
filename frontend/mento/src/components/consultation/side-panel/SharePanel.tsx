@@ -1,14 +1,6 @@
 import { useRef, useState, useEffect, type ChangeEvent, type PointerEvent } from "react";
 import { uploadConsultationMedia } from "@/api/consultationMediaApi";
-import {
-  ALLOWED_IMAGE_EXTENSIONS,
-  ALLOWED_VIDEO_EXTENSIONS,
-  MAX_SINGLE_FILE_BYTES,
-  MAX_TOTAL_BYTES,
-  type SharedMediaFile,
-  type DrawCommand,
-  type DrawPoint,
-} from "@/types/consultationMedia";
+import { ALLOWED_IMAGE_EXTENSIONS, ALLOWED_VIDEO_EXTENSIONS, MAX_SINGLE_FILE_BYTES, MAX_TOTAL_BYTES, type SharedMediaFile, type DrawCommand, type DrawPoint } from "@/types/consultationMedia";
 
 export interface SharePanelProps {
   reservationId: number | null;
@@ -57,16 +49,7 @@ const SEND_INTERVAL_MS = 60;
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
-export function SharePanel({
-  reservationId,
-  onShare,
-  sharedImageUrl,
-  drawCommands,
-  onShareImage,
-  onDrawCommand,
-  onClearWhiteboard,
-  canDraw = false,
-}: SharePanelProps) {
+export function SharePanel({ reservationId, onShare, sharedImageUrl, drawCommands, onShareImage, onDrawCommand, onClearWhiteboard, canDraw = false }: SharePanelProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -165,8 +148,8 @@ export function SharePanel({
   }, [sharedImageUrl, drawCommands]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    setSelectedFiles(files);
+    const file = event.target.files?.[0];
+    setSelectedFiles(file ? [file] : []);
     setErrorMessage(null);
   };
 
@@ -328,26 +311,6 @@ export function SharePanel({
 
   return (
     <div className="flex flex-col h-full">
-      {/* 헤더 */}
-      <div className="p-4 border-b border-gray-800">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-600/20 rounded-lg">
-            <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-              />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-gray-200">미디어 공유</h3>
-            <p className="text-xs text-gray-500">이미지 또는 영상 공유</p>
-          </div>
-        </div>
-      </div>
-
       {sharedImageUrl && (
         <div className="p-4 space-y-4">
           {/* 공유 이미지 + 캔버스 */}
@@ -383,15 +346,7 @@ export function SharePanel({
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-gray-500">굵기</span>
-                  <input
-                    type="range"
-                    min={2}
-                    max={12}
-                    step={1}
-                    value={penLineWidth}
-                    onChange={(event) => setPenLineWidth(Number(event.target.value))}
-                    className="flex-1 accent-cyan-500"
-                  />
+                  <input type="range" min={2} max={12} step={1} value={penLineWidth} onChange={(event) => setPenLineWidth(Number(event.target.value))} className="flex-1 accent-cyan-500" />
                   <span className="text-xs text-gray-400 w-6 text-right">{penLineWidth}</span>
                 </div>
               </div>
@@ -400,11 +355,7 @@ export function SharePanel({
               <span>실시간 드로잉 공유</span>
               <div className="flex items-center gap-2">
                 {canDraw && (
-                  <button
-                    type="button"
-                    onClick={handleClearWhiteboard}
-                    className="px-2 py-1 rounded border border-gray-700 text-gray-300 hover:border-cyan-500 hover:text-cyan-300 transition-colors"
-                  >
+                  <button type="button" onClick={handleClearWhiteboard} className="px-2 py-1 rounded border border-gray-700 text-gray-300 hover:border-cyan-500 hover:text-cyan-300 transition-colors">
                     전체 지우기
                   </button>
                 )}
@@ -416,37 +367,19 @@ export function SharePanel({
       )}
 
       {/* 업로드 영역 */}
-      <div className={`p-4 space-y-4 ${sharedImageUrl ? "border-t border-gray-800" : ""}`}>
+      <div className={`p-3 space-y-3 ${sharedImageUrl ? "border-t border-gray-800" : ""}`}>
         {/* 파일 선택 영역 */}
         <div className="relative">
-          <input
-            ref={inputRef}
-            type="file"
-            multiple
-            accept=".jpg,.jpeg,.png,.webp,.mp4,.mov,.webm,.mkv"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-          <div
-            onClick={handleBrowseClick}
-            className="border-2 border-dashed border-gray-700 rounded-lg p-6 cursor-pointer hover:border-cyan-500 hover:bg-gray-800/50 transition-all"
-          >
-            <div className="text-center">
-              <svg
-                className="mx-auto h-12 w-12 text-gray-600 mb-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                />
+          <input ref={inputRef} type="file" accept=".jpg,.jpeg,.png,.webp,.mp4,.mov,.webm,.mkv" onChange={handleFileChange} className="hidden" />
+          <div onClick={handleBrowseClick} className="border-2 border-dashed border-gray-700 rounded-lg px-3 py-2 cursor-pointer hover:border-cyan-500 hover:bg-gray-800/50 transition-all">
+            <div className="flex items-center gap-3">
+              <svg className="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
-              <p className="text-sm text-gray-400 mb-1">클릭하여 파일 선택</p>
-              <p className="text-xs text-gray-600">JPG, PNG, WEBP, MP4, MOV, WEBM, MKV</p>
+              <div className="flex flex-col">
+                <p className="text-xs text-gray-400">클릭하여 파일 선택</p>
+                <p className="text-[11px] text-gray-600">JPG, PNG, WEBP, MP4, MOV, WEBM, MKV</p>
+              </div>
             </div>
           </div>
         </div>
@@ -462,11 +395,7 @@ export function SharePanel({
               {selectedFiles.map((file, idx) => (
                 <div key={idx} className="flex items-center gap-2 text-xs">
                   <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
-                      clipRule="evenodd"
-                    />
+                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                   </svg>
                   <span className="text-gray-400 truncate flex-1">{file.name}</span>
                   <span className="text-gray-600">{(file.size / 1024 / 1024).toFixed(1)}MB</span>
@@ -480,34 +409,26 @@ export function SharePanel({
         <button
           onClick={handleUpload}
           disabled={uploading || selectedFiles.length === 0}
-          className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-sm font-medium disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed hover:from-cyan-500 hover:to-blue-500 transition-all shadow-lg disabled:shadow-none"
+          className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-sm font-medium disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed hover:from-cyan-500 hover:to-blue-500 transition-all shadow-lg disabled:shadow-none"
         >
           {uploading ? (
             <span className="flex items-center justify-center gap-2">
               <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
               업로드 중...
             </span>
           ) : (
             <span className="flex items-center justify-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
               </svg>
-              업로드
+              {sharedImageUrl ? "사진 바꾸기" : "업로드"}
             </span>
           )}
         </button>
+        {sharedImageUrl && <p className="text-xs text-amber-300">사진을 변경하면 지금까지 그린 내용이 모두 삭제됩니다.</p>}
 
         {/* 에러 메시지 */}
         {errorMessage && (
@@ -522,7 +443,6 @@ export function SharePanel({
             <p className="text-sm text-red-300">{errorMessage}</p>
           </div>
         )}
-
       </div>
     </div>
   );
