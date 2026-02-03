@@ -18,6 +18,7 @@ export interface UseConsultationSessionReturn {
   localParticipant: LocalParticipant | null;
   remoteParticipants: RemoteParticipant[];
   remoteMaskType: MaskType;
+  remoteMaskUpdateSeq: number;
 
   // 연결 제어
   connect: (reservationId: number) => Promise<void>;
@@ -47,6 +48,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
   const [localParticipant, setLocalParticipant] = useState<LocalParticipant | null>(null);
   const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipant[]>([]);
   const [remoteMaskType, setRemoteMaskType] = useState<MaskType>(null);
+  const [remoteMaskUpdateSeq, setRemoteMaskUpdateSeq] = useState(0);
   const [isMicEnabled, setIsMicEnabled] = useState(true);
   const [isCameraEnabled, setIsCameraEnabled] = useState(true);
 
@@ -162,10 +164,11 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         });
 
         // 데이터 채널 수신 (마스크 동기화)
-        newRoom.on(RoomEvent.DataReceived, (payload, participant) => {
+        newRoom.on(RoomEvent.DataReceived, (payload, _participant) => {
           const nextMaskType = parseMaskUpdate(payload);
           if (nextMaskType === undefined) return;
           setRemoteMaskType(nextMaskType);
+          setRemoteMaskUpdateSeq((prev) => prev + 1);
         });
 
         // 원격 참가자 퇴장
@@ -206,6 +209,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         setIsMicEnabled(true);
         setIsCameraEnabled(true);
         setRemoteMaskType(null);
+        setRemoteMaskUpdateSeq(0);
 
         isConnecting.current = false;
         console.log("✅ 상담 세션 연결 완료");
@@ -292,6 +296,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     localParticipant,
     remoteParticipants,
     remoteMaskType,
+    remoteMaskUpdateSeq,
     connect,
     disconnect,
     sendMaskUpdate,

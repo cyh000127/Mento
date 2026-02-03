@@ -15,6 +15,7 @@ export function ConsultationRoomPage() {
     localParticipant,
     remoteParticipants,
     remoteMaskType,
+    remoteMaskUpdateSeq,
     connect,
     disconnect,
     sendMaskUpdate,
@@ -27,6 +28,7 @@ export function ConsultationRoomPage() {
 
   const hasConnected = useRef(false)
   const isApplyingRemoteMaskRef = useRef(false)
+  const hasResetMaskOnConnectRef = useRef(false)
 
   // 컴포넌트 마운트 시 자동으로 상담 세션 생성 및 LiveKit 연결
   useEffect(() => {
@@ -95,9 +97,10 @@ export function ConsultationRoomPage() {
 
   // 원격에서 받은 마스크를 로컬 상태에 반영 (단일 소스 유지)
   useEffect(() => {
+    if (remoteMaskUpdateSeq === 0) return
     isApplyingRemoteMaskRef.current = true
     setSelectedMaskArea(remoteMaskType)
-  }, [remoteMaskType, setSelectedMaskArea])
+  }, [remoteMaskType, remoteMaskUpdateSeq, setSelectedMaskArea])
 
   // 마스크 변경을 DataChannel로 전송 (역방향 에코 방지)
   useEffect(() => {
@@ -108,6 +111,17 @@ export function ConsultationRoomPage() {
     }
     sendMaskUpdate(selectedMaskArea)
   }, [connectionState, selectedMaskArea, sendMaskUpdate])
+
+  // 새로고침/재접속 시 마스크 초기화
+  useEffect(() => {
+    if (connectionState !== "connected") {
+      hasResetMaskOnConnectRef.current = false
+      return
+    }
+    if (hasResetMaskOnConnectRef.current) return
+    hasResetMaskOnConnectRef.current = true
+    setSelectedMaskArea(null)
+  }, [connectionState, setSelectedMaskArea])
 
   return (
     <div className="relative h-screen bg-gray-950 overflow-hidden">
