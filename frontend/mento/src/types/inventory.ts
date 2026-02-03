@@ -2,8 +2,9 @@ export type ProductCategory = "skin" | "beauty" | "hair"
 
 export type ProductStatus = "in-use" | "unavailable" | "purchasing" | "recommended" | "over-dated"
 
-// API에서 사용하는 상태 타입
-export type ApiProductStatus = "OWNED" | "UNAVAILABLE" | "PURCHASING" | "RECOMMENDED" | "OVER_DATED"
+// API에서 사용하는 상태 타입 (ItemStatus와 동일)
+export type ItemStatus = "OWNED" | "UNAVAILABLE" | "PURCHASING" | "RECOMMENDED" | "OVER_DATED"
+export type ApiProductStatus = ItemStatus
 
 // API 정렬 옵션
 export type ApiSortOption = "LATEST" | "OLDEST" | "EXPIRING_SOON"
@@ -95,7 +96,7 @@ export interface InventoryItemDetailResponse {
       imageUrl: string
       productUrl: string
     }
-    status: "OWNED" | "IN_USE" | "EXPIRED"
+    status: "OWNED" | "IN_USE" | "OVER_DATED"
     isFavorite: boolean
     purchaseDate: string
     expectedExpiry: string

@@ -8,11 +8,15 @@ import {
   getInventoryItems,
   mapApiItemToProduct,
   mapUiStatusToApiStatus,
+  mapApiStatusToUiStatus,
   mapUiSortToApiSort,
   addInventoryItem,
   deleteInventoryItem,
   getInventoryItemDetail,
+  updateInventoryItemStatus,
+  getStatusUpdateErrorMessage,
 } from "@/api/inventoryApi"
+import type { ItemStatus } from "@/types/inventory"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -118,11 +122,11 @@ export default function InventoryPage() {
   const handleProductSelect = async (product: Product) => {
     setSelectedProduct(product)
     setDetailLoading(true)
-    
+
     try {
       const response = await getInventoryItemDetail(product.id)
       const data = response.data
-      
+
       // 만료일까지 남은 일수 계산
       let daysUntilExpiry: number | undefined = undefined
       if (data.expectedExpiry) {
@@ -133,7 +137,7 @@ export default function InventoryPage() {
         const diffTime = expiryDate.getTime() - today.getTime()
         daysUntilExpiry = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
       }
-      
+
       const detailedProduct: Product = {
         id: data.id.toString(),
         name: data.productInfoDto.name,
@@ -148,7 +152,7 @@ export default function InventoryPage() {
         isFavorite: data.isFavorite,
         daysUntilExpiry: daysUntilExpiry,
       }
-      
+
       setSelectedProduct(detailedProduct)
     } catch (error) {
       console.error("Failed to fetch item detail:", error)
@@ -161,12 +165,12 @@ export default function InventoryPage() {
       setDetailLoading(false)
     }
   }
-  
-  const mapDetailStatusToUI = (status: "OWNED" | "IN_USE" | "EXPIRED"): ProductStatus => {
+
+  const mapDetailStatusToUI = (status: "OWNED" | "IN_USE" | "OVER_DATED"): ProductStatus => {
     const statusMap = {
       "OWNED": "in-use" as ProductStatus,
       "IN_USE": "in-use" as ProductStatus,
-      "EXPIRED": "over-dated" as ProductStatus,
+      "OVER_DATED": "over-dated" as ProductStatus,
     }
     return statusMap[status] || "in-use"
   }
@@ -196,7 +200,7 @@ export default function InventoryPage() {
     try {
       // UI에서 즉시 제거
       setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id))
-      
+
       // 선택된 제품이 삭제된 경우 다른 제품 선택
       if (selectedProduct?.id === productToDelete.id) {
         const remainingProducts = products.filter((p) => p.id !== productToDelete.id)
@@ -238,17 +242,17 @@ export default function InventoryPage() {
     try {
       // 현재 인벤토리 목록을 최신 상태로 가져오기
       await fetchInventory()
-      
+
       // 중복 체크: 현재 인벤토리에 이미 있는 상품 찾기
       const duplicateProducts: Product[] = []
       const productsToAdd: Product[] = []
-      
+
       selectedProducts.forEach((selectedProduct) => {
         // products 배열에서 같은 이름의 상품이 있는지 확인
         const isDuplicate = products.some(
           (existingProduct) => existingProduct.name === selectedProduct.name
         )
-        
+
         if (isDuplicate) {
           duplicateProducts.push(selectedProduct)
         } else {
@@ -259,10 +263,10 @@ export default function InventoryPage() {
       // 중복된 상품이 있으면 경고 메시지 표시
       if (duplicateProducts.length > 0) {
         const duplicateNames = duplicateProducts.map(p => `"${p.name}"`).join(", ")
-        
+
         if (productsToAdd.length > 0) {
           const confirmMessage = `다음 상품은 이미 인벤토리에 존재합니다:\n${duplicateNames}\n\n나머지 ${productsToAdd.length}개 상품을 추가하시겠습니까?`
-          
+
           if (!confirm(confirmMessage)) {
             return // 사용자가 취소한 경우
           }
@@ -290,14 +294,14 @@ export default function InventoryPage() {
       const successResults = results
         .filter((r) => r.status === "fulfilled" && r.value.success)
         .map((r) => (r as PromiseFulfilledResult<any>).value.product)
-      
+
       const failedResults = results
         .filter((r) => r.status === "fulfilled" && !r.value.success)
         .map((r) => (r as PromiseFulfilledResult<any>).value)
 
       // 에러 메시지 생성
       const errorMessages: string[] = []
-      
+
       if (failedResults.length > 0) {
         const failedNames = failedResults.map(({ product }) => `"${product.name}"`).join(", ")
         errorMessages.push(`다음 상품 추가 중 오류가 발생했습니다:\n${failedNames}`)
@@ -325,6 +329,46 @@ export default function InventoryPage() {
     } catch (error) {
       console.error("상품 추가 중 예상치 못한 오류:", error)
       alert("상품 추가 중 오류가 발생했습니다.")
+    }
+  }
+
+  const handleStatusChange = async (productId: string, newStatus: ItemStatus) => {
+    const product = products.find((p) => p.id === productId)
+    if (!product) return
+
+    // 이전 상태 저장 (롤백용)
+    const previousProducts = [...products]
+    const previousSelectedProduct = selectedProduct
+
+    try {
+      // Optimistic UI 업데이트
+      const newUiStatus = mapApiStatusToUiStatus(newStatus)
+      setProducts((prev) =>
+        prev.map((p) => (p.id === productId ? { ...p, status: newUiStatus } : p))
+      )
+
+      if (selectedProduct?.id === productId) {
+        setSelectedProduct((prev) => (prev ? { ...prev, status: newUiStatus } : null))
+      }
+
+      // API 호출
+      await updateInventoryItemStatus(parseInt(productId), newStatus)
+
+      toast({
+        title: "상태 변경 완료",
+        description: "아이템 상태가 업데이트되었습니다.",
+      })
+    } catch (error: any) {
+      // 실패 시 원래 상태로 복원
+      setProducts(previousProducts)
+      setSelectedProduct(previousSelectedProduct)
+
+      const errorMessage = getStatusUpdateErrorMessage(error)
+      toast({
+        title: "상태 변경 실패",
+        description: errorMessage,
+        variant: "destructive",
+      })
     }
   }
 
@@ -361,6 +405,7 @@ export default function InventoryPage() {
                 product={selectedProduct}
                 onToggleFavorite={handleToggleFavorite}
                 onDelete={handleDelete}
+                onStatusChange={handleStatusChange}
                 loading={detailLoading}
               />
             )}
