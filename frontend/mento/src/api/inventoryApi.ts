@@ -106,7 +106,9 @@ export function mapUiSortToApiSort(uiSort: SortOption): ApiSortOption {
     alphabetical: "OLDEST",
     expiring: "EXPIRING_SOON",
   }
-  return sortMap[uiSort]
+  const apiSort = sortMap[uiSort]
+  console.log(`Mapping UI sort "${uiSort}" to API sort "${apiSort}"`)
+  return apiSort
 }
 
 /**

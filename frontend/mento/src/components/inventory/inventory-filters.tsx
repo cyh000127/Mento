@@ -19,6 +19,8 @@ interface InventoryFiltersProps {
   onSortChange: (option: SortOption) => void
   selectedStatus: ProductStatus | "all"
   onStatusChange: (status: ProductStatus | "all") => void
+  favoriteOnly: boolean
+  onFavoriteOnlyChange: (favoriteOnly: boolean) => void
   onAddProduct: () => void
 }
 
@@ -53,6 +55,8 @@ export function InventoryFilters({
   onSortChange,
   selectedStatus,
   onStatusChange,
+  favoriteOnly,
+  onFavoriteOnlyChange,
   onAddProduct,
 }: InventoryFiltersProps) {
   return (
@@ -86,19 +90,29 @@ export function InventoryFilters({
             <button
               key={category}
               onClick={() => onCategoryChange(category)}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                selectedCategory === category
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${selectedCategory === category
                   ? "bg-primary-500 text-dark-bg"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
+                }`}
             >
               {categoryLabels[category]}
             </button>
           ))}
         </div>
 
-        {/* Dropdowns */}
+        {/* Favorite Filter and Dropdowns */}
         <div className="flex gap-3">
+          {/* Favorite Filter Toggle */}
+          <button
+            onClick={() => onFavoriteOnlyChange(!favoriteOnly)}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${favoriteOnly
+                ? "bg-primary-500 text-dark-bg"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+          >
+            ⭐ 즐겨찾기만
+          </button>
+
           {/* Sort Dropdown */}
           <Select value={sortOption} onValueChange={(value) => onSortChange(value as SortOption)}>
             <SelectTrigger className="w-[180px]">

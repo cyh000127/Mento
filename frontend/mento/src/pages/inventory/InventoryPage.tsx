@@ -43,7 +43,7 @@ export default function InventoryPage() {
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | "all">("all")
   const [sortOption, setSortOption] = useState<SortOption>("recent")
   const [selectedStatus, setSelectedStatus] = useState<ProductStatus | "all">("all")
-  const [favoriteFilter, setFavoriteFilter] = useState<boolean | undefined>(undefined)
+  const [favoriteFilter, setFavoriteFilter] = useState<boolean>(false)
   const [registerModalOpen, setRegisterModalOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [productToDelete, setProductToDelete] = useState<Product | null>(null)
@@ -69,14 +69,16 @@ export default function InventoryPage() {
       }
 
       // 즐겨찾기 필터 적용
-      if (favoriteFilter !== undefined) {
-        filters.isFavorite = favoriteFilter
+      if (favoriteFilter) {
+        filters.isFavorite = true
       }
 
       // 정렬 옵션 적용
       filters.sort = mapUiSortToApiSort(sortOption)
 
+      console.log("Fetching inventory with filters:", filters)
       const response = await getInventoryItems(filters)
+      console.log("API Response:", response)
 
       const mappedProducts = response.content.map(mapApiItemToProduct)
       setProducts(mappedProducts)
@@ -407,6 +409,8 @@ export default function InventoryPage() {
               onSortChange={setSortOption}
               selectedStatus={selectedStatus}
               onStatusChange={setSelectedStatus}
+              favoriteOnly={favoriteFilter}
+              onFavoriteOnlyChange={setFavoriteFilter}
               onAddProduct={handleAddProduct}
             />
 
