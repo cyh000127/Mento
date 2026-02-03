@@ -29,14 +29,14 @@ export function StandaloneSidePanelDemo() {
             </div>
           </div>
 
-          {/* 컨설턴트 비디오 영역 */}
+          {/* 멘토 비디오 영역 */}
           <div className="w-full max-w-4xl">
             <div className="relative aspect-video bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl shadow-2xl border border-gray-700 overflow-hidden">
               {/* 비디오 플레이스홀더 */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center z-10">
                   <div className="text-7xl mb-4 animate-pulse">👨‍⚕️</div>
-                  <p className="text-2xl text-white font-bold mb-2">컨설턴트</p>
+                  <p className="text-2xl text-white font-bold mb-2">멘토</p>
                   <p className="text-sm text-gray-400">WebRTC Video Stream Area</p>
                 </div>
               </div>
