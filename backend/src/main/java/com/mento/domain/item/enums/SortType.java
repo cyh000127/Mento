@@ -11,11 +11,13 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public enum SortType {
-	IMPORTANT("expectedExpiryDate", Sort.by(Sort.Direction.ASC, "expectedExpiryDate", "id")),
-	LATEST("latest", Sort.by(Sort.Direction.DESC, "createdAt", "id")),
-	PURCHASE_DATE("purchaseDate", Sort.by(Sort.Direction.DESC, "purchaseDate", "id"));
+
+	IMPORTANT("important", "유통기한 임박순", Sort.by(Sort.Direction.ASC, "expectedExpiryDate", "id")),
+	LATEST("latest", "최신 등록순", Sort.by(Sort.Direction.DESC, "createdAt", "id")),
+	PURCHASE_DATE("purchaseDate", "구매일순", Sort.by(Sort.Direction.DESC, "purchaseDate", "id"));
 
 	private final String value;
+	private final String description;
 	private final Sort sort;
 
 	public static SortType from(final String value) {
