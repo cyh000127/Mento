@@ -62,9 +62,12 @@ services:
     restart: unless-stopped
     command:
       - '--url_base_prefix=/cadvisor'
+      - '--housekeeping_interval=30s'
+      - '--docker_only=true'
+      - '--disable_metrics=disk,diskIO'
     volumes:
       - /:/rootfs:ro
-      - /var/run:/var/run:ro
+      - /var/run:/var/run:rw
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
@@ -74,6 +77,12 @@ services:
       - monitoring-network
       - app-network
       - live-network
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+        reservations:
+          memory: 150M
 
   # 5. Loki
   loki:
