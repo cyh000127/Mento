@@ -1,6 +1,6 @@
 import { api } from "./axios"
 import type {
-  ApiProduct,
+  ProductListItem,
   PaginatedResponse,
   ApiResponse,
   ProductListParams,
@@ -8,25 +8,20 @@ import type {
 
 /**
  * 상품 목록 조회 API
- * @param params 조회 파라미터 (brand, category_medium, category_small, sort_key, order, page, size)
+ * @param params 조회 파라미터 (page, size)
  * @returns 페이지네이션된 상품 목록
  */
 export async function getProducts(
   params?: ProductListParams
-): Promise<ApiResponse<PaginatedResponse<ApiProduct>>> {
+): Promise<ApiResponse<PaginatedResponse<ProductListItem>>> {
   try {
     // 값이 있는 파라미터만 쿼리 스트링에 포함
     const queryParams: Record<string, string | number> = {}
-    
-    if (params?.brand) queryParams.brand = params.brand
-    if (params?.category_medium) queryParams.category_medium = params.category_medium
-    if (params?.category_small) queryParams.category_small = params.category_small
-    if (params?.sort_key) queryParams.sort_key = params.sort_key
-    if (params?.order) queryParams.order = params.order
+
     if (params?.page !== undefined) queryParams.page = params.page
     if (params?.size !== undefined) queryParams.size = params.size
 
-    const response = await api.get<ApiResponse<PaginatedResponse<ApiProduct>>>(
+    const response = await api.get<ApiResponse<PaginatedResponse<ProductListItem>>>(
       "/products",
       { params: queryParams }
     )
@@ -37,7 +32,7 @@ export async function getProducts(
     if (error.response?.data) {
       return error.response.data
     }
-    
+
     // 네트워크 에러 등의 경우
     throw error
   }

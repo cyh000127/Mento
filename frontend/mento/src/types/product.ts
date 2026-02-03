@@ -43,13 +43,17 @@ export interface ApiResponse<T> {
   timestamp: string
 }
 
+// 상품 목록 아이템 타입
+export interface ProductListItem {
+  productId: number
+  name: string
+  brandName: string
+  categoryMedium: string
+  imageUrl: string
+}
+
 // 상품 목록 조회 파라미터
 export interface ProductListParams {
-  brand?: string
-  category_medium?: string
-  category_small?: string
-  sort_key?: "price" | "name" | "created_at"
-  order?: "asc" | "desc"
   page?: number
   size?: number
 }
