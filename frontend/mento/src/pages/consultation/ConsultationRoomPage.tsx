@@ -4,7 +4,6 @@ import { useConsultationSession } from "@/hooks/useConsultationSession"
 import { VideoTrack } from "@/components/consultation/VideoTrack"
 import { SidePanel } from "@/components/consultation/side-panel"
 import { useConsultationStore } from "@/stores/useConsultationStore"
-import type { MaskType } from "@/hooks/useFaceMask"
 
 export function ConsultationRoomPage() {
   const { reservationId } = useParams<{ reservationId: string }>()
@@ -27,7 +26,7 @@ export function ConsultationRoomPage() {
   const { selectedMaskArea, setActiveTab, setSelectedMaskArea } = useConsultationStore()
 
   const hasConnected = useRef(false)
-  const lastRemoteMaskTypeRef = useRef<MaskType | null>(null)
+  const isApplyingRemoteMaskRef = useRef(false)
 
   // 컴포넌트 마운트 시 자동으로 상담 세션 생성 및 LiveKit 연결
   useEffect(() => {
@@ -96,15 +95,15 @@ export function ConsultationRoomPage() {
 
   // 원격에서 받은 마스크를 로컬 상태에 반영 (단일 소스 유지)
   useEffect(() => {
-    lastRemoteMaskTypeRef.current = remoteMaskType
+    isApplyingRemoteMaskRef.current = true
     setSelectedMaskArea(remoteMaskType)
   }, [remoteMaskType, setSelectedMaskArea])
 
   // 마스크 변경을 DataChannel로 전송 (역방향 에코 방지)
   useEffect(() => {
     if (connectionState !== "connected") return
-    if (lastRemoteMaskTypeRef.current === selectedMaskArea) {
-      lastRemoteMaskTypeRef.current = null
+    if (isApplyingRemoteMaskRef.current) {
+      isApplyingRemoteMaskRef.current = false
       return
     }
     sendMaskUpdate(selectedMaskArea)
