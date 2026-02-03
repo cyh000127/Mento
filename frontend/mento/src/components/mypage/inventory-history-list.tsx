@@ -33,7 +33,10 @@ export function InventoryHistoryList({ histories }: InventoryHistoryListProps) {
                   <p className="text-sm text-muted-foreground">{history.brandName}</p>
                 </div>
                 <div className="flex-shrink-0">
-                  <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-primary-500/10 text-primary-500">
+                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${history.actionType === 'DELETED'
+                      ? 'bg-red-50 text-red-600'
+                      : 'bg-primary-500/10 text-primary-500'
+                    }`}>
                     {ACTION_TYPE_LABELS[history.actionType]}
                   </span>
                 </div>
