@@ -3,6 +3,7 @@ import { Room, RoomEvent, RemoteParticipant, LocalParticipant } from "livekit-cl
 import { createConsultationSession } from "@/api/consultationSessionApi";
 import type { ConsultationSessionData } from "@/types/consultation";
 import type { MaskType } from "@/hooks/useFaceMask";
+import type { MediaFileType, SharedMediaFile } from "@/types/consultationMedia";
 
 export type ConnectionState = "disconnected" | "connecting" | "connected" | "error";
 
@@ -19,11 +20,13 @@ export interface UseConsultationSessionReturn {
   remoteParticipants: RemoteParticipant[];
   remoteMaskType: MaskType;
   remoteMaskUpdateSeq: number;
+  sharedMediaFiles: SharedMediaFile[];
 
   // 연결 제어
   connect: (reservationId: number) => Promise<void>;
   disconnect: () => void;
   sendMaskUpdate: (maskType: MaskType) => void;
+  sendMediaShare: (files: SharedMediaFile[]) => void;
 
   // 미디어 제어
   toggleMic: () => Promise<void>;
@@ -49,6 +52,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
   const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipant[]>([]);
   const [remoteMaskType, setRemoteMaskType] = useState<MaskType>(null);
   const [remoteMaskUpdateSeq, setRemoteMaskUpdateSeq] = useState(0);
+  const [sharedMediaFiles, setSharedMediaFiles] = useState<SharedMediaFile[]>([]);
   const [isMicEnabled, setIsMicEnabled] = useState(true);
   const [isCameraEnabled, setIsCameraEnabled] = useState(true);
 
@@ -69,6 +73,31 @@ export function useConsultationSession(): UseConsultationSessionReturn {
       return isValidMaskType(data.value) ? data.value : undefined;
     } catch (error) {
       console.warn("⚠️ 마스크 데이터 파싱 실패:", error);
+      return undefined;
+    }
+  };
+
+  const isValidMediaFileType = (value: unknown): value is MediaFileType => {
+    return value === "IMAGE" || value === "VIDEO";
+  };
+
+  const parseMediaShare = (payload: Uint8Array): SharedMediaFile[] | undefined => {
+    try {
+      const text = new TextDecoder().decode(payload);
+      const data = JSON.parse(text) as { type?: string; files?: unknown };
+      if (data?.type !== "MEDIA_SHARED") return undefined;
+      if (!Array.isArray(data.files)) return undefined;
+      const files = data.files
+        .map((file) => {
+          const record = file as { fileUrl?: unknown; fileType?: unknown };
+          if (typeof record?.fileUrl !== "string") return null;
+          if (!isValidMediaFileType(record.fileType)) return null;
+          return { fileUrl: record.fileUrl, fileType: record.fileType };
+        })
+        .filter((file): file is SharedMediaFile => Boolean(file));
+      return files.length > 0 ? files : undefined;
+    } catch (error) {
+      console.warn("⚠️ 미디어 데이터 파싱 실패:", error);
       return undefined;
     }
   };
@@ -166,9 +195,25 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         // 데이터 채널 수신 (마스크 동기화)
         newRoom.on(RoomEvent.DataReceived, (payload, _participant) => {
           const nextMaskType = parseMaskUpdate(payload);
-          if (nextMaskType === undefined) return;
-          setRemoteMaskType(nextMaskType);
-          setRemoteMaskUpdateSeq((prev) => prev + 1);
+          if (nextMaskType !== undefined) {
+            setRemoteMaskType(nextMaskType);
+            setRemoteMaskUpdateSeq((prev) => prev + 1);
+            return;
+          }
+
+          const sharedFiles = parseMediaShare(payload);
+          if (!sharedFiles) return;
+          setSharedMediaFiles((prev) => {
+            const existing = new Set(prev.map((file) => file.fileUrl));
+            const merged = [...prev];
+            sharedFiles.forEach((file) => {
+              if (!existing.has(file.fileUrl)) {
+                existing.add(file.fileUrl);
+                merged.push(file);
+              }
+            });
+            return merged;
+          });
         });
 
         // 원격 참가자 퇴장
@@ -210,6 +255,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         setIsCameraEnabled(true);
         setRemoteMaskType(null);
         setRemoteMaskUpdateSeq(0);
+        setSharedMediaFiles([]);
 
         isConnecting.current = false;
         console.log("✅ 상담 세션 연결 완료");
@@ -237,6 +283,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     setRemoteMaskType(null);
     setConnectionState("disconnected");
     setSessionData(null);
+    setSharedMediaFiles([]);
     setError(null);
     isConnecting.current = false;
     processedReservationId.current = null;
@@ -249,6 +296,19 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     (maskType: MaskType) => {
       if (!room) return;
       const payload = { type: "MASK_UPDATE", value: maskType };
+      const data = new TextEncoder().encode(JSON.stringify(payload));
+      room.localParticipant.publishData(data, { reliable: true });
+    },
+    [room]
+  );
+
+  /**
+   * 미디어 공유 데이터 전송 (DataChannel)
+   */
+  const sendMediaShare = useCallback(
+    (files: SharedMediaFile[]) => {
+      if (!room || files.length === 0) return;
+      const payload = { type: "MEDIA_SHARED", files };
       const data = new TextEncoder().encode(JSON.stringify(payload));
       room.localParticipant.publishData(data, { reliable: true });
     },
@@ -297,9 +357,11 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     remoteParticipants,
     remoteMaskType,
     remoteMaskUpdateSeq,
+    sharedMediaFiles,
     connect,
     disconnect,
     sendMaskUpdate,
+    sendMediaShare,
     toggleMic,
     toggleCamera,
     isMicEnabled,

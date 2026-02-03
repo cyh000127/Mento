@@ -18,9 +18,11 @@ export function ConsultationRoomPage() {
     remoteParticipants,
     remoteMaskType,
     remoteMaskUpdateSeq,
+    sharedMediaFiles,
     connect,
     disconnect,
     sendMaskUpdate,
+    sendMediaShare,
     toggleMic,
     toggleCamera,
     isMicEnabled,
@@ -31,6 +33,7 @@ export function ConsultationRoomPage() {
   const hasConnected = useRef(false);
   const isApplyingRemoteMaskRef = useRef(false);
   const hasResetMaskOnConnectRef = useRef(false);
+  const reservationIdNumber = reservationId ? Number(reservationId) : null;
 
   // 컴포넌트 마운트 시 자동으로 상담 세션 생성 및 LiveKit 연결
   useEffect(() => {
@@ -85,6 +88,11 @@ export function ConsultationRoomPage() {
     mentorId: user?.id ?? null,
     localParticipant,
     connectionState,
+  };
+  const shareProps = {
+    reservationId: Number.isNaN(reservationIdNumber ?? NaN) ? null : reservationIdNumber,
+    onShare: sendMediaShare,
+    incomingSharedFiles: sharedMediaFiles,
   };
 
   // USER 접근 시 숨겨진 탭이 활성화되지 않도록 초기화
@@ -257,7 +265,7 @@ export function ConsultationRoomPage() {
       </div>
 
       {/* 오른쪽 사이드 패널 */}
-      <SidePanel allowedTabs={sidePanelTabs} recordProps={recordProps} />
+      <SidePanel allowedTabs={sidePanelTabs} recordProps={recordProps} shareProps={shareProps} />
     </div>
   );
 }
