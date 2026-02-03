@@ -1,4 +1,4 @@
-import { Search, Plus } from "lucide-react"
+import { Camera, Search, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -21,6 +21,7 @@ interface InventoryFiltersProps {
   onStatusChange: (status: ProductStatus | "all") => void
   favoriteOnly: boolean
   onFavoriteOnlyChange: (favoriteOnly: boolean) => void
+  onAddPhoto: () => void
   onAddProduct: () => void
 }
 
@@ -57,12 +58,13 @@ export function InventoryFilters({
   onStatusChange,
   favoriteOnly,
   onFavoriteOnlyChange,
+  onAddPhoto,
   onAddProduct,
 }: InventoryFiltersProps) {
   return (
     <div className="mb-6 space-y-4">
       {/* Search Bar and Add Button */}
-      <div className="flex gap-3">
+      <div className="flex items-center gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -73,13 +75,22 @@ export function InventoryFilters({
             className="pl-10"
           />
         </div>
-        <Button
-          onClick={onAddProduct}
-          className="bg-primary-500 text-dark-bg hover:bg-primary-400"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          제품 등록
-        </Button>
+        <div className="ml-auto flex items-center gap-3">
+          <Button
+            onClick={onAddPhoto}
+            className="bg-primary-500 text-dark-bg hover:bg-primary-400"
+          >
+            <Camera className="mr-2 h-4 w-4" />
+            사진 등록
+          </Button>
+          <Button
+            onClick={onAddProduct}
+            className="bg-primary-500 text-dark-bg hover:bg-primary-400"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            제품 등록
+          </Button>
+        </div>
       </div>
 
       {/* Category Filter Buttons and Dropdowns */}
