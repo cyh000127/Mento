@@ -165,10 +165,6 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         newRoom.on(RoomEvent.DataReceived, (payload, participant) => {
           const nextMaskType = parseMaskUpdate(payload);
           if (nextMaskType === undefined) return;
-          console.log("📨 마스크 데이터 수신:", {
-            from: participant?.identity ?? "unknown",
-            maskType: nextMaskType,
-          });
           setRemoteMaskType(nextMaskType);
         });
 
@@ -251,7 +247,6 @@ export function useConsultationSession(): UseConsultationSessionReturn {
       const payload = { type: "MASK_UPDATE", value: maskType };
       const data = new TextEncoder().encode(JSON.stringify(payload));
       room.localParticipant.publishData(data, { reliable: true });
-      console.log("📤 마스크 데이터 전송:", payload);
     },
     [room]
   );
