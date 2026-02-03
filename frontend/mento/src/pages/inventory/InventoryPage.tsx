@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { ProductGrid } from "@/components/inventory/product-grid"
 import { ProductDetail } from "@/components/inventory/product-detail"
 import { InventoryFilters } from "@/components/inventory/inventory-filters"
@@ -28,6 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 
 export default function InventoryPage() {
@@ -45,9 +46,13 @@ export default function InventoryPage() {
   const [selectedStatus, setSelectedStatus] = useState<ProductStatus | "all">("all")
   const [favoriteFilter, setFavoriteFilter] = useState<boolean>(false)
   const [registerModalOpen, setRegisterModalOpen] = useState(false)
+  const [photoModalOpen, setPhotoModalOpen] = useState(false)
+  const [cameraError, setCameraError] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [productToDelete, setProductToDelete] = useState<Product | null>(null)
   const { toast } = useToast()
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const mediaStreamRef = useRef<MediaStream | null>(null)
 
   // API 데이터 가져오기
   const fetchInventory = useCallback(async () => {
@@ -263,6 +268,10 @@ export default function InventoryPage() {
     setRegisterModalOpen(true)
   }
 
+  const handleAddPhoto = () => {
+    setPhotoModalOpen(true)
+  }
+
   const handleProductsAdded = async (selectedProducts: Product[]) => {
     try {
       // 현재 인벤토리 목록을 최신 상태로 가져오기
@@ -397,6 +406,41 @@ export default function InventoryPage() {
     }
   }
 
+  useEffect(() => {
+    let isActive = true
+
+    const startCamera = async () => {
+      try {
+        setCameraError(null)
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        if (!isActive) {
+          stream.getTracks().forEach((track) => track.stop())
+          return
+        }
+        mediaStreamRef.current = stream
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+        }
+      } catch (error) {
+        if (isActive) {
+          setCameraError("카메라 접근이 거부되었습니다.")
+        }
+      }
+    }
+
+    if (photoModalOpen) {
+      startCamera()
+    }
+
+    return () => {
+      isActive = false
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop())
+        mediaStreamRef.current = null
+      }
+    }
+  }, [photoModalOpen])
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-[1400px] px-6 py-8">
@@ -415,6 +459,7 @@ export default function InventoryPage() {
               onStatusChange={setSelectedStatus}
               favoriteOnly={favoriteFilter}
               onFavoriteOnlyChange={setFavoriteFilter}
+              onAddPhoto={handleAddPhoto}
               onAddProduct={handleAddProduct}
             />
 
@@ -446,6 +491,29 @@ export default function InventoryPage() {
         onOpenChange={setRegisterModalOpen}
         onConfirm={handleProductsAdded}
       />
+
+      {/* Photo Registration Modal */}
+      <Dialog open={photoModalOpen} onOpenChange={setPhotoModalOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>사진 등록</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {cameraError ? (
+              <p className="text-sm text-muted-foreground">{cameraError}</p>
+            ) : (
+              <div className="overflow-hidden rounded-lg border border-border bg-black">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="h-[360px] w-full object-cover"
+                />
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
