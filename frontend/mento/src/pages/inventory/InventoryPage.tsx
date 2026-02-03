@@ -85,17 +85,12 @@ export default function InventoryPage() {
       setTotalPages(response.totalPages)
       setHasNext(response.hasNext)
 
-      // 선택된 제품이 없으면 첫 번째 제품 선택
-      if (mappedProducts.length > 0) {
-        setSelectedProduct((prev) => {
-          if (!prev) return mappedProducts[0]
-          // 현재 선택된 제품이 새 목록에 있는지 확인
-          const stillExists = mappedProducts.find((p) => p.id === prev.id)
-          return stillExists || mappedProducts[0]
-        })
-      } else {
-        setSelectedProduct(null)
-      }
+      // 선택된 제품이 새 목록에 없으면 선택 해제
+      setSelectedProduct((prev) => {
+        if (!prev) return null
+        const stillExists = mappedProducts.find((p) => p.id === prev.id)
+        return stillExists || null
+      })
     } catch (error) {
       console.error("Failed to fetch inventory:", error)
       setProducts([])
