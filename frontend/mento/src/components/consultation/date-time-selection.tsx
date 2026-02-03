@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react"
-import { ChevronLeft, ChevronRight, ArrowLeft, ArrowRight, Droplets, Sparkles, Scissors } from "lucide-react"
+import { ChevronLeft, ChevronRight, ArrowLeft, ArrowRight, Droplets, Sparkles, Scissors, CreditCard } from "lucide-react"
 import type { ConsultationCategory } from "@/types/consultation"
 import { getMonthlyTimetablesByMentorType } from "@/api/timetableApi"
 import type { MonthlyTimetablesData, TimetableSlot } from "@/types/timetable"
@@ -19,12 +19,14 @@ const categoryLabels: Record<NonNullable<ConsultationCategory>, { label: string;
   skincare: { label: "스킨 케어", icon: Droplets },
   beauty: { label: "뷰티", icon: Sparkles },
   hair: { label: "헤어", icon: Scissors },
+  general: { label: "멘토 상담 상품", icon: CreditCard },
 }
 
 const categoryTypeIds: Record<NonNullable<ConsultationCategory>, number> = {
   skincare: 1,
   beauty: 2,
   hair: 3,
+  general: 1,
 }
 
 const DAYS_KO = ["일", "월", "화", "수", "목", "금", "토"]

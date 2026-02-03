@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CategorySelection } from "@/components/consultation/category-selection";
 import { DateTimeSelection } from "@/components/consultation/date-time-selection";
@@ -61,6 +60,8 @@ export default function ConsultationPage() {
     paymentId: null,
   });
   const [answers, setAnswers] = useState<string[]>([]);
+  const paymentLoadingRef = useRef(false);
+  const [isPaymentDataReady, setIsPaymentDataReady] = useState(false);
 
   const resetSurveyState = () => {
     setAnswers([]);
@@ -69,11 +70,77 @@ export default function ConsultationPage() {
   };
 
   useEffect(() => {
-    const state = location.state as { step?: number } | null;
+    const state = location.state as { step?: number; reservationId?: number } | null;
     if (state?.step === 5) {
       setCurrentStep(5);
+      return;
     }
-  }, [location.state]);
+    if (state?.step === 4 && state?.reservationId) {
+      const targetReservationId = state.reservationId;
+      
+      // 중복 로딩 방지
+      if (paymentLoadingRef.current) {
+        return;
+      }
+      
+      // 결제 페이지로 바로 진입 시 예약 정보 로드
+      const loadReservationForPayment = async () => {
+        paymentLoadingRef.current = true;
+        
+        try {
+          const { getReservationDetail } = await import("@/api/reservationApi");
+          const detail = await getReservationDetail(targetReservationId);
+          
+          // 카테고리 매핑 (mentorTypeName -> ConsultationCategory)
+          let category: ConsultationCategory | null = null;
+          const mentorTypeName = detail.mentorTypeInfo?.mentorTypeName?.toLowerCase() || "";
+          
+          if (mentorTypeName.includes("스킨케어") || mentorTypeName.includes("skincare") || mentorTypeName.includes("스킨")) {
+            category = "skincare";
+          } else if (mentorTypeName.includes("뷰티") || mentorTypeName.includes("beauty")) {
+            category = "beauty";
+          } else if (mentorTypeName.includes("헤어") || mentorTypeName.includes("hair")) {
+            category = "hair";
+          }
+          
+          // 카테고리 없으면 기본값 설정
+          if (!category) {
+            console.warn(`[카테고리 매핑 실패] mentorTypeName: ${mentorTypeName}, 기본값 'general' (멘토 상담 상품) 사용`);
+            category = "general";
+          }
+          
+          setBookingData((prev) => ({
+            ...prev,
+            category,
+            reservationId: detail.reservationId,
+            date: detail.scheduledDate ? new Date(detail.scheduledDate) : null,
+            time: detail.scheduledTime ?? "",
+            draftSlotInfo: {
+              timetableId: detail.timetableId,
+              slotId: 0, // 실제 slotId는 예약에 포함되어 있지 않음
+              scheduledTime: detail.scheduledTime ?? "",
+              price: 35000, // 고정 가격 35000원
+              maxCapacity: 1,
+              currentCapacity: 1,
+              availableCapacity: 0,
+              status: "CONFIRMED",
+            },
+          }));
+          setIsPaymentDataReady(true);
+          setCurrentStep(4);
+        } catch (error) {
+          console.error("예약 정보 로드 실패:", error);
+          navigate("/mypage/consultations");
+        } finally {
+          // 다음 프레임에서 플래그 해제 (상태 업데이트 완료 후)
+          setTimeout(() => {
+            paymentLoadingRef.current = false;
+          }, 100);
+        }
+      };
+      loadReservationForPayment();
+    }
+  }, [location.state, navigate]);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("consultationBookingData");
@@ -164,10 +231,11 @@ export default function ConsultationPage() {
 
   const handleGoToPayment = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+    setIsPaymentDataReady(true); // 일반 플로우에서는 이미 데이터가 준비되어 있음
     handleNext();
   };
 
-  const handlePaymentReady = async () => {
+  const handlePaymentReady = async () => {    
     const reservationId = bookingData.reservationId;
     const itemName = bookingData.category;
     const totalAmount = bookingData.draftSlotInfo?.price;
@@ -177,6 +245,7 @@ export default function ConsultationPage() {
         reservationId,
         itemName,
         totalAmount,
+        fullBookingData: bookingData,
       });
       return;
     }
@@ -211,6 +280,7 @@ export default function ConsultationPage() {
 
   const handleBackFromPayment = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+    setIsPaymentDataReady(false);
     setShowSurveyComplete(true);
     handleBack();
   };
@@ -278,7 +348,15 @@ export default function ConsultationPage() {
 
           {currentStep === 3 && showSurveyComplete && <SurveyComplete onGoToPayment={handleGoToPayment} />}
 
-          {currentStep === 4 && <Payment bookingData={bookingData} onPrev={handleBackFromPayment} onPaymentReady={handlePaymentReady} />}
+          {currentStep === 4 && isPaymentDataReady && <Payment bookingData={bookingData} onPrev={handleBackFromPayment} onPaymentReady={handlePaymentReady} />}
+          {currentStep === 4 && !isPaymentDataReady && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent"></div>
+                <p className="mt-4 text-text-secondary">결제 정보를 불러오는 중...</p>
+              </div>
+            </div>
+          )}
 
           {currentStep === 5 && <BookingComplete bookingData={bookingData} />}
         </div>
