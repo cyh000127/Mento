@@ -130,6 +130,7 @@ export default function InventoryPage() {
     try {
       const response = await getInventoryItemDetail(product.id)
       const data = response.data
+      const categoryMedium = data.categoryMedium ?? data.productInfoDto.categoryMedium
 
       // 만료일까지 남은 일수 계산
       let daysUntilExpiry: number | undefined = undefined
@@ -145,8 +146,8 @@ export default function InventoryPage() {
       const detailedProduct: Product = {
         id: data.id.toString(),
         name: data.productInfoDto.name,
-        brand: product.brand,
-        category: product.category,
+        brand: data.productInfoDto.brandName ?? product.brand,
+        category: mapDetailCategoryToUI(categoryMedium),
         image: data.productInfoDto.imageUrl,
         purchaseDate: data.purchaseDate,
         expirationDate: data.expectedExpiry,
@@ -177,6 +178,16 @@ export default function InventoryPage() {
       "OVER_DATED": "over-dated" as ProductStatus,
     }
     return statusMap[status] || "in-use"
+  }
+
+  const mapDetailCategoryToUI = (categoryMedium?: string): ProductCategory => {
+    const categoryMap: Record<string, ProductCategory> = {
+      "스킨케어": "skin",
+      "메이크업": "beauty",
+      "헤어케어": "hair",
+    }
+
+    return categoryMedium ? (categoryMap[categoryMedium] || "skin") : "skin"
   }
 
   const handleToggleFavorite = async (productId: string) => {
