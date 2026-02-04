@@ -58,7 +58,7 @@ pipeline {
         stage('Sync file to EC2'){
             steps {
                 script {
-                    echo "===== COPYING redis.conf, init.sql TO INFRA DIRECTORY (LOCAL) ====="
+                    echo "===== COPYING redis.conf, data.sql TO INFRA DIRECTORY (LOCAL) ====="
                     // EC2 내부의 절대 경로 정의
                     def TARGET_SCRIPT_DIR = "/home/ubuntu/app/infra/infra-repo/infra/script"
                     def TARGET_CONF_DIR = "/home/ubuntu/app/infra/infra-repo/infra/conf"
@@ -67,12 +67,12 @@ pipeline {
                     sh "mkdir -p ${TARGET_CONF_DIR}"
 
                     // 2. 로컬 복사
-                    sh "cp backend/script/init.sql ${TARGET_SCRIPT_DIR}/init.sql"
+                    sh "cp backend/script/data.sql ${TARGET_SCRIPT_DIR}/data.sql"
                     sh "cp backend/redis.conf ${TARGET_CONF_DIR}/redis.conf"
                     sh "cp backend/redis.conf ${TARGET_CONF_DIR}/my.conf"
 
                     // 3. 권한 설정
-                    sh "chmod 644 ${TARGET_SCRIPT_DIR}/init.sql"
+                    sh "chmod 644 ${TARGET_SCRIPT_DIR}/data.sql"
                     sh "chmod 644 ${TARGET_CONF_DIR}/redis.conf"
                     sh "chmod 644 ${TARGET_CONF_DIR}/my.conf"
                 }
