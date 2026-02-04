@@ -130,12 +130,12 @@ class ReservationQueryServiceImplTest {
 		);
 		Page<Reservation> expectedPage = new PageImpl<>(reservations, pageable, reservations.size());
 
-		given(reservationRepository.findAllByUserIdAndDateRange(userId, startDate, endDate, status, pageable))
+		given(reservationRepository.findAllByCondition(userId, null, startDate, endDate, status, pageable))
 			.willReturn(expectedPage);
 
 		// When
-		Page<Reservation> result = reservationQueryService.findAllByUserIdAndStatusWithPageable(
-			userId, status, startDate, endDate, pageable
+		Page<Reservation> result = reservationQueryService.findAllByRoleAndIdAndStatusWithPageable(
+			userId, Role.USER, status, startDate, endDate, pageable
 		);
 
 		// Then
@@ -143,7 +143,7 @@ class ReservationQueryServiceImplTest {
 		assertThat(result.getContent()).hasSize(2);
 		assertThat(result.getTotalElements()).isEqualTo(2);
 
-		then(reservationRepository).should().findAllByUserIdAndDateRange(userId, startDate, endDate, status, pageable);
+		then(reservationRepository).should().findAllByCondition(userId, null, startDate, endDate, status, pageable);
 	}
 
 	// Helper Methods

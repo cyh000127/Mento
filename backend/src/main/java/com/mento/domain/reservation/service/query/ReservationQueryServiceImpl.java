@@ -13,6 +13,7 @@ import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.enums.ReservationStatus;
 import com.mento.domain.reservation.exception.ReservationException;
 import com.mento.domain.reservation.repository.ReservationRepository;
+import com.mento.domain.user.entity.Role;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -49,18 +50,24 @@ public class ReservationQueryServiceImpl implements ReservationQueryService {
 	}
 
 	@Override
-	public Page<Reservation> findAllByUserIdAndStatusWithPageable(
-		final Long userId,
+	public Page<Reservation> findAllByRoleAndIdAndStatusWithPageable(
+		final Long memberId,
+		final Role role,
 		final ReservationStatus status,
 		final LocalDate startDate,
 		final LocalDate endDate,
 		final Pageable pageable
 	) {
-		Page<Reservation> page = reservationRepository.findAllByUserIdAndDateRange(
-			userId, startDate, endDate, status, pageable
+		Long userId = (role == Role.USER) ? memberId : null;
+		Long mentorId = (role == Role.MENTOR) ? memberId : null;
+
+		Page<Reservation> page = reservationRepository.findAllByCondition(
+			userId, mentorId, startDate, endDate, status, pageable
 		);
-		log.info("[Reservation] 예약 목록 조회 완료 {userId: {}, status: {}, dateRange: {}-{}, total: {}, page: {}}",
-			userId, status, startDate, endDate, page.getTotalElements(), page.getNumber()
+
+		log.info(
+			"[Reservation] 예약 목록 조회 완료 {role: {}, memberId: {}, status: {}, dateRange: {}-{}, total: {}, page: {}}",
+			role, memberId, status, startDate, endDate, page.getTotalElements(), page.getNumber()
 		);
 		return page;
 	}

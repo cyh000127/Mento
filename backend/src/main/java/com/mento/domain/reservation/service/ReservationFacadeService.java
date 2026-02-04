@@ -174,14 +174,16 @@ public class ReservationFacadeService {
 		return ReservationConverter.toReservationDetailResDto(reservation);
 	}
 
-	public Page<ReservationPageInfoDto> findAllByUserIdAndDateRange(
-		final Long userId,
+	public Page<ReservationPageInfoDto> findAllByAuthUserAndDateRange(
+		final AuthenticatedUser authUser,
 		final ReservationHistoryReqDto reqDto
 	) {
 		Pageable pageable = PageUtils.getPageableOrDefault(reqDto.page(), reqDto.size());
+		Role role = Role.fromString(authUser.getRole());
 
-		Page<Reservation> reservations = reservationQueryService.findAllByUserIdAndStatusWithPageable(
-			userId,
+		Page<Reservation> reservations = reservationQueryService.findAllByRoleAndIdAndStatusWithPageable(
+			authUser.getId(),
+			role,
 			reqDto.status(),
 			reqDto.startDate(),
 			reqDto.endDate(),
