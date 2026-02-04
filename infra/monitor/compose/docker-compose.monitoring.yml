@@ -61,10 +61,14 @@ services:
     container_name: cadvisor
     restart: unless-stopped
     privileged: true
+    security_opt:
+      - label:disable
     command:
       - '--url_base_prefix=/cadvisor'
       - '--housekeeping_interval=30s'
       - '--docker_only=true'
+      # 필요 시 store_container_labels를 false로 하면 오버헤드가 줄어듭니다.
+      - '--store_container_labels=false'
       - '--disable_metrics=disk,diskIO,tcp,udp,percpu,sched,memory_numa'
     volumes:
       - /:/rootfs:ro
@@ -72,6 +76,7 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
+      - /proc:/host/proc:ro
     devices:
       - /dev/kmsg:/dev/kmsg
     networks:
@@ -81,9 +86,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 300M
+          memory: 400M
         reservations:
-          memory: 150M
+          memory: 200M
 
   # 5. Loki
   loki:
