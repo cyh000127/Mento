@@ -36,17 +36,6 @@ export default function HomePage() {
     }
   }, [isLoggedIn])
 
-  useLayoutEffect(() => {
-    setSnapEnabled(false)
-    setIsScrollReady(false)
-    resetScroll()
-    const rafId = requestAnimationFrame(() => {
-      resetScroll()
-      setSnapEnabled(true)
-      setIsScrollReady(true)
-    })
-    return () => cancelAnimationFrame(rafId)
-  }, [resetScroll])
 
   useEffect(() => {
     const handlePageShow = () => resetScroll()
@@ -58,12 +47,16 @@ export default function HomePage() {
     setSnapEnabled(false)
     setIsScrollReady(false)
     resetScroll()
-    const rafId = requestAnimationFrame(() => {
-      resetScroll()
-      setSnapEnabled(true)
-      setIsScrollReady(true)
-    })
-    return () => cancelAnimationFrame(rafId)
+  
+    const timeoutId = setTimeout(() => {
+      requestAnimationFrame(() => {
+        resetScroll()
+        setSnapEnabled(true)
+        setIsScrollReady(true)
+      })
+    }, 150) // Hero 레이아웃 안정화 대기
+  
+    return () => clearTimeout(timeoutId)
   }, [isLoggedIn, resetScroll])
 
   const scrollContainerHeight = isLoggedIn ? "h-[calc(100vh-3.5rem)]" : "h-screen"

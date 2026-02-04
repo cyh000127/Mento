@@ -149,21 +149,25 @@ export function HeroSection() {
     return () => observer.disconnect()
   }, [showIntro, imagesLoaded])
 
-  useEffect(() => {
-    if (showIntro) return
-    const scrollContainer = document.querySelector("[data-home-scroll]") as HTMLElement | null
-    if (!scrollContainer) return
-    scrollContainer.scrollTo({ top: 0, left: 0, behavior: "auto" })
-  }, [showIntro])
 
   const handleIntroComplete = () => {
     sessionStorage.setItem("hasSeenIntro", "true")
     setShowIntro(false)
   }
 
-  if (showIntro) {
-    return <LoadingIntro onComplete={handleIntroComplete} />
-  }
+  <section
+  data-home-section
+  className="relative h-screen w-full snap-start snap-always bg-background"
+>
+  {showIntro && <LoadingIntro onComplete={handleIntroComplete} />}
+
+  {!showIntro && (
+    <>
+      {/* 기존 Hero 콘텐츠 */}
+    </>
+  )}
+</section>
+
 
   // Show loading overlay if images are not ready
   if (!imagesLoaded) {
