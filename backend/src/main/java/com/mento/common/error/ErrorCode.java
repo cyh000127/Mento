@@ -127,6 +127,9 @@ public enum ErrorCode {
 	CONSULTING_NOT_FOUND(HttpStatus.NOT_FOUND, "CON-001", "상담 정보를 찾을 수 없습니다."),
 	CHATLOG_EMPTY(HttpStatus.BAD_REQUEST, "CON-002", "Redis에 저장된 채팅 로그가 없습니다."),
 	CHATLOG_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CON-003", "채팅 로그 저장에 실패했습니다."),
+	AI_REPORT_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CON-004", "AI 보고서 생성에 실패했습니다."),
+	REPORT_GENERATION_IN_PROGRESS(HttpStatus.CONFLICT, "CON-005", "이미 보고서 생성이 진행 중입니다."),
+	MISSING_CONSULTING_REPORT(HttpStatus.BAD_REQUEST, "CON-006", "상담 요약본 정보를 찾을 수 없습니다"),
 
 	/**
 	 * Notification Error (N-xxx)

@@ -34,6 +34,14 @@ spring:
             token-uri: https://kauth.kakao.com/oauth/token
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
+  ai:
+    openai:
+      api-key: ${GMS_KEY}
+      base-url: https://gms.ssafy.io/gmsapi/api.openai.com/v1
+      chat:
+        completions-path: /chat/completions
+        options:
+          model: gpt-5-mini
 
 kakaopay:
   base-url: https://open-api.kakaopay.com
@@ -74,3 +82,8 @@ livekit:
   url: ${LIVEKIT_URL}
   api-key: ${LIVEKIT_API_KEY}
   secret: ${LIVEKIT_API_SECRET}
+
+ai:
+  prompts:
+    system: ${AI_PROMPT_SYSTEM:classpath:prompts/system.st}
+    consulting: ${AI_PROMPT_CONSULTING:classpath:prompts/consulting.st}

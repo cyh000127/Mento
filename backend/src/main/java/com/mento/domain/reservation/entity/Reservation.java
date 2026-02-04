@@ -4,12 +4,14 @@ import java.time.LocalDateTime;
 
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
+import com.mento.domain.consulting.entity.ConsultingReport;
 import com.mento.domain.payment.entity.Payment;
 import com.mento.domain.reservation.enums.ReservationStatus;
 import com.mento.domain.reservation.exception.ReservationException;
 import com.mento.domain.timetable.entity.TimetableSlot;
 import com.mento.domain.user.entity.User;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -51,6 +53,10 @@ public class Reservation extends BaseEntity {
 
 	@OneToOne(mappedBy = "reservation")
 	Payment payment;
+
+	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@JoinColumn(name = "consulting_report_id")
+	ConsultingReport consultingReport;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "mentor_id")
@@ -95,6 +101,13 @@ public class Reservation extends BaseEntity {
 			throw new ReservationException(ErrorCode.MISSING_PAYMENT);
 		}
 		this.payment = payment;
+	}
+
+	public void assignConsultingReport(final ConsultingReport consultingReport) {
+		if (consultingReport == null) {
+			throw new ReservationException(ErrorCode.MISSING_CONSULTING_REPORT);
+		}
+		this.consultingReport = consultingReport;
 	}
 
 	public void confirm() {

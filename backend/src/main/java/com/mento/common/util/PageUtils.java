@@ -15,7 +15,7 @@ public class PageUtils {
 
 	private static final int DEFAULT_PAGE = 0;
 	private static final int DEFAULT_SIZE = 10;
-	private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.DESC, "createdAt", "id"));
+	private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.DESC, "createdAt", "id");
 
 	public Pageable getPageableOrDefault(final int page, final int size) {
 		return PageRequest.of(page, size);
