@@ -128,12 +128,22 @@ CREATE TABLE IF NOT EXISTS `timetable_slots`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `consulting_reports`
+(
+    `id`         BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `content`    LONGTEXT,
+    `media_url`  VARCHAR(255),
+    `created_at` DATETIME NOT NULL,
+    `updated_at` DATETIME NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS `reservations`
 (
     `reservation_id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `user_id`        BIGINT      NOT NULL,
     `slot_id`        BIGINT      NOT NULL,
-    `mentor_id`      BIGINT               DEFAULT NULL,
+    `mentor_id`            BIGINT DEFAULT NULL,
+    `consulting_report_id` BIGINT DEFAULT NULL,
     `status`         VARCHAR(20) NOT NULL,
     `survey_data`    TEXT                 DEFAULT NULL,
     `expires_at`     DATETIME(6)          DEFAULT NULL,
@@ -142,7 +152,8 @@ CREATE TABLE IF NOT EXISTS `reservations`
     `updated_at`     DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
     CONSTRAINT `fk_reservations_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT `fk_reservations_slot` FOREIGN KEY (`slot_id`) REFERENCES `timetable_slots` (`slot_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT `fk_reservations_mentor` FOREIGN KEY (`mentor_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT `fk_reservations_mentor` FOREIGN KEY (`mentor_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT `fk_reservation_consulting_report` FOREIGN KEY (`consulting_report_id`) REFERENCES `consulting_reports` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
@@ -191,21 +202,20 @@ CREATE TABLE IF NOT EXISTS `consultings`
     DEFAULT CHARSET=utf8mb4
     COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS skin_anlyses (
-    skin_analysis_id BIGINT NOT NULL AUTO_INCREMENT,
-    user_id BIGINT NOT NULL,
-    total_score INT,
-    total_grade INT,
-    skin_type_summary VARCHAR(255),
-    analysis_details JSON,
-    created_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
-    updated_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-    PRIMARY KEY (skin_analysis_id)
+CREATE TABLE IF NOT EXISTS `skin_analyses`
+(
+    `skin_analysis_id`  BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `user_id`           BIGINT NOT NULL,
+    `total_score`       INT,
+    `total_grade`       INT,
+    `skin_type_summary` VARCHAR(255),
+    `analysis_details`  JSON,
+    `created_at`        DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
+    `updated_at`        DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
     CONSTRAINT `fk_skin_anlyses_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB
     DEFAULT CHARSET=utf8mb4
     COLLATE=utf8mb4_unicode_ci;
-
 
 INSERT
 IGNORE INTO `mentor_types` (`type_id`, `type_name`, `price`, `description`, `created_at`, `updated_at`)
