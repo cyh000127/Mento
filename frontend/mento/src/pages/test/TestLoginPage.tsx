@@ -11,7 +11,7 @@ export default function TestLoginPage() {
     const navigate = useNavigate();
     const { setAccessToken } = useAuthStore();
 
-    const [loginId, setLoginId] = useState("skincare01");
+    const [email, setEmail] = useState("skincare01@example.com");
     const [password, setPassword] = useState("test1234");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -22,8 +22,8 @@ export default function TestLoginPage() {
         setLoading(true);
 
         try {
-            const response = await api.post("/auth/login/mentor", {
-                loginId,
+            const response = await api.post("auth/login/mentor", {
+                email,
                 password,
             });
 
@@ -49,13 +49,13 @@ export default function TestLoginPage() {
                 <CardContent>
                     <form onSubmit={handleLogin} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="loginId">아이디</Label>
+                            <Label htmlFor="email">이메일</Label> 
                             <Input
-                                id="loginId"
-                                type="text"
-                                value={loginId}
-                                onChange={(e) => setLoginId(e.target.value)}
-                                placeholder="아이디 입력"
+                                id="email"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="이메일 입력 (예: skincare01@example.com)"
                                 required
                             />
                         </div>
@@ -79,9 +79,10 @@ export default function TestLoginPage() {
 
                         <div className="mt-4 p-4 bg-slate-50 rounded text-xs text-gray-500">
                             <p className="font-bold mb-1">테스트 계정 정보:</p>
-                            <p>ID: skincare01</p>
-                            <p>ID: beauty01</p>
-                            <p>ID: hair01 </p>
+                            <p>Email: skincare01@example.com</p>
+                            <p>Email: beauty01@example.com</p>
+                            <p>Email: hair01@example.com</p>
+                            <p>PW: test1234</p>
                         </div>
                     </form>
                 </CardContent>
