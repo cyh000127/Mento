@@ -6,10 +6,23 @@ import { CtaSection } from "@/components/home/cta-section"
 
 export default function HomePage() {
   return (
-    <div
-      className="h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth"
-      data-home-scroll
-    >
+    <>
+      <style>{`
+        [data-home-scroll] {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          overscroll-behavior-y: contain;
+        }
+        [data-home-scroll]::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+      `}</style>
+      <div
+        className="h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth overscroll-y-contain"
+        data-home-scroll
+      >
       {/* Hero with 3 scenes */}
       <HeroSection />
 
@@ -18,6 +31,7 @@ export default function HomePage() {
       <ServicesSection />
       <HowItWorksSection />
       <CtaSection />
-    </div>
+      </div>
+    </>
   )
 }

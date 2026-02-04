@@ -47,7 +47,7 @@ const services = [
 
 export function ServicesSection() {
   return (
-    <section className="relative h-screen snap-start bg-muted/30 overflow-hidden">
+    <section className="relative h-screen snap-start snap-always bg-muted/30 overflow-hidden">
       {/* Background video */}
       <video
         autoPlay

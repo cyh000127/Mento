@@ -3,7 +3,7 @@ import { ArrowRight, Sparkles } from "lucide-react"
 
 export function CtaSection() {
   return (
-    <section className="relative h-screen snap-start bg-dark-bg overflow-hidden">
+    <section className="relative h-screen snap-start snap-always bg-dark-bg overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 bg-gradient-to-b from-dark-bg via-dark-bg/95 to-dark-bg" />
       

@@ -193,7 +193,7 @@ export function HeroSection() {
       <section
         ref={setSceneRef(0)}
         data-scene-index="0"
-        className="relative h-screen w-full snap-start bg-background animate-fade-in"
+        className="relative h-screen w-full snap-start snap-always bg-background animate-fade-in"
       >
         <div className="flex h-full w-full">
             {/* Left Film Strip */}
@@ -266,7 +266,7 @@ export function HeroSection() {
       <section
         ref={setSceneRef(1)}
         data-scene-index="1"
-        className="relative h-screen w-full snap-start bg-background"
+        className="relative h-screen w-full snap-start snap-always bg-background"
       >
         <div className="flex h-full w-full">
           {/* Left Film Strip */}
@@ -326,7 +326,7 @@ export function HeroSection() {
       <section
         ref={setSceneRef(2)}
         data-scene-index="2"
-        className="relative h-screen w-full snap-start bg-background"
+        className="relative h-screen w-full snap-start snap-always bg-background"
       >
         <div className="relative h-full w-full">
           {/* Video Background */}

@@ -38,7 +38,7 @@ const features = [
 
 export function FeaturesSection() {
   return (
-    <section className="relative h-screen snap-start bg-background overflow-hidden">
+    <section className="relative h-screen snap-start snap-always bg-background overflow-hidden">
       {/* Background video */}
       <video
         autoPlay
