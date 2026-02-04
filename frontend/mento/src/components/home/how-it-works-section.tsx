@@ -1,4 +1,5 @@
 import dryingHairVideo from "@/assets/videos/drying_hair.mp4"
+import { ChevronDown } from "lucide-react"
 
 const steps = [
   {
@@ -112,6 +113,15 @@ export function HowItWorksSection() {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+
+        <div
+          className="animate-fade-in-up mt-4"
+          style={{ animationDelay: '0.6s', animationFillMode: 'backwards' }}
+        >
+          <div className="animate-bounce">
+            <ChevronDown className="mx-auto h-8 w-8 text-primary-500" />
           </div>
         </div>
       </div>

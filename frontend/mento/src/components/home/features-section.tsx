@@ -1,4 +1,4 @@
-import { Package, Brain, MessageCircle, BarChart3 } from "lucide-react"
+import { Package, Brain, MessageCircle, BarChart3, ChevronDown } from "lucide-react"
 import dryingHairVideo from "@/assets/videos/drying_hair.mp4"
 
 const features = [
@@ -103,10 +103,21 @@ export function FeaturesSection() {
                 </p>
               </div>
 
+              
+
               {/* Hover indicator */}
               <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 to-primary-300 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             </div>
           ))}
+        </div>
+
+        <div
+          className="animate-fade-in-up mt-4"
+          style={{ animationDelay: '0.6s', animationFillMode: 'backwards' }}
+        >
+          <div className="animate-bounce">
+            <ChevronDown className="mx-auto h-8 w-8 text-primary-500" />
+          </div>
         </div>
       </div>
     </section>

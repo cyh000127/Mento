@@ -334,7 +334,18 @@ export function HeroSection() {
                 더 나은 당신을 만들어갑니다
               </p>
             </div>
+
+            <div
+              className="animate-fade-in-up mt-4"
+              style={{ animationDelay: '0.6s', animationFillMode: 'backwards' }}
+            >
+              <div className="animate-bounce">
+                <ChevronDown className="mx-auto h-8 w-8 text-primary-500" />
+              </div>
+            </div>
           </div>
+
+          
 
           {/* Right Film Strip */}
           <div className="w-[20%] overflow-hidden border-l border-border/30 bg-black">
@@ -407,6 +418,15 @@ export function HeroSection() {
                 >
                   서비스 소개
                 </Link>
+              </div>
+            </div>
+
+            <div
+              className="animate-fade-in-up mt-4"
+              style={{ animationDelay: '0.6s', animationFillMode: 'backwards' }}
+            >
+              <div className="animate-bounce">
+                <ChevronDown className="mx-auto h-8 w-8 text-primary-500" />
               </div>
             </div>
           </div>
