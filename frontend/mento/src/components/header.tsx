@@ -58,7 +58,7 @@ export function Header() {
         const newNotification = JSON.parse(e.data) as NotificationResDto;
         setNotifications((prev) => [newNotification, ...prev]);
 
-        // 브라우저 알림 요청 (선택 사항)
+        // 브라우저 알림 요청
         if (Notification.permission === "granted") {
           new Notification("새로운 알림", { body: newNotification.content });
         }
@@ -69,8 +69,6 @@ export function Header() {
 
     eventSource.onerror = (e) => {
       console.error("SSE Error:", e);
-      // 연결 해제 시 재연결 로직은 브라우저가 자동 처리하지만, 
-      // 토큰 만료 등의 이슈가 있을 수 있음.
       eventSource.close();
     };
 
