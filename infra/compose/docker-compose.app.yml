@@ -249,6 +249,15 @@ services:
     networks:
       - app-network
 
+  aiskin:
+    image: ${AISKIN_IMAGE:-ejjem/s14p11a704:aiskin}
+    container_name: aiskin
+    expose:
+      - "4000"
+    networks:
+      - app-network
+
+
 volumes:
   mysql_data:
   redis_data:
