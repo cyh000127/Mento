@@ -19,6 +19,8 @@ import com.mento.domain.consulting.entity.Consulting;
 import com.mento.domain.consulting.factory.ConsultingFactory;
 import com.mento.domain.consulting.service.command.ConsultingCommandServiceImpl;
 import com.mento.domain.mentor.entity.MentorType;
+import com.mento.domain.notification.dto.request.NotificationSendReqDto;
+import com.mento.domain.notification.service.NotificationFacadeService;
 import com.mento.domain.payment.dto.request.PaymentApproveReqDto;
 import com.mento.domain.payment.dto.response.PaymentApproveResDto;
 import com.mento.domain.payment.entity.Payment;
@@ -53,6 +55,9 @@ class PaymentFacadeServiceTest {
 
 	@Mock
 	private ConsultingCommandServiceImpl consultingCommandService;
+
+	@Mock
+	private NotificationFacadeService notificationFacadeService;
 
 	@InjectMocks
 	private PaymentFacadeService paymentFacadeService;
@@ -146,6 +151,7 @@ class PaymentFacadeServiceTest {
 			.willReturn(reservation.getMentor());
 		given(consultingFactory.createConsulting(anyLong()))
 			.willReturn(consulting);
+		willDoNothing().given(notificationFacadeService).sendNotification(any(NotificationSendReqDto.class));
 
 		// When
 		ReservationDetailResDto result = paymentFacadeService.approvePaymentAndConfirmReservation(request, userId);
@@ -153,11 +159,14 @@ class PaymentFacadeServiceTest {
 		// Then
 		assertThat(result).isNotNull();
 		assertThat(result.reservationId()).isEqualTo(1L);
+		assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+
 		then(paymentCommandService).should(times(1)).approve(request, userId);
 		then(paymentQueryService).should(times(1)).findById(paymentId);
 		then(userQueryService).should(times(1)).findById(1L);
 		then(consultingFactory).should(times(1)).createConsulting(anyLong());
 		then(consultingCommandService).should(times(1)).saveDraftConsulting(consulting);
+		then(notificationFacadeService).should(times(1)).sendNotification(any(NotificationSendReqDto.class));
 	}
 
 	@Test

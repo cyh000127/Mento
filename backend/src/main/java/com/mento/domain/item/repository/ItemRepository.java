@@ -60,4 +60,17 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 		WHERE i.id = :itemId
 		""")
 	Optional<Item> findWithDetailsById(Long itemId);
+
+	@Query("""
+		SELECT i FROM Item i
+		JOIN FETCH i.user
+		WHERE i.expectedExpiryDate BETWEEN :startDate AND :endDate
+		AND i.status = 'OWNED'
+		AND i.deletedAt IS NULL
+		ORDER BY i.expectedExpiryDate ASC
+		""")
+	List<Item> findItemsExpiringBetween(
+		@Param("startDate") LocalDate startDate,
+		@Param("endDate") LocalDate endDate
+	);
 }

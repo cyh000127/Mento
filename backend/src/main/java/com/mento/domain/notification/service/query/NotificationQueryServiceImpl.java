@@ -1,5 +1,6 @@
 package com.mento.domain.notification.service.query;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -22,5 +23,10 @@ public class NotificationQueryServiceImpl implements NotificationQueryService {
 	@Override
 	public List<Notification> getNotifications(final Long userId) {
 		return notificationRepository.findAllByUserId(userId);
+	}
+
+	@Override
+	public List<Notification> findActiveNotifications(final Long userId, final LocalDateTime now) {
+		return notificationRepository.findActiveNotifications(userId, now);
 	}
 }

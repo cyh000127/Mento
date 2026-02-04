@@ -1,6 +1,7 @@
 package com.mento.domain.notification.service;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -14,7 +15,6 @@ import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.dto.response.NotificationResDto;
 import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.event.NotificationEvent;
-import com.mento.domain.notification.repository.NotificationRepository;
 import com.mento.domain.notification.repository.SseEmitterRepository;
 import com.mento.domain.notification.service.command.NotificationCommandService;
 import com.mento.domain.notification.service.query.NotificationQueryService;
@@ -28,10 +28,11 @@ import lombok.extern.slf4j.Slf4j;
 public class NotificationFacadeService {
 
 	private static final Long DEFAULT_TIMEOUT = 60L * 1000 * 60;
+	private static final Integer EXPIRE_DATE = 90;
 
 	private final NotificationCommandService notificationCommandService;
 	private final NotificationQueryService notificationQueryService;
-	private final NotificationRepository notificationRepository;
+
 	private final SseEmitterRepository sseEmitterRepository;
 	private final ApplicationEventPublisher eventPublisher;
 
@@ -54,7 +55,7 @@ public class NotificationFacadeService {
 				.name("connect")
 				.data("connected!"));
 
-			List<Notification> unreadNotifications = notificationRepository
+			List<Notification> unreadNotifications = notificationQueryService
 				.findActiveNotifications(userId, TimeUtils.nowAsLocalDateTime());
 
 			if (!unreadNotifications.isEmpty()) {
@@ -77,18 +78,14 @@ public class NotificationFacadeService {
 
 	@Transactional
 	public void sendNotification(final NotificationSendReqDto dto) {
-		Notification notification = notificationCommandService.send(dto);
-
-		eventPublisher.publishEvent(new NotificationEvent(this, notification));
-	}
-
-	@Transactional
-	public void sendNotifications(final List<NotificationSendReqDto> dtos) {
-		List<Notification> notifications = notificationCommandService.sendAll(dtos);
-
-		for (Notification notification : notifications) {
-			eventPublisher.publishEvent(new NotificationEvent(this, notification));
+		LocalDateTime expiredAt = LocalDateTime.now().plusDays(EXPIRE_DATE);
+		if (dto.expiredAt() != null) {
+			expiredAt = dto.expiredAt();
 		}
+		Notification notification = NotificationConverter.toEntity(dto, expiredAt);
+		Notification savedNotification = notificationCommandService.save(notification);
+
+		eventPublisher.publishEvent(new NotificationEvent(this, savedNotification));
 	}
 
 	@Transactional(readOnly = true)

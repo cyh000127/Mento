@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
@@ -15,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.mento.common.error.ErrorCode;
-import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.exception.NotificationException;
@@ -31,16 +29,9 @@ class NotificationCommandServiceImplTest {
 	private NotificationRepository notificationRepository;
 
 	@Test
-	@DisplayName("알림을 성공적으로 발송(저장)한다")
-	void 알림을_성공적으로_발송한다() {
+	@DisplayName("알림을 성공적으로 저장한다")
+	void 알림을_성공적으로_저장한다() {
 		// given
-		NotificationSendReqDto reqDto = new NotificationSendReqDto(
-			1L,
-			NotificationType.RESERVATION_REMINDER,
-			"60",
-			LocalDateTime.now().plusDays(1)
-		);
-
 		Notification notification = Notification.builder()
 			.id(100L)
 			.userId(1L)
@@ -50,7 +41,7 @@ class NotificationCommandServiceImplTest {
 		given(notificationRepository.save(any(Notification.class))).willReturn(notification);
 
 		// when
-		Notification result = notificationCommandService.send(reqDto);
+		Notification result = notificationCommandService.save(notification);
 
 		// then
 		assertThat(result).isNotNull();
