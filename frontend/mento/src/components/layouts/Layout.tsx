@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react"
-import { Outlet } from "react-router-dom"
+import { Outlet, useLocation  } from "react-router-dom"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { useAuthStore } from "@/stores/useAuthStore"
@@ -10,6 +10,9 @@ export default function Layout() {
   const { accessToken, user, setUser, logoutTriggered } = useAuthStore()
   const isFetchingRef = useRef(false)
   const reissueAttemptedRef = useRef(false)
+  const location = useLocation()
+  const isHome = location.pathname === "/"
+
 
   useEffect(() => {
     // 앱 초기화 시 토큰 복원 로직
@@ -67,7 +70,7 @@ export default function Layout() {
       <main className="flex-1">
         <Outlet />
       </main>
-      <Footer />
+      {!isHome && <Footer />}
     </div>
   )
 }
