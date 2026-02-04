@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom"
 import { ProductTypeGrid } from "./ProductTypeGrid"
-import { PRODUCT_CATEGORIES } from "@/constants/guide.ts"
+import { PRODUCT_CATEGORIES } from "@/constants/guide"
 
 interface HowToUseSectionProps {
   activeCategory: string

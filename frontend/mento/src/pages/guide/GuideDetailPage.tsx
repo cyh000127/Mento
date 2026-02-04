@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import { FaceCameraSection } from "../../components/guide/FaceCameraSection"
 import { StepGuide } from "../../components/guide/StepGuide"
 import { ArrowLeft } from "lucide-react"
-import { PRODUCT_SUBTYPES } from "@/constants/guide.ts"
+import { PRODUCT_SUBTYPES } from "@/constants/guide"
 
 const usageSteps: Record<string, Record<string, { steps: any[], tip: string }>> = {
   // 스킨케어 - 클렌징
