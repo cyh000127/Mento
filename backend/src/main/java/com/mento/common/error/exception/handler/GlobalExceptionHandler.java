@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.mento.common.error.ErrorCode;
+import com.mento.common.error.exception.AiException;
 import com.mento.common.error.exception.BusinessException;
 import com.mento.common.error.exception.CryptoException;
 import com.mento.common.error.exception.FileStorageException;
@@ -234,4 +235,13 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(BaseResponse.fail(response));
 	}
 
+	@ExceptionHandler(AiException.class)
+	public ResponseEntity<BaseResponse<ErrorResponse>> handleAiException(
+		AiException ex,
+		HttpServletRequest request
+	) {
+		LoggingUtils.logException("AiException 발생 ", ex, request);
+		ErrorResponse response = ErrorResponse.of(ex.getErrorCode(), request);
+		return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(BaseResponse.fail(response));
+	}
 }
