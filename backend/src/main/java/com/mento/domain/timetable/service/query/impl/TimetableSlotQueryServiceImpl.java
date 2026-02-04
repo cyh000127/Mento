@@ -1,5 +1,7 @@
 package com.mento.domain.timetable.service.query.impl;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -43,5 +45,10 @@ public class TimetableSlotQueryServiceImpl implements TimetableSlotQueryService 
 	@Override
 	public List<TimetableSlot> findAllByTimetableIds(final List<Long> timetableIds) {
 		return timetableSlotRepository.findAllByTimetableIds(timetableIds);
+	}
+
+	@Override
+	public List<TimetableSlot> findAllActiveSlotsBefore(final LocalDate date, final LocalTime time) {
+		return timetableSlotRepository.findAllActiveSlotsBefore(date, time);
 	}
 }

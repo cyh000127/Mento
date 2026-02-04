@@ -1,10 +1,13 @@
 package com.mento.domain.timetable.repository;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.mento.domain.timetable.entity.TimetableSlot;
 
@@ -45,4 +48,17 @@ public interface TimetableSlotRepository extends JpaRepository<TimetableSlot, Lo
 		ORDER BY ts.timetable.scheduledDate, ts.timetable.scheduledTime
 		""")
 	List<TimetableSlot> findAllByTimetableIds(List<Long> timetableIds);
+
+	@Query("""
+		SELECT ts
+		FROM TimetableSlot ts
+		WHERE ts.timetable.scheduledDate = :date
+			AND ts.timetable.scheduledTime < :time
+			AND ts.status != 'CLOSED'
+			AND ts.deletedAt IS NULL
+		""")
+	List<TimetableSlot> findAllActiveSlotsBefore(
+		@Param("date") final LocalDate date,
+		@Param("time") final LocalTime time
+	);
 }
