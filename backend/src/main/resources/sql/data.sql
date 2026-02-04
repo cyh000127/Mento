@@ -1,4 +1,4 @@
-CREATE TABLE `mentor_types`
+CREATE TABLE IF NOT EXISTS `mentor_types`
 (
     `type_id`     BIGINT AUTO_INCREMENT PRIMARY KEY,
     `type_name`   VARCHAR(50) NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE `mentor_types`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `users`
+CREATE TABLE IF NOT EXISTS `users`
 (
     `user_id`        BIGINT AUTO_INCREMENT PRIMARY KEY,
     `email`          VARCHAR(100) NOT NULL UNIQUE,
@@ -28,7 +28,7 @@ CREATE TABLE `users`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `brands`
+CREATE TABLE IF NOT EXISTS `brands`
 (
     `brand_id`   BIGINT AUTO_INCREMENT PRIMARY KEY,
     `name`       VARCHAR(100) NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE `brands`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `products`
+CREATE TABLE IF NOT EXISTS `products`
 (
     `product_id`          BIGINT AUTO_INCREMENT PRIMARY KEY,
     `brand_id`            BIGINT       NOT NULL,
@@ -64,7 +64,7 @@ CREATE TABLE `products`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `items`
+CREATE TABLE IF NOT EXISTS `items`
 (
     `id`                   BIGINT AUTO_INCREMENT PRIMARY KEY,
     `user_id`              BIGINT      NOT NULL,
@@ -83,7 +83,7 @@ CREATE TABLE `items`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `item_histories`
+CREATE TABLE IF NOT EXISTS `item_histories`
 (
     `id`          BIGINT AUTO_INCREMENT PRIMARY KEY,
     `user_id`     BIGINT      NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE `item_histories`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `timetables`
+CREATE TABLE IF NOT EXISTS `timetables`
 (
     `timetable_id`   BIGINT AUTO_INCREMENT PRIMARY KEY,
     `scheduled_date` DATE        NOT NULL,
@@ -111,7 +111,7 @@ CREATE TABLE `timetables`
   COLLATE = utf8mb4_unicode_ci;
 
 
-CREATE TABLE `timetable_slots`
+CREATE TABLE IF NOT EXISTS `timetable_slots`
 (
     `slot_id`          BIGINT AUTO_INCREMENT PRIMARY KEY,
     `timetable_id`     BIGINT      NOT NULL,
@@ -128,7 +128,7 @@ CREATE TABLE `timetable_slots`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `reservations`
+CREATE TABLE IF NOT EXISTS `reservations`
 (
     `reservation_id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `user_id`        BIGINT      NOT NULL,
@@ -147,7 +147,7 @@ CREATE TABLE `reservations`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `payments`
+CREATE TABLE IF NOT EXISTS `payments`
 (
     `payment_id`     BIGINT AUTO_INCREMENT PRIMARY KEY,
     `reservation_id` BIGINT               DEFAULT NULL,
@@ -164,7 +164,7 @@ CREATE TABLE `payments`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `notifications`
+CREATE TABLE IF NOT EXISTS `notifications`
 (
     `notification_id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `user_id`         BIGINT      NOT NULL,
@@ -178,7 +178,7 @@ CREATE TABLE `notifications`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `consultings`
+CREATE TABLE IF NOT EXISTS `consultings`
 (
     `id`         BIGINT       NOT NULL AUTO_INCREMENT,
     `room_id`    VARCHAR(255) NOT NULL,
@@ -191,90 +191,102 @@ CREATE TABLE `consultings`
     DEFAULT CHARSET=utf8mb4
     COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `mentor_types` (`type_id`, `type_name`, `price`, `description`, `created_at`, `updated_at`)
-SELECT * FROM (
-    SELECT 1, '스킨케어', 35000, '피부 타입 분석 및 맞춤 스킨케어 루틴 상담', NOW(6), NOW(6)
-    UNION ALL SELECT 2, '뷰티', 35000, '퍼스널 컬러 및 메이크업 스타일링 상담', NOW(6), NOW(6)
-    UNION ALL SELECT 3, '헤어', 35000, '얼굴형에 맞는 헤어스타일 및 관리법 상담', NOW(6), NOW(6)
-) AS tmp
-WHERE NOT EXISTS (SELECT 1 FROM `mentor_types` LIMIT 1);
 
-INSERT INTO `users` (`email`, `password`, `name`, `kakao_id`, `role`, `created_at`, `updated_at`)
-SELECT * FROM (
-    SELECT 'skincare01@example.com', 'test1234', '김스킨', 'kakao_skin01', 'MENTOR', NOW(6), NOW(6)
-    UNION ALL SELECT 'skincare02@example.com', 'test1234', '이장벽', 'kakao_skin02', 'MENTOR', NOW(6), NOW(6)
-    UNION ALL SELECT 'skincare03@example.com', 'test1234', '박보습', 'kakao_skin03', 'MENTOR', NOW(6), NOW(6)
-    UNION ALL SELECT 'skincare04@example.com', 'test1234', '최진정', 'kakao_skin04', 'MENTOR', NOW(6), NOW(6)
-    UNION ALL SELECT 'skincare05@example.com', 'test1234', '정모공', 'kakao_skin05', 'MENTOR', NOW(6), NOW(6)
-    UNION ALL SELECT 'beauty01@example.com', 'test1234', '강뷰티', 'kakao_beauty01', 'MENTOR', NOW(6), NOW(6)
-    UNION ALL SELECT 'beauty02@example.com', 'test1234', '조화장', 'kakao_beauty02', 'MENTOR', NOW(6), NOW(6)
-    UNION ALL SELECT 'beauty03@example.com', 'test1234', '윤컬러', 'kakao_beauty03', 'MENTOR', NOW(6), NOW(6)
-    UNION ALL SELECT 'beauty04@example.com', 'test1234', '임색조', 'kakao_beauty04', 'MENTOR', NOW(6), NOW(6)
-    UNION ALL SELECT 'beauty05@example.com', 'test1234', '한베이스', 'kakao_beauty05', 'MENTOR', NOW(6), NOW(6)
-    UNION ALL SELECT 'hair01@example.com', 'test1234', '서헤어', 'kakao_hair01', 'MENTOR', NOW(6), NOW(6)
-    UNION ALL SELECT 'hair02@example.com', 'test1234', '고커트', 'kakao_hair02', 'MENTOR', NOW(6), NOW(6)
-    UNION ALL SELECT 'hair03@example.com', 'test1234', '문펌', 'kakao_hair03', 'MENTOR', NOW(6), NOW(6)
-    UNION ALL SELECT 'hair04@example.com', 'test1234', '양염색', 'kakao_hair04', 'MENTOR', NOW(6), NOW(6)
-    UNION ALL SELECT 'hair05@example.com', 'test1234', '손두피', 'kakao_hair05', 'MENTOR', NOW(6), NOW(6)
-) AS tmp
+INSERT
+IGNORE INTO `mentor_types` (`type_id`, `type_name`, `price`, `description`, `created_at`, `updated_at`)
+VALUES (1, '스킨케어', 35000, '피부 타입 분석 및 맞춤 스킨케어 루틴 상담', NOW(), NOW()),
+       (2, '뷰티', 35000, '퍼스널 컬러 및 메이크업 스타일링 상담', NOW(), NOW()),
+       (3, '헤어', 35000, '얼굴형에 맞는 헤어스타일 및 관리법 상담', NOW(), NOW()) ON DUPLICATE KEY
+UPDATE `type_name` =
+VALUES (`type_name`), `price` =
+                      VALUES(`price`), `description` = VALUES(`description`), `updated_at` = NOW();
+
+INSERT
+IGNORE INTO `users` (`email`, `password`, `name`, `kakao_id`, `role`, `created_at`, `updated_at`)
+SELECT *
+FROM (SELECT 'skincare01@example.com', 'test1234', '김스킨', 'kakao_skin01', 'MENTOR', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'skincare02@example.com', 'test1234', '이장벽', 'kakao_skin02', 'MENTOR', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'skincare03@example.com', 'test1234', '박보습', 'kakao_skin03', 'MENTOR', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'skincare04@example.com', 'test1234', '최진정', 'kakao_skin04', 'MENTOR', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'skincare05@example.com', 'test1234', '정모공', 'kakao_skin05', 'MENTOR', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'beauty01@example.com', 'test1234', '강뷰티', 'kakao_beauty01', 'MENTOR', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'beauty02@example.com', 'test1234', '조화장', 'kakao_beauty02', 'MENTOR', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'beauty03@example.com', 'test1234', '윤컬러', 'kakao_beauty03', 'MENTOR', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'beauty04@example.com', 'test1234', '임색조', 'kakao_beauty04', 'MENTOR', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'beauty05@example.com', 'test1234', '한베이스', 'kakao_beauty05', 'MENTOR', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'hair01@example.com', 'test1234', '서헤어', 'kakao_hair01', 'MENTOR', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'hair02@example.com', 'test1234', '고커트', 'kakao_hair02', 'MENTOR', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'hair03@example.com', 'test1234', '문펌', 'kakao_hair03', 'MENTOR', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'hair04@example.com', 'test1234', '양염색', 'kakao_hair04', 'MENTOR', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'hair05@example.com', 'test1234', '손두피', 'kakao_hair05', 'MENTOR', NOW(6), NOW(6))
 WHERE NOT EXISTS (SELECT 1 FROM `users` LIMIT 1);
 
+INSERT
+IGNORE INTO `brands` (`name`)
+VALUES ('아이디얼포맨'),
+       ('비오템'),
+       ('아이오페'),
+       ('닥터지'),
+       ('토리든'),
+       ('오브제'),
+       ('우르오스'),
+       ('피지오겔'),
+       ('라운드랩'),
+       ('헤라'),
+       ('이니스프리'),
+       ('엠도씨'),
+       ('두잉왓'),
+       ('아크네스'),
+       ('이아소'),
+       ('라네즈'),
+       ('플리프'),
+       ('마몽드'),
+       ('미닉'),
+       ('라끌랑'),
+       ('비레디'),
+       ('그라펜'),
+       ('더페이스샵'),
+       ('미프'),
+       ('다슈'),
+       ('무칸'),
+       ('낫포유'),
+       ('듀이셀'),
+       ('포맨트'),
+       ('뉴트로지나'),
+       ('세븐피엠'),
+       ('원오브뎀'),
+       ('정샘물'),
+       ('바우로'),
+       ('블랙몬스터'),
+       ('리우젤'),
+       ('포뷰트'),
+       ('갸스비'),
+       ('폴미첼'),
+       ('모이'),
+       ('브리티시엠'),
+       ('커리쉴'),
+       ('헤레카'),
+       ('제이숲'),
+       ('스웨거'),
+       ('박준뷰티랩');
 
-INSERT INTO `brands` (`name`)
-SELECT * FROM (
-    SELECT '아이디얼포맨'
-    UNION ALL SELECT '비오템'
-    UNION ALL SELECT '아이오페'
-    UNION ALL SELECT '닥터지'
-    UNION ALL SELECT '토리든'
-    UNION ALL SELECT '오브제'
-    UNION ALL SELECT '우르오스'
-    UNION ALL SELECT '피지오겔'
-    UNION ALL SELECT '라운드랩'
-    UNION ALL SELECT '헤라'
-    UNION ALL SELECT '이니스프리'
-    UNION ALL SELECT '엠도씨'
-    UNION ALL SELECT '두잉왓'
-    UNION ALL SELECT '아크네스'
-    UNION ALL SELECT '이아소'
-    UNION ALL SELECT '라네즈'
-    UNION ALL SELECT '플리프'
-    UNION ALL SELECT '마몽드'
-    UNION ALL SELECT '미닉'
-    UNION ALL SELECT '라끌랑'
-    UNION ALL SELECT '비레디'
-    UNION ALL SELECT '그라펜'
-    UNION ALL SELECT '더페이스샵'
-    UNION ALL SELECT '미프'
-    UNION ALL SELECT '다슈'
-    UNION ALL SELECT '무칸'
-    UNION ALL SELECT '낫포유'
-    UNION ALL SELECT '듀이셀'
-    UNION ALL SELECT '포맨트'
-    UNION ALL SELECT '뉴트로지나'
-    UNION ALL SELECT '세븐피엠'
-    UNION ALL SELECT '원오브뎀'
-    UNION ALL SELECT '정샘물'
-    UNION ALL SELECT '바우로'
-    UNION ALL SELECT '블랙몬스터'
-    UNION ALL SELECT '리우젤'
-    UNION ALL SELECT '포뷰트'
-    UNION ALL SELECT '갸스비'
-    UNION ALL SELECT '폴미첼'
-    UNION ALL SELECT '모이'
-    UNION ALL SELECT '브리티시엠'
-    UNION ALL SELECT '커리쉴'
-    UNION ALL SELECT '헤레카'
-    UNION ALL SELECT '제이숲'
-    UNION ALL SELECT '스웨거'
-    UNION ALL SELECT '박준뷰티랩'
-) AS tmp
-WHERE NOT EXISTS (SELECT 1 FROM `brands` LIMIT 1);
-
-INSERT INTO `products` (`brand_id`, `name`, `price`, `default_usage_days`, `oliveyoung_goods_no`, `category_medium`,
+INSERT IGNORE INTO `products` (`brand_id`, `name`, `price`, `default_usage_days`, `oliveyoung_goods_no`, `category_medium`,
                         `category_small`, `volume`, `description`, `image_url`, `product_url`, `ingredients`,
                         `skin_types`, `related_conditions`, `benefits`)
-SELECT * FROM (
 SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '아이디얼포맨' LIMIT 1),
        '아이디얼포맨 퍼펙트 올인원 150ml 단품/기획',
        12900,
@@ -593,14 +605,11 @@ SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '아이디얼포맨' LIMI
        '정제수,프로판다이올,다이프로필렌글라이콜,메틸프로판다이올,나이아신아마이드,펜틸렌글라이콜,글리세린,병풀추출물,실버위드추출물,쇠비름추출물,귀리커넬추출물,아티초크잎추출물,콜라겐추출물,로즈마리잎추출물,마트리카리아꽃추출물,하이드로제네이티드레시틴,녹차수,소듐하이알루로네이트,다이페닐다이메티콘,트라이에틸헥사노인,부틸렌글라이콜,폴리글리세릴-10올리에이트,소듐아크릴릭애씨드/엠에이코폴리머,하이드록시아세토페논,에틸헥실글리세린,아데노신,다이소듐이디티에이,카보머,트로메타민,폴리쿼터늄-51,1,2-헥산다이올,소듐폴리아크릴레이트,피브이엠/엠에이코폴리머,베타-글루칸,스키조사카로미세스발효여과물,락토바실러스발효용해물,카프릴릴글라이콜,비피다발효용해물,스트렙토코쿠스 테르모필루스발효물,카프릴릭/카프릭트라이글리세라이드,레티놀,에이치디아이/트라이메틸올헥실락톤크로스폴리머,토코페롤,하이드롤라이즈드엘라스틴,폴리비닐알코올,콜라겐,스쿠알란,세라마이드엔피,아세틸테트라펩타이드-5,잔탄검,페닐프로판올,리놀레닉애씨드,수크로오스다이스테아레이트,하이드록시프로필사이클로덱스트린,올리브수 로션 : 정제수,글리세린,카프릴릭/카프릭트라이글리세라이드,1,2-헥산다이올,글리세레스-26,나이아신아마이드,폴리글리세린-3,세테아릴올리베이트,베헤닐알코올,비닐다이메티콘,스페인감초뿌리추출물,작약뿌리추출물,천궁뿌리추출물,칡뿌리추출물,무화과추출물,병풀추출물,쇠비름추출물,콜라겐추출물,살구씨오일,소듐하이알루로네이트,하이드로제네이티드레시틴,수용성콜라겐,알로에베라잎즙,솔비탄올리베이트,스쿠알란,포타슘세틸포스페이트,다이메티콘/비닐다이메티콘크로스폴리머,피토스테릴/이소스테아릴/세틸/스테아릴/베헤닐다이머디리놀리에이트,글리세릴스테아레이트,세틸알코올,하이드로제네이티드팜글리세라이즈,소듐스테아로일글루타메이트,알지닌,카보머,부틸렌글라이콜,수크로오스스테아레이트,수크로오스트라이스테아레이트,에틸헥실글리세린,시어버터,아데노신,폴리글리세릴-10미리스테이트,하이드록시아세토페논,잔탄검,스키조사카로미세스발효여과물,세라마이드엔피,토코페롤,말토덱스트린,하이드롤라이즈드식물성단백질,레티놀,에이치디아이/트라이메틸올헥실락톤크로스폴리머,하이드롤라이즈드엘라스틴,폴리비닐알코올,메틸프로판다이올,프로테아제,카프릴릴글라이콜,아세틸테트라펩타이드-5,페닐프로판올,아세틸헥사펩타이드-1 올인원 폼 : 정제수, 미리스틱애씨드, 글리세린, 메틸프로판다이올, 포타슘하이드록사이드, 라우릭애씨드, 팔미틱애씨드, 스테아릭애씨드, 글리세릴스테아레이트, 병풀추출물, 무화과추출물, 당느릅나무뿌리추출물, 줄맨드라미씨추출물, 녹차추출물, 달맞이꽃추출물, 대왕송잎추출물, 칡뿌리추출물, 스페인감초뿌리추출물, 플랑크톤추출물, 하이드로제네이티드레시틴, 아크릴레이트코폴리머, 포타슘코코에이트, 포타슘코코일글리시네이트, 솔비탄올리베이트, 라우릴베타인, 폴리글리세릴-10라우레이트, 폴리쿼터늄-7, 알란토인, 소듐클로라이드, 다이소듐이디티에이, 부틸렌글라이콜, 세라마이드엔피, 해수, 마데카소사이드, 1,2-헥산다이올, 에틸헥실글리세린, 소듐벤조에이트, 향료, 부틸페닐메틸프로피오날, 리모넨',
        '민감성, 지성, 건성',
        '아토피',
-       '보습, 진정, 미백, 탄력'
-) AS tmp
-WHERE NOT EXISTS (SELECT 1 FROM `products` LIMIT 1);
+       '보습, 진정, 미백, 탄력';
 
 INSERT INTO `products` (`brand_id`, `name`, `price`, `default_usage_days`, `oliveyoung_goods_no`, `category_medium`,
                         `category_small`, `volume`, `description`, `image_url`, `product_url`, `ingredients`,
                         `skin_types`, `related_conditions`, `benefits`)
-SELECT * FROM (
 SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '오브제' LIMIT 1),
        '오브제 포어 제로 토너/로션 2종 기획',
        30800,
@@ -919,14 +928,11 @@ SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '오브제' LIMIT 1),
        '정제수, 미리스틱애씨드, 글리세린, 스테아릭애씨드, 부틸렌글라이콜, 티트리잎수, 포타슘하이드록사이드, 라우릭애씨드, 소듐라우레스설페이트, 데실글루코사이드, 향료, 솔비탄올리베이트, 1,2-헥산다이올, 글리세릴스테아레이트, 피이지-100스테아레이트, 클로페네신, 폴리쿼터늄-7, 팔미틱애씨드, 아라키딕애씨드, 에틸헥실글리세린, 다이소듐이디티에이, 블랙체리열매추출물, 양까막까치밥나무열매추출물, 올레익애씨드, 마카다미아씨오일, 카프릭애씨드, 소듐벤조에이트, 검은뽕나무열매추출물, 포타슘코코일글리시네이트, 카올린, 벤토나이트, 라임전초오일, 자몽껍질오일, 오렌지껍질오일, 로얄젤리추출물, 밀아미노산, 소듐하이알루로네이트, 카카오추출물, 커피콩추출물, 스위트아몬드추출물, 펜틸렌글라이콜, 하이드록시프로필트라이모늄하이알루로네이트, 낫토검, 하이드롤라이즈드하이알루로닉애씨드, 소듐아세틸레이티드하이알루로네이트, 소듐하이알루로네이트크로스폴리머, 하이알루로닉애씨드, 하이드롤라이즈드소듐하이알루로네이트, 포타슘하이알루로네이트',
        '건성',
        '여드름',
-       '보습, 진정'
-) AS tmp
-WHERE NOT EXISTS (SELECT 1 FROM `products` LIMIT 1);
+       '보습, 진정';
 
 INSERT INTO `products` (`brand_id`, `name`, `price`, `default_usage_days`, `oliveyoung_goods_no`, `category_medium`,
                         `category_small`, `volume`, `description`, `image_url`, `product_url`, `ingredients`,
                         `skin_types`, `related_conditions`, `benefits`)
-SELECT * FROM (
 SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '이아소' LIMIT 1),
        '닥터이아소 스킨케어 포 맨 멀티 액션 폼 클렌저',
        22000,
@@ -1245,14 +1251,11 @@ SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '라끌랑' LIMIT 1),
        '정제수, 사이클로펜타실록산, 티타늄디옥사이드, 부틸렌글라이콜, 글리세린, 탤크, 사이클로메치콘, 에칠헥실메톡시신나메이트, 피이지-10디메치콘, 스위트아몬드오일, 알부틴, 이소프로필이소스테아레이트, 징크옥사이드, 디메치콘/비닐디메치콘크로스폴리머, 디스테아디모늄헥토라이트, 베타인, 트리에칠헥사노인, 헥실데실미리스토일메칠아미노프로피오네이트, 마치현추출물, 블랙베리잎추출물, 마그네슘설페이트, 비닐디메치콘/메치콘실세스퀴옥산크로스폴리머, 아크릴레이트/디메치콘코폴리머, 메치콘, 글라이코실트레할로스, 팔미틱애씨드, 하이드로제네이티드스타치하이드롤리세이트, 에칠헥실글리세린, 토코페릴아세테이트, 알루미늄하이드록사이드, 알루미늄스테아레이트, 자일리틸글루코사이드, 아데노신, 무수자일리톨, 디메치콘, 자일리톨, 말토덱스트린, 향료, 황색산화철, 흑색산화철, 적색산화철, 페녹시에탄올',
        '건성',
        '일반',
-       '보습, 탄력'
-) AS tmp
-WHERE NOT EXISTS (SELECT 1 FROM `products` LIMIT 1);
+       '보습, 탄력';
 
 INSERT INTO `products` (`brand_id`, `name`, `price`, `default_usage_days`, `oliveyoung_goods_no`, `category_medium`,
                         `category_small`, `volume`, `description`, `image_url`, `product_url`, `ingredients`,
                         `skin_types`, `related_conditions`, `benefits`)
-SELECT * FROM (
 SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '비레디' LIMIT 1),
        '비레디 트루 톤 로션 하이드로/에어리 40ml 기획 (+20ml 추가 증정)',
        32000,
@@ -1571,14 +1574,11 @@ SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '다슈' LIMIT 1),
        '비비쿠션 - 정제수, 사이클로펜타실록세인 , 티타늄디옥사이드 , 에칠헥실메톡시신나메이트 , 징크옥사이드 , 부틸렌글라이콜 , 부틸렌글라이콜다이카프릴레이트 다이카프레이트 , 피이지 10 다이메티콘 , 메틸메타크릴레이트크로스폴리머 , 카프릴릴메티콘 , 나이아신아마이드 , 페닐트라이메티콘 , 폴리프로필실세스퀴옥세인 , 황색산화철 , 라임추출물 , 말토덱스트린 , 마카뿌리추출물 , 수박추출물 , 오렌지추출물 , 자몽추출물 , 토마토추출물 , 살구추출물 , 파파야열매추출물 , 탄산수 , 윈터체리뿌리추출물 , 흰버드나무껍질추출물 , 살비아잎추출물 , 바이오사카라이드검 4, 레몬추출물 , 병풀추출물 , 버지니아풍년화잎추출물 , 녹차추출물 , 티트리잎추출물 , 라우릴피이지 9 폴리다이메틸실록시에틸다이메티콘 , 다이스테아다이모늄헥토라이트 , 솔비탄세스퀴올리에이트 , 비닐다이 메티콘 메티콘실세스퀴옥세인크로스폴리머 , 마그네슘설페이트 , 트라이에톡시카프릴릴실레인 , 트라이베헤닌 , 알루미늄하이드록사이드 , 트라이에틸시트레이트 , 에틸헥실글리세린 , 아데노신 , 다이소듐이디티에이 , 토코페롤 , 프룩토오스 , 글리세린 , 1,2 헥산다이올 , 시트릭애씨드 , 적색산화철 , 흑색산화철 , 페녹시에탄올 , 포타슘솔베이트 , 향료, 리모넨 , 부틸페닐메칠프로피오날 , 리날룰 블루쿠션 - 정제수, 사이클로펜타실록세인, 티타늄디옥사이드, 에칠헥실메톡시신나메이트, 메틸메타크릴레이트크로스폴리머, 징크옥사이드, 부틸렌글라이콜, 부틸렌글라이콜다이카프릴레이트/다이카프레이트, 피이지-10다이메티콘, 카프릴릴메티콘, 나이아신아마이드, 페닐트라이메티콘, 폴리프로필실세스퀴옥세인, 라임추출물, 말토덱스트린, 마카뿌리추출물, 수박추출물, 오렌지추출물, 자몽추출물, 토마토추출물, 살구추출물, 파파야열매추출물, 탄산수, 윈터체리뿌리추출물, 흰버드나무껍질추출물, 살비아잎추출물, 바이오사카라이드검-4, 레몬추출물, 병풀추출물, 버지니아풍년화잎추출물, 녹차추출물, 티트리잎추출물, 라우릴피이지-9폴리다이메틸실록시에틸다이메티콘, 다이스테아다이모늄헥토라이트, 솔비탄세스퀴올리에이트, 비닐다이메티콘/메티콘실세스퀴옥세인크로스폴리머, 마그네슘설페이트, 트라이베헤닌, 트라이에톡시카프릴릴실레인, 알루미늄하이드록사이드, 트라이에틸시트레이트, 에틸헥실글리세린, 아데노신, 다이소듐이디티에이, 토코페롤, 프룩토오스, 글리세린, 1,2-헥산다이올, 시트릭애씨드, 울트라마린, 크로뮴하이드록사이드그린, 황색산화철, 페녹시에탄올, 포타슘솔베이트, 향료, 리모넨, 부틸페닐메칠프로피오날, 리날룰',
        '민감성, 지성, 건성',
        '여드름',
-       '보습, 진정, 미백, 탄력'
-) AS tmp
-WHERE NOT EXISTS (SELECT 1 FROM `products` LIMIT 1);
+       '보습, 진정, 미백, 탄력';
 
 INSERT INTO `products` (`brand_id`, `name`, `price`, `default_usage_days`, `oliveyoung_goods_no`, `category_medium`,
                         `category_small`, `volume`, `description`, `image_url`, `product_url`, `ingredients`,
                         `skin_types`, `related_conditions`, `benefits`)
-SELECT * FROM (
 SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '다슈' LIMIT 1),
        '다슈 맨즈 아쿠아 매트 비비 쿠션 (리필용)',
        18000,
@@ -1897,14 +1897,11 @@ SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '그라펜' LIMIT 1),
        '아이소데실아이소노나노에이트, 실리카, 옥틸도데실스테아로일스테아레이트, 합성왁스, 에틸헥실아이소노나노에이트, 합성플루오르플로고파이트, C12-15알킬벤조에이트, 펜타에리스리틸테트라아이소스테아레이트, 마이크로크리스탈린왁스, 카프릴릭/카프릭트라이글리세라이드, 솔비탄세스퀴올리에이트, 솔비탄아이소스테아레이트, 글리세릴카프릴레이트, 토코페릴아세테이트, 스테아랄코늄헥토라이트, 카프릴릴글라이콜, 아이소프로필티타늄트라이아이소스테아레이트, 프로필렌카보네이트, 에틸헥실글리세린, 알루미늄하이드록사이드, 티타늄디옥사이드, 황색산화철, 흑색산화철, 적색산화철',
        '건성',
        '일반',
-       '기본케어'
-) AS tmp
-WHERE NOT EXISTS (SELECT 1 FROM `products` LIMIT 1);
+       '기본케어';
 
 INSERT INTO `products` (`brand_id`, `name`, `price`, `default_usage_days`, `oliveyoung_goods_no`, `category_medium`,
                         `category_small`, `volume`, `description`, `image_url`, `product_url`, `ingredients`,
                         `skin_types`, `related_conditions`, `benefits`)
-SELECT * FROM (
 SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '오브제' LIMIT 1),
        '오브제 무드체인지 립밤 3g 2종 택1',
        10100,
@@ -2223,14 +2220,11 @@ SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '오브제' LIMIT 1),
        '하이드로제네이티드돌콩오일, 하이드로제네이티드코코-글리세라이즈, 합성플루오르플로고파이트, 하이드로제네이티드식물성오일, 징크스테아레이트, 스테아릭애씨드, 카나우바왁스, 폴리글리세릴-2트라이아이소스테아레이트, 토코페롤, 카프릴릴글라이콜, 페녹시에탄올, 살구씨오일, 아보카도오일, 하이드로제네이티드코코넛오일, 아스코빌팔미테이트, 헥실렌글라이콜, 티타늄디옥사이드, 흑색산화철, 황색산화철, 적색산화철',
        '건성',
        '일반',
-       '기본케어'
-) AS tmp
-WHERE NOT EXISTS (SELECT 1 FROM `products` LIMIT 1);
+       '기본케어';
 
 INSERT INTO `products` (`brand_id`, `name`, `price`, `default_usage_days`, `oliveyoung_goods_no`, `category_medium`,
                         `category_small`, `volume`, `description`, `image_url`, `product_url`, `ingredients`,
                         `skin_types`, `related_conditions`, `benefits`)
-SELECT * FROM (
 SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '다슈' LIMIT 1),
        '다슈 맨즈 굿 룩스 아이브로우 펜슬 블랙/그레이',
        9800,
@@ -2549,14 +2543,11 @@ SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '다슈' LIMIT 1),
        '그루밍토닉 정제수, 부틸렌글라이콜, 변성알코올, 피브이피, 폴리솔베이트20, 글리세린, 브이피/브이에이코폴리머, 하이드록시에틸셀룰로오스, 1,2-헥산다이올, 카프릴릴글라이콜, 다이소듐이디티에이, 소듐나이트레이트, 글라이옥살, 데실렌글라이콜, 바오밥나무씨오일, 트라이올레인, 다이소듐포스페이트,메티오닌, 호두추출물, 시스테인, 브로콜리추출물, 양파추출물, 사철쑥추출물, 별꽃추출물, 토코페롤, 에틸헥실글리세린, 식물성오일, 페녹시에탄올, 향료,리날룰, 시트로넬올, 리모넨, 쿠마린, 벤질벤조에이트 *컬크림 정제수, 글리세린, 사이클로펜타실록세인, 다이메티콘, 피브이피, 사이클로헥사실록세인, 폴리아크릴아마이드, 베타인, 폴리쿼터늄-7, 아르간커넬오일, 잉카피넛씨오일, 코코넛야자오일, 하이드롤라이즈드실크, 하이드롤라이즈드밀단백질, 하이드롤라이즈드콜라겐, 콩싹추출물, 알로에베라잎추출물, 비타민나무추출물, 마트리카리아추출물, 로우스위트블루베리추출물, 녹차추출물, 여주열매추출물, 알란토인, C13-14아이소알케인, 폴리솔베이트80, 폴리솔베이트20, 라우레스-7, 라우레스-3, 라우레스-20, 디엠디엠하이단토인, 카보머, 알지닌, 다이소듐이디티에이, 향료, 리날룰, 시트로넬올, 헥실신남알, 알파-아이소메틸아이오논',
        '민감성, 건성',
        '일반',
-       '보습, 진정, 탄력'
-) AS tmp
-WHERE NOT EXISTS (SELECT 1 FROM `products` LIMIT 1);
+       '보습, 진정, 탄력';
 
 INSERT INTO `products` (`brand_id`, `name`, `price`, `default_usage_days`, `oliveyoung_goods_no`, `category_medium`,
                         `category_small`, `volume`, `description`, `image_url`, `product_url`, `ingredients`,
                         `skin_types`, `related_conditions`, `benefits`)
-SELECT * FROM (
 SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '갸스비' LIMIT 1),
        '갸스비 셋&킵 스프레이 263ml (레귤러)',
        7600,
@@ -2875,14 +2866,11 @@ SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '다슈' LIMIT 1),
        '정제수, 변성알코올, 부틸렌글라이콜, 인삼추출물, 서양측백나무잎추출물, 상백피추출물, 구절초추출물, 구기자추출물, 석창포뿌리/줄기추출물, 창이자추출물, 감초추출물, 박하추출물, 어성초추출물, 녹차추출물, 자소엽추출물, 엘-멘톨, 트로메타민, 살리실산, D-판테놀, DL-피롤리돈카르복실산나트륨액, 하이드록시프로필트리모늄하이드롤라이즈드케라틴, 고삼추출물, 작약추출물, 로즈마리추출물, 비오틴, 하이드롤라이즈드케라틴, 하이드롤라이즈드실크, 하이드롤라이즈드밀단백질, 페녹시에탄올',
        '민감성',
        '지루성피부염, 아토피',
-       '기본케어'
-) AS tmp
-WHERE NOT EXISTS (SELECT 1 FROM `products` LIMIT 1);
+       '기본케어';
 
 INSERT INTO `products` (`brand_id`, `name`, `price`, `default_usage_days`, `oliveyoung_goods_no`, `category_medium`,
                         `category_small`, `volume`, `description`, `image_url`, `product_url`, `ingredients`,
                         `skin_types`, `related_conditions`, `benefits`)
-SELECT * FROM (
 SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '포뷰트' LIMIT 1),
        '포뷰트 두피 타투15g 블랙/브라운 단품/기획',
        24000,
@@ -3121,6 +3109,4 @@ SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '박준뷰티랩' LIMIT 1
        '정제수, 에탄올아민티오글라이콜레이트, 세테아릴알코올, 미네랄오일, 에탄올아민, 아이소프로필미리스테이트, 세테스-20포스페이트, 스테아레스-21, 세테아레스-25, 하이드롤라이즈드콜라겐, 부틸렌글라이콜, 쇠비름추출물, 하수오뿌리추출물, 라벤더꽃추출물, 베르가못잎추출물, 페퍼민트잎추출물, 프리지아추출물, 마트리카리아꽃추출물, 로즈마리잎추출물, 참당귀뿌리추출물, 족도리풀뿌리추출물, 도둑놈의지팡이뿌리추출물, 측백나무잎추출물, 구기자추출물, 은행나무잎추출물, 잇꽃꽃추출물, 1,2-헥산다이올, 에틸헥실글리세린, 에탄올, 베헨트라이모늄클로라이드, 포도씨오일, 마카다미아씨오일, 글리세릴스테아레이트, 에티드로닉애씨드, 라놀린알코올, 하이드록시에틸셀룰로오스, 다이리놀레익애씨드/부테인다이올코폴리머, 아이소프로필알코올, 피토스테릴올리에이트, 하이드로제네이티드식물성글리세라이즈, 포스포릭애씨드, 향료, 벤질벤조에이트, 시트랄, 시트로넬올, 리모넨, 제라니올, 리날룰',
        '건성',
        '일반',
-       '보습, 탄력'
-) AS tmp
-WHERE NOT EXISTS (SELECT 1 FROM `products` LIMIT 1);
+       '보습, 탄력';
