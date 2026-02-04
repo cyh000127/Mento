@@ -200,8 +200,14 @@ VALUES (1, '스킨케어', 35000, '피부 타입 분석 및 맞춤 스킨케어 
 
 INSERT
 IGNORE INTO `users` (`email`, `password`, `name`, `kakao_id`, `role`, `created_at`, `updated_at`)
-SELECT *
-FROM (SELECT 'skincare01@example.com', 'test1234', '김스킨', 'kakao_skin01', 'MENTOR', NOW(6), NOW(6)
+SELECT `email`, `password`, `name`, `kakao_id`, `role`, `created_at`, `updated_at`
+FROM (SELECT 'skincare01@example.com' AS `email`,
+             'test1234'               AS `password`,
+             '김스킨'                    AS `name`,
+             'kakao_skin01'           AS `kakao_id`,
+             'MENTOR'                 AS `role`,
+             NOW(6)                   AS `created_at`,
+             NOW(6)                   AS `updated_at`
       UNION ALL
       SELECT 'skincare02@example.com', 'test1234', '이장벽', 'kakao_skin02', 'MENTOR', NOW(6), NOW(6)
       UNION ALL
