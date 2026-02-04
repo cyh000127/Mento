@@ -39,8 +39,11 @@ async def entrypoint(ctx: JobContext):
     # 종료 신호 전송을 위한 셧다운 콜백 등록 (함수 최상단에 배치)
     async def on_shutdown():
         print(f"--- [Room: {ctx.room.name}] 셧다운 콜백 실행. 종료 API 호출 ---", flush=True)
-        finish_endpoint = "http://backend:8080/api/v1/consulting/session/end"
-        finish_payload = {"roomId": str(ctx.room.name)}
+
+        # roomId를 경로에 포함하도록 수정
+        room_id = str(ctx.room.name)
+        finish_endpoint = f"http://backend:8080/api/v1/consulting/session/{room_id}/end"
+        finish_payload = {"roomId": room_id}
 
         # 셧다운 시점에는 새로운 비동기 클라이언트를 생성해서 전송
         async with httpx.AsyncClient() as client:
@@ -62,9 +65,11 @@ async def entrypoint(ctx: JobContext):
         await ctx.disconnect()
         return
 
+    openai_base_url = os.getenv("OPENAI_API_BASE")
+
     # STT / VAD 설정
     whisper_stt = openai.STT(
-        base_url="https://gms.ssafy.io/gmsapi/api.openai.com/v1",
+        base_url=openai_base_url,
         model="whisper-1",
         language="ko"
     )
