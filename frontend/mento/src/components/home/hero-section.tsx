@@ -52,8 +52,9 @@ const RIGHT_IMAGES = [
 
 export function HeroSection() {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const sceneRefs = useRef<(HTMLDivElement | null)[]>([])
+  const sectionRefs = useRef<HTMLElement[]>([])
   const [currentScene, setCurrentScene] = useState(0)
+  const [sectionCount, setSectionCount] = useState(0)
   const [showIntro, setShowIntro] = useState(true)
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [isLoginOpen, setIsLoginOpen] = useState(false)
@@ -117,29 +118,42 @@ export function HeroSection() {
   }, [])
 
   useEffect(() => {
-    if (showIntro) return
+    if (showIntro || !imagesLoaded) return
 
     const scrollContainer = document.querySelector("[data-home-scroll]") as HTMLElement | null
     if (!scrollContainer) return
+
+    const sectionElements = Array.from(
+      scrollContainer.querySelectorAll<HTMLElement>("[data-home-section]")
+    )
+    sectionRefs.current = sectionElements
+    setSectionCount(sectionElements.length)
+    if (sectionElements.length === 0) return
+    setCurrentScene(0)
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return
-          const index = Number(entry.target.getAttribute("data-scene-index"))
-          if (!Number.isNaN(index)) {
-            setCurrentScene(index)
-          }
+          const index = sectionRefs.current.indexOf(entry.target as HTMLElement)
+          if (index >= 0) setCurrentScene(index)
         })
       },
       { root: scrollContainer, threshold: 0.6 }
     )
 
-    sceneRefs.current.forEach((scene) => {
-      if (scene) observer.observe(scene)
+    sectionRefs.current.forEach((section) => {
+      observer.observe(section)
     })
 
     return () => observer.disconnect()
+  }, [showIntro, imagesLoaded])
+
+  useEffect(() => {
+    if (showIntro) return
+    const scrollContainer = document.querySelector("[data-home-scroll]") as HTMLElement | null
+    if (!scrollContainer) return
+    scrollContainer.scrollTo({ top: 0, left: 0, behavior: "auto" })
   }, [showIntro])
 
   const handleIntroComplete = () => {
@@ -163,24 +177,20 @@ export function HeroSection() {
     )
   }
 
-  const setSceneRef = (index: number) => (element: HTMLDivElement | null) => {
-    sceneRefs.current[index] = element
-  }
-
   const handleLearnMore = () => {
-    const nextIndex = Math.min(currentScene + 1, sceneRefs.current.length - 1)
-    sceneRefs.current[nextIndex]?.scrollIntoView({ behavior: "smooth", block: "start" })
+    const nextIndex = Math.min(currentScene + 1, sectionRefs.current.length - 1)
+    sectionRefs.current[nextIndex]?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
 
   return (
     <>
       {/* Progress indicator */}
       <div className="fixed right-8 top-1/2 z-50 flex -translate-y-1/2 flex-col gap-3">
-        {[0, 1, 2].map((index) => (
+        {Array.from({ length: sectionCount }, (_, index) => (
           <button
             key={index}
             onClick={() => {
-              sceneRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "start" })
+              sectionRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "start" })
             }}
             className="group relative"
             aria-label={`Scene ${index + 1}`}
@@ -201,8 +211,7 @@ export function HeroSection() {
 
       {/* Scene 1: Film Strip Intro */}
       <section
-        ref={setSceneRef(0)}
-        data-scene-index="0"
+        data-home-section
         className="relative h-screen w-full snap-start snap-always bg-background animate-fade-in"
       >
         <div className="flex h-full w-full">
@@ -296,8 +305,7 @@ export function HeroSection() {
 
       {/* Scene 2: Film Strip Climax */}
       <section
-        ref={setSceneRef(1)}
-        data-scene-index="1"
+        data-home-section
         className="relative h-screen w-full snap-start snap-always bg-background"
       >
         <div className="flex h-full w-full">
@@ -367,8 +375,7 @@ export function HeroSection() {
 
       {/* Scene 3: Video Hero */}
       <section
-        ref={setSceneRef(2)}
-        data-scene-index="2"
+        data-home-section
         className="relative h-screen w-full snap-start snap-always bg-background"
       >
         <div className="relative h-full w-full">
