@@ -19,7 +19,6 @@ import com.mento.domain.consulting.entity.Consulting;
 import com.mento.domain.consulting.factory.ConsultingFactory;
 import com.mento.domain.consulting.service.command.ConsultingCommandServiceImpl;
 import com.mento.domain.mentor.entity.MentorType;
-import com.mento.domain.mentor.service.query.MentorQueryService;
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.service.NotificationFacadeService;
 import com.mento.domain.payment.dto.request.PaymentApproveReqDto;

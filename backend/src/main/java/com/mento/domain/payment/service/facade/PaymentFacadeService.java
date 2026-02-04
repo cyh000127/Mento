@@ -10,7 +10,6 @@ import com.mento.common.error.exception.PaymentException;
 import com.mento.domain.consulting.entity.Consulting;
 import com.mento.domain.consulting.factory.ConsultingFactory;
 import com.mento.domain.consulting.service.command.ConsultingCommandService;
-import com.mento.domain.mentor.service.query.MentorQueryService;
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.service.NotificationFacadeService;
@@ -27,6 +26,7 @@ import com.mento.domain.reservation.dto.response.ReservationDetailResDto;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.timetable.entity.Timetable;
 import com.mento.domain.user.entity.User;
+import com.mento.domain.user.service.query.UserQueryService;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -40,10 +40,10 @@ public class PaymentFacadeService {
 	private static final int NOTIFICATION_MINUTES = 10;
 	private final PaymentCommandService paymentCommandService;
 	private final PaymentQueryService paymentQueryService;
-	private final MentorQueryService mentorQueryService;
 	private final NotificationFacadeService notificationFacadeService;
 	private final ConsultingCommandService consultingCommandService;
 	private final ConsultingFactory consultingFactory;
+	private final UserQueryService userQueryService;
 
 	@Transactional
 	public PaymentReadyResDto preparePayment(final PaymentReadyReqDto request, final Long userId) {
