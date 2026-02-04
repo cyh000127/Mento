@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
-import { Upload, Sparkles, ChevronRight, X, Loader2, Droplets, Search, Minus, Sun, Dumbbell } from "lucide-react";
+import { Upload, Sparkles, X, Loader2, Droplets, Search, Minus, Sun, Dumbbell } from "lucide-react";
 import { api } from "@/api/axios";
 import { userApi } from "@/api/userApi";
+import { requestSkinAnalysis } from "../../api/skinAnalysisApi";
 
 interface UploadedImage {
   file: File;
@@ -129,21 +130,22 @@ export function SkinAnalysis() {
       };
 
       // 1. 생년월일 정보 업데이트 API 호출
-      console.log("생년월일 업데이트 중:", birthDate);
       await userApi.updateUserProfile({
         birthDate: birthDate,
       });
-      console.log("생년월일 업데이트 완료");
 
       const l30_url = await uploadFile(leftImage.file);
       const front_url = await uploadFile(frontImage.file);
       const r30_url = await uploadFile(rightImage.file);
-      void l30_url;
-      void front_url;
-      void r30_url;
 
       // 2. 피부 분석 API 호출 (TODO: 실제 피부 분석 API 구현)
-
+      await requestSkinAnalysis({
+        front_url,
+        l30_url,
+        r30_url,
+        birth_date: birthDate,
+        gender: gender as "male" | "female",
+      });
       // 시뮬레이션: 3초 후 결과 표시
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
@@ -493,7 +495,7 @@ export function SkinAnalysis() {
                       { angle: 144, value: 22, label: "주름" },
                       { angle: 216, value: 30, label: "색소침착" },
                       { angle: 288, value: 11, label: "탄력" },
-                    ].map(({ angle, value, label }, idx) => {
+                    ].map(({ angle, label }, idx) => {
                       const radian = ((angle - 90) * Math.PI) / 180;
                       const labelX = 250 + 210 * Math.cos(radian);
                       const labelY = 250 + 210 * Math.sin(radian);
