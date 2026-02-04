@@ -11,6 +11,7 @@ interface ProductDetailProps {
   onDelete: (productId: string) => void
   onStatusChange: (productId: string, newStatus: ItemStatus) => void
   loading?: boolean
+  isEmpty?: boolean
 }
 
 const categoryLabels = {
@@ -41,7 +42,26 @@ export function ProductDetail({
   onDelete,
   onStatusChange,
   loading = false,
+  isEmpty = false,
 }: ProductDetailProps) {
+  const canInteract = !isEmpty && Boolean(product.id)
+  const isPlaceholder = !product.id && !isEmpty
+  const displayBrand = isEmpty ? "N/A" : product.brand
+  const displayName = isEmpty ? "N/A" : product.name
+  const displayCategory = isEmpty ? "N/A" : isPlaceholder ? "-" : categoryLabels[product.category]
+  const displayPurchaseDate = isEmpty ? "N/A" : formatDate(product.purchaseDate)
+  const displayExpirationDate = isEmpty ? "N/A" : formatDate(product.expirationDate)
+  const displayDaysUntilExpiry = isEmpty
+    ? "N/A"
+    : product.daysUntilExpiry !== undefined
+      ? formatDaysUntilExpiry(product.daysUntilExpiry)
+      : ""
+  const displayRepurchaseCount = isEmpty ? "N/A" : `${product.repurchaseCount}회`
+  const displayStatusLabel = isEmpty ? "N/A" : isPlaceholder ? "-" : statusLabels[product.status]
+  const imageSrc =
+    isEmpty || !product.image ? "https://via.placeholder.com/150" : product.image
+  const imageAlt = isEmpty ? "N/A" : product.name
+
   // 현재 상태를 API 상태로 변환
   const currentApiStatus = mapUiStatusToApiStatus(product.status)
   // 허용된 상태 전환 목록 가져오기
@@ -53,8 +73,8 @@ export function ProductDetail({
         {/* Product Image */}
         <div className="relative aspect-square w-full overflow-hidden bg-muted">
           <img
-            src={product.image}
-            alt={product.name}
+            src={imageSrc}
+            alt={imageAlt}
             className="h-full w-full object-cover"
           />
           {loading && (
@@ -69,10 +89,13 @@ export function ProductDetail({
           {/* Brand and Favorite */}
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-muted-foreground">
-              {product.brand}
+              {displayBrand}
             </h3>
             <button
-              onClick={() => onToggleFavorite(product.id)}
+              onClick={() => {
+                if (!canInteract) return
+                onToggleFavorite(product.id)
+              }}
               className="transition-colors hover:scale-110"
               aria-label="즐겨찾기"
             >
@@ -86,20 +109,20 @@ export function ProductDetail({
           </div>
 
           {/* Product Name */}
-          <h2 className="text-xl font-bold text-foreground">{product.name}</h2>
+          <h2 className="text-xl font-bold text-foreground">{displayName}</h2>
 
           {/* Details */}
           <div className="space-y-3 border-t border-border pt-4">
-            <DetailRow label="카테고리" value={categoryLabels[product.category]} />
-            <DetailRow label="구매일" value={formatDate(product.purchaseDate)} />
-            <DetailRow label="사용기한" value={formatDate(product.expirationDate)} />
-            {product.daysUntilExpiry !== undefined && (
+            <DetailRow label="카테고리" value={displayCategory} />
+            <DetailRow label="구매일" value={displayPurchaseDate} />
+            <DetailRow label="사용기한" value={displayExpirationDate} />
+            {(isEmpty || product.daysUntilExpiry !== undefined) && (
               <DetailRow
                 label="만료까지"
-                value={formatDaysUntilExpiry(product.daysUntilExpiry)}
+                value={displayDaysUntilExpiry}
               />
             )}
-            <DetailRow label="재구매 횟수" value={`${product.repurchaseCount}회`} />
+            <DetailRow label="재구매 횟수" value={displayRepurchaseCount} />
           </div>
 
           {/* Status */}
@@ -110,7 +133,7 @@ export function ProductDetail({
                 className={`rounded-full border px-3 py-1 text-sm font-medium ${statusColors[product.status]
                   }`}
               >
-                {statusLabels[product.status]}
+                {displayStatusLabel}
               </span>
             </div>
 
@@ -120,7 +143,10 @@ export function ProductDetail({
                 {allowedTransitions.map((targetStatus) => (
                   <Button
                     key={targetStatus}
-                    onClick={() => onStatusChange(product.id, targetStatus)}
+                    onClick={() => {
+                      if (!canInteract) return
+                      onStatusChange(product.id, targetStatus)
+                    }}
                     variant="outline"
                     className="w-full text-sm"
                   >
@@ -134,14 +160,20 @@ export function ProductDetail({
           {/* Actions */}
           <div className="space-y-2 border-t border-border pt-4">
             <Button
-              onClick={() => window.open(product.purchaseLink, "_blank")}
+              onClick={() => {
+                if (!canInteract || !product.purchaseLink) return
+                window.open(product.purchaseLink, "_blank")
+              }}
               className="w-full bg-primary-500 text-dark-bg hover:bg-primary-400"
             >
               <ExternalLink className="mr-2 h-4 w-4" />
               구매 링크
             </Button>
             <Button
-              onClick={() => onDelete(product.id)}
+              onClick={() => {
+                if (!canInteract) return
+                onDelete(product.id)
+              }}
               variant="outline"
               className="w-full border-destructive text-destructive hover:bg-destructive/10"
             >
