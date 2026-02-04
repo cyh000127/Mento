@@ -34,7 +34,7 @@ import com.mento.domain.user.dto.request.UserUpdateReqDto;
 import com.mento.domain.user.dto.response.UserResDto;
 import com.mento.domain.user.entity.User;
 import com.mento.domain.user.service.command.UserCommandService;
-import com.mento.domain.user.service.query.UserQueryService;
+import com.mento.domain.user.service.query.UserQueryServiceImpl;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +43,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserFacadeService {
 
-	private final UserQueryService userQueryService;
+	private final UserQueryServiceImpl userQueryService;
 	private final UserCommandService userCommandService;
 
 	private final ItemCommandService itemCommandService;

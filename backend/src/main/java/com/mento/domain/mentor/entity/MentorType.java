@@ -7,6 +7,7 @@ import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.mentor.exception.MentorException;
 import com.mento.domain.timetable.entity.TimetableSlot;
+import com.mento.domain.user.entity.User;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -46,7 +47,7 @@ public class MentorType extends BaseEntity {
 
 	@Builder.Default
 	@OneToMany(mappedBy = "mentorType", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<Mentor> mentors = new ArrayList<>();
+	private List<User> users = new ArrayList<>();
 
 	@Builder.Default
 	@OneToMany(mappedBy = "mentorType", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -69,21 +70,13 @@ public class MentorType extends BaseEntity {
 		this.slots.remove(slot);
 	}
 
-	public void addMentor(final Mentor mentor) {
-		if (mentor == null) {
+	public void addMentor(final User user) {
+		if (user == null) {
 			throw new MentorException(ErrorCode.MISSING_MENTOR);
 		}
-		this.mentors.add(mentor);
-		if (mentor.getMentorType() != this) {
-			mentor.assignMentorType(this);
+		this.users.add(user);
+		if (user.getMentorType() != this) {
+			user.assignMentorType(this);
 		}
 	}
-
-	public void removeMentor(final Mentor mentor) {
-		if (mentor == null) {
-			return;
-		}
-		this.mentors.remove(mentor);
-	}
-
 }

@@ -8,6 +8,7 @@ import java.util.List;
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.item.entity.Item;
+import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.product.exception.ProductException;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.user.exception.UserException;
@@ -17,9 +18,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -48,6 +52,10 @@ public class User extends BaseEntity {
 	@Builder.Default
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Item> items = new ArrayList<>();
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "mentor_type_id")
+	private MentorType mentorType;
 
 	@Column(nullable = false, unique = true, length = 100)
 	private String email;
@@ -105,6 +113,30 @@ public class User extends BaseEntity {
 		items.add(item);
 		if (item.getUser() != this) {
 			item.assignUser(this);
+		}
+	}
+
+	public void assignMentorType(final MentorType mentorType) {
+		if (mentorType == null) {
+			throw new UserException(ErrorCode.MISSING_MENTOR_TYPE);
+		}
+		this.mentorType = mentorType;
+	}
+
+	public boolean isMentor() {
+		return this.role == Role.MENTOR && this.mentorType != null;
+	}
+
+	public void validateMentorRole() {
+		if (!isMentor()) {
+			throw new UserException(ErrorCode.USER_NOT_MENTOR);
+		}
+	}
+
+	public void validateMentorType(final MentorType expectedType) {
+		validateMentorRole();
+		if (!this.mentorType.equals(expectedType)) {
+			throw new UserException(ErrorCode.INVALID_MENTOR_TYPE);
 		}
 	}
 }

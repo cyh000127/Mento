@@ -14,7 +14,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.mento.domain.mentor.entity.Mentor;
 import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.reservation.dto.response.ReservationDetailResDto;
 import com.mento.domain.reservation.dto.response.ReservationPageInfoDto;
@@ -22,6 +21,7 @@ import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.enums.ReservationStatus;
 import com.mento.domain.timetable.entity.Timetable;
 import com.mento.domain.timetable.entity.TimetableSlot;
+import com.mento.domain.user.entity.Role;
 import com.mento.domain.user.entity.User;
 
 class ReservationConverterTest {
@@ -108,17 +108,20 @@ class ReservationConverterTest {
 			.build();
 		ReflectionTestUtils.setField(user, "id", 1L);
 
-		Mentor mentor = Mentor.builder()
-			.name("테스트 멘토")
-			.loginId("mentor_login")
-			.password("password")
-			.build();
-		ReflectionTestUtils.setField(mentor, "id", 2L);
-
 		MentorType mentorType = MentorType.builder()
 			.typeName("스킨케어")
 			.build();
 		ReflectionTestUtils.setField(mentorType, "id", 3L);
+
+		User mentor = User.builder()
+			.name("테스트 멘토")
+			.email("mentor@test.com")
+			.password("password")
+			.kakaoId("mentor_kakao")
+			.role(Role.MENTOR)
+			.mentorType(mentorType)
+			.build();
+		ReflectionTestUtils.setField(mentor, "id", 2L);
 
 		Timetable timetable = Timetable.builder()
 			.scheduledDate(LocalDate.of(2026, 1, 30))

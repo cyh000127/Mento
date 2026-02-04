@@ -43,6 +43,8 @@ public enum ErrorCode {
 	ALREADY_WITHDRAWN(HttpStatus.CONFLICT, "U-003", "이미 탈퇴한 회원입니다."),
 	INVALID_USER_ROLE(HttpStatus.BAD_REQUEST, "U-004", "유효하지 않은 사용자 역할입니다."),
 	MISSING_USER(HttpStatus.BAD_REQUEST, "U-005", "사용자 정보가 누락되었습니다."),
+	USER_NOT_MENTOR(HttpStatus.FORBIDDEN, "U-006", "멘토 권한이 없는 사용자입니다."),
+	INVALID_MENTOR_TYPE(HttpStatus.BAD_REQUEST, "U-007", "잘못된 멘토 타입입니다."),
 
 	/**
 	 * Auth Error (A-xxx)

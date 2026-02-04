@@ -40,7 +40,7 @@ import com.mento.domain.timetable.entity.TimetableSlot;
 import com.mento.domain.timetable.service.query.TimetableSlotQueryService;
 import com.mento.domain.user.entity.Role;
 import com.mento.domain.user.entity.User;
-import com.mento.domain.user.service.query.UserQueryService;
+import com.mento.domain.user.service.query.UserQueryServiceImpl;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -54,7 +54,7 @@ public class ReservationFacadeService {
 	private final ReservationQueryService reservationQueryService;
 	private final ReservationCommandService reservationCommandService;
 	private final TimetableSlotQueryService timetableSlotQueryService;
-	private final UserQueryService userQueryService;
+	private final UserQueryServiceImpl userQueryService;
 
 	private final FileService fileService;
 	private final LiveKitManager liveKitManager;

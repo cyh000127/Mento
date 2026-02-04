@@ -35,7 +35,7 @@ import com.mento.domain.item.service.command.ItemCommandService;
 import com.mento.domain.item.service.command.ItemHistoryCommandService;
 import com.mento.domain.item.service.query.ItemQueryService;
 import com.mento.domain.item.validator.ItemValidator;
-import com.mento.domain.mentor.entity.Mentor;
+import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.product.entity.Product;
 import com.mento.domain.product.service.query.ProductQueryService;
 import com.mento.domain.reservation.entity.Reservation;
@@ -43,15 +43,16 @@ import com.mento.domain.reservation.service.query.ReservationQueryService;
 import com.mento.domain.user.dto.request.MentorAddItemReqDto;
 import com.mento.domain.user.dto.request.UserItemsReqDto;
 import com.mento.domain.user.dto.response.UserResDto;
+import com.mento.domain.user.entity.Role;
 import com.mento.domain.user.entity.User;
-import com.mento.domain.user.service.query.UserQueryService;
+import com.mento.domain.user.service.query.UserQueryServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserFacadeService 단위 테스트")
 class UserFacadeServiceTest {
 
 	@Mock
-	private UserQueryService userQueryService;
+	private UserQueryServiceImpl userQueryService;
 
 	@Mock
 	private ItemQueryService itemQueryService;
@@ -82,7 +83,7 @@ class UserFacadeServiceTest {
 
 	private AuthenticatedUser mentorAuthUser;
 	private User testUser;
-	private Mentor testMentor;
+	private User testMentor;
 	private Brand testBrand;
 	private Product testProduct;
 	private Reservation testReservation;
@@ -91,7 +92,7 @@ class UserFacadeServiceTest {
 	void setUp() {
 		mentorAuthUser = createAuthenticatedUser(1L, "mentor@test.com", "ROLE_MENTOR");
 		testUser = createUser(2L, "테스트유저", "user@test.com");
-		testMentor = createMentor(1L, "mentor123", "테스트멘토");
+		testMentor = createMentorUser(1L, "mentor@test.com", "테스트멘토");
 		testBrand = createBrand(1L, "테스트브랜드");
 		testProduct = createProduct(1L, "테스트상품", testBrand, "스킨케어", 90);
 		testReservation = createReservation(1L, testUser, testMentor);
@@ -208,12 +209,18 @@ class UserFacadeServiceTest {
 			.build();
 	}
 
-	private Mentor createMentor(final Long id, final String loginId, final String name) {
-		return Mentor.builder()
+	private User createMentorUser(final Long id, final String email, final String name) {
+		MentorType mentorType = MentorType.builder()
+			.typeName("스킨케어")
+			.build();
+		return User.builder()
 			.id(id)
-			.loginId(loginId)
+			.email(email)
 			.name(name)
 			.password("password")
+			.kakaoId("mentor_kakao")
+			.role(Role.MENTOR)
+			.mentorType(mentorType)
 			.build();
 	}
 
@@ -260,7 +267,7 @@ class UserFacadeServiceTest {
 			.build();
 	}
 
-	private Reservation createReservation(final Long id, final User user, final Mentor mentor) {
+	private Reservation createReservation(final Long id, final User user, final User mentor) {
 		return Reservation.builder()
 			.id(id)
 			.user(user)

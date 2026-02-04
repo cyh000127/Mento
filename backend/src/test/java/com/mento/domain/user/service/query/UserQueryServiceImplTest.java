@@ -19,13 +19,13 @@ import com.mento.domain.user.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserQueryService 단위 테스트")
-class UserQueryServiceTest {
+class UserQueryServiceImplTest {
 
 	@Mock
 	private UserRepository userRepository;
 
 	@InjectMocks
-	private UserQueryService userQueryService;
+	private UserQueryServiceImpl userQueryService;
 
 	@Test
 	@DisplayName("회원_ID로_조회_성공_테스트")
