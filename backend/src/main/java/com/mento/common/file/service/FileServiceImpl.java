@@ -34,6 +34,15 @@ public class FileServiceImpl implements FileService {
 		return uploadedFiles;
 	}
 
+	@Override
+	public FileInfo uploadFile(final MultipartFile file, final String directory) {
+		FileInfo uploadFile = uploadSingleFile(file, directory);
+
+		log.info("[MediaFile] 파일 업로드 완료 {directory: {}, name: {}}", directory, uploadFile.originalFilename());
+
+		return uploadFile;
+	}
+
 	private FileInfo uploadSingleFile(final MultipartFile file, final String directory) {
 		String fileUrl = cloudflareStorageUtil.uploadFile(file, directory);
 		return FileConverter.toFileInfo(file, fileUrl);

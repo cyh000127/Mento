@@ -81,7 +81,7 @@ public class PaymentFacadeService {
 		reservation.confirm();
 
 		log.info("[Payment] 결제 승인 및 예약 확정 완료 {paymentId: {}, reservationId: {}, mentorId: {}}",
-			payment.getPaymentId(), reservation.getId(), mentor.getId());
+			payment.getId(), reservation.getId(), mentor.getId());
 
 		Consulting consulting = consultingFactory.createConsulting(reservation.getId());
 		consultingCommandService.saveDraftConsulting(consulting);

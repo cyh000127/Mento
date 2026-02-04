@@ -1,4 +1,4 @@
-package com.mento.common.config;
+package com.mento.common.config.restclient;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -12,11 +12,18 @@ import lombok.RequiredArgsConstructor;
 @Configuration
 @EnableConfigurationProperties(KakaopayProperties.class)
 @RequiredArgsConstructor
-public class KakaopayConfig {
+public class RestClientConfig {
 
 	private final KakaopayProperties kakaopayProperties;
 
-	@Bean
+	@Bean(name = "skinAnalysisRestClient")
+	public RestClient skinAnalysisRestClient() {
+		return RestClient.builder()
+			.baseUrl("http://localhost:8000")
+			.build();
+	}
+
+	@Bean(name = "kakaopayRestClient")
 	public RestClient kakaopayRestClient() {
 		return RestClient.builder()
 			.baseUrl(kakaopayProperties.baseUrl())
@@ -24,4 +31,5 @@ public class KakaopayConfig {
 			.defaultHeader("Content-Type", "application/json")
 			.build();
 	}
+
 }

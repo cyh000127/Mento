@@ -8,4 +8,7 @@ import com.mento.common.file.dto.FileInfo;
 
 public interface FileService {
 	List<FileInfo> uploadFiles(final List<MultipartFile> files, final String directory);
+
+	FileInfo uploadFile(final MultipartFile file, String directory);
+
 }

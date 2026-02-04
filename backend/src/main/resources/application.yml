@@ -63,6 +63,7 @@ cloudflare:
     bucket: ${CLOUDFLARE_BUCKET}
     access-key: ${CLOUDFLARE_ACCESS_KEY}
     secret-key: ${CLOUDFLARE_SECRET_KEY}
+    outer-prefix: https://pub-e67da594a346412f91ba6f351d463038.r2.dev/
 
 jwt:
   secret: ${JWT_SECRET}
