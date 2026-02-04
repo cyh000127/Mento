@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import com.mento.common.error.ErrorCode;
+import com.mento.common.error.exception.BusinessException;
 import com.mento.domain.user.entity.Role;
 
 import io.livekit.server.AccessToken;
@@ -39,16 +41,21 @@ public class LiveKitManager {
 			if (response.isSuccessful() && response.body() != null) {
 				var rooms = response.body();
 				if (!rooms.isEmpty()) {
-					int participantCount = rooms.get(0).getNumParticipants();
+					int participantCount = rooms.getFirst().getNumParticipants();
 					log.info("[LiveKit] 방 인원 체크: {} -> {}/{}", roomName, participantCount, limit);
 					return participantCount >= limit;
 				}
 			}
 		} catch (Exception e) {
-			// 방이 아직 생성되지 않았거나 서버 통신 실패 시 로그 남김
 			log.warn("[LiveKit] 방 인원 조회 실패(방이 없거나 연결 오류): {}", e.getMessage());
 		}
 		return false;
+	}
+
+	public void validateRoomEntry(final String roomName, final int limit) {
+		if (isRoomFull(roomName, limit)) {
+			throw new BusinessException(ErrorCode.LIVEKIT_ROOM_FULL);
+		}
 	}
 
 	public String createToken(

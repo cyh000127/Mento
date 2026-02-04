@@ -74,18 +74,22 @@ public class ReservationFacadeService {
 	@Transactional(readOnly = true)
 	public LiveKitSessionResponse createSession(final Long reservationId, final AuthenticatedUser authuser) {
 		Reservation reservation = reservationQueryService.findById(reservationId);
+		reservationValidator.validateReservationAccess(authuser, reservation);
+
 		Timetable timetable = reservation.getSlot().getTimetable();
 
 		LocalDateTime now = TimeUtils.nowAsLocalDateTime();
 		LocalDateTime startTime = calculateStartTime(timetable);
-		// LocalDateTime entryStartTime = startTime.minusMinutes(LiveKitConstants.EARLY_ENTRY_MINUTES);
+		LocalDateTime entryStartTime = startTime.minusMinutes(LiveKitConstants.EARLY_ENTRY_MINUTES);
 		LocalDateTime endTime = startTime.plusMinutes(LiveKitConstants.END_MINUTES);
 
-		// validateSessionTiming(now, entryStartTime, endTime);
+		validateSessionTiming(now, entryStartTime, endTime);
 		Role role = Role.fromString(authuser.getRole());
 
 		long ttlSeconds = calculateTokenTtl(now, endTime);
 		String roomName = generateRoomName(reservationId);
+
+		liveKitManager.validateRoomEntry(roomName, 3);
 
 		String uniqueId = String.format("%s(%s)",
 			authuser.getId(),
@@ -101,22 +105,47 @@ public class ReservationFacadeService {
 			role.getDescription());
 	}
 
+	@Transactional(readOnly = true)
+	public LiveKitSessionResponse createInfiniteSession(final Long reservationId, final AuthenticatedUser authuser) {
+		Reservation reservation = reservationQueryService.findById(reservationId);
+		reservationValidator.validateReservationAccess(authuser, reservation);
+
+		Role role = Role.fromString(authuser.getRole());
+		long ttlSeconds = (long)365 * 24 * 60;
+		String roomName = generateRoomName(reservationId);
+
+		liveKitManager.validateRoomEntry(roomName, 3);
+
+		String uniqueId = String.format("%s(%s)",
+			authuser.getId(),
+			authuser.getRole());
+
+		String token = liveKitManager.createToken(uniqueId, authuser.getEmail(), roomName, role,
+			ttlSeconds);
+
+		log.info("[Reservation] LiveKit 무제한 세션 생성 완료 {reservationId: {}, userId: {}, role: {}}", reservationId,
+			authuser.getId(), role);
+
+		return LiveKitSessionResponse.of(reservationId, token, roomName, liveKitManager.getUrl(),
+			role.getDescription());
+	}
+
 	private LocalDateTime calculateStartTime(final Timetable timetable) {
 		return LocalDateTime.of(timetable.getScheduledDate(), timetable.getScheduledTime());
 	}
 
-	// private void validateSessionTiming(
-	// 	final LocalDateTime now,
-	// 	final LocalDateTime entryStartTime,
-	// 	final LocalDateTime endTime
-	// ) {
-	// 	if (now.isBefore(entryStartTime)) {
-	// 		throw new ReservationException(ErrorCode.NOT_STARTED_YET);
-	// 	}
-	// 	if (now.isAfter(endTime)) {
-	// 		throw new ReservationException(ErrorCode.CONSULTING_ENDED);
-	// 	}
-	// }
+	private void validateSessionTiming(
+		final LocalDateTime now,
+		final LocalDateTime entryStartTime,
+		final LocalDateTime endTime
+	) {
+		if (now.isBefore(entryStartTime)) {
+			throw new ReservationException(ErrorCode.NOT_STARTED_YET);
+		}
+		if (now.isAfter(endTime)) {
+			throw new ReservationException(ErrorCode.CONSULTING_ENDED);
+		}
+	}
 
 	private long calculateTokenTtl(final LocalDateTime now, final LocalDateTime endTime) {
 		long ttlSeconds = Duration.between(now, endTime).getSeconds();
