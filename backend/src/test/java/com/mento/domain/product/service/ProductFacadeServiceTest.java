@@ -14,14 +14,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.brand.entity.Brand;
 import com.mento.domain.brand.exception.BrandException;
 import com.mento.domain.brand.service.query.BrandQueryService;
 import com.mento.domain.product.dto.request.ProductCreateReqDto;
-import com.mento.domain.product.dto.request.ProductSearchCondition;
+import com.mento.domain.product.dto.response.ProductListResDto;
 import com.mento.domain.product.dto.response.ProductResDto;
 import com.mento.domain.product.entity.Product;
 import com.mento.domain.product.exception.ProductException;
@@ -161,31 +160,33 @@ class ProductFacadeServiceTest {
 	}
 
 	@Test
-	@DisplayName("상품_목록_조회_정렬_테스트_가격_내림차순")
-	void 상품_목록_조회_정렬_테스트_가격_내림차순() {
+	@DisplayName("상품_목록_조회_성공")
+	void 상품_목록_조회_성공() {
 		// given
-		ProductSearchCondition condition = new ProductSearchCondition(null, null, null, "price", "desc");
 		int page = 0;
 		int size = 10;
 
-		Brand brand = Brand.builder().id(1L).brandName("Brand").build();
-		Product product = Product.builder().id(1L).brand(brand).name("Product").price(10000).build();
-		Page<Product> productPage = new PageImpl<>(List.of(product));
+		ProductListResDto resDto = ProductListResDto.builder()
+			.productId(1L)
+			.name("Product")
+			.brandName("Brand")
+			.categoryMedium("Category")
+			.imageUrl("url")
+			.build();
+		Page<ProductListResDto> productPage = new PageImpl<>(List.of(resDto));
 
-		given(productQueryService.getProducts(eq(condition), any(Pageable.class)))
+		given(productQueryService.getProducts(any(Pageable.class)))
 			.willReturn(productPage);
 
 		// when
-		Page<ProductResDto> result = productFacadeService.getProducts(condition, page, size);
+		Page<ProductListResDto> result = productFacadeService.getProducts(page, size);
 
 		// then
 		assertThat(result.getContent()).hasSize(1);
 		assertThat(result.getContent().getFirst().name()).isEqualTo("Product");
 
-		verify(productQueryService).getProducts(eq(condition), argThat(pageable -> {
-			Sort sort = pageable.getSort();
-			Sort.Order order = sort.getOrderFor("price");
-			return order != null && order.isDescending();
+		verify(productQueryService).getProducts(argThat(pageable -> {
+			return pageable.getPageNumber() == page && pageable.getPageSize() == size;
 		}));
 	}
 }

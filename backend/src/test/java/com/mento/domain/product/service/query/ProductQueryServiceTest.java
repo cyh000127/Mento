@@ -14,10 +14,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 
 import com.mento.common.error.ErrorCode;
-import com.mento.domain.product.dto.request.ProductSearchCondition;
+import com.mento.domain.product.dto.response.ProductListResDto;
 import com.mento.domain.product.entity.Product;
 import com.mento.domain.product.exception.ProductException;
 import com.mento.domain.product.repository.ProductRepository;
@@ -65,20 +64,20 @@ class ProductQueryServiceTest {
 
 	@Test
 	@DisplayName("상품_목록_조회_성공")
-	@SuppressWarnings("unchecked")
 	void 상품_목록_조회_성공() {
 		// given
-		ProductSearchCondition condition = new ProductSearchCondition(null, null, null, null, null);
 		Pageable pageable = PageRequest.of(0, 10);
-		Page<Product> emptyPage = Page.empty();
+		Page<ProductListResDto> emptyPage = Page.empty();
 
-		given(productRepository.findAll(any(Specification.class), eq(pageable))).willReturn(emptyPage);
+		// Repository: findAllProductsProjected(pageable)
+		given(productRepository.findAllProductsProjected(pageable))
+			.willReturn(emptyPage);
 
 		// when
-		Page<Product> result = productQueryService.getProducts(condition, pageable);
+		Page<ProductListResDto> result = productQueryService.getProducts(pageable);
 
 		// then
 		assertThat(result).isEmpty();
-		then(productRepository).should(times(1)).findAll(any(Specification.class), eq(pageable));
+		then(productRepository).should(times(1)).findAllProductsProjected(eq(pageable));
 	}
 }

@@ -47,10 +47,6 @@ kakaopay:
   base-url: https://open-api.kakaopay.com
   cid: ${KAKAOPAY_CLIENT_ID}
   secret-key: ${KAKAOPAY_SECRET_KEY}
-  redirect-urls:
-    approval: http://localhost:8080/swagger-ui/index.html
-    cancel: http://localhost:8080/swagger-ui/index.html
-    fail: http://localhost:8080/swagger-ui/index.html
 
 encryption:
   secret-key: ${ENCRYPTION_SECRET_KEY}

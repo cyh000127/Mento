@@ -26,6 +26,7 @@ import com.mento.common.error.exception.ReservationException;
 import com.mento.common.livekit.LiveKitManager;
 import com.mento.common.livekit.dto.LiveKitSessionResponse;
 import com.mento.domain.mentor.entity.MentorType;
+import com.mento.domain.notification.service.NotificationFacadeService;
 import com.mento.domain.reservation.dto.request.ReservationHistoryReqDto;
 import com.mento.domain.reservation.dto.response.ReservationDetailResDto;
 import com.mento.domain.reservation.dto.response.ReservationDraftResDto;
@@ -75,6 +76,9 @@ class ReservationFacadeServiceTest {
 	@Mock
 	private ReservationFactory reservationFactory;
 
+	@Mock
+	private NotificationFacadeService notificationFacadeService;
+
 	@Test
 	@DisplayName("멘토가_예약_세션에_입장한다")
 	void 멘토가_예약_세션에_입장한다() {
@@ -113,7 +117,7 @@ class ReservationFacadeServiceTest {
 
 		then(reservationQueryService).should().findById(reservationId);
 		then(liveKitManager).should().createToken(
-			eq(String.valueOf(mentorId)),
+			eq(String.format("%s(%s)", mentorId, Role.MENTOR.name())),
 			eq("mentor@test.com"),
 			eq("room_1"),
 			eq(Role.MENTOR),
@@ -159,7 +163,7 @@ class ReservationFacadeServiceTest {
 
 		then(reservationQueryService).should().findById(reservationId);
 		then(liveKitManager).should().createToken(
-			eq(String.valueOf(userId)),
+			eq(String.format("%s(%s)", userId, Role.USER.name())),
 			eq("user@test.com"),
 			eq("room_2"),
 			eq(Role.USER),

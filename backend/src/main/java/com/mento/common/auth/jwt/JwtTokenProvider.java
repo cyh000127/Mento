@@ -110,9 +110,13 @@ public class JwtTokenProvider {
 	}
 
 	public Optional<String> extractAccessToken(HttpServletRequest request) {
-		return Optional.ofNullable(request.getHeader(AUTHORIZATION)).filter(
-			accessToken -> accessToken.startsWith(BEARER)
-		).map(accessToken -> accessToken.replace(BEARER, BLANK));
+		if (request.getRequestURI().startsWith("/api/v1/notifications/subscribe")) {
+			return Optional.ofNullable(request.getParameter("token"));
+		}
+
+		return Optional.ofNullable(request.getHeader(AUTHORIZATION))
+			.filter(accessToken -> accessToken.startsWith(BEARER))
+			.map(accessToken -> accessToken.replace(BEARER, BLANK));
 	}
 
 	public Optional<String> getType(Claims claims) {

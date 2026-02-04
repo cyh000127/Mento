@@ -36,3 +36,10 @@ spring:
       encoding: UTF-8
       separator: ;
       continue-on-error: false
+
+
+kakaopay:
+  redirect-urls:
+    approval: http://localhost:5173/payments/redirect
+    fail: http://localhost:5173/payments/fail
+    cancel: http://localhost:5173/payments/fail
