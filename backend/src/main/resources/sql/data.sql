@@ -196,10 +196,7 @@ INSERT
 IGNORE INTO `mentor_types` (`type_id`, `type_name`, `price`, `description`, `created_at`, `updated_at`)
 VALUES (1, '스킨케어', 35000, '피부 타입 분석 및 맞춤 스킨케어 루틴 상담', NOW(), NOW()),
        (2, '뷰티', 35000, '퍼스널 컬러 및 메이크업 스타일링 상담', NOW(), NOW()),
-       (3, '헤어', 35000, '얼굴형에 맞는 헤어스타일 및 관리법 상담', NOW(), NOW()) ON DUPLICATE KEY
-UPDATE `type_name` =
-VALUES (`type_name`), `price` =
-                      VALUES(`price`), `description` = VALUES(`description`), `updated_at` = NOW();
+       (3, '헤어', 35000, '얼굴형에 맞는 헤어스타일 및 관리법 상담', NOW(), NOW());
 
 INSERT
 IGNORE INTO `users` (`email`, `password`, `name`, `kakao_id`, `role`, `created_at`, `updated_at`)
@@ -232,7 +229,7 @@ FROM (SELECT 'skincare01@example.com', 'test1234', '김스킨', 'kakao_skin01', 
       UNION ALL
       SELECT 'hair04@example.com', 'test1234', '양염색', 'kakao_hair04', 'MENTOR', NOW(6), NOW(6)
       UNION ALL
-      SELECT 'hair05@example.com', 'test1234', '손두피', 'kakao_hair05', 'MENTOR', NOW(6), NOW(6))
+      SELECT 'hair05@example.com', 'test1234', '손두피', 'kakao_hair05', 'MENTOR', NOW(6), NOW(6)) AS tmp
 WHERE NOT EXISTS (SELECT 1 FROM `users` LIMIT 1);
 
 INSERT
@@ -284,7 +281,8 @@ VALUES ('아이디얼포맨'),
        ('스웨거'),
        ('박준뷰티랩');
 
-INSERT IGNORE INTO `products` (`brand_id`, `name`, `price`, `default_usage_days`, `oliveyoung_goods_no`, `category_medium`,
+INSERT
+IGNORE INTO `products` (`brand_id`, `name`, `price`, `default_usage_days`, `oliveyoung_goods_no`, `category_medium`,
                         `category_small`, `volume`, `description`, `image_url`, `product_url`, `ingredients`,
                         `skin_types`, `related_conditions`, `benefits`)
 SELECT (SELECT `brand_id` FROM `brands` WHERE `name` = '아이디얼포맨' LIMIT 1),
