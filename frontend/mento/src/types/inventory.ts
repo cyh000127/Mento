@@ -66,6 +66,7 @@ export interface InventoryFilters {
 // 인벤토리 아이템 추가 요청 타입
 export interface AddInventoryItemRequest {
   productId: number
+  reservationId?: number // 상담(멘토) 흐름에서 필요
   purchaseDate?: string // YYYY-MM-DD
 }
 

@@ -196,6 +196,37 @@ export async function addInventoryItem(request: AddInventoryItemRequest): Promis
 }
 
 /**
+ * 멘토가 고객 인벤토리 아이템 추가 API
+ */
+export async function addCustomerInventoryItem(
+  userId: number,
+  request: AddInventoryItemRequest
+): Promise<AddInventoryItemResponse> {
+  const body: AddInventoryItemRequest = {
+    productId: request.productId,
+    reservationId: request.reservationId,
+  }
+
+  if (request.purchaseDate) {
+    body.purchaseDate = request.purchaseDate
+  }
+
+  try {
+    const response = await api.post<AddInventoryItemResponse["data"]>(`/users/${userId}/items`, body)
+    return {
+      success: true,
+      data: response.data,
+    }
+  } catch (error: any) {
+    console.error("고객 인벤토리 추가 에러:", error)
+    console.error("에러 상태:", error.response?.status)
+    console.error("에러 응답:", error.response?.data)
+    throw error
+  }
+}
+
+
+/**
  * 인벤토리 아이템 삭제 API (Soft Delete)
  */
 export async function deleteInventoryItem(itemId: string): Promise<void> {
@@ -290,6 +321,32 @@ export function getStatusUpdateErrorMessage(error: any): string {
   }
 
   return "상태 변경 중 오류가 발생했습니다."
+}
+
+/**
+ * 멘토가 고객 인벤토리 추가 에러 메시지 변환
+ */
+export function getAddInventoryErrorMessage(error: any): string {
+  const status = error?.response?.status
+  const errorCode = error?.response?.data?.code || error?.response?.data?.error
+
+  if (status === 409 || errorCode === "ALREADY_IN_INVENTORY") {
+    return "이미 인벤토리에 존재하는 제품입니다"
+  }
+
+  if (errorCode === "USER_NOT_FOUND") {
+    return "사용자를 찾을 수 없습니다."
+  }
+
+  if (errorCode === "PRODUCT_NOT_FOUND") {
+    return "제품을 찾을 수 없습니다."
+  }
+
+  if (status === 403) {
+    return "권한이 없습니다."
+  }
+
+  return "상품 추가 중 오류가 발생했습니다."
 }
 
 /**

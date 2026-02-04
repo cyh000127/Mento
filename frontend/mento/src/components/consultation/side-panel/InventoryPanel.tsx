@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useParams } from "react-router-dom"
 import { useAuthStore } from "@/stores/useAuthStore"
 import {
+  addCustomerInventoryItem,
   addInventoryItem,
   getCustomerInventory,
   getInventoryItems,
+  getAddInventoryErrorMessage,
   STATUS_LABELS,
 } from "@/api/inventoryApi"
 import { getReservationDetail } from "@/api/reservationApi"
@@ -28,6 +30,7 @@ export function InventoryPanel() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [registerModalOpen, setRegisterModalOpen] = useState(false)
+  const [customerUserId, setCustomerUserId] = useState<number | null>(null)
 
   const fetchInventory = useCallback(
     async (canUpdate?: () => boolean) => {
@@ -44,6 +47,7 @@ export function InventoryPanel() {
             throw new Error("고객 정보를 찾을 수 없습니다.")
           }
 
+          setCustomerUserId(customerUserId)
           const inventory = await getCustomerInventory(
             customerUserId,
             reservationIdNumber,
@@ -63,6 +67,7 @@ export function InventoryPanel() {
         if (!canUpdate || canUpdate()) {
           setItems(inventory.content ?? [])
         }
+        setCustomerUserId(null)
         return inventory.content ?? []
       } catch (err: any) {
         console.error("인벤토리 조회 실패:", err)
@@ -137,14 +142,38 @@ export function InventoryPanel() {
         return
       }
 
+      const resolvedCustomerUserId = isConsultant ? customerUserId : null
+
+      if (isConsultant && !resolvedCustomerUserId) {
+        alert("고객 정보를 찾을 수 없습니다.")
+        return
+      }
+
       const results = await Promise.allSettled(
-        productsToAdd.map((product) =>
-          addInventoryItem({
+        productsToAdd.map((product) => {
+          const request = {
             productId: parseInt(product.id),
-          })
+            reservationId: reservationIdNumber!,
+          }
+          
+          const addRequest = isConsultant && resolvedCustomerUserId
+            ? addCustomerInventoryItem(resolvedCustomerUserId, {
+              productId: parseInt(product.id),
+              reservationId: reservationIdNumber!,
+            })
+            : addInventoryItem({
+              productId: parseInt(product.id),
+            })
+
+          return addRequest
             .then(() => ({ product, success: true }))
-            .catch((error) => ({ product, success: false, error }))
-        )
+            .catch((error) => ({
+              product,
+              success: false,
+              error,
+              errorMessage: getAddInventoryErrorMessage(error),
+            }))
+        })
       )
 
       const successResults = results
@@ -158,8 +187,10 @@ export function InventoryPanel() {
       const errorMessages: string[] = []
 
       if (failedResults.length > 0) {
-        const failedNames = failedResults.map(({ product }) => `"${product.name}"`).join(", ")
-        errorMessages.push(`다음 상품 추가 중 오류가 발생했습니다:\n${failedNames}`)
+        const failedDetails = failedResults
+          .map(({ product, errorMessage }) => `"${product.name}": ${errorMessage}`)
+          .join("\n")
+        errorMessages.push(`다음 상품 추가 중 오류가 발생했습니다:\n${failedDetails}`)
       }
 
       if (successResults.length > 0 && (duplicateProducts.length > 0 || errorMessages.length > 0)) {
@@ -196,7 +227,7 @@ export function InventoryPanel() {
             <p className="text-xs text-gray-400">상담 중 보유 제품 목록</p>
           )}
         </div>
-        {!isConsultant && (
+      {isConsultant && (
           <button
             type="button"
             onClick={handleAddProduct}
@@ -270,7 +301,7 @@ export function InventoryPanel() {
         </div>
       )}
 
-      {!isConsultant && (
+      {isConsultant && (
         <InventoryRegisterModal
           open={registerModalOpen}
           onOpenChange={setRegisterModalOpen}
