@@ -37,7 +37,7 @@ public class Payment extends BaseEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "payment_id")
-	private Long paymentId;
+	private Long id;
 
 	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	@JoinColumn(name = "reservation_id")

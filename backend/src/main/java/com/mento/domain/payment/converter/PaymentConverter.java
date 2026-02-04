@@ -12,14 +12,14 @@ public class PaymentConverter {
 
 	public PaymentReadyResDto toPaymentReadyResDto(final Payment payment, final String redirectUrl) {
 		return PaymentReadyResDto.builder()
-			.paymentId(payment.getPaymentId())
+			.paymentId(payment.getId())
 			.redirectUrl(redirectUrl)
 			.build();
 	}
 
 	public PaymentApproveResDto toPaymentApproveResDto(final Payment payment) {
 		return PaymentApproveResDto.builder()
-			.paymentId(payment.getPaymentId())
+			.paymentId(payment.getId())
 			.paidAt(payment.getPaidAt())
 			.build();
 	}
@@ -30,7 +30,7 @@ public class PaymentConverter {
 		}
 
 		return PaymentInfoDto.builder()
-			.paymentId(payment.getPaymentId())
+			.paymentId(payment.getId())
 			.reservationId(payment.getReservation() != null ? payment.getReservation().getId() : null)
 			.amount(payment.getAmount())
 			.paymentMethod(payment.getPaymentMethod())

@@ -38,7 +38,7 @@ public class ReservationConverter {
 			.scheduledDate(reservation.getSlot().getTimetable().getScheduledDate())
 			.scheduledTime(reservation.getSlot().getTimetable().getScheduledTime().toString())
 			.reservationStatus(reservation.getStatus().name())
-			.paymentId(reservation.getPayment() != null ? reservation.getPayment().getPaymentId() : null)
+			.paymentId(reservation.getPayment() != null ? reservation.getPayment().getId() : null)
 			.surveyInfo(toReservationSurveyDto(reservation.getSurveyData()))
 			.createdAt(reservation.getCreatedAt())
 			.updatedAt(reservation.getUpdatedAt())

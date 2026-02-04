@@ -39,7 +39,7 @@ public class PaymentCommandServiceImpl implements PaymentCommandService {
 
 		PaymentReadyResDto response = kakaoPaymentService.ready(savedPayment, request, userId);
 		log.info("[Payment] 결제 준비 완료 {paymentId: {}, reservationId: {}, userId: {}}",
-			payment.getPaymentId(), reservation.getId(), userId);
+			payment.getId(), reservation.getId(), userId);
 
 		return response;
 	}
@@ -48,7 +48,7 @@ public class PaymentCommandServiceImpl implements PaymentCommandService {
 	public PaymentApproveResDto approve(final PaymentApproveReqDto request, final Long userId) {
 		Payment payment = findPaymentById(request.paymentId());
 		PaymentApproveResDto response = kakaoPaymentService.approve(payment, request, userId);
-		log.info("[Payment] 결제 승인 완료 {paymentId: {}, userId: {}}", payment.getPaymentId(), userId);
+		log.info("[Payment] 결제 승인 완료 {paymentId: {}, userId: {}}", payment.getId(), userId);
 
 		return response;
 	}
@@ -56,7 +56,7 @@ public class PaymentCommandServiceImpl implements PaymentCommandService {
 	@Override
 	public Payment save(final Payment payment) {
 		Payment savedPayment = paymentRepository.save(payment);
-		log.info("[Payment] 결제 정보 저장 완료 {paymentId: {}, status: {}}", savedPayment.getPaymentId(),
+		log.info("[Payment] 결제 정보 저장 완료 {paymentId: {}, status: {}}", savedPayment.getId(),
 			savedPayment.getStatus());
 		return savedPayment;
 	}

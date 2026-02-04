@@ -121,7 +121,7 @@ class PaymentFacadeServiceTest {
 			.paymentMethod(PaymentMethod.KAKAO_PAY)
 			.status(PaymentStatus.READY)
 			.build();
-		ReflectionTestUtils.setField(payment, "paymentId", paymentId);
+		ReflectionTestUtils.setField(payment, "id", paymentId);
 		payment.assignReservation(reservation);
 	}
 
@@ -188,7 +188,7 @@ class PaymentFacadeServiceTest {
 			.paymentMethod(PaymentMethod.KAKAO_PAY)
 			.status(PaymentStatus.READY)
 			.build();
-		ReflectionTestUtils.setField(paymentWithoutReservation, "paymentId", paymentId);
+		ReflectionTestUtils.setField(paymentWithoutReservation, "id", paymentId);
 
 		given(paymentCommandService.approve(any(PaymentApproveReqDto.class), any(Long.class)))
 			.willReturn(approveResDto);
