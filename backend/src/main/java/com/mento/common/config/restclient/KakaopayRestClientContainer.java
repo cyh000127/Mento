@@ -9,7 +9,7 @@ public class KakaopayRestClientContainer {
 
 	private final RestClient restClient;
 
-	public KakaopayRestClientContainer(@Qualifier("kakaopayRestClientContainer") RestClient restClient) {
+	public KakaopayRestClientContainer(@Qualifier("kakaopayRestClient") RestClient restClient) {
 		this.restClient = restClient;
 	}
 

@@ -23,7 +23,7 @@ public class RestClientConfig {
 			.build();
 	}
 
-	@Bean(name = "kakaopayRestClientContainer")
+	@Bean(name = "kakaopayRestClient")
 	public RestClient kakaopayRestClient() {
 		return RestClient.builder()
 			.baseUrl(kakaopayProperties.baseUrl())
