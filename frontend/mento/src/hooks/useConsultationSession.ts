@@ -3,6 +3,7 @@ import { Room, RoomEvent, RemoteParticipant, LocalParticipant } from "livekit-cl
 import { createConsultationSession } from "@/api/consultationSessionApi";
 import type { ConsultationSessionData } from "@/types/consultation";
 import type { MaskType } from "@/hooks/useFaceMask";
+import type { MediaFileType, SharedMediaFile, DrawCommand } from "@/types/consultationMedia";
 
 export type ConnectionState = "disconnected" | "connecting" | "connected" | "error";
 
@@ -19,11 +20,19 @@ export interface UseConsultationSessionReturn {
   remoteParticipants: RemoteParticipant[];
   remoteMaskType: MaskType;
   remoteMaskUpdateSeq: number;
+  sharedMediaFiles: SharedMediaFile[];
+  sharedImageUrl: string | null;
+  drawCommands: DrawCommand[];
 
   // 연결 제어
   connect: (reservationId: number) => Promise<void>;
   disconnect: () => void;
   sendMaskUpdate: (maskType: MaskType) => void;
+  sendMediaShare: (files: SharedMediaFile[]) => void;
+  sendImageShare: (imageUrl: string) => void;
+  sendImageClear: () => void;
+  sendDrawCommand: (command: DrawCommand) => void;
+  sendClearWhiteboard: () => void;
 
   // 미디어 제어
   toggleMic: () => Promise<void>;
@@ -49,6 +58,9 @@ export function useConsultationSession(): UseConsultationSessionReturn {
   const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipant[]>([]);
   const [remoteMaskType, setRemoteMaskType] = useState<MaskType>(null);
   const [remoteMaskUpdateSeq, setRemoteMaskUpdateSeq] = useState(0);
+  const [sharedMediaFiles, setSharedMediaFiles] = useState<SharedMediaFile[]>([]);
+  const [sharedImageUrl, setSharedImageUrl] = useState<string | null>(null);
+  const [drawCommands, setDrawCommands] = useState<DrawCommand[]>([]);
   const [isMicEnabled, setIsMicEnabled] = useState(true);
   const [isCameraEnabled, setIsCameraEnabled] = useState(true);
 
@@ -70,6 +82,90 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     } catch (error) {
       console.warn("⚠️ 마스크 데이터 파싱 실패:", error);
       return undefined;
+    }
+  };
+
+  const isValidMediaFileType = (value: unknown): value is MediaFileType => {
+    return value === "IMAGE" || value === "VIDEO";
+  };
+
+  const parseMediaShare = (payload: Uint8Array): SharedMediaFile[] | undefined => {
+    try {
+      const text = new TextDecoder().decode(payload);
+      const data = JSON.parse(text) as { type?: string; files?: unknown };
+      if (data?.type !== "MEDIA_SHARED") return undefined;
+      if (!Array.isArray(data.files)) return undefined;
+      const files = data.files
+        .map((file) => {
+          const record = file as { fileUrl?: unknown; fileType?: unknown };
+          if (typeof record?.fileUrl !== "string") return null;
+          if (!isValidMediaFileType(record.fileType)) return null;
+          return { fileUrl: record.fileUrl, fileType: record.fileType };
+        })
+        .filter((file): file is SharedMediaFile => Boolean(file));
+      return files.length > 0 ? files : undefined;
+    } catch (error) {
+      console.warn("⚠️ 미디어 데이터 파싱 실패:", error);
+      return undefined;
+    }
+  };
+
+  const parseImageShare = (payload: Uint8Array): string | undefined => {
+    try {
+      const text = new TextDecoder().decode(payload);
+      const data = JSON.parse(text) as { type?: string; imageUrl?: unknown };
+      if (data?.type !== "IMAGE_SHARED") return undefined;
+      if (typeof data.imageUrl !== "string") return undefined;
+      return data.imageUrl;
+    } catch (error) {
+      console.warn("⚠️ 이미지 공유 데이터 파싱 실패:", error);
+      return undefined;
+    }
+  };
+
+  const parseImageClear = (payload: Uint8Array): boolean => {
+    try {
+      const text = new TextDecoder().decode(payload);
+      const data = JSON.parse(text) as { type?: string };
+      return data?.type === "IMAGE_CLEAR";
+    } catch (error) {
+      console.warn("⚠️ 이미지 초기화 데이터 파싱 실패:", error);
+      return false;
+    }
+  };
+
+  const parseDrawCommand = (payload: Uint8Array): DrawCommand | undefined => {
+    try {
+      const text = new TextDecoder().decode(payload);
+      const data = JSON.parse(text) as { type?: string; tool?: unknown; color?: unknown; lineWidth?: unknown; points?: unknown };
+      if (data?.type !== "DRAW") return undefined;
+      if (data.tool !== "pen") return undefined;
+      if (typeof data.color !== "string") return undefined;
+      if (typeof data.lineWidth !== "number") return undefined;
+      if (!Array.isArray(data.points)) return undefined;
+      const points = data.points
+        .map((point) => {
+          const record = point as { x?: unknown; y?: unknown };
+          if (typeof record.x !== "number" || typeof record.y !== "number") return null;
+          return { x: record.x, y: record.y };
+        })
+        .filter((point): point is { x: number; y: number } => Boolean(point));
+      if (points.length < 2) return undefined;
+      return { tool: "pen", color: data.color, lineWidth: data.lineWidth, points };
+    } catch (error) {
+      console.warn("⚠️ 드로잉 데이터 파싱 실패:", error);
+      return undefined;
+    }
+  };
+
+  const parseWhiteboardClear = (payload: Uint8Array): boolean => {
+    try {
+      const text = new TextDecoder().decode(payload);
+      const data = JSON.parse(text) as { type?: string };
+      return data?.type === "WHITEBOARD_CLEAR";
+    } catch (error) {
+      console.warn("⚠️ 화이트보드 초기화 데이터 파싱 실패:", error);
+      return false;
     }
   };
 
@@ -166,9 +262,49 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         // 데이터 채널 수신 (마스크 동기화)
         newRoom.on(RoomEvent.DataReceived, (payload, _participant) => {
           const nextMaskType = parseMaskUpdate(payload);
-          if (nextMaskType === undefined) return;
-          setRemoteMaskType(nextMaskType);
-          setRemoteMaskUpdateSeq((prev) => prev + 1);
+          if (nextMaskType !== undefined) {
+            setRemoteMaskType(nextMaskType);
+            setRemoteMaskUpdateSeq((prev) => prev + 1);
+            return;
+          }
+
+          const sharedFiles = parseMediaShare(payload);
+          if (sharedFiles) {
+            setSharedMediaFiles((prev) => {
+              const existing = new Set(prev.map((file) => file.fileUrl));
+              const merged = [...prev];
+              sharedFiles.forEach((file) => {
+                if (!existing.has(file.fileUrl)) {
+                  existing.add(file.fileUrl);
+                  merged.push(file);
+                }
+              });
+              return merged;
+            });
+            return;
+          }
+
+          const imageUrl = parseImageShare(payload);
+          if (imageUrl) {
+            setSharedImageUrl(imageUrl);
+            setDrawCommands([]);
+            return;
+          }
+
+        if (parseImageClear(payload)) {
+          setSharedImageUrl(null);
+          setDrawCommands([]);
+          return;
+        }
+
+          if (parseWhiteboardClear(payload)) {
+            setDrawCommands([]);
+            return;
+          }
+
+          const drawCommand = parseDrawCommand(payload);
+          if (!drawCommand) return;
+          setDrawCommands((prev) => [...prev, drawCommand]);
         });
 
         // 원격 참가자 퇴장
@@ -210,6 +346,9 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         setIsCameraEnabled(true);
         setRemoteMaskType(null);
         setRemoteMaskUpdateSeq(0);
+        setSharedMediaFiles([]);
+        setSharedImageUrl(null);
+        setDrawCommands([]);
 
         isConnecting.current = false;
         console.log("✅ 상담 세션 연결 완료");
@@ -237,6 +376,9 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     setRemoteMaskType(null);
     setConnectionState("disconnected");
     setSessionData(null);
+    setSharedMediaFiles([]);
+    setSharedImageUrl(null);
+    setDrawCommands([]);
     setError(null);
     isConnecting.current = false;
     processedReservationId.current = null;
@@ -249,6 +391,67 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     (maskType: MaskType) => {
       if (!room) return;
       const payload = { type: "MASK_UPDATE", value: maskType };
+      const data = new TextEncoder().encode(JSON.stringify(payload));
+      room.localParticipant.publishData(data, { reliable: true });
+    },
+    [room]
+  );
+
+  /**
+   * 이미지 공유 데이터 전송 (DataChannel)
+   */
+  const sendImageShare = useCallback(
+    (imageUrl: string) => {
+      setSharedImageUrl(imageUrl);
+      setDrawCommands([]);
+      if (!room) return;
+      const payload = { type: "IMAGE_SHARED", imageUrl };
+      const data = new TextEncoder().encode(JSON.stringify(payload));
+      room.localParticipant.publishData(data, { reliable: true });
+    },
+    [room]
+  );
+
+  const sendImageClear = useCallback(() => {
+    setSharedImageUrl(null);
+    setDrawCommands([]);
+    if (!room) return;
+    const payload = { type: "IMAGE_CLEAR" };
+    const data = new TextEncoder().encode(JSON.stringify(payload));
+    room.localParticipant.publishData(data, { reliable: true });
+  }, [room]);
+
+  /**
+   * 드로잉 데이터 전송 (DataChannel)
+   */
+  const sendDrawCommand = useCallback(
+    (command: DrawCommand) => {
+      if (!room) return;
+      const payload = { type: "DRAW", ...command };
+      const data = new TextEncoder().encode(JSON.stringify(payload));
+      room.localParticipant.publishData(data, { reliable: true });
+    },
+    [room]
+  );
+
+  /**
+   * 화이트보드 초기화 전송 (DataChannel)
+   */
+  const sendClearWhiteboard = useCallback(() => {
+    setDrawCommands([]);
+    if (!room) return;
+    const payload = { type: "WHITEBOARD_CLEAR" };
+    const data = new TextEncoder().encode(JSON.stringify(payload));
+    room.localParticipant.publishData(data, { reliable: true });
+  }, [room]);
+
+  /**
+   * 미디어 공유 데이터 전송 (DataChannel)
+   */
+  const sendMediaShare = useCallback(
+    (files: SharedMediaFile[]) => {
+      if (!room || files.length === 0) return;
+      const payload = { type: "MEDIA_SHARED", files };
       const data = new TextEncoder().encode(JSON.stringify(payload));
       room.localParticipant.publishData(data, { reliable: true });
     },
@@ -297,9 +500,17 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     remoteParticipants,
     remoteMaskType,
     remoteMaskUpdateSeq,
+    sharedMediaFiles,
+    sharedImageUrl,
+    drawCommands,
     connect,
     disconnect,
     sendMaskUpdate,
+    sendMediaShare,
+    sendImageShare,
+    sendImageClear,
+    sendDrawCommand,
+    sendClearWhiteboard,
     toggleMic,
     toggleCamera,
     isMicEnabled,

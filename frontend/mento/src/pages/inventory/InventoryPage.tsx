@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { ProductGrid } from "@/components/inventory/product-grid"
 import { ProductDetail } from "@/components/inventory/product-detail"
 import { InventoryFilters } from "@/components/inventory/inventory-filters"
@@ -28,12 +28,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 
 export default function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(false)
+  const [hasFetched, setHasFetched] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
   const [favoriteLoading, setFavoriteLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
@@ -45,9 +47,13 @@ export default function InventoryPage() {
   const [selectedStatus, setSelectedStatus] = useState<ProductStatus | "all">("all")
   const [favoriteFilter, setFavoriteFilter] = useState<boolean>(false)
   const [registerModalOpen, setRegisterModalOpen] = useState(false)
+  const [photoModalOpen, setPhotoModalOpen] = useState(false)
+  const [cameraError, setCameraError] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [productToDelete, setProductToDelete] = useState<Product | null>(null)
   const { toast } = useToast()
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const mediaStreamRef = useRef<MediaStream | null>(null)
 
   // API 데이터 가져오기
   const fetchInventory = useCallback(async () => {
@@ -82,19 +88,13 @@ export default function InventoryPage() {
       setProducts(mappedProducts)
       setTotalPages(response.totalPages)
       setHasNext(response.hasNext)
-
-      // 선택된 제품이 새 목록에 없으면 선택 해제
-      setSelectedProduct((prev) => {
-        if (!prev) return null
-        const stillExists = mappedProducts.find((p) => p.id === prev.id)
-        return stillExists || null
-      })
     } catch (error) {
       console.error("Failed to fetch inventory:", error)
       setProducts([])
       setSelectedProduct(null)
     } finally {
       setLoading(false)
+      setHasFetched(true)
     }
   }, [currentPage, selectedCategory, selectedStatus, favoriteFilter, sortOption])
 
@@ -116,7 +116,26 @@ export default function InventoryPage() {
     return true
   })
 
-  const handleProductSelect = async (product: Product) => {
+  const mapDetailStatusToUI = useCallback((status: "OWNED" | "IN_USE" | "OVER_DATED"): ProductStatus => {
+    const statusMap = {
+      "OWNED": "in-use" as ProductStatus,
+      "IN_USE": "in-use" as ProductStatus,
+      "OVER_DATED": "over-dated" as ProductStatus,
+    }
+    return statusMap[status] || "in-use"
+  }, [])
+
+  const mapDetailCategoryToUI = useCallback((categoryMedium?: string): ProductCategory => {
+    const categoryMap: Record<string, ProductCategory> = {
+      "스킨케어": "skin",
+      "메이크업": "beauty",
+      "헤어케어": "hair",
+    }
+
+    return categoryMedium ? (categoryMap[categoryMedium] || "skin") : "skin"
+  }, [])
+
+  const handleProductSelect = useCallback(async (product: Product) => {
     setSelectedProduct(product)
     setDetailLoading(true)
 
@@ -162,26 +181,22 @@ export default function InventoryPage() {
     } finally {
       setDetailLoading(false)
     }
-  }
+  }, [mapDetailCategoryToUI, mapDetailStatusToUI, toast])
 
-  const mapDetailStatusToUI = (status: "OWNED" | "IN_USE" | "OVER_DATED"): ProductStatus => {
-    const statusMap = {
-      "OWNED": "in-use" as ProductStatus,
-      "IN_USE": "in-use" as ProductStatus,
-      "OVER_DATED": "over-dated" as ProductStatus,
-    }
-    return statusMap[status] || "in-use"
-  }
+  useEffect(() => {
+    if (!hasFetched || loading) return
 
-  const mapDetailCategoryToUI = (categoryMedium?: string): ProductCategory => {
-    const categoryMap: Record<string, ProductCategory> = {
-      "스킨케어": "skin",
-      "메이크업": "beauty",
-      "헤어케어": "hair",
+    if (products.length === 0) {
+      if (selectedProduct !== null) {
+        setSelectedProduct(null)
+      }
+      return
     }
 
-    return categoryMedium ? (categoryMap[categoryMedium] || "skin") : "skin"
-  }
+    if (!selectedProduct || !products.some((product) => product.id === selectedProduct.id)) {
+      handleProductSelect(products[0])
+    }
+  }, [products, selectedProduct, hasFetched, loading, handleProductSelect])
 
   const handleToggleFavorite = async (productId: string) => {
     // 중복 요청 방지
@@ -261,6 +276,10 @@ export default function InventoryPage() {
 
   const handleAddProduct = () => {
     setRegisterModalOpen(true)
+  }
+
+  const handleAddPhoto = () => {
+    setPhotoModalOpen(true)
   }
 
   const handleProductsAdded = async (selectedProducts: Product[]) => {
@@ -397,6 +416,57 @@ export default function InventoryPage() {
     }
   }
 
+  useEffect(() => {
+    let isActive = true
+
+    const startCamera = async () => {
+      try {
+        setCameraError(null)
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        if (!isActive) {
+          stream.getTracks().forEach((track) => track.stop())
+          return
+        }
+        mediaStreamRef.current = stream
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+        }
+      } catch (error) {
+        if (isActive) {
+          setCameraError("카메라 접근이 거부되었습니다.")
+        }
+      }
+    }
+
+    if (photoModalOpen) {
+      startCamera()
+    }
+
+    return () => {
+      isActive = false
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop())
+        mediaStreamRef.current = null
+      }
+    }
+  }, [photoModalOpen])
+
+  const isEmptyState = hasFetched && !loading && products.length === 0
+  const fallbackProduct: Product = {
+    id: "",
+    name: "-",
+    brand: "-",
+    category: "skin",
+    image: "",
+    purchaseDate: "",
+    expirationDate: "",
+    repurchaseCount: 0,
+    status: "in-use",
+    purchaseLink: "",
+    isFavorite: false,
+  }
+  const detailProduct = selectedProduct ?? fallbackProduct
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-[1400px] px-6 py-8">
@@ -415,6 +485,7 @@ export default function InventoryPage() {
               onStatusChange={setSelectedStatus}
               favoriteOnly={favoriteFilter}
               onFavoriteOnlyChange={setFavoriteFilter}
+              onAddPhoto={handleAddPhoto}
               onAddProduct={handleAddProduct}
             />
 
@@ -427,15 +498,14 @@ export default function InventoryPage() {
 
           {/* Right Section - Product Detail */}
           <div className="lg:col-span-1">
-            {selectedProduct && (
-              <ProductDetail
-                product={selectedProduct}
-                onToggleFavorite={handleToggleFavorite}
-                onDelete={handleDelete}
-                onStatusChange={handleStatusChange}
-                loading={detailLoading}
-              />
-            )}
+            <ProductDetail
+              product={detailProduct}
+              onToggleFavorite={handleToggleFavorite}
+              onDelete={handleDelete}
+              onStatusChange={handleStatusChange}
+              loading={detailLoading}
+              isEmpty={isEmptyState}
+            />
           </div>
         </div>
       </div>
@@ -446,6 +516,29 @@ export default function InventoryPage() {
         onOpenChange={setRegisterModalOpen}
         onConfirm={handleProductsAdded}
       />
+
+      {/* Photo Registration Modal */}
+      <Dialog open={photoModalOpen} onOpenChange={setPhotoModalOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>사진 등록</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {cameraError ? (
+              <p className="text-sm text-muted-foreground">{cameraError}</p>
+            ) : (
+              <div className="overflow-hidden rounded-lg border border-border bg-black">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="h-[360px] w-full object-cover"
+                />
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

@@ -7,8 +7,10 @@ interface AuthState {
   isLoggedIn: boolean;
   user: User | null;
   logoutTriggered: boolean;
+  isAuthInitialized: boolean;
   setAccessToken: (token: string) => void;
   setUser: (user: User) => void;
+  setAuthInitialized: (initialized: boolean) => void;
   logout: () => void;
 }
 
@@ -19,6 +21,7 @@ export const useAuthStore = create<AuthState>()(
       isLoggedIn: false,
       user: null,
       logoutTriggered: false,
+      isAuthInitialized: false,
 
       setAccessToken: (token) =>
         set({
@@ -32,16 +35,28 @@ export const useAuthStore = create<AuthState>()(
           user,
         }),
 
+      setAuthInitialized: (initialized) =>
+        set({
+          isAuthInitialized: initialized,
+        }),
+
       logout: () =>
         set({
           accessToken: null,
           isLoggedIn: false,
           user: null,
           logoutTriggered: true,
+          isAuthInitialized: true, // 로그아웃 시 초기화 완료 상태로 둠
         }),
     }),
     {
       name: "auth-storage",
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        isLoggedIn: state.isLoggedIn,
+        user: state.user,
+        logoutTriggered: state.logoutTriggered,
+      }),
     }
   )
 )
