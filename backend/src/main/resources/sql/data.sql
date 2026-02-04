@@ -191,6 +191,21 @@ CREATE TABLE IF NOT EXISTS `consultings`
     DEFAULT CHARSET=utf8mb4
     COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS skin_anlyses (
+    skin_analysis_id BIGINT NOT NULL AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    total_score INT,
+    total_grade INT,
+    skin_type_summary VARCHAR(255),
+    analysis_details JSON,
+    created_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    PRIMARY KEY (skin_analysis_id)
+    CONSTRAINT `fk_skin_anlyses_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8mb4
+    COLLATE=utf8mb4_unicode_ci;
+
 
 INSERT
 IGNORE INTO `mentor_types` (`type_id`, `type_name`, `price`, `description`, `created_at`, `updated_at`)
