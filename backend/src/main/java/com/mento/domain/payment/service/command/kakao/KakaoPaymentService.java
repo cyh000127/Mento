@@ -5,9 +5,9 @@ import java.util.Optional;
 
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 import com.mento.common.config.properties.KakaopayProperties;
+import com.mento.common.config.restclient.KakaopayRestClientContainer;
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.PaymentException;
 import com.mento.domain.payment.converter.PaymentConverter;
@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class KakaoPaymentService {
 
-	private final RestClient kakaopayRestClient;
+	private final KakaopayRestClientContainer kakaopayRestClientContainer;
 	private final KakaopayProperties kakaopayProperties;
 
 	public PaymentReadyResDto ready(final Payment payment, final PaymentReadyReqDto request, final Long userId) {
@@ -58,7 +58,7 @@ public class KakaoPaymentService {
 	) {
 		return KakaoReadyReqDto.builder()
 			.cid(kakaopayProperties.cid())
-			.partnerOrderId(String.valueOf(payment.getPaymentId()))
+			.partnerOrderId(String.valueOf(payment.getId()))
 			.partnerUserId(String.valueOf(userId))
 			.itemName(request.itemName())
 			.quantity(1L)
@@ -86,7 +86,7 @@ public class KakaoPaymentService {
 
 	private KakaoReadyResDto callKakaoReadyApi(final KakaoReadyReqDto kakaoRequest) {
 		return Optional.ofNullable(
-			kakaopayRestClient.post()
+			kakaopayRestClientContainer.get().post()
 				.uri("/online/v1/payment/ready")
 				.body(kakaoRequest)
 				.retrieve()
@@ -103,21 +103,21 @@ public class KakaoPaymentService {
 		final KakaoApproveReqDto kakaoRequest,
 		final Payment payment
 	) {
-		return kakaopayRestClient.post()
+		return kakaopayRestClientContainer.get().post()
 			.uri("/online/v1/payment/approve")
 			.body(kakaoRequest)
 			.retrieve()
 			.onStatus(HttpStatusCode::is4xxClientError, (_, res) -> {
 				String errorBody = new String(res.getBody().readAllBytes(), StandardCharsets.UTF_8);
 				log.error("[Payment] 카카오페이 결제 승인 실패 (4xx) {paymentId: {}, body: {}}",
-					payment.getPaymentId(), errorBody);
+					payment.getId(), errorBody);
 				payment.updateFail();
 				throw new PaymentException(ErrorCode.PAYMENT_APPROVE_FAILED);
 			})
 			.onStatus(HttpStatusCode::is5xxServerError, (_, res) -> {
 				String errorBody = new String(res.getBody().readAllBytes(), StandardCharsets.UTF_8);
 				log.error("[Payment] 카카오페이 결제 승인 실패 (5xx) {paymentId: {}, body: {}}",
-					payment.getPaymentId(), errorBody);
+					payment.getId(), errorBody);
 				payment.updateFail();
 				throw new PaymentException(ErrorCode.PAYMENT_APPROVE_FAILED);
 			})
