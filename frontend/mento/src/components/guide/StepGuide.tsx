@@ -6,9 +6,10 @@ interface Step {
 
 interface StepGuideProps {
   steps: Step[]
+  tip?: string
 }
 
-export function StepGuide({ steps }: StepGuideProps) {
+export function StepGuide({ steps, tip }: StepGuideProps) {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-text-primary mb-6">
@@ -46,12 +47,14 @@ export function StepGuide({ steps }: StepGuideProps) {
       </div>
 
       {/* Additional Tips */}
-      <div className="mt-6 p-4 bg-pastel-blue-100 rounded-lg border border-pastel-blue-200">
-        <p className="text-sm text-text-secondary">
-          <span className="font-semibold text-primary-500">💡 Tip:</span>{" "}
-          제품은 소량을 여러 번 덧바르는 것이 한 번에 많이 바르는 것보다 효과적입니다.
-        </p>
-      </div>
+      {tip && (
+        <div className="mt-6 p-4 bg-pastel-blue-100 rounded-lg border border-pastel-blue-200">
+          <p className="text-sm text-text-secondary">
+            <span className="font-semibold text-primary-500">💡 Tip:</span>{" "}
+            {tip}
+          </p>
+        </div>
+      )}
     </div>
   )
 }
