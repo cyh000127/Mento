@@ -8,6 +8,28 @@ type SkinAnalysisRequest = {
   gender: "male" | "female";
 };
 
+type SkinAnalysisListParams = {
+  page?: number;
+  size?: number;
+  sort?: string[];
+};
+
+type SkinAnalysisListResponse = {
+  content: {
+    id: number;
+    created_at: string;
+    total_score: number;
+    skin_type_summary: string;
+  }[];
+  hasNext: boolean;
+  totalPages: number;
+  totalElements: number;
+  page: number;
+  size: number;
+  isFirst: boolean;
+  isLast: boolean;
+};
+
 export const requestSkinAnalysis = async (payload: SkinAnalysisRequest) => {
   const { front_url, l30_url, r30_url } = payload;
   if (!front_url || !l30_url || !r30_url) {
@@ -19,4 +41,16 @@ export const requestSkinAnalysis = async (payload: SkinAnalysisRequest) => {
   });
 
   return response.data.data;
+};
+
+export const getSkinAnalysisHistory = async (params: SkinAnalysisListParams = {}) => {
+  const response = await api.get<SkinAnalysisListResponse>("/skin-analysis", {
+    params: {
+      page: params.page ?? 0,
+      size: params.size ?? 10,
+      sort: params.sort ?? ["createdAt,DESC"],
+    },
+  });
+
+  return response.data;
 };
