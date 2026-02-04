@@ -63,19 +63,18 @@ services:
     privileged: true
     security_opt:
       - label:disable
+    # 문제가 되는 proc_systems 플래그를 제거하고 기본 실행으로 돌립니다.
     command:
       - '--url_base_prefix=/cadvisor'
       - '--housekeeping_interval=30s'
       - '--docker_only=true'
-      - '--proc_systems=/host/proc'
-      - '--store_container_labels=false'
-      - '--disable_metrics=disk,diskIO,tcp,udp,percpu,sched,memory_numa'
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
+      # 호스트 proc 정보는 볼륨 매핑으로만 전달합니다.
       - /proc:/host/proc:ro
     devices:
       - /dev/kmsg:/dev/kmsg
