@@ -29,10 +29,7 @@ public class TestAuthCommandServiceImpl implements TestAuthCommandService {
 		if (!user.getPassword().equals(reqDto.password())) {
 			throw new AuthException(ErrorCode.INVALID_PASSWORD);
 		}
-		// 24시간 유효 토큰 생성
 		Token token = jwtTokenProvider.createTestToken(user);
-		
-		// Refresh Token을 쿠키에 설정 (24시간)
 		CookieUtil.addCookie(response, "refreshToken", token.refreshToken(), 24 * 60 * 60);
 		
 		return token;

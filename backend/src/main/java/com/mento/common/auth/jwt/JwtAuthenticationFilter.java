@@ -36,12 +36,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		HttpServletResponse response,
 		FilterChain filterChain
 	) throws ServletException, IOException {
-		jwtTokenProvider.extractAccessToken(request)
-			.filter(token -> {
-				jwtTokenProvider.validateToken(token);
-				return true;
-			})
-			.ifPresent(this::setAuthentication);
+		try {
+			jwtTokenProvider.extractAccessToken(request)
+				.filter(token -> {
+					jwtTokenProvider.validateToken(token);
+					return jwtTokenProvider.getUser(token).isPresent();
+				})
+				.ifPresent(this::setAuthentication);
+		} catch (Exception e) {
+			SecurityContextHolder.clearContext();
+		}
 
 		filterChain.doFilter(request, response);
 	}

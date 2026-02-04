@@ -57,6 +57,9 @@ public class JwtTokenProvider {
 		);
 	}
 
+	/**
+	 * 시현용 테스트 코드 (토큰 발행)
+	 */
 	public Token createTestToken(final User user) {
 		long testExpiration = 86400000L;
 		return new Token(
