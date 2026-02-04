@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.mento.common.auth.principal.AuthenticatedUser;
 import com.mento.domain.skinanalysis.dto.request.SkinAnalysisClientReqDto;
 import com.mento.domain.skinanalysis.dto.response.SkinAnalysisDetailResDto;
 import com.mento.domain.skinanalysis.dto.response.SkinAnalysisSummaryResDto;
@@ -23,8 +24,8 @@ public class SkinAnalysisFacadeService {
 		return skinAnalysisCommandService.analyze(userId, dto);
 	}
 
-	public SkinAnalysisDetailResDto getById(Long id) {
-		return skinAnalysisQueryService.getById(id);
+	public SkinAnalysisDetailResDto getById(Long id, AuthenticatedUser authUser) {
+		return skinAnalysisQueryService.getById(id, authUser);
 	}
 
 	public Page<SkinAnalysisSummaryResDto> getMySummaries(Long userId, Pageable pageable) {
