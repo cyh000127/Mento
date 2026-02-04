@@ -23,4 +23,9 @@ public class NotificationQueryServiceImpl implements NotificationQueryService {
 	public List<Notification> getNotifications(final Long userId) {
 		return notificationRepository.findAllByUserId(userId);
 	}
+
+	@Override
+	public List<Notification> findActiveNotifications(final Long userId, final java.time.LocalDateTime now) {
+		return notificationRepository.findActiveNotifications(userId, now);
+	}
 }

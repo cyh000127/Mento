@@ -1,6 +1,7 @@
 package com.mento.domain.notification.service;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -14,7 +15,6 @@ import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.dto.response.NotificationResDto;
 import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.event.NotificationEvent;
-import com.mento.domain.notification.repository.NotificationRepository;
 import com.mento.domain.notification.repository.SseEmitterRepository;
 import com.mento.domain.notification.service.command.NotificationCommandService;
 import com.mento.domain.notification.service.query.NotificationQueryService;
@@ -32,7 +32,7 @@ public class NotificationFacadeService {
 
 	private final NotificationCommandService notificationCommandService;
 	private final NotificationQueryService notificationQueryService;
-	private final NotificationRepository notificationRepository;
+
 	private final SseEmitterRepository sseEmitterRepository;
 	private final ApplicationEventPublisher eventPublisher;
 
@@ -55,7 +55,7 @@ public class NotificationFacadeService {
 				.name("connect")
 				.data("connected!"));
 
-			List<Notification> unreadNotifications = notificationRepository
+			List<Notification> unreadNotifications = notificationQueryService
 				.findActiveNotifications(userId, TimeUtils.nowAsLocalDateTime());
 
 			if (!unreadNotifications.isEmpty()) {
@@ -87,8 +87,6 @@ public class NotificationFacadeService {
 
 		eventPublisher.publishEvent(new NotificationEvent(this, savedNotification));
 	}
-
-
 
 	@Transactional(readOnly = true)
 	public List<NotificationResDto> getNotifications(final Long userId) {

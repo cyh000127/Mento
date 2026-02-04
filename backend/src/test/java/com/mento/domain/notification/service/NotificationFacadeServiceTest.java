@@ -21,7 +21,6 @@ import com.mento.domain.notification.dto.response.NotificationResDto;
 import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.event.NotificationEvent;
-import com.mento.domain.notification.repository.NotificationRepository;
 import com.mento.domain.notification.repository.SseEmitterRepository;
 import com.mento.domain.notification.service.command.NotificationCommandService;
 import com.mento.domain.notification.service.query.NotificationQueryService;
@@ -38,8 +37,7 @@ class NotificationFacadeServiceTest {
 	@Mock
 	private NotificationQueryService notificationQueryService;
 
-	@Mock
-	private NotificationRepository notificationRepository;
+
 
 	@Mock
 	private SseEmitterRepository sseEmitterRepository;
@@ -62,7 +60,7 @@ class NotificationFacadeServiceTest {
 
 		List<Notification> unreadNotifications = List.of(notification);
 
-		given(notificationRepository.findActiveNotifications(eq(userId), any(LocalDateTime.class)))
+		given(notificationQueryService.findActiveNotifications(eq(userId), any(LocalDateTime.class)))
 			.willReturn(unreadNotifications);
 
 		// when
@@ -120,8 +118,8 @@ class NotificationFacadeServiceTest {
 
 		// then
 		assertThat(result).hasSize(1);
-		assertThat(result.get(0).notificationId()).isEqualTo(notification.getId());
-		assertThat(result.get(0).content()).isEqualTo(notification.getContent());
+		assertThat(result.getFirst().notificationId()).isEqualTo(notification.getId());
+		assertThat(result.getFirst().content()).isEqualTo(notification.getContent());
 		verify(notificationQueryService).getNotifications(userId);
 	}
 

@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import com.mento.common.util.TimeUtils;
-import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.converter.NotificationConverter;
 import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.entity.NotificationType;
@@ -55,17 +54,17 @@ public class NotificationScheduleService {
 		LocalTime nextHour = now.toLocalTime().plusHours(1).truncatedTo(ChronoUnit.HOURS);
 
 		if (minute <= 25) {
-			checkAndSendReminders(now.toLocalDate(), nextHour, 
+			checkAndSendReminders(now.toLocalDate(), nextHour,
 				"60", NotificationType.RESERVATION_REMINDER, -30);
 		}
 
 		if (minute >= 30 && minute <= 45) {
-			checkAndSendReminders(now.toLocalDate(), nextHour, 
+			checkAndSendReminders(now.toLocalDate(), nextHour,
 				"30", NotificationType.RESERVATION_REMINDER, -10);
 		}
 
 		if (minute >= 50) {
-			checkAndSendReminders(now.toLocalDate(), nextHour, 
+			checkAndSendReminders(now.toLocalDate(), nextHour,
 				"0", NotificationType.CONSULTING_STARTED, 10);
 		}
 	}
@@ -75,7 +74,7 @@ public class NotificationScheduleService {
 		String content,
 		NotificationType type,
 		int expiryOffsetMinutes) {
-		
+
 		List<Timetable> timetables = timetableQueryService
 			.findAllByDateAndTime(targetDate, targetTime);
 
