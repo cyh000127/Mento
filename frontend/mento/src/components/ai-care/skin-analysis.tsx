@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { Upload, Sparkles, ChevronRight, X, Loader2, Droplets, Search, Minus, Sun, Dumbbell } from "lucide-react";
+import { api } from "@/api/axios";
 import { userApi } from "@/api/userApi";
 
 interface UploadedImage {
@@ -93,7 +94,7 @@ export function SkinAnalysis() {
     // 로딩 상태로 변경
     setState("loading");
     setLoadingProgress(0);
-    
+
     // 로딩 화면으로 전환 시 스크롤
     setTimeout(() => {
       const analysisSection = document.getElementById("skin-analysis");
@@ -114,6 +115,19 @@ export function SkinAnalysis() {
     }, 150);
 
     try {
+      const uploadFile = async (file: File) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await api.post("/files", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        const fileUrl = response?.data?.data?.fileUrl;
+        if (!fileUrl) {
+          throw new Error("파일 업로드에 실패했습니다.");
+        }
+        return fileUrl as string;
+      };
+
       // 1. 생년월일 정보 업데이트 API 호출
       console.log("생년월일 업데이트 중:", birthDate);
       await userApi.updateUserProfile({
@@ -121,8 +135,14 @@ export function SkinAnalysis() {
       });
       console.log("생년월일 업데이트 완료");
 
+      const l30_url = await uploadFile(leftImage.file);
+      const front_url = await uploadFile(frontImage.file);
+      const r30_url = await uploadFile(rightImage.file);
+      void l30_url;
+      void front_url;
+      void r30_url;
+
       // 2. 피부 분석 API 호출 (TODO: 실제 피부 분석 API 구현)
-      
 
       // 시뮬레이션: 3초 후 결과 표시
       await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -130,13 +150,13 @@ export function SkinAnalysis() {
       // 로딩 완료
       clearInterval(progressInterval);
       setLoadingProgress(100);
-      
+
       // 잠시 100% 표시 후 결과로 전환
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       // 결과 상태로 변경
       setState("result");
-      
+
       // 결과 섹션으로 부드럽게 스크롤
       setTimeout(() => {
         const resultSection = document.getElementById("skin-analysis");
@@ -369,10 +389,7 @@ export function SkinAnalysis() {
             <p className="mb-8 text-text-secondary">잠시만 기다려주세요. 곧 맞춤 분석 결과를 확인하실 수 있습니다.</p>
             <div className="w-full max-w-md">
               <div className="mb-2 h-2 overflow-hidden rounded-full bg-muted">
-                <div 
-                  className="h-full rounded-full bg-gradient-to-r from-primary-400 to-primary-500 transition-all duration-300 ease-out" 
-                  style={{ width: `${loadingProgress}%` }}
-                />
+                <div className="h-full rounded-full bg-gradient-to-r from-primary-400 to-primary-500 transition-all duration-300 ease-out" style={{ width: `${loadingProgress}%` }} />
               </div>
               <p className="text-sm text-text-secondary">분석 진행중... {loadingProgress}%</p>
             </div>
@@ -428,22 +445,14 @@ export function SkinAnalysis() {
             {/* Central Visualization Section */}
             <div className="mb-8 rounded-3xl border border-border bg-gradient-to-br from-primary-50/50 to-white p-8 shadow-lg">
               <h3 className="mb-6 text-center text-2xl font-bold text-text-primary">피부 상태 상세 분석</h3>
-              
+
               <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 lg:flex-row lg:items-center">
                 {/* Radar Chart */}
                 <div className="relative flex w-full max-w-lg items-center justify-center lg:w-1/2">
                   <svg viewBox="0 0 500 500" className="h-full w-full" style={{ maxHeight: "500px" }}>
                     {/* Background circles */}
                     {[180, 144, 108, 72, 36].map((radius, idx) => (
-                      <circle
-                        key={`circle-${idx}`}
-                        cx="250"
-                        cy="250"
-                        r={radius}
-                        fill="none"
-                        stroke={idx === 0 ? "#b8f6ff" : "#e5e7eb"}
-                        strokeWidth="2"
-                      />
+                      <circle key={`circle-${idx}`} cx="250" cy="250" r={radius} fill="none" stroke={idx === 0 ? "#b8f6ff" : "#e5e7eb"} strokeWidth="2" />
                     ))}
 
                     {/* Guide lines */}
@@ -451,27 +460,17 @@ export function SkinAnalysis() {
                       const radian = ((angle - 90) * Math.PI) / 180;
                       const x = 250 + 180 * Math.cos(radian);
                       const y = 250 + 180 * Math.sin(radian);
-                      return (
-                        <line
-                          key={`line-${idx}`}
-                          x1="250"
-                          y1="250"
-                          x2={x}
-                          y2={y}
-                          stroke="#d1d5db"
-                          strokeWidth="2"
-                        />
-                      );
+                      return <line key={`line-${idx}`} x1="250" y1="250" x2={x} y2={y} stroke="#d1d5db" strokeWidth="2" />;
                     })}
 
                     {/* Data polygon */}
                     <polygon
                       points={[
-                        { angle: 0, value: 8 },    // 수분 (상단) - 낮을수록 좋음
-                        { angle: 72, value: 15 },   // 모공 (우상단)
-                        { angle: 144, value: 22 },  // 주름 (우하단)
-                        { angle: 216, value: 30 },  // 색소침착 (좌하단)
-                        { angle: 288, value: 11 },  // 탄력 (좌상단)
+                        { angle: 0, value: 8 }, // 수분 (상단) - 낮을수록 좋음
+                        { angle: 72, value: 15 }, // 모공 (우상단)
+                        { angle: 144, value: 22 }, // 주름 (우하단)
+                        { angle: 216, value: 30 }, // 색소침착 (좌하단)
+                        { angle: 288, value: 11 }, // 탄력 (좌상단)
                       ]
                         .map(({ angle, value }) => {
                           const radian = ((angle - 90) * Math.PI) / 180;
@@ -498,24 +497,17 @@ export function SkinAnalysis() {
                       const radian = ((angle - 90) * Math.PI) / 180;
                       const labelX = 250 + 210 * Math.cos(radian);
                       const labelY = 250 + 210 * Math.sin(radian);
-                      
+
                       return (
                         <g key={`point-${idx}`}>
-                          <text
-                            x={labelX}
-                            y={labelY}
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                            className="text-xl font-bold"
-                            fill="#111827"
-                          >
+                          <text x={labelX} y={labelY} textAnchor="middle" dominantBaseline="middle" className="text-xl font-bold" fill="#111827">
                             {label}
                           </text>
                         </g>
                       );
                     })}
                   </svg>
-                  
+
                   {/* Data point icons overlay */}
                   <div className="absolute inset-0" style={{ pointerEvents: "none" }}>
                     {[
@@ -534,7 +526,7 @@ export function SkinAnalysis() {
                       // SVG 좌표를 퍼센트로 변환 (viewBox 500 기준)
                       const percentX = (svgX / 500) * 100;
                       const percentY = (svgY / 500) * 100;
-                      
+
                       return (
                         <div
                           key={idx}
@@ -563,10 +555,7 @@ export function SkinAnalysis() {
                   ].map((item, idx) => {
                     const Icon = item.icon;
                     return (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between rounded-xl border border-border bg-white p-4 shadow-sm transition-all hover:shadow-md"
-                      >
+                      <div key={idx} className="flex items-center justify-between rounded-xl border border-border bg-white p-4 shadow-sm transition-all hover:shadow-md">
                         <div className="flex items-center gap-3">
                           <div className={`flex h-8 w-8 items-center justify-center rounded-full ${item.color}`}>
                             <Icon className={`h-4 w-4 ${item.iconColor}`} />
@@ -580,12 +569,12 @@ export function SkinAnalysis() {
                               item.status === "우수"
                                 ? "bg-green-100 text-green-700 font-semibold"
                                 : item.status === "양호"
-                                  ? "bg-primary-100 text-primary-500 font-semibold"
-                                  : item.status === "보통"
-                                    ? "bg-orange-100 text-orange-600 font-semibold"
-                                    : item.status === "주의"
-                                      ? "bg-red-100 text-red-600 font-semibold"
-                                      : "bg-muted text-text-secondary"
+                                ? "bg-primary-100 text-primary-500 font-semibold"
+                                : item.status === "보통"
+                                ? "bg-orange-100 text-orange-600 font-semibold"
+                                : item.status === "주의"
+                                ? "bg-red-100 text-red-600 font-semibold"
+                                : "bg-muted text-text-secondary"
                             }`}
                           >
                             {item.status}
@@ -659,10 +648,7 @@ export function SkinAnalysis() {
               ].map((item, idx) => {
                 const Icon = item.icon;
                 return (
-                  <div
-                    key={idx}
-                    className={`overflow-hidden rounded-2xl border border-border ${item.bgColor} shadow-md transition-all hover:shadow-lg`}
-                  >
+                  <div key={idx} className={`overflow-hidden rounded-2xl border border-border ${item.bgColor} shadow-md transition-all hover:shadow-lg`}>
                     <div className={`bg-gradient-to-r ${item.color} px-6 py-4 ${item.textColor}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -678,16 +664,9 @@ export function SkinAnalysis() {
                     <div className="p-6">
                       <div className="mb-3 flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
-                          <div
-                            key={i}
-                            className={`h-2 w-2 rounded-full ${
-                              i < item.grade ? "bg-[#22c55e]" : "bg-gray-300"
-                            }`}
-                          />
+                          <div key={i} className={`h-2 w-2 rounded-full ${i < item.grade ? "bg-[#22c55e]" : "bg-gray-300"}`} />
                         ))}
-                        <span className="ml-2 text-sm text-text-secondary">
-                          {item.grade}/5 단계
-                        </span>
+                        <span className="ml-2 text-sm text-text-secondary">{item.grade}/5 단계</span>
                       </div>
                       <p className="text-sm leading-relaxed text-text-secondary">{item.description}</p>
                     </div>
