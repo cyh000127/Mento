@@ -1,6 +1,6 @@
 import { useState } from "react"
-import { CategorySidebar } from "@/components/guide/CategorySidebar"
-import { HowToUseSection } from "@/components/guide/HowToUseSection"
+import { CategorySidebar } from "../../components/guide/CategorySidebar"
+import { HowToUseSection } from "../../components/guide/HowToUseSection"
 import { BookOpen, Menu } from "lucide-react"
 
 export default function GuidePage() {
