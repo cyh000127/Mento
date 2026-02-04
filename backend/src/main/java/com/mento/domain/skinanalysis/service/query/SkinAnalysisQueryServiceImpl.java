@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mento.common.auth.principal.AuthenticatedUser;
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.BusinessException;
 import com.mento.domain.skinanalysis.converter.SkinAnalysisConverter;
@@ -24,9 +25,14 @@ public class SkinAnalysisQueryServiceImpl implements SkinAnalysisQueryService {
 	private final SkinAnalysisRepository skinAnalysisRepository;
 
 	@Override
-	public SkinAnalysisDetailResDto getById(Long id) {
+	public SkinAnalysisDetailResDto getById(Long id, AuthenticatedUser authUser) {
 		SkinAnalysis entity = skinAnalysisRepository.findById(id)
 			.orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
+
+		if (!authUser.isAdminOrMentor() && !entity.getUserId().equals(authUser.getId())) {
+			throw new BusinessException(ErrorCode.ACCESS_DENIED);
+		}
+		
 		return SkinAnalysisConverter.toSkinAnalysisDetailResDto(entity);
 	}
 

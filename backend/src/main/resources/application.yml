@@ -83,6 +83,9 @@ livekit:
   api-key: ${LIVEKIT_API_KEY}
   secret: ${LIVEKIT_API_SECRET}
 
+skinai:
+  base-url: ${SKIN_API_URL}
+
 ai:
   prompts:
     system: ${AI_PROMPT_SYSTEM:classpath:prompts/system.st}

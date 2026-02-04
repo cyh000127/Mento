@@ -6,20 +6,25 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 
 import com.mento.common.config.properties.KakaopayProperties;
+import com.mento.common.config.properties.SkinAnalysisProperties;
 
 import lombok.RequiredArgsConstructor;
 
 @Configuration
-@EnableConfigurationProperties(KakaopayProperties.class)
+@EnableConfigurationProperties({
+	KakaopayProperties.class,
+	SkinAnalysisProperties.class
+})
 @RequiredArgsConstructor
 public class RestClientConfig {
 
 	private final KakaopayProperties kakaopayProperties;
+	private final SkinAnalysisProperties skinAnalysisProperties;
 
 	@Bean(name = "skinAnalysisRestClient")
 	public RestClient skinAnalysisRestClient() {
 		return RestClient.builder()
-			.baseUrl("http://localhost:8000")
+			.baseUrl(skinAnalysisProperties.baseUrl())
 			.build();
 	}
 

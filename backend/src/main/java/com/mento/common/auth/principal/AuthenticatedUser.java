@@ -25,4 +25,8 @@ public class AuthenticatedUser {
 	public Collection<GrantedAuthority> getAuthorities() {
 		return Collections.singletonList(new SimpleGrantedAuthority(role));
 	}
+
+	public boolean isAdminOrMentor() {
+		return role.equals("MENTOR") || role.equals("ADMIN");
+	}
 }
