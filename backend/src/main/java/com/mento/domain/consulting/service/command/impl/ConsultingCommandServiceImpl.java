@@ -1,10 +1,11 @@
-package com.mento.domain.consulting.service.command;
+package com.mento.domain.consulting.service.command.impl;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mento.domain.consulting.entity.Consulting;
 import com.mento.domain.consulting.repository.ConsultingRepository;
+import com.mento.domain.consulting.service.command.ConsultingCommandService;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
