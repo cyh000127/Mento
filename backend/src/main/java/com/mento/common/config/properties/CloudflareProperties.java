@@ -18,6 +18,9 @@ public record CloudflareProperties(
 	String accessKey,
 
 	@NotBlank(message = "R2 시크릿 키는 필수입니다")
-	String secretKey
+	String secretKey,
+
+	@NotBlank(message = "outerPrefix는 필수입니다.")
+	String outerPrefix
 ) {
 }

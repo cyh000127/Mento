@@ -31,7 +31,7 @@ public class CloudflareStorageUtil {
 
 		try {
 			uploadToS3(file, key);
-			String fileUrl = buildFileUrl(key);
+			String fileUrl = convertUrl(buildFileUrl(key));
 			log.info("[CloudflareStorage] 파일 업로드 완료 {key: {}}", key);
 			return fileUrl;
 
@@ -76,4 +76,18 @@ public class CloudflareStorageUtil {
 			key
 		);
 	}
+
+	private String convertUrl(String url) {
+		String newPrefix = cloudflareProperties.outerPrefix();
+		String keyword = "common";
+
+		int index = url.indexOf(keyword);
+
+		if (index != -1) {
+			return newPrefix + url.substring(index);
+		} else {
+			return url;
+		}
+	}
 }
+
