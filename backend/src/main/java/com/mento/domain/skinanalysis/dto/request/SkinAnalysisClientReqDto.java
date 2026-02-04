@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.Builder;
 
@@ -29,7 +30,7 @@ public record SkinAnalysisClientReqDto(
 	@Schema(description = "오른쪽 30도 사진 URL", example = "https://example.com/r30.jpg")
 	String r30Url,
 
-	@NotBlank(message = "생년월일은 필수입니다.")
+	@NotNull(message = "생년월일은 필수입니다.")
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
 	@JsonProperty("birth_date")
 	@Schema(description = "생년월일 (YYYY-MM-DD)", example = "1995-05-20")
