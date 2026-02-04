@@ -37,9 +37,9 @@ spring:
   ai:
     openai:
       api-key: ${GMS_KEY}
-      base-url: https://gms.ssafy.io/gmsapi/api.openai.com/v1/
+      base-url: https://gms.ssafy.io/gmsapi/api.openai.com/v1
       chat:
-        completions-path: chat/completions
+        completions-path: /chat/completions
         options:
           model: gpt-5-mini
 
@@ -82,3 +82,8 @@ livekit:
   url: ${LIVEKIT_URL}
   api-key: ${LIVEKIT_API_KEY}
   secret: ${LIVEKIT_API_SECRET}
+
+ai:
+  prompts:
+    system: ${AI_PROMPT_SYSTEM:classpath:prompts/system.st}
+    consulting: ${AI_PROMPT_CONSULTING:classpath:prompts/consulting.st}
