@@ -38,16 +38,20 @@ export function InventoryPanel() {
         // ✅ 상담사 → 고객 인벤토리
         if (isConsultant && reservationIdNumber) {
           const reservationDetail = await getReservationDetail(reservationIdNumber)
-          const customerUserId = reservationDetail.userInfo?.userId
+          const customerUserId = reservationDetail.userInfo?.id
 
           if (!customerUserId) {
             throw new Error("고객 정보를 찾을 수 없습니다.")
           }
 
-          const inventory = await getCustomerInventory(customerUserId, {
-            page: 0,
-            size: 20,
-          })
+          const inventory = await getCustomerInventory(
+            customerUserId,
+            reservationIdNumber,
+            {
+              page: 0,
+              size: 20,
+            }
+          )
 
           if (!canUpdate || canUpdate()) {
             setItems(inventory.content ?? [])

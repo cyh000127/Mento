@@ -1,5 +1,5 @@
 export interface ReservationDetailUserInfo {
-  userId: number
+  id: number
   userName: string
 }
 

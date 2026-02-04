@@ -39,10 +39,14 @@ export async function getInventoryItems(filters: InventoryFilters = {}): Promise
  * 고객 인벤토리 목록 조회 API
  */
 export async function getCustomerInventory(
-  userId: number,
+  id: number,
+  reservationId: number,
   filters: InventoryFilters = {}
 ): Promise<InventoryResponse> {
   const params = new URLSearchParams()
+
+  // 🔑 예약 ID 추가
+  params.append("reservationId", reservationId.toString())
 
   if (filters.page !== undefined) params.append("page", filters.page.toString())
   if (filters.size !== undefined) params.append("size", filters.size.toString())
@@ -52,7 +56,7 @@ export async function getCustomerInventory(
   if (filters.sort) params.append("sort", filters.sort)
 
   const response = await api.get<InventoryResponse>(
-    `/users/${userId}/items?${params.toString()}`
+    `/users/${id}/items?${params.toString()}`
   )
   return response.data
 }
