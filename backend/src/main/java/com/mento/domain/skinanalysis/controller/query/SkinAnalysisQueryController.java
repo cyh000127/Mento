@@ -33,7 +33,8 @@ public class SkinAnalysisQueryController {
 	public ResponseEntity<PageResponse<SkinAnalysisSummaryResDto>> getList(
 		@AuthenticationPrincipal final AuthenticatedUser authUser,
 		@ParameterObject
-		@PageableDefault(page = 0, size = 10, sort = "createdAt", direction = Sort.Direction.DESC) final Pageable pageable
+		@PageableDefault(page = 0, size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
+		final Pageable pageable
 	) {
 		Page<SkinAnalysisSummaryResDto> resultPage =
 			skinAnalysisFacadeService.getMySummaries(authUser.getId(), pageable);
