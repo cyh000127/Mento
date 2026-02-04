@@ -10,11 +10,14 @@ import com.mento.common.config.restclient.SkinAnalysisRestClientContainer;
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.BusinessException;
 import com.mento.domain.skinanalysis.converter.SkinAnalysisConverter;
-import com.mento.domain.skinanalysis.dto.request.SkinAnalysisReqDto;
+import com.mento.domain.skinanalysis.dto.request.SkinAnalysisAiReqDto;
+import com.mento.domain.skinanalysis.dto.request.SkinAnalysisClientReqDto;
 import com.mento.domain.skinanalysis.dto.response.SkinAnalysisApiResWrapper;
 import com.mento.domain.skinanalysis.dto.response.SkinAnalysisDetailResDto;
 import com.mento.domain.skinanalysis.entity.SkinAnalysis;
 import com.mento.domain.skinanalysis.repository.SkinAnalysisRepository;
+import com.mento.domain.user.dto.request.UserUpdateReqDto;
+import com.mento.domain.user.service.command.UserCommandService;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -27,13 +30,17 @@ public class SkinAnalysisCommandServiceImpl implements SkinAnalysisCommandServic
 
 	private final SkinAnalysisRepository skinAnalysisRepository;
 	private final SkinAnalysisRestClientContainer skinAnalysisRestClientContainer;
+	private final UserCommandService userCommandService;
 
 	@Override
-	public SkinAnalysisDetailResDto analyze(Long userId, SkinAnalysisReqDto dto) {
+	public SkinAnalysisDetailResDto analyze(Long userId, SkinAnalysisClientReqDto dto) {
+		userCommandService.update(userId, new UserUpdateReqDto(dto.birthDate()));
+
+		SkinAnalysisAiReqDto request = SkinAnalysisConverter.toSkinAnalysisAiReqDto(dto);
 
 		SkinAnalysisApiResWrapper wrapper = skinAnalysisRestClientContainer.get().post()
 			.uri("/analyze")
-			.body(dto)
+			.body(request)
 			.retrieve()
 			.onStatus(HttpStatusCode::is4xxClientError, ((_, res) -> {
 				String errorBody = new String(res.getBody().readAllBytes(), StandardCharsets.UTF_8);

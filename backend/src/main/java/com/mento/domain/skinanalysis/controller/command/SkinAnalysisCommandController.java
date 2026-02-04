@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mento.common.auth.principal.AuthenticatedUser;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.util.ResponseUtils;
-import com.mento.domain.skinanalysis.dto.request.SkinAnalysisReqDto;
+import com.mento.domain.skinanalysis.dto.request.SkinAnalysisClientReqDto;
 import com.mento.domain.skinanalysis.dto.response.SkinAnalysisDetailResDto;
 import com.mento.domain.skinanalysis.service.facade.SkinAnalysisFacadeService;
 
@@ -26,7 +26,7 @@ public class SkinAnalysisCommandController {
 
 	@PostMapping
 	public ResponseEntity<BaseResponse<SkinAnalysisDetailResDto>> analyze(
-		@RequestBody @Valid final SkinAnalysisReqDto dto,
+		@RequestBody @Valid final SkinAnalysisClientReqDto dto,
 		@AuthenticationPrincipal final AuthenticatedUser authUser
 	) {
 		SkinAnalysisDetailResDto response = skinAnalysisFacadeService.analyzeSkin(authUser.getId(), dto);

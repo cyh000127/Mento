@@ -1,5 +1,7 @@
 package com.mento.domain.skinanalysis.converter;
 
+import com.mento.domain.skinanalysis.dto.request.SkinAnalysisAiReqDto;
+import com.mento.domain.skinanalysis.dto.request.SkinAnalysisClientReqDto;
 import com.mento.domain.skinanalysis.dto.response.SkinAnalysisDetailResDto;
 import com.mento.domain.skinanalysis.dto.response.SkinAnalysisSummaryResDto;
 import com.mento.domain.skinanalysis.entity.SkinAnalysis;
@@ -36,4 +38,15 @@ public class SkinAnalysisConverter {
 			.details(entity.getAnalysisDetails())
 			.build();
 	}
+
+	public SkinAnalysisAiReqDto toSkinAnalysisAiReqDto(SkinAnalysisClientReqDto dto) {
+		return SkinAnalysisAiReqDto.builder()
+			.frontUrl(dto.frontUrl())
+			.l30Url(dto.l30Url())
+			.r30Url(dto.r30Url())
+			.age(dto.getCalculatedAge())
+			.gender(dto.gender())
+			.build();
+	}
+
 }
