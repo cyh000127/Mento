@@ -1,12 +1,22 @@
-package com.mento.domain.skin_analysis.converter;
+package com.mento.domain.skinanalysis.converter;
 
-import com.mento.domain.skin_analysis.dto.response.SkinAnalysisDetailResDto;
-import com.mento.domain.skin_analysis.entity.SkinAnalysis;
+import com.mento.domain.skinanalysis.dto.response.SkinAnalysisDetailResDto;
+import com.mento.domain.skinanalysis.dto.response.SkinAnalysisSummaryResDto;
+import com.mento.domain.skinanalysis.entity.SkinAnalysis;
 
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class SkinAnalysisConverter {
+
+	public SkinAnalysisSummaryResDto toSkinAnalysisSummaryResDto(SkinAnalysis entity) {
+		return SkinAnalysisSummaryResDto.builder()
+			.id(entity.getId())
+			.createdAt(entity.getCreatedAt())
+			.totalScore(entity.getTotalScore())
+			.skinTypeSummary(entity.getSkinTypeSummary())
+			.build();
+	}
 
 	public SkinAnalysis toEntity(Long userId, SkinAnalysisDetailResDto dto) {
 		return SkinAnalysis.builder()
@@ -26,5 +36,4 @@ public class SkinAnalysisConverter {
 			.details(entity.getAnalysisDetails())
 			.build();
 	}
-
 }
