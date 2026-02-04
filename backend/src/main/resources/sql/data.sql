@@ -260,7 +260,17 @@ FROM (SELECT 'skincare01@example.com' AS `email`,
       UNION ALL
       SELECT 'hair04@example.com', 'test1234', '양염색', 'kakao_hair04', 'MENTOR', NOW(6), NOW(6)
       UNION ALL
-      SELECT 'hair05@example.com', 'test1234', '손두피', 'kakao_hair05', 'MENTOR', NOW(6), NOW(6)) AS tmp
+      SELECT 'hair05@example.com', 'test1234', '손두피', 'kakao_hair05', 'MENTOR', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'user01@example.com', 'test1234', '김유저', 'kakao_user01', 'USER', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'user02@example.com', 'test1234', '이체험', 'kakao_user02', 'USER', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'user03@example.com', 'test1234', '박고객', 'kakao_user03', 'USER', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'user04@example.com', 'test1234', '최방문', 'kakao_user04', 'USER', NOW(6), NOW(6)
+      UNION ALL
+      SELECT 'user05@example.com', 'test1234', '정회원', 'kakao_user05', 'USER', NOW(6), NOW(6)) AS tmp
 WHERE NOT EXISTS (SELECT 1 FROM `users` LIMIT 1);
 
 INSERT

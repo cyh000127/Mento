@@ -105,6 +105,9 @@ public class ReservationFacadeService {
 			role.getDescription());
 	}
 
+	/**
+	 * 시현용 테스트 코드
+	 */
 	@Transactional(readOnly = true)
 	public LiveKitSessionResponse createInfiniteSession(final Long reservationId, final AuthenticatedUser authuser) {
 		Reservation reservation = reservationQueryService.findById(reservationId);

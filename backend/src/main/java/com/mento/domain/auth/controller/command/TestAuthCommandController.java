@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mento.common.auth.dto.Token;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.util.ResponseUtils;
-import com.mento.domain.auth.dto.request.MentorLoginReqDto;
-import com.mento.domain.auth.service.command.MentorAuthCommandService;
+import com.mento.domain.auth.dto.request.TestLoginReqDto;
+import com.mento.domain.auth.service.command.TestAuthCommandService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,19 +20,19 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Auth", description = "인증 관련 API")
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/v1/test/auth")
 @RequiredArgsConstructor
-public class MentorAuthCommandController {
+public class TestAuthCommandController {
 
-	private final MentorAuthCommandService mentorAuthCommandService;
+	private final TestAuthCommandService testAuthCommandService;
 
-	@Operation(summary = "멘토 로그인 (테스트/시연용)", description = "멘토 ID와 비밀번호로 로그인하여 토큰을 발급받습니다.")
-	@PostMapping("/login/mentor")
+	@Operation(summary = "테스트용 통합 로그인", description = "계정 정보로 로그인하여 24시간 유효한 토큰을 발급받습니다.")
+	@PostMapping("/login")
 	public ResponseEntity<BaseResponse<Token>> login(
-		@Valid @RequestBody MentorLoginReqDto reqDto,
+		@Valid @RequestBody TestLoginReqDto reqDto,
 		HttpServletResponse response
 	) {
-		Token token = mentorAuthCommandService.login(reqDto, response);
+		Token token = testAuthCommandService.login(reqDto, response);
 		return ResponseUtils.ok(token);
 	}
 }
