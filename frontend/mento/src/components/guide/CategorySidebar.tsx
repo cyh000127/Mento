@@ -1,4 +1,4 @@
-import { Droplets, Sparkles, Scissors } from "lucide-react"
+import { Droplets, Sparkles } from "lucide-react"
 
 type Category = {
   id: string
@@ -16,12 +16,7 @@ const categories: Category[] = [
     id: "beauty",
     label: "뷰티",
     icon: Sparkles,
-  },
-  {
-    id: "hair",
-    label: "헤어",
-    icon: Scissors,
-  },
+  }
 ]
 
 interface CategorySidebarProps {
