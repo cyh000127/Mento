@@ -1,66 +1,254 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
-import requests
+import re
+import json
 import uuid
 import time
-import json
 import os
+import requests
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from dotenv import load_dotenv
 
-# .env 파일에서 환경 변수 로드
+# 1. 환경 변수 로드 세팅
 load_dotenv()
 
 app = FastAPI()
 
-# --- 환경 변수 설정 ---
+# 환경 변수 및 설정 값
 NAVER_OCR_URL = os.getenv("NAVER_OCR_URL")
 NAVER_SECRET_KEY = os.getenv("NAVER_SECRET_KEY")
-# Docker app-network 내부망 주소 (기본값 설정)
+# Docker 내부망 주소 고려 (기본값 설정)
 ES_URL = os.getenv("ES_URL", "http://elasticsearch:9200")
 
+# [전략 2: 한/영 매칭 사전] - 내용 생략 (기존 리스트 유지)
+MAPPING_DICT = {
+    "비레디": "B.READY",
+    "올인원": "All-in-one",
+    "오브제": "OBgE",
+    "쿠션": "Cushion",
+    "보습": "Hydration",
+    "매트": "Matte",
+    "택1": "Pick 1",
+    "레티놀": "Retinol",
+    "아이디얼포맨": "Ideal for Men",
+    "지복합성": "Combination Skin",
+    "포맨트": "Forment",
+    "시카": "Cica",
+    "쉐딩": "Shading",
+    "매치업": "Match Up",
+    "어워즈": "Awards",
+    "바우로": "Bauro",
+    "립밤": "Lip Balm",
+    "팩": "Pack",
+    "컨실러": "Concealer",
+    "원오브뎀": "One of them",
+    "기획": "Special Set",
+    "선크림": "Sun Cream",
+    "단품": "Single Item",
+    "라운드랩": "ROUND LAB",
+    "제이숲": "Jsoop",
+    "토너": "Toner",
+    "바하": "BHA",
+    "에멀젼": "Emulsion",
+    "오일": "Oil",
+    "100매": "100Sheets",
+    "1기획": "1Special Set",
+    "크림": "Cream",
+    "스웨거": "Swagger",
+    "중건성": "Dry/Normal Skin",
+    "수분": "Moisture",
+    "미닉": "MINIC",
+    "브리티시엠": "British M",
+    "리우젤": "Reuzel",
+    "이아소": "IASO",
+    "다운펌": "Down Perm",
+    "파우더": "Powder",
+    "젤": "Gel",
+    "마몽드": "Mamonde",
+    "닥터지": "Dr.G",
+    "세븐피엠": "SEVENPM",
+    "무칸": "MUKAN",
+    "다슈": "Dashu",
+    "아크네스": "Acnes",
+    "라네즈": "Laneige",
+    "80매": "80Sheets",
+    "앰플": "Ampoule",
+    "컬크림": "Curl Cream",
+    "그라펜": "Grafen",
+    "모이": "Moi",
+    "아이브로우": "Eyebrow",
+    "리필": "Refill",
+    "낫포유": "NOT4U",
+    "갸스비": "Gatsby",
+    "선스틱": "Sun Stick",
+    "파운데이션": "Foundation",
+    "비오템": "Biotherm",
+    "3종": "3Types",
+    "옴므": "Homme",
+    "23호": "23No.",
+    "뉴트로지나": "Neutrogena",
+    "포뷰트": "FOR:BEAUT",
+    "톤업": "Tone Up",
+    "라끌랑": "Laqlanc",
+    "4종": "4Types",
+    "헤어": "Hair",
+    "우르오스": "ULOS",
+    "클렌징": "Cleansing",
+    "세럼": "Serum",
+    "진정": "Soothing",
+    "세트": "Set",
+    "정샘물": "JUNG SAEM MOOL",
+    "이니스프리": "Innisfree",
+    "로션": "Lotion",
+    "아이오페": "IOPE",
+    "더페이스샵": "The Face Shop",
+    "엠도씨": "MdoC",
+    "트리트먼트": "Treatment",
+    "2입": "2Pcs",
+    "헤라": "Hera",
+    "증정": "Gift",
+    "2종": "2Types",
+    "피지오겔": "Physiogel",
+    "두잉왓": "Doing What",
+    "25호": "25No.",
+    "세라마이드": "Ceramide",
+    "미프": "MIP",
+    "플리프": "FLEEF",
+    "히알루론산": "Hyaluronic Acid",
+    "헤레카": "Hereka",
+    "탄력": "Elasticity",
+    "토리든": "Torriden",
+    "블랙몬스터": "Black Monster",
+    "커리쉴": "CURLYSHYLL",
+    "알로에": "Aloe",
+    "듀이셀": "DEWYCEL",
+    "비비": "BB",
+    "박준뷰티랩": "PARKJUNBEAUTYLAB",
+    "폴미첼": "Paul Mitchell",
+    "마스카라": "Mascara",
+    "폼": "Foam",
+    "맨즈": "Men's",
+    "어드밴스드": "Advanced",
+    "라이트": "Light",
+    "클래식": "Classic",
+    "다크": "Dark",
+    "레드": "Red",
+    "딥": "Deep",
+    "데일리": "Daily",
+    "토닉": "Tonic",
+    "샌드": "Sand",
+    "블랙": "Black",
+    "소프트": "Soft",
+    "스틱": "Stick",
+    "웨이브": "Wave",
+    "그루밍": "Grooming",
+    "아쿠아": "Aqua",
+    "그레이": "Gray",
+    "키트": "Kit",
+    "퍼펙트": "Perfect",
+    "모이스처": "Moisture",
+    "프레쉬": "Fresh",
+    "베스트": "Best",
+    "내추럴": "Natural",
+    "포마드": "Pomade",
+    "홀드": "Hold",
+    "오리지널": "Original",
+    "프리미엄": "Premium",
+    "리뉴얼": "Renewal",
+    "샤인": "Shine",
+    "에디션": "Edition",
+    "블루": "Blue",
+    "포": "For",
+    "볼륨": "Volume",
+    "익스트림": "Extreme",
+    "하드": "Hard",
+    "왁스": "Wax",
+    "브라운": "Brown",
+    "맨": "Men",
+    "스프레이": "Spray"
+}
+
+# ==========================================
+# SECTION 2: 고도화된 전처리 (Slicing & Mapping)
+# ==========================================
+def preprocess_ocr_text(full_text: str):
+    """
+    OCR로 추출된 텍스트에서 노이즈를 제거하고 검색 키워드를 확장합니다.
+    """
+    # 1. 특수문자 제거
+    text = re.sub(r'[^가-힣a-zA-Z0-9\s]', ' ', full_text)
+
+    # 2. [전략 1: 노이즈 키워드 기반 절단]
+    noise_keywords = ["사용방법", "주의사항", "전성분", "제조번호", "책임판매", "제조원", "MADE IN"]
+    for keyword in noise_keywords:
+        if keyword in text:
+            text = text.split(keyword)[0]
+
+    # 3. Sliding Window (상위 20개 단어 추출)
+    words = text.split()
+    top_words = words[:20]
+
+    # 4. [전략 2: 한/영 동의어 확장]
+    search_terms = []
+    for word in top_words:
+        search_terms.append(word)
+        if word in MAPPING_DICT:
+            search_terms.append(MAPPING_DICT[word])
+
+    # 중복 제거 후 하나의 쿼리 스트링으로 반환
+    return " ".join(list(dict.fromkeys(search_terms)))
+
+# ==========================================
+# SECTION 3: Elasticsearch 검색 (Nori Analyzer 활용)
+# ==========================================
 def search_products_in_es(ocr_text: str, limit: int = 5):
     """
-    Elasticsearch에서 Fuzzy Query를 사용하여 연관 상품 리스트를 가져옵니다.
+    정제된 텍스트를 바탕으로 ES 'products' 인덱스에서 검색을 수행합니다.
     """
-    query_text = ocr_text.strip()
-    if not query_text:
+    refined_query = preprocess_ocr_text(ocr_text)
+    if not refined_query:
         return []
 
-    # Elasticsearch 검색 쿼리: 오타 허용(Fuzzy) 및 가중치 부여
+    # [수정] 이전 대화에서 확인된 매핑 필드명 'product_name' 반영
     search_query = {
-        "size": limit,  # 유저에게 보여줄 후보 개수
+        "size": limit,
         "query": {
-            "multi_match": {
-                "query": query_text,
-                "fields": ["name^3", "brand_name", "volume"],  # 상품명에 가중치 3배
-                "fuzziness": "AUTO",  # 오타 자동 보정
-                "operator": "or"
+            "bool": {
+                "should": [
+                    # 상품명에 가장 높은 가중치 부여 (nori_analyzer 적용 필드)
+                    { "match": { "product_name": { "query": refined_query, "boost": 5 } } },
+                    # 브랜드명 검색 (nori_analyzer 적용 필드)
+                    { "match": { "brand_name": { "query": refined_query, "boost": 2 } } },
+                    # 오타 보정을 위한 Fuzzy 검색
+                    { "match": { "product_name": { "query": refined_query, "fuzziness": "AUTO" } } }
+                ]
             }
         }
     }
 
     try:
-        # 인덱스명은 Kibana에서 CSV 업로드 시 설정한 이름을 사용해야 합니다 (여기서는 'products')
-        response = requests.get(f"{ES_URL}/products/_search", json=search_query)
+        # 인덱스 경로를 포함한 최종 URL 구성
+        target_url = f"{ES_URL}/products/_search"
+        response = requests.get(target_url, json=search_query, timeout=5)
 
         if response.status_code == 200:
             hits = response.json().get('hits', {}).get('hits', [])
-            # _source 데이터만 추출하여 리스트화
             return [hit['_source'] for hit in hits]
+
+        print(f"⚠️ ES 응답 오류: {response.status_code} - {response.text}")
         return []
     except Exception as e:
-        print(f"❌ ES 검색 중 오류 발생: {e}")
+        print(f"❌ ES 검색 중 네트워크/로직 오류: {e}")
         return []
 
 @app.post("/api/ocr/scan-cosmetic")
 async def scan_cosmetic(file: UploadFile = File(...)):
     """
-    클라이언트로부터 이미지를 받아 OCR 텍스트 추출 후 ES 검색 결과를 반환합니다.
+    이미지를 업로드받아 OCR 분석 및 상품 매칭 결과를 반환합니다.
     """
     # 1. 파일 데이터 읽기
     content = await file.read()
     file_ext = file.filename.split('.')[-1]
 
-    # 2. Clova OCR 요청 구성
+    # 2. Naver Clova OCR 요청 구성
     request_json = {
         'images': [{'format': file_ext, 'name': 'product_image'}],
         'requestId': str(uuid.uuid4()),
@@ -73,22 +261,21 @@ async def scan_cosmetic(file: UploadFile = File(...)):
     headers = {'X-OCR-SECRET': NAVER_SECRET_KEY}
 
     try:
-        # 3. Naver Clova OCR 호출
-        ocr_response = requests.post(NAVER_OCR_URL, headers=headers, data=payload, files=files)
+        # 3. OCR 호출
+        ocr_response = requests.post(NAVER_OCR_URL, headers=headers, data=payload, files=files, timeout=10)
 
         if ocr_response.status_code != 200:
-            raise HTTPException(status_code=500, detail="OCR 서비스 응답 오류")
+            raise HTTPException(status_code=500, detail=f"OCR 서비스 응답 오류: {ocr_response.status_code}")
 
         res_data = ocr_response.json()
 
-        # 4. 결과 분석 및 Elasticsearch 검색
+        # 4. OCR 결과 분석 및 ES 검색 연동
         if 'images' in res_data and res_data['images'][0]['inferResult'] == 'SUCCESS':
             fields = res_data['images'][0]['fields']
             full_text = " ".join([field['inferText'] for field in fields])
 
-            # --- Elasticsearch 다중 검색 실행 ---
+            # 전처리와 검색 로직 실행
             candidate_products = search_products_in_es(full_text, limit=5)
-            # ----------------------------------
 
             if candidate_products:
                 return {
@@ -108,11 +295,14 @@ async def scan_cosmetic(file: UploadFile = File(...)):
         else:
             return {"status": "fail", "message": "이미지 인식에 실패했습니다."}
 
+    except requests.exceptions.RequestException as e:
+        print(f"❌ 외부 통신 오류: {e}")
+        raise HTTPException(status_code=502, detail="외부 서비스(OCR/ES) 통신 실패")
     except Exception as e:
         print(f"❌ 서버 로직 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
-    # Nginx 및 Docker 설정에 맞춘 내부 포트 1000번 실행
+    # Nginx 및 Docker 설정에 맞춘 포트 1000번 실행
     uvicorn.run(app, host="0.0.0.0", port=1000)

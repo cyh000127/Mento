@@ -197,6 +197,7 @@ services:
     environment:
       NAVER_OCR_URL: ${NAVER_OCR_URL}
       NAVER_SECRET_KEY: ${NAVER_SECRET_KEY}
+      ES_URL: ${ES_URL:-http://elasticsearch:9200}
     networks:
       - app-network
     deploy:
@@ -210,7 +211,6 @@ services:
         max-size: "10m"
         max-file: "3"
     healthcheck:
-      # FastAPI가 1000번 포트에서 떠있는지 확인 (curl이 없을 경우를 대비해 python으로 체크 가능)
       test: [ "CMD-SHELL", "timeout 5s bash -c '< /dev/tcp/127.0.0.1/1000' || exit 1" ]
       interval: 30s
       timeout: 10s
