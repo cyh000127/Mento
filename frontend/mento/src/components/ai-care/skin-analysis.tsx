@@ -11,6 +11,68 @@ interface UploadedImage {
 
 type AnalysisState = "upload" | "loading" | "result";
 
+type SkinAnalysisResult = {
+  total_score: number;
+  total_grade: number;
+  skin_type_summary: string;
+  details: Record<string, SkinAnalysisDetail>;
+};
+
+type SkinAnalysisDetail = {
+  score: number;
+  grade: number;
+  raw_value: number;
+  description: string;
+};
+
+const METRIC_STYLE_MAP = {
+  moisture: {
+    label: "수분",
+    icon: Droplets,
+    color: "text-primary-500",
+    bgColor: "bg-[#beeffc]",
+    cardGradient: "from-[#beeffc] to-[#ccf8ff]",
+    cardBg: "bg-[#ccf8ff]/50",
+    textColor: "text-dark-bg",
+  },
+  pore: {
+    label: "모공",
+    icon: Search,
+    color: "text-[#6fb896]",
+    bgColor: "bg-[#bfeedd]",
+    cardGradient: "from-[#bfeedd] to-[#dffaf0]",
+    cardBg: "bg-[#dffaf0]/50",
+    textColor: "text-dark-bg",
+  },
+  wrinkle: {
+    label: "주름",
+    icon: Minus,
+    color: "text-[#9b93d4]",
+    bgColor: "bg-[#e6e3fa]",
+    cardGradient: "from-[#e6e3fa] to-[#f2f0ff]",
+    cardBg: "bg-[#f2f0ff]/50",
+    textColor: "text-dark-bg",
+  },
+  pigmentation: {
+    label: "색소침착",
+    icon: Sun,
+    color: "text-primary-500",
+    bgColor: "bg-[#ccf8ff]",
+    cardGradient: "from-[#ccf8ff] to-[#beeffc]",
+    cardBg: "bg-[#beeffc]/50",
+    textColor: "text-dark-bg",
+  },
+  sagging: {
+    label: "탄력",
+    icon: Dumbbell,
+    color: "text-[#6fb896]",
+    bgColor: "bg-[#dffaf0]",
+    cardGradient: "from-[#dffaf0] to-[#bfeedd]",
+    cardBg: "bg-[#bfeedd]/50",
+    textColor: "text-dark-bg",
+  },
+};
+
 export function SkinAnalysis() {
   const [state, setState] = useState<AnalysisState>("upload");
   const [gender, setGender] = useState<string>("");
@@ -19,10 +81,26 @@ export function SkinAnalysis() {
   const [frontImage, setFrontImage] = useState<UploadedImage | null>(null);
   const [rightImage, setRightImage] = useState<UploadedImage | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [analysisResult, setAnalysisResult] = useState<SkinAnalysisResult | null>(null);
 
   const leftInputRef = useRef<HTMLInputElement>(null);
   const frontInputRef = useRef<HTMLInputElement>(null);
   const rightInputRef = useRef<HTMLInputElement>(null);
+
+  const getStatusTextClass = (status: string) => {
+    if (status === "우수") return "text-green-700";
+    if (status === "양호") return "text-primary-600";
+    if (status === "보통") return "text-orange-600";
+    if (status === "주의") return "text-red-600";
+    return "text-text-secondary";
+  };
+
+  const getStatusFromGrade = (grade: number) => {
+    if (grade >= 5) return "우수";
+    if (grade === 4) return "양호";
+    if (grade === 3) return "보통";
+    return "주의";
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, position: "left" | "front" | "right") => {
     const file = e.target.files?.[0];
@@ -95,6 +173,7 @@ export function SkinAnalysis() {
     // 로딩 상태로 변경
     setState("loading");
     setLoadingProgress(0);
+    setAnalysisResult(null);
 
     // 로딩 화면으로 전환 시 스크롤
     setTimeout(() => {
@@ -139,24 +218,20 @@ export function SkinAnalysis() {
       const r30_url = await uploadFile(rightImage.file);
 
       // 2. 피부 분석 API 호출 (TODO: 실제 피부 분석 API 구현)
-      await requestSkinAnalysis({
+      const analysisResponse = await requestSkinAnalysis({
         front_url,
         l30_url,
         r30_url,
         birth_date: birthDate,
         gender: gender as "male" | "female",
       });
-      // 시뮬레이션: 3초 후 결과 표시
-      await new Promise((resolve) => setTimeout(resolve, 3000));
 
       // 로딩 완료
       clearInterval(progressInterval);
       setLoadingProgress(100);
 
-      // 잠시 100% 표시 후 결과로 전환
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
       // 결과 상태로 변경
+      setAnalysisResult(analysisResponse);
       setState("result");
 
       // 결과 섹션으로 부드럽게 스크롤
@@ -173,8 +248,27 @@ export function SkinAnalysis() {
       alert(errorMessage);
       setState("upload");
       setLoadingProgress(0);
+      setAnalysisResult(null);
     }
   };
+
+  const totalScore = analysisResult?.total_score;
+  const totalGrade = analysisResult?.total_grade;
+  const totalStatus = totalGrade ? getStatusFromGrade(totalGrade) : "";
+  const skinType = analysisResult?.skin_type_summary ?? "";
+  const details = analysisResult?.details;
+  const metricOrder: Array<keyof typeof METRIC_STYLE_MAP> = ["moisture", "pore", "wrinkle", "pigmentation", "sagging"];
+  const orderedMetrics = metricOrder
+    .map((key) => {
+      const detail = details?.[key];
+      if (!detail) return null;
+      return { key, detail, style: METRIC_STYLE_MAP[key] };
+    })
+    .filter((item): item is { key: keyof typeof METRIC_STYLE_MAP; detail: SkinAnalysisDetail; style: (typeof METRIC_STYLE_MAP)[keyof typeof METRIC_STYLE_MAP] } => Boolean(item));
+  const summaryItems = orderedMetrics.slice(0, 2).map((item) => ({
+    label: item.style.label,
+    status: getStatusFromGrade(item.detail.grade),
+  }));
 
   return (
     <section id="skin-analysis" className="bg-background py-16 md:py-24">
@@ -399,7 +493,7 @@ export function SkinAnalysis() {
         )}
 
         {/* Result State */}
-        {state === "result" && (
+        {state === "result" && analysisResult && orderedMetrics.length > 0 && (
           <div className="mx-auto max-w-6xl">
             {/* Header */}
             <div className="mb-8 text-center">
@@ -413,33 +507,30 @@ export function SkinAnalysis() {
               <div className="rounded-3xl bg-gradient-to-br from-primary-400 to-primary-500 p-8 text-center shadow-xl">
                 <p className="mb-3 text-md font-medium text-white/90">피부 종합 점수</p>
                 <div className="mb-4 flex items-center justify-center gap-3">
-                  <p className="text-7xl font-bold text-white">87</p>
+                  <p className="text-7xl font-bold text-white">{totalScore ?? ""}</p>
                   <div className="flex flex-col items-start">
                     <p className="text-2xl font-semibold text-white">점</p>
                     <div className="flex gap-1">
-                      {[1, 2, 3, 4].map((star) => (
-                        <div key={star} className="h-4 w-4 rounded-full bg-white" />
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <div key={star} className={`h-4 w-4 rounded-full ${totalGrade && star <= totalGrade ? "bg-white" : "bg-white/40"}`} />
                       ))}
-                      <div className="h-4 w-4 rounded-full bg-white/40" />
                     </div>
                   </div>
                 </div>
-                <p className="text-md text-white/90">5단계 중 4단계 - 양호</p>
+                <p className="text-md text-white/90">{totalGrade && totalStatus ? `5단계 중 ${totalGrade}단계 - ${totalStatus}` : ""}</p>
               </div>
 
               {/* Skin Type Summary Card */}
               <div className="rounded-3xl border-2 border-primary-300 bg-gradient-to-br from-primary-50 to-white p-8 shadow-lg">
                 <p className="mb-3 text-md font-medium text-text-secondary">피부 타입</p>
-                <p className="mb-4 text-4xl font-bold text-primary-600">복합성 피부</p>
+                <p className="mb-4 text-4xl font-bold text-primary-600">{skinType ?? ""}</p>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
-                    <span className="text-md font-medium text-text-primary">수분</span>
-                    <span className="text-md font-semibold text-primary-600">양호</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
-                    <span className="text-md font-medium text-text-primary">민감도</span>
-                    <span className="text-md font-semibold text-orange-600">주의</span>
-                  </div>
+                  {summaryItems.map((item, idx) => (
+                    <div key={`${item.label}-${idx}`} className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+                      <span className="text-md font-medium text-text-primary">{item.label}</span>
+                      <span className={`text-md font-semibold ${getStatusTextClass(item.status)}`}>{item.status}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -467,17 +558,12 @@ export function SkinAnalysis() {
 
                     {/* Data polygon */}
                     <polygon
-                      points={[
-                        { angle: 0, value: 8 }, // 수분 (상단) - 낮을수록 좋음
-                        { angle: 72, value: 15 }, // 모공 (우상단)
-                        { angle: 144, value: 22 }, // 주름 (우하단)
-                        { angle: 216, value: 30 }, // 색소침착 (좌하단)
-                        { angle: 288, value: 11 }, // 탄력 (좌상단)
-                      ]
-                        .map(({ angle, value }) => {
+                      points={orderedMetrics
+                        .map(({ detail }, idx) => {
+                          const angle = [0, 72, 144, 216, 288][idx];
                           const radian = ((angle - 90) * Math.PI) / 180;
                           // 점수가 낮을수록 바깥쪽 (100 - value로 반전, 그리고 1.8배 스케일)
-                          const radius = (100 - value) * 1.8;
+                          const radius = (100 - detail.score) * 1.8;
                           const x = 250 + radius * Math.cos(radian);
                           const y = 250 + radius * Math.sin(radian);
                           return `${x},${y}`;
@@ -489,13 +575,8 @@ export function SkinAnalysis() {
                     />
 
                     {/* Data points - circles removed, icons will be overlaid */}
-                    {[
-                      { angle: 0, value: 8, label: "수분" },
-                      { angle: 72, value: 15, label: "모공" },
-                      { angle: 144, value: 22, label: "주름" },
-                      { angle: 216, value: 30, label: "색소침착" },
-                      { angle: 288, value: 11, label: "탄력" },
-                    ].map(({ angle, label }, idx) => {
+                    {orderedMetrics.map(({ style }, idx) => {
+                      const angle = [0, 72, 144, 216, 288][idx];
                       const radian = ((angle - 90) * Math.PI) / 180;
                       const labelX = 250 + 210 * Math.cos(radian);
                       const labelY = 250 + 210 * Math.sin(radian);
@@ -503,7 +584,7 @@ export function SkinAnalysis() {
                       return (
                         <g key={`point-${idx}`}>
                           <text x={labelX} y={labelY} textAnchor="middle" dominantBaseline="middle" className="text-xl font-bold" fill="#111827">
-                            {label}
+                            {style.label}
                           </text>
                         </g>
                       );
@@ -512,15 +593,10 @@ export function SkinAnalysis() {
 
                   {/* Data point icons overlay */}
                   <div className="absolute inset-0" style={{ pointerEvents: "none" }}>
-                    {[
-                      { angle: 0, value: 8, icon: Droplets, color: "text-primary-500", bgColor: "bg-[#beeffc]" },
-                      { angle: 72, value: 15, icon: Search, color: "text-[#6fb896]", bgColor: "bg-[#bfeedd]" },
-                      { angle: 144, value: 22, icon: Minus, color: "text-[#9b93d4]", bgColor: "bg-[#e6e3fa]" },
-                      { angle: 216, value: 30, icon: Sun, color: "text-primary-500", bgColor: "bg-[#ccf8ff]" },
-                      { angle: 288, value: 11, icon: Dumbbell, color: "text-[#6fb896]", bgColor: "bg-[#dffaf0]" },
-                    ].map(({ angle, value, icon: Icon, color, bgColor }, idx) => {
+                    {orderedMetrics.map(({ detail, style }, idx) => {
+                      const angle = [0, 72, 144, 216, 288][idx];
                       const radian = ((angle - 90) * Math.PI) / 180;
-                      const radius = (100 - value) * 1.8;
+                      const radius = (100 - detail.score) * 1.8;
                       // SVG viewBox는 500x500이고, 중심은 250,250
                       // 실제 위치 계산: 중심(250) + radius * cos/sin
                       const svgX = 250 + radius * Math.cos(radian);
@@ -532,14 +608,14 @@ export function SkinAnalysis() {
                       return (
                         <div
                           key={idx}
-                          className={`absolute flex h-7 w-7 items-center justify-center rounded-full ${bgColor} border-2 border-white shadow-md`}
+                          className={`absolute flex h-7 w-7 items-center justify-center rounded-full ${style.bgColor} border-2 border-white shadow-md`}
                           style={{
                             left: `${percentX}%`,
                             top: `${percentY}%`,
                             transform: `translate(-50%, -50%)`,
                           }}
                         >
-                          <Icon className={`h-4 w-4 ${color}`} />
+                          <style.icon className={`h-4 w-4 ${style.color}`} />
                         </div>
                       );
                     })}
@@ -548,38 +624,32 @@ export function SkinAnalysis() {
 
                 {/* Legend / Quick Stats */}
                 <div className="w-full space-y-3 lg:w-1/2">
-                  {[
-                    { label: "수분", value: 8, color: "bg-[#beeffc]", status: "우수", icon: Droplets, iconColor: "text-primary-500" },
-                    { label: "모공", value: 15, color: "bg-[#bfeedd]", status: "양호", icon: Search, iconColor: "text-[#6fb896]" },
-                    { label: "주름", value: 22, color: "bg-[#e6e3fa]", status: "보통", icon: Minus, iconColor: "text-[#9b93d4]" },
-                    { label: "색소침착", value: 30, color: "bg-[#ccf8ff]", status: "주의", icon: Sun, iconColor: "text-primary-500" },
-                    { label: "탄력", value: 11, color: "bg-[#dffaf0]", status: "양호", icon: Dumbbell, iconColor: "text-[#6fb896]" },
-                  ].map((item, idx) => {
-                    const Icon = item.icon;
+                  {orderedMetrics.map(({ detail, style }, idx) => {
+                    const status = getStatusFromGrade(detail.grade);
                     return (
                       <div key={idx} className="flex items-center justify-between rounded-xl border border-border bg-white p-4 shadow-sm transition-all hover:shadow-md">
                         <div className="flex items-center gap-3">
-                          <div className={`flex h-8 w-8 items-center justify-center rounded-full ${item.color}`}>
-                            <Icon className={`h-4 w-4 ${item.iconColor}`} />
+                          <div className={`flex h-8 w-8 items-center justify-center rounded-full ${style.bgColor}`}>
+                            <style.icon className={`h-4 w-4 ${style.color}`} />
                           </div>
-                          <span className="font-medium text-text-primary">{item.label}</span>
+                          <span className="font-medium text-text-primary">{style.label}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-md font-semibold text-text-secondary">{item.value}점</span>
+                          <span className="text-md font-semibold text-text-secondary">{detail.score}점</span>
                           <span
                             className={`rounded-full px-3 py-1 text-xs font-medium ${
-                              item.status === "우수"
+                              status === "우수"
                                 ? "bg-green-100 text-green-700 font-semibold"
-                                : item.status === "양호"
+                                : status === "양호"
                                 ? "bg-primary-100 text-primary-500 font-semibold"
-                                : item.status === "보통"
+                                : status === "보통"
                                 ? "bg-orange-100 text-orange-600 font-semibold"
-                                : item.status === "주의"
+                                : status === "주의"
                                 ? "bg-red-100 text-red-600 font-semibold"
                                 : "bg-muted text-text-secondary"
                             }`}
                           >
-                            {item.status}
+                            {status}
                           </span>
                         </div>
                       </div>
@@ -591,74 +661,17 @@ export function SkinAnalysis() {
 
             {/* Detail Cards Section */}
             <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {[
-                {
-                  category: "수분",
-                  score: 8,
-                  grade: 5,
-                  icon: Droplets,
-                  iconColor: "text-primary-500",
-                  description: "피부 수분도가 매우 우수합니다. 현재 수분 관리를 잘 유지하고 계십니다.",
-                  color: "from-[#beeffc] to-[#ccf8ff]",
-                  bgColor: "bg-[#ccf8ff]/50",
-                  textColor: "text-dark-bg",
-                },
-                {
-                  category: "모공",
-                  score: 15,
-                  grade: 4,
-                  icon: Search,
-                  iconColor: "text-[#6fb896]",
-                  description: "모공 상태가 양호합니다. 꾸준한 각질 제거로 더 개선할 수 있습니다.",
-                  color: "from-[#bfeedd] to-[#dffaf0]",
-                  bgColor: "bg-[#dffaf0]/50",
-                  textColor: "text-dark-bg",
-                },
-                {
-                  category: "주름",
-                  score: 22,
-                  grade: 3,
-                  icon: Minus,
-                  iconColor: "text-[#9b93d4]",
-                  description: "주름 관리가 필요합니다. 레티놀 성분의 제품 사용을 권장합니다.",
-                  color: "from-[#e6e3fa] to-[#f2f0ff]",
-                  bgColor: "bg-[#f2f0ff]/50",
-                  textColor: "text-dark-bg",
-                },
-                {
-                  category: "색소침착",
-                  score: 30,
-                  grade: 3,
-                  icon: Sun,
-                  iconColor: "text-primary-500",
-                  description: "색소침착 개선이 필요합니다. 자외선 차단제를 꼼꼼히 발라주세요.",
-                  color: "from-[#ccf8ff] to-[#beeffc]",
-                  bgColor: "bg-[#beeffc]/50",
-                  textColor: "text-dark-bg",
-                },
-                {
-                  category: "탄력",
-                  score: 11,
-                  grade: 4,
-                  icon: Dumbbell,
-                  iconColor: "text-[#6fb896]",
-                  description: "피부 탄력이 좋은 상태입니다. 콜라겐 관리를 지속하세요.",
-                  color: "from-[#dffaf0] to-[#bfeedd]",
-                  bgColor: "bg-[#bfeedd]/50",
-                  textColor: "text-dark-bg",
-                },
-              ].map((item, idx) => {
-                const Icon = item.icon;
+              {orderedMetrics.map(({ detail, style }, idx) => {
                 return (
-                  <div key={idx} className={`overflow-hidden rounded-2xl border border-border ${item.bgColor} shadow-md transition-all hover:shadow-lg`}>
-                    <div className={`bg-gradient-to-r ${item.color} px-6 py-4 ${item.textColor}`}>
+                  <div key={idx} className={`overflow-hidden rounded-2xl border border-border ${style.cardBg} shadow-md transition-all hover:shadow-lg`}>
+                    <div className={`bg-gradient-to-r ${style.cardGradient} px-6 py-4 ${style.textColor}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Icon className={`h-6 w-6 ${item.iconColor}`} />
-                          <h4 className="text-xl font-bold">{item.category}</h4>
+                          <style.icon className={`h-6 w-6 ${style.color}`} />
+                          <h4 className="text-xl font-bold">{style.label}</h4>
                         </div>
                         <div className="text-right">
-                          <p className="text-3xl font-bold">{item.score}</p>
+                          <p className="text-3xl font-bold">{detail.score}</p>
                           <p className="text-xs opacity-90">점</p>
                         </div>
                       </div>
@@ -666,11 +679,11 @@ export function SkinAnalysis() {
                     <div className="p-6">
                       <div className="mb-3 flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
-                          <div key={i} className={`h-2 w-2 rounded-full ${i < item.grade ? "bg-[#22c55e]" : "bg-gray-300"}`} />
+                          <div key={i} className={`h-2 w-2 rounded-full ${i < detail.grade ? "bg-[#22c55e]" : "bg-gray-300"}`} />
                         ))}
-                        <span className="ml-2 text-sm text-text-secondary">{item.grade}/5 단계</span>
+                        <span className="ml-2 text-sm text-text-secondary">{detail.grade}/5 단계</span>
                       </div>
-                      <p className="text-sm leading-relaxed text-text-secondary">{item.description}</p>
+                      <p className="text-sm leading-relaxed text-text-secondary">{detail.description}</p>
                     </div>
                   </div>
                 );
