@@ -43,7 +43,7 @@ pipeline {
                     sh "mkdir -p ${env.TARGET_CONF_DIR}"
 
                     // 또는 env 없이 따옴표 안에서 바로 쉘 변수로 사용하려면 큰따옴표 대신 작은따옴표를 씁니다.
-                    sh 'cp backend/my.conf ${TARGET_CONF_DIR}/my.conf'
+                    sh 'cp my.conf ${TARGET_CONF_DIR}/my.conf'
 
                     echo "Config file copied to ${env.TARGET_CONF_DIR}/my.conf"
                 }
