@@ -14,9 +14,12 @@ import com.mento.domain.skinanalysis.dto.request.SkinAnalysisClientReqDto;
 import com.mento.domain.skinanalysis.dto.response.SkinAnalysisDetailResDto;
 import com.mento.domain.skinanalysis.service.facade.SkinAnalysisFacadeService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Skin Analysis", description = "피부 분석 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/skin-analysis")
@@ -24,6 +27,7 @@ public class SkinAnalysisCommandController {
 
 	private final SkinAnalysisFacadeService skinAnalysisFacadeService;
 
+	@Operation(summary = "피부 분석 요청", description = "이미지 URL들과 기본 정보를 통해 피부 분석을 수행합니다.")
 	@PostMapping
 	public ResponseEntity<BaseResponse<SkinAnalysisDetailResDto>> analyze(
 		@RequestBody @Valid final SkinAnalysisClientReqDto dto,
