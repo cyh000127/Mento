@@ -67,7 +67,7 @@ services:
       - '--url_base_prefix=/cadvisor'
       - '--housekeeping_interval=30s'
       - '--docker_only=true'
-      # 필요 시 store_container_labels를 false로 하면 오버헤드가 줄어듭니다.
+      - '--proc_systems=/host/proc'
       - '--store_container_labels=false'
       - '--disable_metrics=disk,diskIO,tcp,udp,percpu,sched,memory_numa'
     volumes:
