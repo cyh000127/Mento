@@ -17,6 +17,7 @@ import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.entity.ItemHistory;
 import com.mento.domain.item.enums.ItemHistoryAction;
 import com.mento.domain.item.enums.ItemStatus;
+import com.mento.domain.item.enums.SortType;
 import com.mento.domain.item.factory.ItemFactory;
 import com.mento.domain.item.factory.ItemHistoryFactory;
 import com.mento.domain.item.service.command.ItemCommandService;
@@ -79,7 +80,8 @@ public class UserFacadeService {
 		Reservation reservation = reservationQueryService.findById(reqDto.reservationId());
 		itemValidator.validateMentorAccess(authUser, reservation, userId);
 
-		Pageable pageable = PageUtils.getPageableOrDefault(reqDto.page(), reqDto.size(), reqDto.sortType().getSort());
+		SortType sortType = reqDto.sortType() != null ? reqDto.sortType() : SortType.LATEST;
+		Pageable pageable = PageUtils.getPageableOrDefault(reqDto.page(), reqDto.size(), sortType.getSort());
 		Page<Item> items = itemQueryService.findAllByUserIdWithFilters(userId, reqDto.status(), reqDto.category(),
 			reqDto.isFavorite(), pageable);
 
