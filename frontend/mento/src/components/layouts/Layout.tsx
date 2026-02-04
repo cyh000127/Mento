@@ -7,11 +7,12 @@ import { authApi } from "@/api/authApi"
 import { userApi } from "@/api/userApi"
 
 export default function Layout() {
-  const { accessToken, user, setUser, logoutTriggered } = useAuthStore()
+  const { accessToken, setUser, logoutTriggered } = useAuthStore()
   const isFetchingRef = useRef(false)
   const reissueAttemptedRef = useRef(false)
-  const location = useLocation()
-  const isHome = location.pathname === "/"
+  const user = useAuthStore((state) => state.user)
+  const isLoggedIn = !!user
+
 
 
   useEffect(() => {
@@ -70,7 +71,7 @@ export default function Layout() {
       <main className="flex-1">
         <Outlet />
       </main>
-      {!isHome && <Footer />}
+      {isLoggedIn && <Footer />}
     </div>
   )
 }

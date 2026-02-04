@@ -2,6 +2,9 @@ import { Link } from "react-router-dom"
 import { ArrowRight, ChevronDown } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { LoadingIntro } from "./loading-intro"
+import { Button } from "@/components/ui/button"
+import { LoginModal } from "@/components/login-modal"
+import { useAuthStore } from "@/stores/useAuthStore"
 
 // Import grooming images
 import curology1 from "@/assets/images/curology-iKoH1gNON70-unsplash.jpg"
@@ -53,6 +56,8 @@ export function HeroSection() {
   const [currentScene, setCurrentScene] = useState(0)
   const [showIntro, setShowIntro] = useState(true)
   const [imagesLoaded, setImagesLoaded] = useState(false)
+  const [isLoginOpen, setIsLoginOpen] = useState(false)
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
 
   // Preload images
   useEffect(() => {
@@ -162,6 +167,11 @@ export function HeroSection() {
     sceneRefs.current[index] = element
   }
 
+  const handleLearnMore = () => {
+    const nextIndex = Math.min(currentScene + 1, sceneRefs.current.length - 1)
+    sceneRefs.current[nextIndex]?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+
   return (
     <>
       {/* Progress indicator */}
@@ -236,7 +246,29 @@ export function HeroSection() {
                   MENTO와 함께 새로운 루틴을 시작하세요
                 </p>
 
-                <div className="animate-fade-in-up" style={{ animationDelay: '0.6s', animationFillMode: 'backwards' }}>
+                <div
+                  className="animate-fade-in-up mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row"
+                  style={{ animationDelay: '0.8s', animationFillMode: 'backwards' }}
+                >
+                  {!isLoggedIn && (
+                    <Button size="lg" onClick={() => setIsLoginOpen(true)} className="w-full sm:w-auto">
+                      로그인
+                    </Button>
+                  )}
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={handleLearnMore}
+                    className="w-full sm:w-auto"
+                  >
+                    더 알아보기
+                  </Button>
+                </div>
+
+                <div
+                  className="animate-fade-in-up mt-4"
+                  style={{ animationDelay: '0.6s', animationFillMode: 'backwards' }}
+                >
                   <div className="animate-bounce">
                     <ChevronDown className="mx-auto h-8 w-8 text-primary-500" />
                   </div>
@@ -380,6 +412,8 @@ export function HeroSection() {
           </div>
         </div>
       </section>
+
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </>
   )
 }
