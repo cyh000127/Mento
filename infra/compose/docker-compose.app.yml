@@ -223,6 +223,8 @@ services:
       - discovery.type=single-node
       - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
     restart: unless-stopped
     command: >
       bash -c "bin/elasticsearch-plugin install --batch analysis-nori &&
@@ -251,6 +253,8 @@ volumes:
   mysql_data:
   redis_data:
   fe_dev_node_modules:
+  es_data:
+    driver: local
 
 networks:
   app-network:
