@@ -33,12 +33,19 @@ public class ConsultingCommandController {
 		return ResponseUtils.noContent();
 	}
 
-	@PostMapping("/session/{roomId}/end")
+	@PostMapping("/session/{reservationId}/end")
 	public ResponseEntity<BaseResponse<Void>> endConsultingSession(
-		@PathVariable final String roomId
+		@PathVariable final Long reservationId
 	) {
-		facadeService.endConsultingSession(roomId);
-		//TODO: LLM 호출을 통한 상담 요약본 생성
+		facadeService.endConsultingSession(reservationId);
+		return ResponseUtils.noContent();
+	}
+
+	@PostMapping("/reports/{reservationId}")
+	public ResponseEntity<BaseResponse<Void>> generateConsultingReport(
+		@PathVariable final Long reservationId
+	) {
+		facadeService.generateConsultingReport(reservationId);
 		return ResponseUtils.noContent();
 	}
 }
