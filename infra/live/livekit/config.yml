@@ -16,6 +16,7 @@ prometheus:
   port: 8003
 
 webhook:
+  api_key: CRRsJdJGKI
   urls:
     - http://backend:8080/api/v1/recordings/webhook
 
