@@ -1,4 +1,5 @@
 import { Package, Brain, MessageCircle, BarChart3 } from "lucide-react"
+import dryingHairVideo from "@/assets/videos/drying_hair.mp4"
 
 const features = [
   {
@@ -37,11 +38,21 @@ const features = [
 
 export function FeaturesSection() {
   return (
-    <section className="relative bg-background py-24 md:py-32">
+    <section className="relative h-screen snap-start bg-background overflow-hidden">
+      {/* Background video */}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        src={dryingHairVideo}
+        className="absolute inset-0 h-full w-full object-cover opacity-30 pointer-events-none"
+      />
+      <div className="absolute inset-0 bg-background/60 pointer-events-none" />
       {/* Subtle background pattern */}
       <div className="absolute inset-0 bg-gradient-to-b from-muted/20 via-background to-muted/20" />
       
-      <div className="relative mx-auto max-w-[1200px] px-6">
+      <div className="relative z-10 mx-auto flex h-full max-w-[1200px] flex-col justify-center px-6 py-20">
         {/* Section Header */}
         <div className="mb-20 text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary-500/20 bg-primary-100/50 px-4 py-2">

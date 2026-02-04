@@ -6,17 +6,18 @@ import { CtaSection } from "@/components/home/cta-section"
 
 export default function HomePage() {
   return (
-    <div className="scroll-smooth">
+    <div
+      className="h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth"
+      data-home-scroll
+    >
       {/* Hero with 3 scenes */}
       <HeroSection />
-      
+
       {/* Additional sections */}
-      <div className="relative z-10 bg-background">
-        <FeaturesSection />
-        <ServicesSection />
-        <HowItWorksSection />
-        <CtaSection />
-      </div>
+      <FeaturesSection />
+      <ServicesSection />
+      <HowItWorksSection />
+      <CtaSection />
     </div>
   )
 }
