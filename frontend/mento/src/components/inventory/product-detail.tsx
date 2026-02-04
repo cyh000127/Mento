@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import type { Product, ProductStatus } from "@/types/inventory"
 import type { ItemStatus } from "@/types/inventory"
 import { STATUS_LABELS, getAllowedStatusTransitions, mapUiStatusToApiStatus } from "@/api/inventoryApi"
+import NoInventory from "@/assets/images/No_inventory.png"
 
 interface ProductDetailProps {
   product: Product
@@ -46,21 +47,21 @@ export function ProductDetail({
 }: ProductDetailProps) {
   const canInteract = !isEmpty && Boolean(product.id)
   const isPlaceholder = !product.id && !isEmpty
-  const displayBrand = isEmpty ? "N/A" : product.brand
-  const displayName = isEmpty ? "N/A" : product.name
-  const displayCategory = isEmpty ? "N/A" : isPlaceholder ? "-" : categoryLabels[product.category]
-  const displayPurchaseDate = isEmpty ? "N/A" : formatDate(product.purchaseDate)
-  const displayExpirationDate = isEmpty ? "N/A" : formatDate(product.expirationDate)
+  const displayBrand = isEmpty ? "제품을 등록해 주세요" : product.brand
+  const displayName = isEmpty ? "제품을 등록해 주세요" : product.name
+  const displayCategory = isEmpty ? "제품을 등록해 주세요" : isPlaceholder ? "-" : categoryLabels[product.category]
+  const displayPurchaseDate = isEmpty ? "제품을 등록해 주세요" : formatDate(product.purchaseDate)
+  const displayExpirationDate = isEmpty ? "제품을 등록해 주세요" : formatDate(product.expirationDate)
   const displayDaysUntilExpiry = isEmpty
-    ? "N/A"
+    ? "제품을 등록해 주세요"
     : product.daysUntilExpiry !== undefined
       ? formatDaysUntilExpiry(product.daysUntilExpiry)
       : ""
-  const displayRepurchaseCount = isEmpty ? "N/A" : `${product.repurchaseCount}회`
-  const displayStatusLabel = isEmpty ? "N/A" : isPlaceholder ? "-" : statusLabels[product.status]
+  const displayRepurchaseCount = isEmpty ? "제품을 등록해 주세요" : `${product.repurchaseCount}회`
+  const displayStatusLabel = isEmpty ? "제품을 등록해 주세요" : isPlaceholder ? "-" : statusLabels[product.status]
   const imageSrc =
-    isEmpty || !product.image ? "https://via.placeholder.com/150" : product.image
-  const imageAlt = isEmpty ? "N/A" : product.name
+    isEmpty || !product.image ? NoInventory : product.image
+  const imageAlt = isEmpty ? "제품을 등록해 주세요" : product.name
 
   // 현재 상태를 API 상태로 변환
   const currentApiStatus = mapUiStatusToApiStatus(product.status)
