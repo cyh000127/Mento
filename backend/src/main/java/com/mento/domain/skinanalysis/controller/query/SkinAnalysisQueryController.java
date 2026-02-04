@@ -1,5 +1,6 @@
 package com.mento.domain.skinanalysis.controller.query;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -30,10 +31,15 @@ public class SkinAnalysisQueryController {
 
 	@GetMapping
 	public ResponseEntity<PageResponse<SkinAnalysisSummaryResDto>> getList(
-		@AuthenticationPrincipal Long userId,
-		@PageableDefault(page = 0, size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+		@AuthenticationPrincipal
+		AuthenticatedUser authUser,
+
+		@ParameterObject
+		@PageableDefault(page = 0, size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
+		Pageable pageable
 	) {
-		Page<SkinAnalysisSummaryResDto> resultPage = skinAnalysisFacadeService.getMySummaries(userId, pageable);
+		Page<SkinAnalysisSummaryResDto> resultPage =
+			skinAnalysisFacadeService.getMySummaries(authUser.getId(), pageable);
 		return ResponseUtils.page(resultPage);
 	}
 
