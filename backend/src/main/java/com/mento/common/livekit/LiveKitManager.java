@@ -23,20 +23,11 @@ import lombok.extern.slf4j.Slf4j;
 public class LiveKitManager {
 
 	private final LiveKitProperties liveKitProperties;
-
-	private RoomServiceClient getRoomServiceClient() {
-		return RoomServiceClient.create(
-			liveKitProperties.getUrl(),
-			liveKitProperties.getApiKey(),
-			liveKitProperties.getSecret()
-		);
-	}
+	private final RoomServiceClient roomServiceClient;
 
 	public boolean isRoomFull(String roomName, int limit) {
 		try {
-			RoomServiceClient client = getRoomServiceClient();
-
-			var response = client.listRooms(List.of(roomName)).execute();
+			var response = roomServiceClient.listRooms(List.of(roomName)).execute();
 
 			if (response.isSuccessful() && response.body() != null) {
 				var rooms = response.body();
