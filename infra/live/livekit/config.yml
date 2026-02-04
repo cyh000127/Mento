@@ -16,7 +16,7 @@ prometheus:
   port: 8003
 
 webhook:
-  receiver_urls:
+  urls:
     - http://backend:8080/api/v1/recordings/webhook
 
 turn:
