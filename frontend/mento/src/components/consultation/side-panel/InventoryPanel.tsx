@@ -227,7 +227,7 @@ export function InventoryPanel() {
             <p className="text-xs text-gray-400">상담 중 보유 제품 목록</p>
           )}
         </div>
-      {isConsultant && (
+      
           <button
             type="button"
             onClick={handleAddProduct}
@@ -235,7 +235,7 @@ export function InventoryPanel() {
           >
             제품 등록
           </button>
-        )}
+        
       </div>
 
       {loading && (
@@ -301,13 +301,13 @@ export function InventoryPanel() {
         </div>
       )}
 
-      {isConsultant && (
+      
         <InventoryRegisterModal
           open={registerModalOpen}
           onOpenChange={setRegisterModalOpen}
           onConfirm={handleProductsAdded}
         />
-      )}
+      
     </div>
   )
 }
