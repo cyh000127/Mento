@@ -35,6 +35,23 @@ pipeline {
             }
         }
 
+        stage('Copy Config to EC2') {
+            steps {
+                script {
+                    echo "===== COPYING CONFIG TO HOST ====="
+                    // 1. 목적지 디렉토리가 없으면 생성
+                    sh "mkdir -p ${TARGET_CONF_DIR}"
+
+                    // 2. backend 폴더 내의 my.conf를 EC2 호스트 경로로 복사
+                    // checkout 받은 워크스페이스 내의 파일 위치를 지정합니다.
+                    sh "cp backend/my.conf ${TARGET_CONF_DIR}/my.conf"
+
+                    echo "Config file copied to ${TARGET_CONF_DIR}/my.conf"
+                }
+            }
+        }
+
+
         stage('Docker Build & Push') {
             steps {
                 echo "===== DOCKERIZING ====="
