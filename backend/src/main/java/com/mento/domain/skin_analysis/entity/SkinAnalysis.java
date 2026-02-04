@@ -4,7 +4,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import com.mento.common.entity.BaseEntity;
-import com.mento.domain.skin_analysis.dto.response.SkinAnalysisResDto;
+import com.mento.domain.skin_analysis.dto.response.SkinAnalysisDetailResDto.SkinDetails;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,17 +23,27 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Table(name = "skin_anlysis")
+@Table(name = "skin_anlyses")
 public class SkinAnalysis extends BaseEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "skin_analysis_id")
 	private Long id;
 
 	@Column(name = "user_id")
 	private Long userId;
 
+	@Column(name = "total_score")
+	private Integer totalScore;
+
+	@Column(name = "total_grade")
+	private Integer totalGrade;
+
+	@Column(name = "skin_type_summary")
+	private String skinTypeSummary;
+
 	@JdbcTypeCode(SqlTypes.JSON)
-	@Column(name = "analysis_result", columnDefinition = "json")
-	private SkinAnalysisResDto analysisResult;
+	@Column(name = "analysis_details", columnDefinition = "json")
+	private SkinDetails analysisDetails;
 
 }

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 
 @Builder
-public record SkinAnalysisResDto(
+public record SkinAnalysisDetailResDto(
 	@JsonProperty("total_score")
 	Integer totalScore,
 
