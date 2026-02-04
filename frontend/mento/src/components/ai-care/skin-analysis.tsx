@@ -270,6 +270,10 @@ export function SkinAnalysis() {
     status: getStatusFromGrade(item.detail.grade),
   }));
 
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const maxDate = yesterday.toLocaleDateString("sv-SE"); // YYYY-MM-DD
+
   return (
     <section id="skin-analysis" className="bg-background py-16 md:py-24">
       <div className="mx-auto max-w-[1200px] px-6">
@@ -323,7 +327,7 @@ export function SkinAnalysis() {
                   id="birth-date"
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
-                  max={new Date().toISOString().split("T")[0]}
+                  max={maxDate}
                   className="w-full rounded-lg border border-border bg-background px-4 py-3 text-text-primary focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                   placeholder="YYYY-MM-DD"
                 />
