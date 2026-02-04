@@ -50,8 +50,7 @@ public class ConsultingFacadeService {
 	}
 
 	@Transactional
-	public void endConsultingSession(final Long reservationId) {
-		String roomId = LiveKitConstants.ROOM_NAME_PREFIX + reservationId;
+	public void endConsultingSession(final String roomId) {
 		List<ChatLogEntryVo> chatLogs = fetchAndConvertChatLogsFromRedis(roomId);
 		if (CollectionUtils.isEmpty(chatLogs)) {
 			throw new ConsultingException(ErrorCode.CHATLOG_EMPTY);

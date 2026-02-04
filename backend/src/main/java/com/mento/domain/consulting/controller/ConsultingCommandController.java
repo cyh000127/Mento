@@ -33,11 +33,11 @@ public class ConsultingCommandController {
 		return ResponseUtils.noContent();
 	}
 
-	@PostMapping("/session/{reservationId}/end")
+	@PostMapping("/session/{roomId}/end")
 	public ResponseEntity<BaseResponse<Void>> endConsultingSession(
-		@PathVariable final Long reservationId
+		@PathVariable final String roomId
 	) {
-		facadeService.endConsultingSession(reservationId);
+		facadeService.endConsultingSession(roomId);
 		return ResponseUtils.noContent();
 	}
 
