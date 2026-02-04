@@ -1,4 +1,4 @@
-package com.mento.domain.skin_analysis.controller.command;
+package com.mento.domain.skinanalysis.controller.command;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mento.common.auth.principal.AuthenticatedUser;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.util.ResponseUtils;
-import com.mento.domain.skin_analysis.dto.request.SkinAnalysisReqDto;
-import com.mento.domain.skin_analysis.dto.response.SkinAnalysisDetailResDto;
-import com.mento.domain.skin_analysis.service.facade.SkinAnalysisFacadeService;
+import com.mento.domain.skinanalysis.dto.request.SkinAnalysisReqDto;
+import com.mento.domain.skinanalysis.dto.response.SkinAnalysisDetailResDto;
+import com.mento.domain.skinanalysis.service.facade.SkinAnalysisFacadeService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ public class SkinAnalysisCommandController {
 	private final SkinAnalysisFacadeService skinAnalysisFacadeService;
 
 	@PostMapping
-	public ResponseEntity<BaseResponse<SkinAnalysisDetailResDto>> analyzeSkin(
+	public ResponseEntity<BaseResponse<SkinAnalysisDetailResDto>> analyze(
 		@RequestBody @Valid final SkinAnalysisReqDto dto,
 		@AuthenticationPrincipal final AuthenticatedUser authUser
 	) {

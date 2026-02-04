@@ -1,4 +1,4 @@
-package com.mento.domain.skin_analysis.dto.request;
+package com.mento.domain.skinanalysis.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

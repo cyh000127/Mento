@@ -1,14 +1,14 @@
-package com.mento.domain.skin_analysis.service.facade;
+package com.mento.domain.skinanalysis.service.facade;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.mento.domain.skin_analysis.dto.request.SkinAnalysisReqDto;
-import com.mento.domain.skin_analysis.dto.response.SkinAnalysisDetailResDto;
-import com.mento.domain.skin_analysis.dto.response.SkinAnalysisSummaryResDto;
-import com.mento.domain.skin_analysis.service.command.SkinAnalysisCommandService;
-import com.mento.domain.skin_analysis.service.query.SkinAnalysisQueryService;
+import com.mento.domain.skinanalysis.dto.request.SkinAnalysisReqDto;
+import com.mento.domain.skinanalysis.dto.response.SkinAnalysisDetailResDto;
+import com.mento.domain.skinanalysis.dto.response.SkinAnalysisSummaryResDto;
+import com.mento.domain.skinanalysis.service.command.SkinAnalysisCommandService;
+import com.mento.domain.skinanalysis.service.query.SkinAnalysisQueryService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,7 +20,7 @@ public class SkinAnalysisFacadeService {
 	private final SkinAnalysisCommandService skinAnalysisCommandService;
 
 	public SkinAnalysisDetailResDto analyzeSkin(Long userId, SkinAnalysisReqDto dto) {
-		return skinAnalysisCommandService.analyzeSkin(userId, dto);
+		return skinAnalysisCommandService.analyze(userId, dto);
 	}
 
 	public SkinAnalysisDetailResDto getById(Long id) {

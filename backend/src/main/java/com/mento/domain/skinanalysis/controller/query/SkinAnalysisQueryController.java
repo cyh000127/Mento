@@ -1,4 +1,4 @@
-package com.mento.domain.skin_analysis.controller.query;
+package com.mento.domain.skinanalysis.controller.query;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,9 +15,9 @@ import com.mento.common.auth.principal.AuthenticatedUser;
 import com.mento.common.response.BaseResponse;
 import com.mento.common.response.PageResponse;
 import com.mento.common.util.ResponseUtils;
-import com.mento.domain.skin_analysis.dto.response.SkinAnalysisDetailResDto;
-import com.mento.domain.skin_analysis.dto.response.SkinAnalysisSummaryResDto;
-import com.mento.domain.skin_analysis.service.facade.SkinAnalysisFacadeService;
+import com.mento.domain.skinanalysis.dto.response.SkinAnalysisDetailResDto;
+import com.mento.domain.skinanalysis.dto.response.SkinAnalysisSummaryResDto;
+import com.mento.domain.skinanalysis.service.facade.SkinAnalysisFacadeService;
 
 import lombok.RequiredArgsConstructor;
 

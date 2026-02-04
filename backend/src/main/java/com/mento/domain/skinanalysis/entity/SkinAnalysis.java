@@ -1,10 +1,10 @@
-package com.mento.domain.skin_analysis.entity;
+package com.mento.domain.skinanalysis.entity;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import com.mento.common.entity.BaseEntity;
-import com.mento.domain.skin_analysis.dto.response.SkinAnalysisDetailResDto.SkinDetails;
+import com.mento.domain.skinanalysis.dto.response.SkinAnalysisDetailResDto.SkinDetails;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

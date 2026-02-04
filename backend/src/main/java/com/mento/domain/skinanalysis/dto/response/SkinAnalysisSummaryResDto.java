@@ -1,4 +1,4 @@
-package com.mento.domain.skin_analysis.dto.response;
+package com.mento.domain.skinanalysis.dto.response;
 
 import java.time.LocalDateTime;
 
