@@ -79,7 +79,7 @@ public class UserFacadeService {
 		Reservation reservation = reservationQueryService.findById(reqDto.reservationId());
 		itemValidator.validateMentorAccess(authUser, reservation, userId);
 
-		Pageable pageable = PageUtils.getPageable(reqDto.page(), reqDto.size(), reqDto.sortType().getSort());
+		Pageable pageable = PageUtils.getPageableOrDefault(reqDto.page(), reqDto.size(), reqDto.sortType().getSort());
 		Page<Item> items = itemQueryService.findAllByUserIdWithFilters(userId, reqDto.status(), reqDto.category(),
 			reqDto.isFavorite(), pageable);
 

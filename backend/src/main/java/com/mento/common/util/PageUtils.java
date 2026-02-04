@@ -15,17 +15,21 @@ public class PageUtils {
 
 	private static final int DEFAULT_PAGE = 0;
 	private static final int DEFAULT_SIZE = 10;
+	private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.DESC, "createdAt", "id"));
 
-	public Pageable getPageable(final int page, final int size) {
+	public Pageable getPageableOrDefault(final int page, final int size) {
 		return PageRequest.of(page, size);
 	}
 
-	public Pageable getPageable(
+	public Pageable getPageableOrDefault(
 		final Integer page,
 		final Integer size,
 		final Sort sort
 	) {
-		return PageRequest.of(page, size, sort);
+		int actualPage = page != null ? page : DEFAULT_PAGE;
+		int actualSize = size != null ? size : DEFAULT_SIZE;
+		Sort actualSort = sort != null ? sort : DEFAULT_SORT;
+		return PageRequest.of(actualPage, actualSize, actualSort);
 	}
 
 	public Pageable getPageableOrDefault(final Integer page, final Integer size) {
