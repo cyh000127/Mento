@@ -43,6 +43,14 @@ public class ItemQueryServiceImpl implements ItemQueryService {
 	}
 
 	@Override
+	public Page<Item> findAllByUserId(final Long userId, final Pageable pageable) {
+		Page<Item> items = itemRepository.findAllByUserId(userId, pageable);
+		log.info("[Item] 사용자 아이템 목록 조회 - userId: {}, 조회된 아이템 수: {}, 전체 페이지: {}", userId, items.getContent().size(),
+			items.getTotalPages());
+		return items;
+	}
+
+	@Override
 	public Page<Item> findAllByUserIdWithFilters(
 		final Long userId,
 		final ItemStatus status,
@@ -66,7 +74,7 @@ public class ItemQueryServiceImpl implements ItemQueryService {
 	@Override
 	public List<Item> findItemsExpiringBetween(final LocalDate startDate, final LocalDate endDate) {
 		List<Item> items = itemRepository.findItemsExpiringBetween(startDate, endDate);
-		log.info("[Item] 만료 예정 아이템 조회 완료 {startDate: {}, endDate: {}, count: {}}", 
+		log.info("[Item] 만료 예정 아이템 조회 완료 {startDate: {}, endDate: {}, count: {}}",
 			startDate, endDate, items.size());
 		return items;
 	}

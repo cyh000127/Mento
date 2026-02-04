@@ -18,7 +18,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
 import com.mento.common.auth.principal.AuthenticatedUser;
 import com.mento.common.error.ErrorCode;
@@ -28,7 +27,6 @@ import com.mento.domain.item.dto.common.ItemInfoResDto;
 import com.mento.domain.item.dto.response.ItemPageResDto;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.enums.ItemStatus;
-import com.mento.domain.item.enums.SortType;
 import com.mento.domain.item.factory.ItemFactory;
 import com.mento.domain.item.factory.ItemHistoryFactory;
 import com.mento.domain.item.service.command.ItemCommandService;
@@ -286,10 +284,6 @@ class UserFacadeServiceTest {
 			Long userId = testUser.getId();
 			UserItemsReqDto reqDto = UserItemsReqDto.builder()
 				.reservationId(1L)
-				.status(null)
-				.category(null)
-				.isFavorite(null)
-				.sortType(SortType.LATEST)
 				.page(0)
 				.size(10)
 				.build();
@@ -298,13 +292,11 @@ class UserFacadeServiceTest {
 			Item item2 = createItem(2L, testUser, testProduct, ItemStatus.OWNED, true, 2);
 			List<Item> items = List.of(item1, item2);
 
-			Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt", "id"));
+			Pageable pageable = PageRequest.of(0, 10);
 			Page<Item> itemPage = new PageImpl<>(items, pageable, 2);
 
-			given(reservationQueryService.findById(1L)).willReturn(testReservation);
-			given(itemQueryService.findAllByUserIdWithFilters(
-				eq(userId), isNull(), isNull(), isNull(), any(Pageable.class)
-			)).willReturn(itemPage);
+			given(reservationQueryService.findWithDetailsById(1L)).willReturn(testReservation);
+			given(itemQueryService.findAllByUserId(eq(userId), any(Pageable.class))).willReturn(itemPage);
 
 			// when
 			Page<ItemPageResDto> result = userFacadeService.getAllItemsByUserId(mentorAuthUser, userId, reqDto);
@@ -314,87 +306,11 @@ class UserFacadeServiceTest {
 			assertThat(result.getContent()).hasSize(2);
 			assertThat(result.getTotalElements()).isEqualTo(2);
 
-			then(reservationQueryService).should(times(1)).findById(1L);
+			then(reservationQueryService).should(times(1)).findWithDetailsById(1L);
 			then(itemValidator).should(times(1))
 				.validateMentorAccess(mentorAuthUser, testReservation, userId);
 			then(itemQueryService).should(times(1))
-				.findAllByUserIdWithFilters(eq(userId), isNull(), isNull(), isNull(), any(Pageable.class));
-		}
-
-		@Test
-		@DisplayName("상태 필터링으로 아이템 조회 성공")
-		void 상태_필터링으로_아이템_조회_성공() {
-			// given
-			Long userId = testUser.getId();
-			UserItemsReqDto reqDto = UserItemsReqDto.builder()
-				.reservationId(1L)
-				.status(ItemStatus.OWNED)
-				.category(null)
-				.isFavorite(null)
-				.sortType(SortType.LATEST)
-				.page(0)
-				.size(10)
-				.build();
-
-			Item item1 = createItem(1L, testUser, testProduct, ItemStatus.OWNED, false, 1);
-			List<Item> items = List.of(item1);
-
-			Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt", "id"));
-			Page<Item> itemPage = new PageImpl<>(items, pageable, 1);
-
-			given(reservationQueryService.findById(1L)).willReturn(testReservation);
-			given(itemQueryService.findAllByUserIdWithFilters(
-				eq(userId), eq(ItemStatus.OWNED), isNull(), isNull(), any(Pageable.class)
-			)).willReturn(itemPage);
-
-			// when
-			Page<ItemPageResDto> result = userFacadeService.getAllItemsByUserId(mentorAuthUser, userId, reqDto);
-
-			// then
-			assertThat(result.getContent()).hasSize(1);
-			assertThat(result.getContent()).allMatch(item -> item.status() == ItemStatus.OWNED);
-
-			then(itemQueryService).should(times(1))
-				.findAllByUserIdWithFilters(eq(userId), eq(ItemStatus.OWNED), isNull(), isNull(),
-					any(Pageable.class));
-		}
-
-		@Test
-		@DisplayName("즐겨찾기 필터링으로 아이템 조회 성공")
-		void 즐겨찾기_필터링으로_아이템_조회_성공() {
-			// given
-			Long userId = testUser.getId();
-			UserItemsReqDto reqDto = UserItemsReqDto.builder()
-				.reservationId(1L)
-				.status(null)
-				.category(null)
-				.isFavorite(true)
-				.sortType(SortType.LATEST)
-				.page(0)
-				.size(10)
-				.build();
-
-			Item item1 = createItem(1L, testUser, testProduct, ItemStatus.OWNED, true, 1);
-			Item item2 = createItem(2L, testUser, testProduct, ItemStatus.OWNED, true, 2);
-			List<Item> items = List.of(item1, item2);
-
-			Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt", "id"));
-			Page<Item> itemPage = new PageImpl<>(items, pageable, 2);
-
-			given(reservationQueryService.findById(1L)).willReturn(testReservation);
-			given(itemQueryService.findAllByUserIdWithFilters(
-				eq(userId), isNull(), isNull(), eq(true), any(Pageable.class)
-			)).willReturn(itemPage);
-
-			// when
-			Page<ItemPageResDto> result = userFacadeService.getAllItemsByUserId(mentorAuthUser, userId, reqDto);
-
-			// then
-			assertThat(result.getContent()).hasSize(2);
-			assertThat(result.getContent()).allMatch(ItemPageResDto::isFavorite);
-
-			then(itemQueryService).should(times(1))
-				.findAllByUserIdWithFilters(eq(userId), isNull(), isNull(), eq(true), any(Pageable.class));
+				.findAllByUserId(eq(userId), any(Pageable.class));
 		}
 
 		@Test
@@ -404,15 +320,11 @@ class UserFacadeServiceTest {
 			Long userId = testUser.getId();
 			UserItemsReqDto reqDto = UserItemsReqDto.builder()
 				.reservationId(1L)
-				.status(null)
-				.category(null)
-				.isFavorite(null)
-				.sortType(SortType.LATEST)
 				.page(0)
 				.size(10)
 				.build();
 
-			given(reservationQueryService.findById(1L)).willReturn(testReservation);
+			given(reservationQueryService.findWithDetailsById(1L)).willReturn(testReservation);
 			willThrow(new BusinessException(ErrorCode.ACCESS_DENIED))
 				.given(itemValidator).validateMentorAccess(mentorAuthUser, testReservation, userId);
 
@@ -422,11 +334,11 @@ class UserFacadeServiceTest {
 				.isInstanceOf(BusinessException.class)
 				.hasMessageContaining(ErrorCode.ACCESS_DENIED.getMessage());
 
-			then(reservationQueryService).should(times(1)).findById(1L);
+			then(reservationQueryService).should(times(1)).findWithDetailsById(1L);
 			then(itemValidator).should(times(1))
 				.validateMentorAccess(mentorAuthUser, testReservation, userId);
 			then(itemQueryService).should(never())
-				.findAllByUserIdWithFilters(anyLong(), any(), any(), any(), any(Pageable.class));
+				.findAllByUserId(anyLong(), any(Pageable.class));
 		}
 	}
 

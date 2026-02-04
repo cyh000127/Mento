@@ -14,6 +14,8 @@ public interface ItemQueryService {
 
 	Item findById(Long itemId);
 
+	Page<Item> findAllByUserId(Long userId, Pageable pageable);
+
 	Page<Item> findAllByUserIdWithFilters(
 		Long userId,
 		ItemStatus status,

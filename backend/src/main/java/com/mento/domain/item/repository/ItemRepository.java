@@ -36,6 +36,18 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 
 	@Query("""
 		SELECT i FROM Item i
+		JOIN FETCH i.product p
+		JOIN FETCH p.brand b
+		WHERE i.user.id = :userId
+		AND i.deletedAt IS NULL
+		""")
+	Page<Item> findAllByUserId(
+		@Param("userId") Long userId,
+		Pageable pageable
+	);
+
+	@Query("""
+		SELECT i FROM Item i
 		WHERE i.status != 'OVER_DATED'
 		AND i.expectedExpiryDate < :today
 		AND i.deletedAt IS NULL
