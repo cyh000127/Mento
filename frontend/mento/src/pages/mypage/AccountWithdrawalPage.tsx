@@ -1,41 +1,42 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { MyPageSidebar } from "@/components/mypage/mypage-sidebar"
-import { userApi } from "@/api/userApi"
-import { useAuthStore } from "@/stores/useAuthStore"
-import { AlertTriangle, X } from "lucide-react"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { MyPageSidebar } from "@/components/mypage/mypage-sidebar";
+import { userApi } from "@/api/userApi";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { AlertTriangle } from "lucide-react";
+import { ConfirmModal } from "@/components/common/confirm-modal";
 
 export default function AccountWithdrawalPage() {
-  const navigate = useNavigate()
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
+  const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleWithdrawClick = () => {
-    setIsModalOpen(true)
-  }
+    setIsModalOpen(true);
+  };
 
   const handleCancel = () => {
-    setIsModalOpen(false)
-  }
+    setIsModalOpen(false);
+  };
 
   const handleConfirmWithdraw = async () => {
-    if (isProcessing) return
+    if (isProcessing) return;
 
-    setIsProcessing(true)
+    setIsProcessing(true);
 
     try {
       // 회원 탈퇴 API 호출
-      await userApi.withdrawAccount()
+      await userApi.withdrawAccount();
     } catch (error) {
-      console.error("회원 탈퇴 처리 중 오류:", error)
+      console.error("회원 탈퇴 처리 중 오류:", error);
     } finally {
       // 회원 탈퇴 후 프론트엔드에서만 로그아웃 처리
       // (백엔드에서 이미 토큰이 무효화되어 로그아웃 API 호출 시 401 에러 발생)
-      localStorage.removeItem("hasRefreshToken")
-      useAuthStore.getState().logout()
-      navigate("/")
+      localStorage.removeItem("hasRefreshToken");
+      useAuthStore.getState().logout();
+      navigate("/");
     }
-  }
+  };
 
   return (
     <div className="flex min-h-screen bg-background justify-center">
@@ -45,9 +46,7 @@ export default function AccountWithdrawalPage() {
           <div className="mx-auto max-w-7xl px-6 py-8">
             {/* Page Header */}
             <div className="pl-1">
-              <h1 className="text-2xl font-bold text-foreground pb-3">
-                회원 탈퇴
-              </h1>
+              <h1 className="text-2xl font-bold text-foreground pb-3">회원 탈퇴</h1>
             </div>
 
             {/* Warning Card */}
@@ -55,9 +54,7 @@ export default function AccountWithdrawalPage() {
               <div className="flex items-start gap-3 mb-4">
                 <AlertTriangle className="h-6 w-6 text-red-500 flex-shrink-0 mt-1" />
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground mb-2">
-                    회원 탈퇴 안내
-                  </h2>
+                  <h2 className="text-lg font-semibold text-foreground mb-2">회원 탈퇴 안내</h2>
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <p>회원 탈퇴를 진행하시기 전에 아래 내용을 반드시 확인해 주세요.</p>
                   </div>
@@ -99,13 +96,8 @@ export default function AccountWithdrawalPage() {
             {/* Withdraw Button */}
             <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
               <div className="flex flex-col items-center justify-center py-8">
-                <p className="text-center text-muted-foreground mb-6">
-                  정말로 회원 탈퇴를 진행하시겠습니까?
-                </p>
-                <button
-                  onClick={handleWithdrawClick}
-                  className="px-8 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors"
-                >
+                <p className="text-center text-muted-foreground mb-6">정말로 회원 탈퇴를 진행하시겠습니까?</p>
+                <button onClick={handleWithdrawClick} className="px-8 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors">
                   회원 탈퇴하기
                 </button>
               </div>
@@ -114,60 +106,23 @@ export default function AccountWithdrawalPage() {
         </div>
       </div>
 
-      {/* Confirmation Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-xl shadow-xl max-w-md w-full">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <h3 className="text-lg font-semibold text-foreground">
-                회원 탈퇴 확인
-              </h3>
-              <button
-                onClick={handleCancel}
-                disabled={isProcessing}
-                className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-6">
-              <div className="flex items-start gap-3 mb-4">
-                <AlertTriangle className="h-6 w-6 text-red-500 flex-shrink-0 mt-1" />
-                <div className="text-sm text-muted-foreground">
-                  <p className="font-medium text-foreground mb-2">
-                    이 작업은 되돌릴 수 없습니다.
-                  </p>
-                  <p>
-                    회원 탈퇴를 진행하시면 계정이 영구적으로 삭제되며, 
-                    복구가 불가능합니다. 정말로 탈퇴하시겠습니까?
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex gap-3 p-6 border-t border-border">
-              <button
-                onClick={handleConfirmWithdraw}
-                disabled={isProcessing}
-                className="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
-              >
-                {isProcessing ? "처리 중..." : "탈퇴하기"}
-              </button>
-              <button
-                onClick={handleCancel}
-                disabled={isProcessing}
-                className="flex-1 px-4 py-2.5 border border-border rounded-lg font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-              >
-                취소
-              </button>
-            </div>
+      <ConfirmModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onConfirm={handleConfirmWithdraw}
+        title="회원 탈퇴 확인"
+        message={
+          <div className="space-y-2">
+            <p className="font-medium text-foreground">이 작업은 되돌릴 수 없습니다.</p>
+            <p>회원 탈퇴를 진행하시면 계정이 영구적으로 삭제되며, 복구가 불가능합니다. 정말로 탈퇴하시겠습니까?</p>
           </div>
-        </div>
-      )}
+        }
+        type="error"
+        confirmText={isProcessing ? "처리 중..." : "탈퇴하기"}
+        cancelText="취소"
+        confirmDisabled={isProcessing}
+        disableClose={isProcessing}
+      />
     </div>
-  )
+  );
 }

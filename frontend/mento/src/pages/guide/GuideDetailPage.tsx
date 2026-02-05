@@ -422,7 +422,7 @@ export default function GuideDetailPage() {
     <div className="min-h-screen bg-background">
       {/* Header (Hero Section) */}
       <section className="bg-gradient-to-br from-pastel-blue-100/50 via-background to-primary-100/30 py-8 md:py-12">
-        <div className="mx-auto max-w-[1400px] px-6">
+        <div className="mx-auto max-w-[1200px] px-6">
           <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-text-secondary hover:text-primary-500 transition-colors mb-6">
             <ArrowLeft className="h-5 w-5" />
             <span className="font-medium">뒤로 가기</span>
@@ -459,7 +459,7 @@ export default function GuideDetailPage() {
       </section>
 
       {/* Main Content */}
-      <section className="mx-auto max-w-[1400px] px-6 py-12">
+      <section className="mx-auto max-w-[1200px] px-6 py-12">
         <div className="rounded-2xl p-6 md:p-8">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
             {/* Left: Face Camera Section (Controls Masking Only) */}
