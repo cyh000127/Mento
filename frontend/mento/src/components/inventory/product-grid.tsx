@@ -46,6 +46,7 @@ export function ProductGrid({
           />
         ))}
       </div>
+
     </div>
   )
 }

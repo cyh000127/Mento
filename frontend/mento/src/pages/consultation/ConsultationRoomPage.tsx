@@ -215,15 +215,8 @@ export function ConsultationRoomPage() {
           {connectionState === "connected" && <div className="absolute top-4 left-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg">✓ 연결됨</div>}
           {error && <div className="absolute top-4 left-4 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg max-w-md">오류: {error}</div>}
 
-          {/* 참가자 수 표시 */}
-          <div className="absolute top-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg border border-gray-700">
-            <span className="text-sm">
-              참가자: {localParticipant ? 1 : 0} + {remoteParticipants.length} / 2
-            </span>
-          </div>
-
           {/* 하단 컨트롤 바 */}
-          <div className="fixed bottom-8 left-1/2 -translate-x-[calc(50%+12rem)]">
+          <div className="fixed bottom-4 left-[calc((100%-26rem)/2)] -translate-x-1/2">
             <div className="bg-gray-800 rounded-full px-6 py-4 shadow-2xl border border-gray-700 flex items-center gap-4">
               {/* 마이크 버튼 */}
               <button
@@ -281,6 +274,13 @@ export function ConsultationRoomPage() {
                   </svg>
                 )}
               </button>
+
+              {/* AI 리포트 생성 버튼 (멘토 전용) */}
+              {isMentor && (
+                <button className="h-12 px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors" type="button" title="AI 리포트 생성">
+                  AI 리포트 요청
+                </button>
+              )}
 
               {/* 통화 종료 버튼 */}
               <button className="p-3 rounded-full bg-red-600 hover:bg-red-700 transition-colors" onClick={handleDisconnect} title="통화 종료">
