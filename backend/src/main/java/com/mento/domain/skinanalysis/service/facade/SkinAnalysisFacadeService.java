@@ -24,9 +24,7 @@ import com.mento.domain.skinanalysis.exception.SkinAnalysisException;
 import com.mento.domain.skinanalysis.factory.SkinAnalysisFactory;
 import com.mento.domain.skinanalysis.service.command.SkinAnalysisCommandService;
 import com.mento.domain.skinanalysis.service.query.SkinAnalysisQueryService;
-import com.mento.domain.user.dto.request.UserUpdateReqDto;
 import com.mento.domain.user.entity.User;
-import com.mento.domain.user.service.command.UserCommandService;
 import com.mento.domain.user.service.query.UserQueryService;
 
 import lombok.AccessLevel;
@@ -44,13 +42,9 @@ public class SkinAnalysisFacadeService {
 	private final SkinAnalysisFactory skinAnalysisFactory;
 
 	private final UserQueryService userQueryService;
-	private final UserCommandService userCommandService;
 
 	@Transactional
 	public SkinAnalysisDetailResDto analyzeSkin(final Long userId, final SkinAnalysisClientReqDto dto) {
-		userCommandService.update(userId, new UserUpdateReqDto(dto.birthDate()));
-		log.info("[SkinAnalysis] 사용자 생년월일 업데이트 완료 {userId: {}, birthDate: {}}",
-			userId, dto.birthDate());
 
 		SkinAnalysisAiReqDto aiRequest = SkinAnalysisConverter.toSkinAnalysisAiReqDto(dto);
 		log.info("[SkinAnalysis] AI 분석 요청 시작 {userId: {}, age: {}, gender: {}}",

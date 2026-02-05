@@ -82,7 +82,7 @@ class PaymentFacadeServiceTest {
 		ReflectionTestUtils.setField(user, "id", userId);
 
 		MentorType mentorType = MentorType.builder()
-			.typeName("SKINCARE")
+			.typeName("스킨케어")
 			.price(50000)
 			.build();
 		ReflectionTestUtils.setField(mentorType, "id", 1L);

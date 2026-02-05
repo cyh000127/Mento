@@ -108,9 +108,9 @@ public class PaymentFacadeService {
 
 	private Long getMentorIdByType(final String typeName) {
 		return switch (typeName) {
-			case "SKINCARE" -> SKINCARE_MENTOR_ID;
-			case "BEAUTY" -> BEAUTY_MENTOR_ID;
-			case "HAIR" -> HAIR_MENTOR_ID;
+			case "스킨케어" -> SKINCARE_MENTOR_ID;
+			case "뷰티" -> BEAUTY_MENTOR_ID;
+			case "헤어" -> HAIR_MENTOR_ID;
 			default -> throw new MentortTypeException(ErrorCode.INVALID_MENTOR_TYPE);
 		};
 	}
