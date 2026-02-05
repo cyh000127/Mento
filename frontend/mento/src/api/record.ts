@@ -7,7 +7,7 @@ import type { EgressRequestPayload, EgressResponse, RecordApiResponse } from "@/
  */
 export const startRecording = async (payload: EgressRequestPayload): Promise<EgressResponse> => {
   try {
-    const response = await api.post<RecordApiResponse<EgressResponse>>("/egress/start", payload);
+    const response = await api.post<RecordApiResponse<EgressResponse>>("/recordings/start", payload);
 
     if (!response.data.success || !response.data.data) {
       throw new Error(response.data.error?.message || "녹화 시작에 실패했습니다.");
@@ -26,7 +26,7 @@ export const startRecording = async (payload: EgressRequestPayload): Promise<Egr
  */
 export const stopRecording = async (roomId: string): Promise<void> => {
   try {
-    const response = await api.post<RecordApiResponse<null>>("/egress/stop", { roomId });
+    const response = await api.post<RecordApiResponse<null>>("/recordings/stop", { roomId });
 
     if (!response.data.success) {
       throw new Error(response.data.error?.message || "녹화 종료에 실패했습니다.");
