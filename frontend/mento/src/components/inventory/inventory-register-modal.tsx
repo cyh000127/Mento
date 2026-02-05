@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@/components/ui/pagination";
 import { getProducts } from "@/api/productsApi";
-import type { ApiProduct } from "@/types/product";
+import type { ProductListItem } from "@/types/product";
 import type { Product } from "@/types/inventory";
 
 interface InventoryRegisterModalProps {
@@ -16,9 +16,10 @@ interface InventoryRegisterModalProps {
 }
 
 // API 상품을 재고 상품으로 변환하는 헬퍼 함수
-function convertApiProductToInventoryProduct(apiProduct: ApiProduct): Product {
+function convertApiProductToInventoryProduct(apiProduct: ProductListItem): Product {
   return {
     id: apiProduct.productId.toString(),
+    productId: apiProduct.productId,
     name: apiProduct.name,
     brand: apiProduct.brandName,
     category: "skin", // 기본값
@@ -27,13 +28,13 @@ function convertApiProductToInventoryProduct(apiProduct: ApiProduct): Product {
     expirationDate: "",
     repurchaseCount: 0,
     status: "purchasing",
-    purchaseLink: apiProduct.productUrl,
+    purchaseLink: "",
     isFavorite: false,
   };
 }
 
 interface ProductSearchCardProps {
-  product: ApiProduct;
+  product: ProductListItem;
   isSelected: boolean;
   onToggleSelect: (productId: number) => void;
 }
@@ -165,7 +166,7 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
   const [currentPage, setCurrentPage] = useState(1);
 
   // API 상태
-  const [apiProducts, setApiProducts] = useState<ApiProduct[]>([]);
+  const [apiProducts, setApiProducts] = useState<ProductListItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(0);
 
@@ -177,8 +178,6 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
     setIsLoading(true);
     try {
       const response = await getProducts({
-        sort_key: "name",
-        order: "asc",
         page: currentPage - 1, // API는 0부터 시작
         size: itemsPerPage,
       });
