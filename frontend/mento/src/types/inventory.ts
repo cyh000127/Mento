@@ -13,6 +13,7 @@ export type SortOption = "recent" | "alphabetical" | "expiring"
 
 export interface Product {
   id: string
+  productId: number // 상품 마스터 ID
   name: string
   brand: string
   category: ProductCategory
@@ -29,6 +30,7 @@ export interface Product {
 // API 응답 타입 (백엔드 응답 형식)
 export interface ApiItem {
   id: number
+  productId: number
   productName: string
   productImageUrl: string
   brandName: string
