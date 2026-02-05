@@ -217,7 +217,7 @@ export function HeroSection(props: HeroSectionProps) {
               <div className="animate-fade-in-up mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row" style={{ animationDelay: "0.8s", animationFillMode: "backwards" }}>
                 {!isLoggedIn && (
                   <Button size="lg" onClick={() => setIsLoginOpen(true)} className="w-full sm:w-auto">
-                    시작하기
+                    로그인
                     <ArrowRight className="h-5 w-5" />
                   </Button>
                 )}
