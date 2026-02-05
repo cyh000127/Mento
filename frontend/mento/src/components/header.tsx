@@ -104,7 +104,7 @@ export function Header() {
         <div className="relative mx-auto flex h-14 max-w-[1200px] items-center px-6">
           {/* Left */}
           <div className="flex flex-1 items-center">
-            <Link to="/" className="text-xl font-bold tracking-tight text-dark-bg transition-opacity hover:opacity-80">
+            <Link to="/" className="text-2xl font-bold tracking-tight text-dark-bg transition-opacity hover:opacity-80">
               MENTO
             </Link>
           </div>
@@ -112,7 +112,7 @@ export function Header() {
           {/* Center (Desktop Nav only) */}
           <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex">
             {navItems.map((item) => (
-              <Link key={item.href} to={item.href} className="text-sm font-medium text-dark-bg/80 transition-colors hover:text-dark-bg">
+              <Link key={item.href} to={item.href} className="text-base font-medium text-dark-bg/80 transition-colors hover:text-dark-bg">
                 {item.label}
               </Link>
             ))}
@@ -138,15 +138,15 @@ export function Header() {
               <div className="hidden items-center gap-3 md:flex">
                 {user && (
                   <Link to="/mypage/consultations">
-                    <span className="text-sm font-medium text-dark-bg/90">{user.name}님</span>
+                    <span className="text-base font-medium text-dark-bg/90">{user.name}님</span>
                   </Link>
                 )}
-                <button onClick={() => setIsLogoutConfirmOpen(true)} className="rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500">
+                <button onClick={() => setIsLogoutConfirmOpen(true)} className="rounded-full bg-dark-bg px-4 py-1.5 text-base text-primary-500">
                   로그아웃
                 </button>
               </div>
             ) : (
-              <button onClick={() => setIsLoginOpen(true)} className="hidden rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500 md:block">
+              <button onClick={() => setIsLoginOpen(true)} className="hidden rounded-full bg-dark-bg px-4 py-1.5 text-base text-primary-500 md:block">
                 로그인
               </button>
             )}
@@ -165,7 +165,7 @@ export function Header() {
           <nav className="mx-auto max-w-[1200px] px-6 py-4">
             <div className="flex flex-col gap-3">
               {navItems.map((item) => (
-                <Link key={item.href} to={item.href} onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg px-3 py-2 text-sm font-medium text-dark-bg/80 hover:bg-dark-bg/10">
+                <Link key={item.href} to={item.href} onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg px-3 py-2 text-base font-medium text-dark-bg/80 hover:bg-dark-bg/10">
                   {item.label}
                 </Link>
               ))}
@@ -187,13 +187,13 @@ export function Header() {
 
                 {isLoggedIn ? (
                   <div className="ml-auto flex items-center gap-2">
-                    {user && <span className="text-sm font-medium text-dark-bg/90">{user.name}님</span>}
+                    {user && <span className="text-base font-medium text-dark-bg/90">{user.name}님</span>}
                     <button
                       onClick={() => {
                         setIsLogoutConfirmOpen(true);
                         setIsMobileMenuOpen(false);
                       }}
-                      className="rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500"
+                      className="rounded-full bg-dark-bg px-4 py-1.5 text-base text-primary-500"
                     >
                       로그아웃
                     </button>
@@ -204,7 +204,7 @@ export function Header() {
                       setIsLoginOpen(true);
                       setIsMobileMenuOpen(false);
                     }}
-                    className="ml-auto rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500"
+                    className="ml-auto rounded-full bg-dark-bg px-4 py-1.5 text-base text-primary-500"
                   >
                     로그인
                   </button>
