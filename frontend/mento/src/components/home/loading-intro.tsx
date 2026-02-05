@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 interface LoadingIntroProps {
   onComplete: () => void
@@ -8,20 +8,18 @@ export function LoadingIntro({ onComplete }: LoadingIntroProps) {
   const [phase, setPhase] = useState<"question" | "counting" | "complete" | "logo">("question")
   const [count, setCount] = useState(0)
   const [speed, setSpeed] = useState(1)
+  const completedRef = useRef(false)
+  const onCompleteRef = useRef(onComplete)
 
   useEffect(() => {
-    // Phase 1: Show question for 1.5 seconds
-    const questionTimer = setTimeout(() => {
-      setPhase("counting")
-    }, 1500)
-
-    return () => clearTimeout(questionTimer)
-  }, [])
+    onCompleteRef.current = onComplete
+  }, [onComplete])
 
   useEffect(() => {
-    if (phase !== "counting") return
+    let isActive = true
+    const timeouts: number[] = []
+    let intervalId: number | null = null
 
-    // Counter animation (0 to 99) with skipping - faster
     const duration = 2000 // 2 seconds (faster)
     const steps = 99
     let currentCount = 0
@@ -31,10 +29,17 @@ export function LoadingIntro({ onComplete }: LoadingIntroProps) {
       0, 1, 3, 7, 12, 19, 28, 38, 49, 61, 74, 85, 92, 96, 97, 98, 99
     ]
 
-    const animate = () => {
-      const interval = setInterval(() => {
+    const finishIntro = () => {
+      if (completedRef.current) return
+      completedRef.current = true
+      onCompleteRef.current()
+    }
+
+    const startCounting = () => {
+      intervalId = window.setInterval(() => {
+        if (!isActive) return
         currentCount++
-        
+
         // Only update display for certain numbers
         if (showNumbers.includes(currentCount) || currentCount >= 95) {
           setCount(currentCount)
@@ -45,28 +50,52 @@ export function LoadingIntro({ onComplete }: LoadingIntroProps) {
         setSpeed(speedMultiplier)
 
         if (currentCount >= steps) {
-          clearInterval(interval)
+          if (intervalId) {
+            clearInterval(intervalId)
+            intervalId = null
+          }
+
           // Show "complete" message
-          setTimeout(() => {
+          const completeTimer = window.setTimeout(() => {
+            if (!isActive) return
             setPhase("complete")
+
             // Show MENTO logo
-            setTimeout(() => {
+            const logoTimer = window.setTimeout(() => {
+              if (!isActive) return
               setPhase("logo")
+
               // Complete after showing MENTO
-              setTimeout(() => {
-                onComplete()
+              const doneTimer = window.setTimeout(() => {
+                if (!isActive) return
+                finishIntro()
               }, 1200)
+              timeouts.push(doneTimer)
             }, 1500)
+            timeouts.push(logoTimer)
           }, 300)
+          timeouts.push(completeTimer)
         }
       }, duration / steps)
-
-      return interval
     }
 
-    const interval = animate()
-    return () => clearInterval(interval)
-  }, [phase, onComplete])
+    // Phase 1: Show question for 1.5 seconds
+    const questionTimer = window.setTimeout(() => {
+      if (!isActive) return
+      setPhase("counting")
+      startCounting()
+    }, 1500)
+    timeouts.push(questionTimer)
+
+    return () => {
+      isActive = false
+      timeouts.forEach((timerId) => clearTimeout(timerId))
+      if (intervalId) {
+        clearInterval(intervalId)
+        intervalId = null
+      }
+    }
+  }, [])
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
