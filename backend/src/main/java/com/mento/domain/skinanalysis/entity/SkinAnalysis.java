@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "skin_anlyses")
+@Table(name = "skin_analyses")
 public class SkinAnalysis extends BaseEntity {
 
 	@Id
