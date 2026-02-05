@@ -7,6 +7,7 @@ import os
 import httpx  # 비동기 통신을 위해 httpx 사용
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Header
 from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 from pydantic import BaseModel
@@ -203,6 +204,32 @@ class FinalOCRResponse(BaseModel):
     items: List[MatchedProduct] = []
     message: str
 
+
+# JWT 토큰에서 유저 ID를 추출하는 헬퍼 함수
+def get_user_id_from_token(auth_header: str) -> Optional[str]:
+    try:
+        # 1. "Bearer <token>" 분리
+        token = auth_header.split(" ")[1]
+
+        # 2. JWT의 페이로드(두 번째 부분) 추출
+        payload_part = token.split(".")[1]
+
+        # 3. Base64 디코딩 (패딩 오류 방지)
+        # base64.urlsafe_b64decode를 사용하면 더 안전합니다.
+        decoded_payload = base64.urlsafe_b64decode(payload_part + "==").decode("utf-8")
+
+        # 4. JSON 파싱
+        payload_data = json.loads(decoded_payload)
+
+        # 팀원분 코드에서 .subject()에 넣었으므로 'sub' 필드 확인
+        # 만약 KEY_ID가 'id'라면 payload_data.get("id")도 가능합니다.
+        user_id = payload_data.get("sub")
+        return user_id
+    except Exception as e:
+        print(f"⚠️ 토큰 파싱 에러: {e}")
+        return None
+
+
 # ==========================================
 # SECTION 2: 고도화된 전처리 (Slicing & Mapping)
 # ==========================================
@@ -210,28 +237,39 @@ def preprocess_ocr_text(full_text: str):
     """
     OCR로 추출된 텍스트에서 노이즈를 제거하고 검색 키워드를 확장합니다.
     """
-    # 1. 특수문자 제거
-    text = re.sub(r'[^가-힣a-zA-Z0-9\s]', ' ', full_text)
+    # 1. 노이즈 제거를 위해 특수문자만 살짝 정리한 텍스트
+    clean_text = re.sub(r'[^가-힣a-zA-Z0-9\s]', ' ', full_text)
 
     # 2. [전략 1: 노이즈 키워드 기반 절단]
     noise_keywords = ["사용방법", "주의사항", "전성분", "제조번호", "책임판매", "제조원", "MADE IN"]
     for keyword in noise_keywords:
-        if keyword in text:
-            text = text.split(keyword)[0]
+        if keyword in clean_text:
+            clean_text = clean_text.split(keyword)[0]
 
-    # 3. 상위 단어 추출 (상품명은 보통 상단에 위치)
-    words = text.split()
-    top_words = words[:20]
-
-    # 4. [전략 2: 한/영 동의어 확장]
+    # 3. [핵심 수정] 한/영 동의어 확장 (포함 여부로 체크)
     search_terms = []
-    for word in top_words:
-        search_terms.append(word)
-        if word in MAPPING_DICT:
-            search_terms.append(MAPPING_DICT[word])
+
+    # 공백과 점을 완전히 제거한 '비교용 텍스트' 생성 (예: "B. READY" -> "BREADY")
+    match_target = full_text.replace(" ", "").replace(".", "").upper()
+
+    for kor_key, eng_val in MAPPING_DICT.items():
+        # 매핑 사전의 키(예: "비레디")가 인식된 전체 문장에 포함되어 있는지 확인
+        if kor_key in match_target or eng_val.replace(" ", "").upper() in match_target:
+            search_terms.append(kor_key)
+            search_terms.append(eng_val)
+
+    # 4. 기존 방식대로 상위 단어들도 추가 (일반 검색용)
+    words = clean_text.split()
+    search_terms.extend(words[:20])
 
     # 중복 제거 후 쿼리 스트링 반환
-    return " ".join(list(dict.fromkeys(search_terms)))
+    result = " ".join(list(dict.fromkeys(search_terms)))
+
+    # 디버깅을 위해 로그 출력 (컨테이너 로그에서 확인 가능)
+    print(f"🔍 [OCR 원본]: {full_text[:50]}")
+    print(f"🔍 [확장된 검색어]: {result}")
+
+    return result
 
 # ==========================================
 # SECTION 3: Elasticsearch 검색 (비동기 POST 방식)
@@ -292,7 +330,37 @@ async def search_products_in_es(ocr_text: str, limit: int = 5):
 # SECTION 4: 메인 비즈니스 로직 (OCR 스캔)
 # ==========================================
 @app.post("/api/ocr/products/recognize", response_model=FinalOCRResponse)
-async def scan_cosmetic(request: OCRRequest):
+async def scan_cosmetic(
+        request: OCRRequest,
+        authorization: Optional[str] = Header(None) # 이 부분을 추가해야 헤더에서 토큰을 읽어옵니다.
+):
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # 1. 헤더 체크
+    if not authorization or not authorization.startswith("Bearer "):
+        return FinalOCRResponse(status="fail", items=[], message="인증 헤더가 누락되었습니다.")
+
+    # 2. 토큰에서 user_id 추출
+    user_id = get_user_id_from_token(authorization)
+    if not user_id:
+        return FinalOCRResponse(status="fail", items=[], message="유효하지 않은 토큰입니다.")
+
+    # 3. Spring Boot에 유저 확인 요청 (프록시 승인)
+    try:
+        # Docker 네트워크 내부 주소: http://backend:8080
+        target_url = f"http://backend:8080/api/v1/users/{user_id}"
+
+        async with httpx.AsyncClient() as client:
+            # 유저의 토큰을 그대로 전달하여 Spring Boot가 검증하게 함
+            auth_res = await client.get(target_url, headers={"Authorization": authorization}, timeout=3.0)
+
+        if auth_res.status_code != 200:
+            return FinalOCRResponse(status="fail", items=[], message="인증 서버로부터 승인을 받지 못했습니다.")
+
+    except Exception as e:
+        print(f"❌ BE 통신 에러: {e}")
+        return FinalOCRResponse(status="error", items=[], message="인증 서버와 통신할 수 없습니다.")
+
     try:
         # 1. Base64 데이터 디코딩 (기존 로직 동일)
         image_raw = request.imageUrl
