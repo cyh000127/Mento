@@ -40,11 +40,11 @@ export default function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(false)
+  const [hasFetched, setHasFetched] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
   const [favoriteLoading, setFavoriteLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
-  const [hasNext, setHasNext] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | "all">("all")
   const [sortOption, setSortOption] = useState<SortOption>("recent")
@@ -96,20 +96,13 @@ export default function InventoryPage() {
       const mappedProducts = response.content.map(mapApiItemToProduct)
       setProducts(mappedProducts)
       setTotalPages(response.totalPages)
-      setHasNext(response.hasNext)
-
-      // 선택된 제품이 새 목록에 없으면 선택 해제
-      setSelectedProduct((prev) => {
-        if (!prev) return null
-        const stillExists = mappedProducts.find((p) => p.id === prev.id)
-        return stillExists || null
-      })
     } catch (error) {
       console.error("Failed to fetch inventory:", error)
       setProducts([])
       setSelectedProduct(null)
     } finally {
       setLoading(false)
+      setHasFetched(true)
     }
   }, [currentPage, selectedCategory, selectedStatus, favoriteFilter, sortOption])
 
@@ -130,8 +123,20 @@ export default function InventoryPage() {
     }
     return true
   })
+  const shouldShowPagination = totalPages > 1
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index)
 
-  const handleProductSelect = async (product: Product) => {
+  const mapDetailCategoryToUI = useCallback((categoryMedium?: string): ProductCategory => {
+    const categoryMap: Record<string, ProductCategory> = {
+      "스킨케어": "skin",
+      "메이크업": "beauty",
+      "헤어케어": "hair",
+    }
+
+    return categoryMedium ? (categoryMap[categoryMedium] || "skin") : "skin"
+  }, [])
+
+  const handleProductSelect = useCallback(async (product: Product) => {
     setSelectedProduct(product)
     setDetailLoading(true)
 
@@ -151,6 +156,7 @@ export default function InventoryPage() {
         daysUntilExpiry = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
       }
 
+      const normalizedStatus = data.status === "IN_USE" ? "OWNED" : data.status
       const detailedProduct: Product = {
         id: data.id.toString(),
         name: data.productInfoDto.name,
@@ -160,7 +166,7 @@ export default function InventoryPage() {
         purchaseDate: data.purchaseDate,
         expirationDate: data.expectedExpiry,
         repurchaseCount: data.purchaseCount,
-        status: mapDetailStatusToUI(data.status),
+        status: mapApiStatusToUiStatus(normalizedStatus as ItemStatus),
         purchaseLink: data.productInfoDto.productUrl,
         isFavorite: data.isFavorite,
         daysUntilExpiry: daysUntilExpiry,
@@ -177,26 +183,22 @@ export default function InventoryPage() {
     } finally {
       setDetailLoading(false)
     }
-  }
+  }, [mapDetailCategoryToUI, toast])
 
-  const mapDetailStatusToUI = (status: "OWNED" | "IN_USE" | "OVER_DATED"): ProductStatus => {
-    const statusMap = {
-      "OWNED": "in-use" as ProductStatus,
-      "IN_USE": "in-use" as ProductStatus,
-      "OVER_DATED": "over-dated" as ProductStatus,
-    }
-    return statusMap[status] || "in-use"
-  }
+  useEffect(() => {
+    if (!hasFetched || loading) return
 
-  const mapDetailCategoryToUI = (categoryMedium?: string): ProductCategory => {
-    const categoryMap: Record<string, ProductCategory> = {
-      "스킨케어": "skin",
-      "메이크업": "beauty",
-      "헤어케어": "hair",
+    if (products.length === 0) {
+      if (selectedProduct !== null) {
+        setSelectedProduct(null)
+      }
+      return
     }
 
-    return categoryMedium ? (categoryMap[categoryMedium] || "skin") : "skin"
-  }
+    if (!selectedProduct || !products.some((product) => product.id === selectedProduct.id)) {
+      handleProductSelect(products[0])
+    }
+  }, [products, selectedProduct, hasFetched, loading, handleProductSelect])
 
   const handleToggleFavorite = async (productId: string) => {
     // 중복 요청 방지
@@ -555,6 +557,22 @@ export default function InventoryPage() {
     setRegisterModalOpen(true)
   }
 
+  const isEmptyState = hasFetched && !loading && products.length === 0
+  const fallbackProduct: Product = {
+    id: "",
+    name: "-",
+    brand: "-",
+    category: "skin",
+    image: "",
+    purchaseDate: "",
+    expirationDate: "",
+    repurchaseCount: 0,
+    status: "in-use",
+    purchaseLink: "",
+    isFavorite: false,
+  }
+  const detailProduct = selectedProduct ?? fallbackProduct
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-[1400px] px-6 py-8">
@@ -582,19 +600,55 @@ export default function InventoryPage() {
               selectedProductId={selectedProduct?.id}
               onProductSelect={handleProductSelect}
             />
+            {shouldShowPagination && (
+              <div className="mt-16 flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  variant="outline"
+                  className="h-9 w-9 p-0"
+                  disabled={currentPage === 0}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  ←
+                </Button>
+                {pageNumbers.map((page) => {
+                  const isActive = page === currentPage
+                  return (
+                    <Button
+                      key={page}
+                      variant="outline"
+                      className={`h-9 w-9 p-0 ${
+                        isActive
+                          ? "border-primary-500 bg-primary-500 text-dark-bg hover:bg-primary-400"
+                          : "text-muted-foreground"
+                      }`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page + 1}
+                    </Button>
+                  )
+                })}
+                <Button
+                  variant="outline"
+                  className="h-9 w-9 p-0"
+                  disabled={currentPage >= totalPages - 1}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  →
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Right Section - Product Detail */}
           <div className="lg:col-span-1">
-            {selectedProduct && (
-              <ProductDetail
-                product={selectedProduct}
-                onToggleFavorite={handleToggleFavorite}
-                onDelete={handleDelete}
-                onStatusChange={handleStatusChange}
-                loading={detailLoading}
-              />
-            )}
+            <ProductDetail
+              product={detailProduct}
+              onToggleFavorite={handleToggleFavorite}
+              onDelete={handleDelete}
+              onStatusChange={handleStatusChange}
+              loading={detailLoading}
+              isEmpty={isEmptyState}
+            />
           </div>
         </div>
       </div>

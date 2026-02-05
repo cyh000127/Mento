@@ -41,7 +41,7 @@ const sortLabels: Record<SortOption, string> = {
 const statusLabels: Record<ProductStatus | "all", string> = {
   all: "전체",
   "in-use": "사용중",
-  unavailable: "사용불가",
+  unavailable: "사용완료",
   purchasing: "구매중",
   recommended: "추천받음",
   "over-dated": "기한만료",

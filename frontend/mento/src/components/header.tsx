@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Bell, Package, Menu, X } from "lucide-react";
 import { LoginModal } from "./login-modal";
 import { LogoutConfirmModal } from "./logout-confirm-modal";
-import { NotificationModal, type Notification } from "./notification-modal";
+import { NotificationModal } from "./notification-modal";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { authApi } from "@/api/authApi";
+
+import { getNotificationEventSourceUrl, deleteNotification } from "@/api/notificationApi";
+import type { NotificationResDto } from "@/types/notification";
 
 const navItems = [
   // { label: "추천", href: "/recommend" }, // 260128 kjm 아직 구현 여부가 결정되지 않아서 주석 처리
@@ -14,33 +17,73 @@ const navItems = [
   { label: "AI CARE", href: "/ai-care" },
 ];
 
-// 목 데이터 (실제 서비스에서는 API로부터 가져옴)
-const mockNotifications: Notification[] = [
-  {
-    id: "1",
-    type: "expiration",
-    message: "사용 중인 제품이 유통기한에 가까워지고 있습니다.",
-    timestamp: new Date(Date.now() - 1000 * 60 * 15), // 15분 전
-  },
-  {
-    id: "2",
-    type: "consultation",
-    message: "30분 후 상담이 시작됩니다.",
-    timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5분 전
-  },
-];
-
 export function Header() {
   const navigate = useNavigate();
-  const { isLoggedIn, user } = useAuthStore();
+  const { isLoggedIn, user, accessToken, isAuthInitialized } = useAuthStore();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [notifications, setNotifications] = useState<NotificationResDto[]>([]);
 
-  const handleRemoveNotification = (id: string) => {
-    setNotifications((prev) => prev.filter((notification) => notification.id !== id));
+  // SSE 구독
+  useEffect(() => {
+    // 초기화가 완료되고, 로그인이 되어 있고, 토큰이 있어야 SSE 연결 시도
+    if (!isAuthInitialized || !isLoggedIn || !accessToken) {
+      setNotifications([]);
+      return;
+    }
+
+    const url = getNotificationEventSourceUrl(accessToken);
+    const eventSource = new EventSource(url);
+
+    // 연결 성공 (디버깅용)
+    eventSource.addEventListener("connect", (e: MessageEvent) => {
+      console.log("SSE Connected:", e.data);
+    });
+
+    // 초기 알림 데이터 수신
+    eventSource.addEventListener("initial-notifications", (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data) as NotificationResDto[];
+        setNotifications(data);
+      } catch (error) {
+        console.error("Failed to parse initial notifications:", error);
+      }
+    });
+
+    // 실시간 알림 수신
+    eventSource.addEventListener("notification", (e: MessageEvent) => {
+      try {
+        const newNotification = JSON.parse(e.data) as NotificationResDto;
+        setNotifications((prev) => [newNotification, ...prev]);
+
+        // 브라우저 알림 요청
+        if (Notification.permission === "granted") {
+          new Notification("새로운 알림", { body: newNotification.content });
+        }
+      } catch (error) {
+        console.error("Failed to parse notification:", error);
+      }
+    });
+
+    eventSource.onerror = (e) => {
+      console.error("SSE Error:", e);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [isLoggedIn, accessToken, isAuthInitialized]);
+
+  const handleRemoveNotification = async (id: number) => {
+    try {
+      await deleteNotification(id);
+      setNotifications((prev) => prev.filter((n) => n.notificationId !== id));
+    } catch (error) {
+      console.error("Failed to delete notification:", error);
+    }
   };
 
   const handleLogout = async () => {
@@ -99,7 +142,7 @@ export function Header() {
                       {user.name}님
                     </span>
                   </Link>
-                  )}
+                )}
                 <button onClick={() => setIsLogoutConfirmOpen(true)} className="rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500">
                   로그아웃
                 </button>

@@ -18,9 +18,16 @@ export function ConsultationRoomPage() {
     remoteParticipants,
     remoteMaskType,
     remoteMaskUpdateSeq,
+    sharedImageUrl,
+    drawCommands,
     connect,
     disconnect,
     sendMaskUpdate,
+    sendMediaShare,
+    sendImageShare,
+    sendImageClear,
+    sendDrawCommand,
+    sendClearWhiteboard,
     toggleMic,
     toggleCamera,
     isMicEnabled,
@@ -31,6 +38,7 @@ export function ConsultationRoomPage() {
   const hasConnected = useRef(false);
   const isApplyingRemoteMaskRef = useRef(false);
   const hasResetMaskOnConnectRef = useRef(false);
+  const reservationIdNumber = reservationId ? Number(reservationId) : null;
 
   // 컴포넌트 마운트 시 자동으로 상담 세션 생성 및 LiveKit 연결
   useEffect(() => {
@@ -62,6 +70,8 @@ export function ConsultationRoomPage() {
 
   // 연결 해제 핸들러
   const handleDisconnect = () => {
+    sendImageClear();
+    sendClearWhiteboard();
     disconnect();
     navigate("/mypage/consultations");
   };
@@ -86,6 +96,41 @@ export function ConsultationRoomPage() {
     localParticipant,
     connectionState,
   };
+  const shareProps = {
+    reservationId: Number.isNaN(reservationIdNumber ?? NaN) ? null : reservationIdNumber,
+    onShare: sendMediaShare,
+    sharedImageUrl,
+    drawCommands,
+    onShareImage: sendImageShare,
+    onDrawCommand: sendDrawCommand,
+    onClearWhiteboard: sendClearWhiteboard,
+    canDraw: isMentor,
+  };
+
+  useEffect(() => {
+    const handleUnload = () => {
+      sessionStorage.setItem("consultation:clearOnReconnect", "1");
+      sendImageClear();
+      sendClearWhiteboard();
+    };
+
+    window.addEventListener("beforeunload", handleUnload);
+    window.addEventListener("pagehide", handleUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+      window.removeEventListener("pagehide", handleUnload);
+    };
+  }, [sendImageClear, sendClearWhiteboard]);
+
+  useEffect(() => {
+    if (connectionState !== "connected") return;
+    const shouldClear = sessionStorage.getItem("consultation:clearOnReconnect") === "1";
+    if (!shouldClear) return;
+    sessionStorage.removeItem("consultation:clearOnReconnect");
+    sendImageClear();
+    sendClearWhiteboard();
+  }, [connectionState, sendImageClear, sendClearWhiteboard]);
 
   // USER 접근 시 숨겨진 탭이 활성화되지 않도록 초기화
   useEffect(() => {
@@ -125,68 +170,53 @@ export function ConsultationRoomPage() {
   return (
     <div className="relative h-screen bg-gray-950 overflow-hidden">
       {/* 메인 컨텐츠 영역 */}
-      <div className="h-full pr-96">
-        <div className="h-full flex flex-col items-center justify-center p-8">
+      <div className="h-full pr-[26rem]">
+        <div className="h-full flex items-center gap-6 px-8 pt-8 pb-28">
+          {/* 왼쪽 (멘토) */}
+          <div className="flex-1 h-full max-w-[50%]">
+            <div className="h-full flex flex-col">
+              <div className="flex-1 aspect-video bg-gray-800 rounded-lg shadow-2xl border border-gray-700 overflow-hidden relative">
+                {topParticipant ? (
+                  <>
+                    <VideoTrack participant={topParticipant} maskType={sharedMaskType} />
+                    <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm">
+                      {topLabel}
+                      {sharedMaskType && <span className="ml-2 text-xs text-cyan-300">🎭 {sharedMaskType} 분석 중</span>}
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-500">멘토 대기 중...</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 오른쪽 (고객) */}
+          <div className="flex-1 h-full max-w-[50%]">
+            <div className="h-full flex flex-col">
+              <div className="flex-1 aspect-video bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden relative">
+                {bottomParticipant ? (
+                  <>
+                    <VideoTrack participant={bottomParticipant} maskType={sharedMaskType} />
+                    <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm">
+                      {bottomLabel}
+                      {sharedMaskType && <span className="ml-2 text-xs text-cyan-300">🎭 {sharedMaskType} 분석 중</span>}
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-500">고객 대기 중...</div>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* 연결 상태 표시 */}
           {connectionState === "connecting" && <div className="absolute top-4 left-4 bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-lg">연결 중...</div>}
           {connectionState === "connected" && <div className="absolute top-4 left-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg">✓ 연결됨</div>}
           {error && <div className="absolute top-4 left-4 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg max-w-md">오류: {error}</div>}
 
-          {/* 참가자 수 표시 */}
-          <div className="absolute top-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg border border-gray-700">
-            <span className="text-sm">
-              참가자: {localParticipant ? 1 : 0} + {remoteParticipants.length} / 2
-            </span>
-          </div>
-
-          {/* 멘토 비디오 영역 (상단) */}
-          <div className="w-full max-w-2xl mb-8">
-            <div className="aspect-video bg-gray-800 rounded-lg shadow-2xl border border-gray-700 overflow-hidden relative">
-              {topParticipant ? (
-                <>
-                  <VideoTrack participant={topParticipant} maskType={sharedMaskType} />
-                  <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm">
-                    {topLabel}
-                    {sharedMaskType && <span className="ml-2 text-xs text-cyan-300">🎭 {sharedMaskType} 분석 중</span>}
-                  </div>
-                </>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-6xl mb-4">👨‍⚕️</div>
-                    <p className="text-xl text-gray-400 font-semibold">멘토</p>
-                    <p className="text-sm text-gray-500 mt-2">대기 중...</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 고객 비디오 영역 (하단) */}
-          <div className="w-full max-w-2xl">
-            <div className="aspect-video bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden relative">
-              {bottomParticipant ? (
-                <>
-                  <VideoTrack participant={bottomParticipant} maskType={sharedMaskType} />
-                  <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm">
-                    {bottomLabel}
-                    {sharedMaskType && <span className="ml-2 text-xs text-cyan-300">🎭 {sharedMaskType} 분석 중</span>}
-                  </div>
-                </>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-4xl mb-3">👤</div>
-                    <p className="text-lg text-gray-400 font-semibold">고객</p>
-                    <p className="text-xs text-gray-500 mt-2">대기 중...</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* 하단 컨트롤 바 */}
-          <div className="fixed bottom-8 left-1/2 -translate-x-[calc(50%+12rem)]">
+          <div className="fixed bottom-4 left-[calc((100%-26rem)/2)] -translate-x-1/2">
             <div className="bg-gray-800 rounded-full px-6 py-4 shadow-2xl border border-gray-700 flex items-center gap-4">
               {/* 마이크 버튼 */}
               <button
@@ -245,6 +275,13 @@ export function ConsultationRoomPage() {
                 )}
               </button>
 
+              {/* AI 리포트 생성 버튼 (멘토 전용) */}
+              {isMentor && (
+                <button className="h-12 px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors" type="button" title="AI 리포트 생성">
+                  AI 리포트 요청
+                </button>
+              )}
+
               {/* 통화 종료 버튼 */}
               <button className="p-3 rounded-full bg-red-600 hover:bg-red-700 transition-colors" onClick={handleDisconnect} title="통화 종료">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,8 +293,8 @@ export function ConsultationRoomPage() {
         </div>
       </div>
 
-      {/* 오른쪽 사이드 패널 */}
-      <SidePanel allowedTabs={sidePanelTabs} recordProps={recordProps} />
+      {/* 사이드 패널 */}
+      <SidePanel allowedTabs={sidePanelTabs} recordProps={recordProps} shareProps={shareProps} />
     </div>
   );
 }
