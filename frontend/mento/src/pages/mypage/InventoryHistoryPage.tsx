@@ -1,79 +1,79 @@
-import { useState, useMemo } from "react"
-import { useNavigate } from "react-router-dom"
-import { MyPageSidebar } from "@/components/mypage/mypage-sidebar"
-import { PeriodDateFilters } from "@/components/mypage/consultation-filters"
-import { InventoryHistoryList } from "@/components/mypage/inventory-history-list"
-import { InventoryHistoryEmpty } from "@/components/mypage/inventory-history-empty"
-import { getInventoryHistories } from "@/api/inventoryApi"
-import type { InventoryHistoryItem } from "@/types/inventory"
-import type { PeriodFilter } from "@/types/consultation"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { MyPageSidebar } from "@/components/mypage/mypage-sidebar";
+import { PeriodDateFilters } from "@/components/mypage/consultation-filters";
+import { InventoryHistoryList } from "@/components/mypage/inventory-history-list";
+import { InventoryHistoryEmpty } from "@/components/mypage/inventory-history-empty";
+import { getInventoryHistories } from "@/api/inventoryApi";
+import type { InventoryHistoryItem } from "@/types/inventory";
+import type { PeriodFilter } from "@/types/consultation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function InventoryHistoryPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   // Filter states
-  const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>("1month")
-  const [startYear, setStartYear] = useState("2026")
-  const [startMonth, setStartMonth] = useState("1")
-  const [startDay, setStartDay] = useState("3")
-  const [endYear, setEndYear] = useState("2026")
-  const [endMonth, setEndMonth] = useState("2")
-  const [endDay, setEndDay] = useState("3")
-  const [isSearched, setIsSearched] = useState(false)
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>("1month");
+  const [startYear, setStartYear] = useState("2026");
+  const [startMonth, setStartMonth] = useState("1");
+  const [startDay, setStartDay] = useState("3");
+  const [endYear, setEndYear] = useState("2026");
+  const [endMonth, setEndMonth] = useState("2");
+  const [endDay, setEndDay] = useState("3");
+  const [isSearched, setIsSearched] = useState(false);
 
   // Data state
-  const [histories, setHistories] = useState<InventoryHistoryItem[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [histories, setHistories] = useState<InventoryHistoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
-  const [hasNext, setHasNext] = useState(false)
-  const pageSize = 20
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const pageSize = 20;
 
   // Initialize dates on period change
   const handlePeriodChange = (period: PeriodFilter) => {
-    setSelectedPeriod(period)
-    const today = new Date()
-    const start = new Date()
+    setSelectedPeriod(period);
+    const today = new Date();
+    const start = new Date();
 
     switch (period) {
       case "1month":
-        start.setMonth(today.getMonth() - 1)
-        break
+        start.setMonth(today.getMonth() - 1);
+        break;
       case "3months":
-        start.setMonth(today.getMonth() - 3)
-        break
+        start.setMonth(today.getMonth() - 3);
+        break;
       case "6months":
-        start.setMonth(today.getMonth() - 6)
-        break
+        start.setMonth(today.getMonth() - 6);
+        break;
       case "12months":
-        start.setFullYear(today.getFullYear() - 1)
-        break
+        start.setFullYear(today.getFullYear() - 1);
+        break;
     }
 
-    setStartYear(start.getFullYear().toString())
-    setStartMonth((start.getMonth() + 1).toString())
-    setStartDay(start.getDate().toString())
-    setEndYear(today.getFullYear().toString())
-    setEndMonth((today.getMonth() + 1).toString())
-    setEndDay(today.getDate().toString())
-  }
+    setStartYear(start.getFullYear().toString());
+    setStartMonth((start.getMonth() + 1).toString());
+    setStartDay(start.getDate().toString());
+    setEndYear(today.getFullYear().toString());
+    setEndMonth((today.getMonth() + 1).toString());
+    setEndDay(today.getDate().toString());
+  };
 
   // Calculate date range based on dropdowns
   const dateRange = useMemo(() => {
     return {
       start: `${startYear}-${startMonth.padStart(2, "0")}-${startDay.padStart(2, "0")}`,
       end: `${endYear}-${endMonth.padStart(2, "0")}-${endDay.padStart(2, "0")}`,
-    }
-  }, [startYear, startMonth, startDay, endYear, endMonth, endDay])
+    };
+  }, [startYear, startMonth, startDay, endYear, endMonth, endDay]);
 
   // Fetch histories
   const fetchHistories = async (page: number = 0) => {
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
       const response = await getInventoryHistories({
@@ -81,57 +81,57 @@ export default function InventoryHistoryPage() {
         size: pageSize,
         startDate: dateRange.start,
         endDate: dateRange.end,
-      })
+      });
 
-      setHistories(response.data.content)
-      setCurrentPage(response.data.page)
-      setTotalPages(response.data.totalPages)
-      setHasNext(response.data.hasNext)
+      setHistories(response.data.content);
+      setCurrentPage(response.data.page);
+      setTotalPages(response.data.totalPages);
+      setHasNext(response.data.hasNext);
     } catch (err: any) {
-      console.error("히스토리 조회 실패:", err)
-      const status = err.response?.status
-      const errorCode = err.response?.data?.code
+      console.error("히스토리 조회 실패:", err);
+      const status = err.response?.status;
+      const errorCode = err.response?.data?.code;
 
       if (status === 400 && errorCode === "INVALID_DATE_RANGE") {
-        setError(err.response?.data?.message || "유효하지 않은 날짜 범위입니다.")
+        setError(err.response?.data?.message || "유효하지 않은 날짜 범위입니다.");
       } else if (status === 401) {
         // 기존 인증 에러 핸들링 재사용
-        setError("로그인이 필요합니다.")
+        setError("로그인이 필요합니다.");
       } else {
-        setError("히스토리를 불러오는 중 오류가 발생했습니다.")
+        setError("히스토리를 불러오는 중 오류가 발생했습니다.");
       }
-      setHistories([])
+      setHistories([]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Handlers
   const handleSearch = () => {
-    setIsSearched(true)
-    setCurrentPage(0)
-    fetchHistories(0)
-  }
+    setIsSearched(true);
+    setCurrentPage(0);
+    fetchHistories(0);
+  };
 
   const handlePreviousPage = () => {
     if (currentPage > 0) {
-      const newPage = currentPage - 1
-      setCurrentPage(newPage)
-      fetchHistories(newPage)
+      const newPage = currentPage - 1;
+      setCurrentPage(newPage);
+      fetchHistories(newPage);
     }
-  }
+  };
 
   const handleNextPage = () => {
     if (hasNext) {
-      const newPage = currentPage + 1
-      setCurrentPage(newPage)
-      fetchHistories(newPage)
+      const newPage = currentPage + 1;
+      setCurrentPage(newPage);
+      fetchHistories(newPage);
     }
-  }
+  };
 
   const handleGoToInventory = () => {
-    navigate("/inventory")
-  }
+    navigate("/inventory");
+  };
 
   return (
     <div className="flex min-h-screen bg-background justify-center">
@@ -141,9 +141,7 @@ export default function InventoryHistoryPage() {
           <div className="mx-auto max-w-7xl px-6 py-8">
             {/* Page Header */}
             <div className="pl-1">
-              <h1 className="text-2xl font-bold text-foreground pb-3">
-                인벤토리 히스토리
-              </h1>
+              <h1 className="text-2xl font-bold text-foreground pb-3">인벤토리 내역</h1>
             </div>
 
             {/* Filters */}
@@ -223,9 +221,7 @@ export default function InventoryHistoryPage() {
             {!isLoading && !isSearched && (
               <div className="rounded-xl border border-border bg-card p-12 shadow-sm">
                 <div className="flex items-center justify-center">
-                  <p className="text-muted-foreground">
-                    조회 기간을 선택하고 검색 버튼을 클릭하세요.
-                  </p>
+                  <p className="text-muted-foreground">조회 기간을 선택하고 검색 버튼을 클릭하세요.</p>
                 </div>
               </div>
             )}
@@ -233,5 +229,5 @@ export default function InventoryHistoryPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

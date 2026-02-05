@@ -123,7 +123,7 @@ export default function AiSkincareHistoryPage() {
           <div className="mx-auto max-w-7xl px-6 py-8">
             {/* Page Header */}
             <div className="pl-1">
-              <h1 className="text-2xl font-bold text-foreground pb-3">AI 피부관리 내역</h1>
+              <h1 className="text-2xl font-bold text-foreground pb-3">AI CARE 내역</h1>
             </div>
 
             {/* Filters */}

@@ -11,18 +11,14 @@ export function AiSkincareList({ diagnoses, onViewDetail }: AiSkincareListProps)
     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       {/* Table Header */}
       <div className="text-center grid grid-cols-12 gap-4 bg-muted px-6 py-4 text-sm font-semibold text-foreground border-b border-border">
-        <div className="col-span-2">#</div>
         <div className="col-span-4">진단 일자</div>
-        <div className="col-span-6"></div>
+        <div className="col-span-8"></div>
       </div>
 
       {/* Table Body */}
       <div className="divide-y divide-border">
         {diagnoses.map((diagnosis, index) => (
           <div key={diagnosis.id} className="grid grid-cols-12 gap-4 px-6 py-5 hover:bg-muted/30 transition-colors">
-            {/* Index */}
-            <div className="col-span-2 flex items-center text-sm text-foreground justify-center">{index + 1}</div>
-
             {/* Diagnosis Date */}
             <div className="col-span-4 flex items-center text-sm text-foreground justify-center">{diagnosis.created_at}</div>
 

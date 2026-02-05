@@ -28,7 +28,7 @@ export function ConsultationDetail({ consultation, onBack, onGoToPayment }: Cons
         <div className="space-y-6">
           {/* Header with Back Button */}
           <div className="flex items-center justify-between border-b border-border pb-3">
-            <h1 className="text-2xl font-bold text-foreground">상담 관리</h1>
+            <h1 className="text-2xl font-bold text-foreground">상담 내역</h1>
             <Button onClick={onBack} variant="ghost" className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="mr-2 h-4 w-4" />
               목록으로
