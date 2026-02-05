@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Upload, Sparkles, X, Loader2 } from "lucide-react";
 import { api } from "@/api/axios";
 import { userApi } from "@/api/userApi";
@@ -15,9 +15,11 @@ interface UploadedImage {
 
 type AnalysisState = "upload" | "loading" | "result";
 
+interface SkinAnalysisProps {
+  onResultStateChange?: (showHero: boolean) => void;
+}
 
-
-export function SkinAnalysis() {
+export function SkinAnalysis({ onResultStateChange }: SkinAnalysisProps) {
   const [state, setState] = useState<AnalysisState>("upload");
   const [gender, setGender] = useState<string>("");
   const [birthDate, setBirthDate] = useState("");
@@ -37,6 +39,14 @@ export function SkinAnalysis() {
   const leftInputRef = useRef<HTMLInputElement>(null);
   const frontInputRef = useRef<HTMLInputElement>(null);
   const rightInputRef = useRef<HTMLInputElement>(null);
+
+  // Notify parent component when state changes
+  useEffect(() => {
+    if (onResultStateChange) {
+      // Hide hero when showing results, show hero when in upload or loading state
+      onResultStateChange(state !== "result");
+    }
+  }, [state, onResultStateChange]);
 
   const showAlert = (options: { title?: string; message: string; type?: AlertModalType; confirmText?: string }) => {
     setAlertState({
