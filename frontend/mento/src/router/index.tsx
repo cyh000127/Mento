@@ -18,85 +18,103 @@ import InventoryHistoryPage from "@/pages/mypage/InventoryHistoryPage";
 import AccountWithdrawalPage from "@/pages/mypage/AccountWithdrawalPage";
 import KakaoCallback from "@/pages/auth/KakaoCallback";
 import TestLoginPage from "@/pages/test/TestLoginPage";
+import AuthInitializer from "@/router/AuthInitializer";
+import ProtectedRoute from "@/router/ProtectedRoute";
 
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <Layout />,
+    element: <AuthInitializer />,
     children: [
       {
-        index: true,
-        element: <HomePage />,
+        path: "/",
+        element: <Layout />,
+        children: [
+          {
+            index: true,
+            element: <HomePage />,
+          },
+          {
+            path: "/login/oauth2/callback",
+            element: <KakaoCallback />,
+          },
+        ],
       },
       {
-        path: "ai-care",
-        element: <AiCarePage />,
+        element: <ProtectedRoute />,
+        children: [
+          {
+            path: "/",
+            element: <Layout />,
+            children: [
+              {
+                path: "ai-care",
+                element: <AiCarePage />,
+              },
+              {
+                path: "consultation",
+                element: <ConsultationPage />,
+              },
+              {
+                path: "consultation/payment-redirect",
+                element: <PaymentRedirectPage />,
+              },
+              {
+                path: "payments/redirect",
+                element: <PaymentCallbackPage />,
+              },
+              {
+                path: "payments/fail",
+                element: <PaymentFailPage />,
+              },
+              {
+                path: "guide",
+                element: <GuidePage />,
+              },
+              {
+                path: "guide/:category/:productType",
+                element: <GuideDetailPage />,
+              },
+              {
+                path: "mentoring",
+                element: <MentoringPage />,
+              },
+              {
+                path: "recommend",
+                element: <RecommendPage />,
+              },
+              {
+                path: "inventory",
+                element: <InventoryPage />,
+              },
+              {
+                path: "/mypage/consultations",
+                element: <ConsultationManagementPage />,
+              },
+              {
+                path: "/mypage/ai-skincare",
+                element: <AiSkincareHistoryPage />,
+              },
+              {
+                path: "/mypage/inventory-history",
+                element: <InventoryHistoryPage />,
+              },
+              {
+                path: "/mypage/account-withdrawal",
+                element: <AccountWithdrawalPage />,
+              },
+            ],
+          },
+          {
+            path: "/consultation-room/:roomId",
+            element: <ConsultationRoomPage />,
+          },
+        ],
       },
       {
-        path: "consultation",
-        element: <ConsultationPage />,
-      },
-      {
-        path: "consultation/payment-redirect",
-        element: <PaymentRedirectPage />,
-      },
-      {
-        path: "payments/redirect",
-        element: <PaymentCallbackPage />,
-      },
-      {
-        path: "payments/fail",
-        element: <PaymentFailPage />,
-      },
-      {
-        path: "guide",
-        element: <GuidePage />,
-      },
-      {
-        path: "guide/:category/:productType",
-        element: <GuideDetailPage />,
-      },
-      {
-        path: "mentoring",
-        element: <MentoringPage />,
-      },
-      {
-        path: "recommend",
-        element: <RecommendPage />,
-      },
-      {
-        path: "inventory",
-        element: <InventoryPage />,
-      },
-      {
-        path: "/mypage/consultations",
-        element: <ConsultationManagementPage />,
-      },
-      {
-        path: "/mypage/ai-skincare",
-        element: <AiSkincareHistoryPage />,
-      },
-      {
-        path: "/mypage/inventory-history",
-        element: <InventoryHistoryPage />,
-      },
-      {
-        path: "/mypage/account-withdrawal",
-        element: <AccountWithdrawalPage />,
-      },
-      {
-        path: "/login/oauth2/callback",
-        element: <KakaoCallback />,
+        path: "/test/testLogin",
+        element: <TestLoginPage />,
       },
     ],
-  },
-  {
-    path: "/consultation-room/:roomId",
-    element: <ConsultationRoomPage />,
-  },
-  {
-    path: "/test/testLogin",
-    element: <TestLoginPage />,
   },
 ]);
 
