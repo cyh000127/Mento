@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
-import com.mento.domain.mentor.exception.MentorException;
+import com.mento.domain.mentor.exception.MentortTypeException;
 import com.mento.domain.timetable.entity.TimetableSlot;
 import com.mento.domain.user.entity.User;
 
@@ -55,7 +55,7 @@ public class MentorType extends BaseEntity {
 
 	public void addSlot(final TimetableSlot slot) {
 		if (slot == null) {
-			throw new MentorException(ErrorCode.MISSING_SLOT);
+			throw new MentortTypeException(ErrorCode.MISSING_SLOT);
 		}
 		this.slots.add(slot);
 		if (slot.getMentorType() != this) {
@@ -72,7 +72,7 @@ public class MentorType extends BaseEntity {
 
 	public void addMentor(final User user) {
 		if (user == null) {
-			throw new MentorException(ErrorCode.MISSING_MENTOR);
+			throw new MentortTypeException(ErrorCode.MISSING_MENTOR);
 		}
 		this.users.add(user);
 		if (user.getMentorType() != this) {

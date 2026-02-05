@@ -26,8 +26,9 @@ import com.mento.common.response.BaseResponse;
 import com.mento.common.response.ErrorResponse;
 import com.mento.common.util.LoggingUtils;
 import com.mento.domain.consulting.exception.ConsultingException;
-import com.mento.domain.mentor.exception.MentorException;
+import com.mento.domain.mentor.exception.MentortTypeException;
 import com.mento.domain.reservation.exception.ReservationException;
+import com.mento.domain.skinanalysis.exception.SkinAnalysisException;
 import com.mento.domain.timetable.exception.TimetableException;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -185,9 +186,9 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(BaseResponse.fail(response));
 	}
 
-	@ExceptionHandler(MentorException.class)
+	@ExceptionHandler(MentortTypeException.class)
 	public ResponseEntity<BaseResponse<ErrorResponse>> handleMentorException(
-		MentorException ex,
+		MentortTypeException ex,
 		HttpServletRequest request
 	) {
 		LoggingUtils.logException("MentorException 발생", ex, request);
@@ -241,6 +242,16 @@ public class GlobalExceptionHandler {
 		HttpServletRequest request
 	) {
 		LoggingUtils.logException("AiException 발생 ", ex, request);
+		ErrorResponse response = ErrorResponse.of(ex.getErrorCode(), request);
+		return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(BaseResponse.fail(response));
+	}
+
+	@ExceptionHandler(SkinAnalysisException.class)
+	public ResponseEntity<BaseResponse<ErrorResponse>> handleSkinAnalysisException(
+		SkinAnalysisException ex,
+		HttpServletRequest request
+	) {
+		LoggingUtils.logException("SkinAnalysisException 발생 ", ex, request);
 		ErrorResponse response = ErrorResponse.of(ex.getErrorCode(), request);
 		return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(BaseResponse.fail(response));
 	}

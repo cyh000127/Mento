@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.springdoc.core.models.GroupedOpenApi;
 import org.springdoc.core.properties.SwaggerUiConfigProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -52,6 +53,25 @@ public class SwaggerConfig {
 				.addSecuritySchemes("accessTokenAuth", accessTokenAuth))
 			.security(Collections.singletonList(securityRequirement))
 			.servers(servers);
+	}
+
+	@Bean
+	public GroupedOpenApi productionApi() {
+		return GroupedOpenApi.builder()
+			.group("1. Production APIs")
+			.displayName("Production APIs (Requires Auth)")
+			.pathsToMatch("/api/**")
+			.pathsToExclude("/test/**")
+			.build();
+	}
+
+	@Bean
+	public GroupedOpenApi testApi() {
+		return GroupedOpenApi.builder()
+			.group("2. Test APIs")
+			.displayName("Test APIs (No Auth Required)")
+			.pathsToMatch("/test/**")
+			.build();
 	}
 
 	@Bean

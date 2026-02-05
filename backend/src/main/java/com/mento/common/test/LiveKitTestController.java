@@ -1,4 +1,4 @@
-package com.mento.domain.reservation.controller.test;
+package com.mento.common.test;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,15 +17,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "Reservation Test", description = "예약 테스트 API")
+@Tag(name = "Test - Reservation", description = "예약 테스트용 API (인증 없이 예약 ID로 직접 접근)")
 @RestController
-@RequestMapping("/api/v1/test/reservations")
+@RequestMapping("/test/v1/reservations")
 @RequiredArgsConstructor
-public class ReservationTestController {
+public class LiveKitTestController {
 
 	private final ReservationFacadeService facadeService;
 
-	@Operation(summary = "테스트용 LiveKit 세션 생성", description = "유효기간이 없는 LiveKit 세션 토큰을 발급합니다.")
+	@Operation(summary = "[테스트] LiveKit 세션 생성 (무제한)", description = "유효기간이 없는 LiveKit 세션 토큰을 발급합니다.")
 	@PostMapping("/{id}/sessions")
 	public ResponseEntity<BaseResponse<LiveKitSessionResponse>> createInfiniteSession(
 		@PathVariable final Long id,

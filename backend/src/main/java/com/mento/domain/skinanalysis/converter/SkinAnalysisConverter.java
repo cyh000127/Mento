@@ -11,7 +11,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class SkinAnalysisConverter {
 
-	public SkinAnalysisSummaryResDto toSkinAnalysisSummaryResDto(SkinAnalysis entity) {
+	public SkinAnalysisSummaryResDto toSkinAnalysisSummaryResDto(final SkinAnalysis entity) {
 		return SkinAnalysisSummaryResDto.builder()
 			.id(entity.getId())
 			.createdAt(entity.getCreatedAt())
@@ -20,17 +20,7 @@ public class SkinAnalysisConverter {
 			.build();
 	}
 
-	public SkinAnalysis toEntity(Long userId, SkinAnalysisDetailResDto dto) {
-		return SkinAnalysis.builder()
-			.userId(userId)
-			.totalScore(dto.totalScore())
-			.totalGrade(dto.totalGrade())
-			.skinTypeSummary(dto.skinTypeSummary())
-			.analysisDetails(dto.details())
-			.build();
-	}
-
-	public SkinAnalysisDetailResDto toSkinAnalysisDetailResDto(SkinAnalysis entity) {
+	public SkinAnalysisDetailResDto toSkinAnalysisDetailResDto(final SkinAnalysis entity) {
 		return SkinAnalysisDetailResDto.builder()
 			.totalScore(entity.getTotalScore())
 			.totalGrade(entity.getTotalGrade())
@@ -39,7 +29,7 @@ public class SkinAnalysisConverter {
 			.build();
 	}
 
-	public SkinAnalysisAiReqDto toSkinAnalysisAiReqDto(SkinAnalysisClientReqDto dto) {
+	public SkinAnalysisAiReqDto toSkinAnalysisAiReqDto(final SkinAnalysisClientReqDto dto) {
 		return SkinAnalysisAiReqDto.builder()
 			.frontUrl(dto.frontUrl())
 			.l30Url(dto.l30Url())
@@ -48,5 +38,4 @@ public class SkinAnalysisConverter {
 			.gender(dto.gender())
 			.build();
 	}
-
 }

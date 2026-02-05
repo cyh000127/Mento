@@ -4,11 +4,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.mento.common.auth.principal.AuthenticatedUser;
-import com.mento.domain.skinanalysis.dto.response.SkinAnalysisDetailResDto;
-import com.mento.domain.skinanalysis.dto.response.SkinAnalysisSummaryResDto;
+import com.mento.domain.skinanalysis.entity.SkinAnalysis;
 
 public interface SkinAnalysisQueryService {
-	SkinAnalysisDetailResDto getById(Long id, AuthenticatedUser authUser);
+	SkinAnalysis findById(Long id, AuthenticatedUser authUser);
 
-	Page<SkinAnalysisSummaryResDto> getMySummaries(Long userId, Pageable pageable);
+	Page<SkinAnalysis> findAllByUserId(Long userId, Pageable pageable);
 }

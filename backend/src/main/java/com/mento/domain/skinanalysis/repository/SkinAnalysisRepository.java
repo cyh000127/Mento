@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.mento.domain.skinanalysis.entity.SkinAnalysis;
 
 public interface SkinAnalysisRepository extends JpaRepository<SkinAnalysis, Long> {
-	Page<SkinAnalysis> findAllByUserId(Long userId, Pageable pageable);
+	Page<SkinAnalysis> findAllByUser_IdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 }

@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.mentor.entity.MentorType;
-import com.mento.domain.mentor.exception.MentorException;
+import com.mento.domain.mentor.exception.MentortTypeException;
 import com.mento.domain.mentor.repository.MentorTypeRepository;
 import com.mento.domain.mentor.service.query.MentorTypeQueryService;
 
@@ -26,7 +26,7 @@ public class MentorTypeQueryServiceImpl implements MentorTypeQueryService {
 	@Override
 	public MentorType findById(final Long id) {
 		return mentorTypeRepository.findById(id)
-			.orElseThrow(() -> new MentorException(ErrorCode.MENTOR_TYPE_NOT_FOUND));
+			.orElseThrow(() -> new MentortTypeException(ErrorCode.MENTOR_TYPE_NOT_FOUND));
 	}
 
 	@Override
