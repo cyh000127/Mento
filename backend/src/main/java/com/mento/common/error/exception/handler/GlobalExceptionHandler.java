@@ -26,7 +26,7 @@ import com.mento.common.response.BaseResponse;
 import com.mento.common.response.ErrorResponse;
 import com.mento.common.util.LoggingUtils;
 import com.mento.domain.consulting.exception.ConsultingException;
-import com.mento.domain.mentor.exception.MentorException;
+import com.mento.domain.mentor.exception.MentortTypeException;
 import com.mento.domain.reservation.exception.ReservationException;
 import com.mento.domain.timetable.exception.TimetableException;
 
@@ -185,9 +185,9 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(BaseResponse.fail(response));
 	}
 
-	@ExceptionHandler(MentorException.class)
+	@ExceptionHandler(MentortTypeException.class)
 	public ResponseEntity<BaseResponse<ErrorResponse>> handleMentorException(
-		MentorException ex,
+		MentortTypeException ex,
 		HttpServletRequest request
 	) {
 		LoggingUtils.logException("MentorException 발생", ex, request);
