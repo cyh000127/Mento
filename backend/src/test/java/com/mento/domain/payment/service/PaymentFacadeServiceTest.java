@@ -62,10 +62,13 @@ class PaymentFacadeServiceTest {
 	@InjectMocks
 	private PaymentFacadeService paymentFacadeService;
 
+	private static final Long SKINCARE_MENTOR_ID = 1L;
+
 	private Long userId;
 	private Long paymentId;
 	private Payment payment;
 	private Reservation reservation;
+	private User mentor;
 
 	@BeforeEach
 	void setUp() {
@@ -79,7 +82,7 @@ class PaymentFacadeServiceTest {
 		ReflectionTestUtils.setField(user, "id", userId);
 
 		MentorType mentorType = MentorType.builder()
-			.typeName("스킨케어")
+			.typeName("SKINCARE")
 			.price(50000)
 			.build();
 		ReflectionTestUtils.setField(mentorType, "id", 1L);
@@ -96,7 +99,7 @@ class PaymentFacadeServiceTest {
 			.build();
 		ReflectionTestUtils.setField(slot, "id", 1L);
 
-		User mentor = User.builder()
+		mentor = User.builder()
 			.name("테스트 멘토")
 			.email("mentor@test.com")
 			.password("test1234")
@@ -145,10 +148,10 @@ class PaymentFacadeServiceTest {
 
 		given(paymentCommandService.approve(any(PaymentApproveReqDto.class), any(Long.class)))
 			.willReturn(approveResDto);
-		given(paymentQueryService.findById(paymentId))
+		given(paymentQueryService.findDetailsById(paymentId))
 			.willReturn(payment);
-		given(userQueryService.findById(1L))
-			.willReturn(reservation.getMentor());
+		given(userQueryService.findById(SKINCARE_MENTOR_ID))
+			.willReturn(mentor);
 		given(consultingFactory.createConsulting(anyLong()))
 			.willReturn(consulting);
 		willDoNothing().given(notificationFacadeService).sendNotification(any(NotificationSendReqDto.class));
@@ -160,10 +163,11 @@ class PaymentFacadeServiceTest {
 		assertThat(result).isNotNull();
 		assertThat(result.reservationId()).isEqualTo(1L);
 		assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+		assertThat(reservation.getMentor()).isEqualTo(mentor);
 
 		then(paymentCommandService).should(times(1)).approve(request, userId);
-		then(paymentQueryService).should(times(1)).findById(paymentId);
-		then(userQueryService).should(times(1)).findById(1L);
+		then(paymentQueryService).should(times(1)).findDetailsById(paymentId);
+		then(userQueryService).should(times(1)).findById(SKINCARE_MENTOR_ID);
 		then(consultingFactory).should(times(1)).createConsulting(anyLong());
 		then(consultingCommandService).should(times(1)).saveDraftConsulting(consulting);
 		then(notificationFacadeService).should(times(1)).sendNotification(any(NotificationSendReqDto.class));
@@ -192,7 +196,7 @@ class PaymentFacadeServiceTest {
 
 		given(paymentCommandService.approve(any(PaymentApproveReqDto.class), any(Long.class)))
 			.willReturn(approveResDto);
-		given(paymentQueryService.findById(paymentId))
+		given(paymentQueryService.findDetailsById(paymentId))
 			.willReturn(paymentWithoutReservation);
 
 		// When & Then
