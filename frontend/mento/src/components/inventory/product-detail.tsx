@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { Star, ExternalLink, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -23,10 +24,10 @@ const categoryLabels = {
 
 const statusLabels: Record<ProductStatus, string> = {
   "in-use": "보유 중",
-  unavailable: "사용 불가",
+  unavailable: "사용 완료",
   purchasing: "구매 중",
   recommended: "추천 제품",
-  "over-dated": "사용 완료",
+  "over-dated": "기한 만료",
 }
 
 const statusColors: Record<ProductStatus, string> = {
@@ -36,6 +37,13 @@ const statusColors: Record<ProductStatus, string> = {
   recommended: "bg-pastel-green-100 text-green-600 border-pastel-green-200",
   "over-dated": "bg-red-100 text-red-600 border-red-200",
 }
+
+const STATUS_PURCHASING: ProductStatus = "purchasing"
+const STATUS_UNAVAILABLE: ProductStatus = "unavailable"
+const STATUS_OVER_DATED: ProductStatus = "over-dated"
+const ITEM_STATUS_OWNED: ItemStatus = "OWNED"
+const ITEM_STATUS_UNAVAILABLE: ItemStatus = "UNAVAILABLE"
+const ITEM_STATUS_PURCHASING: ItemStatus = "PURCHASING"
 
 export function ProductDetail({
   product,
@@ -67,6 +75,20 @@ export function ProductDetail({
   const currentApiStatus = mapUiStatusToApiStatus(product.status)
   // 허용된 상태 전환 목록 가져오기
   const allowedTransitions = getAllowedStatusTransitions(currentApiStatus)
+  const allowedStatusButtons = allowedTransitions.filter(
+    (targetStatus) => targetStatus === ITEM_STATUS_UNAVAILABLE,
+  )
+  const canChangeToInUse =
+    (product.status === STATUS_OVER_DATED ||
+      product.status === STATUS_PURCHASING ||
+      product.status === STATUS_UNAVAILABLE) &&
+    allowedTransitions.includes(ITEM_STATUS_OWNED)
+
+  const [showPurchaseActions, setShowPurchaseActions] = useState(false)
+
+  useEffect(() => {
+    setShowPurchaseActions(false)
+  }, [product.id])
 
   return (
     <Card className="sticky top-20 overflow-hidden shadow-sm">
@@ -139,9 +161,21 @@ export function ProductDetail({
             </div>
 
             {/* 상태 변경 버튼들 */}
-            {allowedTransitions.length > 0 && (
+            {(canChangeToInUse || allowedStatusButtons.length > 0) && (
               <div className="space-y-2">
-                {allowedTransitions.map((targetStatus) => (
+                {canChangeToInUse && (
+                  <Button
+                    onClick={() => {
+                      if (!canInteract) return
+                      onStatusChange(product.id, ITEM_STATUS_OWNED)
+                    }}
+                    variant="outline"
+                    className="w-full text-sm"
+                  >
+                    보유 중으로 변경
+                  </Button>
+                )}
+                {allowedStatusButtons.map((targetStatus) => (
                   <Button
                     key={targetStatus}
                     onClick={() => {
@@ -160,16 +194,42 @@ export function ProductDetail({
 
           {/* Actions */}
           <div className="space-y-2 border-t border-border pt-4">
-            <Button
-              onClick={() => {
-                if (!canInteract || !product.purchaseLink) return
-                window.open(product.purchaseLink, "_blank")
-              }}
-              className="w-full bg-primary-500 text-dark-bg hover:bg-primary-400"
-            >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              구매 링크
-            </Button>
+            {!showPurchaseActions ? (
+              <Button
+                onClick={() => {
+                  if (!canInteract || !product.purchaseLink) return
+                  window.open(product.purchaseLink, "_blank")
+                  setShowPurchaseActions(true)
+                }}
+                className="w-full bg-primary-500 text-dark-bg hover:bg-primary-400"
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                구매 링크
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <Button
+                  onClick={() => {
+                    if (!canInteract) return
+                    onStatusChange(product.id, ITEM_STATUS_PURCHASING)
+                    setShowPurchaseActions(false)
+                  }}
+                  className="w-full bg-primary-500 text-dark-bg hover:bg-primary-400"
+                >
+                  구매중으로 변경
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (!canInteract) return
+                    setShowPurchaseActions(false)
+                  }}
+                  variant="outline"
+                  className="w-full"
+                >
+                  취소
+                </Button>
+              </div>
+            )}
             <Button
               onClick={() => {
                 if (!canInteract) return

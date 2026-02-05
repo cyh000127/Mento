@@ -116,15 +116,6 @@ export default function InventoryPage() {
     return true
   })
 
-  const mapDetailStatusToUI = useCallback((status: "OWNED" | "IN_USE" | "OVER_DATED"): ProductStatus => {
-    const statusMap = {
-      "OWNED": "in-use" as ProductStatus,
-      "IN_USE": "in-use" as ProductStatus,
-      "OVER_DATED": "over-dated" as ProductStatus,
-    }
-    return statusMap[status] || "in-use"
-  }, [])
-
   const mapDetailCategoryToUI = useCallback((categoryMedium?: string): ProductCategory => {
     const categoryMap: Record<string, ProductCategory> = {
       "스킨케어": "skin",
@@ -155,6 +146,7 @@ export default function InventoryPage() {
         daysUntilExpiry = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
       }
 
+      const normalizedStatus = data.status === "IN_USE" ? "OWNED" : data.status
       const detailedProduct: Product = {
         id: data.id.toString(),
         name: data.productInfoDto.name,
@@ -164,7 +156,7 @@ export default function InventoryPage() {
         purchaseDate: data.purchaseDate,
         expirationDate: data.expectedExpiry,
         repurchaseCount: data.purchaseCount,
-        status: mapDetailStatusToUI(data.status),
+        status: mapApiStatusToUiStatus(normalizedStatus as ItemStatus),
         purchaseLink: data.productInfoDto.productUrl,
         isFavorite: data.isFavorite,
         daysUntilExpiry: daysUntilExpiry,
@@ -181,7 +173,7 @@ export default function InventoryPage() {
     } finally {
       setDetailLoading(false)
     }
-  }, [mapDetailCategoryToUI, mapDetailStatusToUI, toast])
+  }, [mapDetailCategoryToUI, toast])
 
   useEffect(() => {
     if (!hasFetched || loading) return
