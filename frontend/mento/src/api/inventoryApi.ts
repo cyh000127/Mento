@@ -19,6 +19,13 @@ import type {
 } from "@/types/inventory"
 import type { ApiResponse, ProductListItem } from "@/types/product"
 
+export interface RecognizeProductResponse {
+  status: "success" | "fail"
+  message: string
+  ocr_text?: string
+  items?: ProductListItem[]
+}
+
 /**
  * 인벤토리 목록 조회 API
  */
@@ -197,20 +204,25 @@ export async function addInventoryItem(request: AddInventoryItemRequest): Promis
 }
 
 /**
- * 이미지 기반 상품 인식 API
+ * 이미지 기반 상품 인식 API (OCR)
  */
 export async function recognizeProductByImage(
   imageUrl: string
-): Promise<ApiResponse<ProductListItem>> {
+): Promise<RecognizeProductResponse> {
   try {
-    const response = await ocrApi.post<ApiResponse<ProductListItem>>("/products/recognize", {
-      imageUrl,
-    })
+    const response = await ocrApi.post<RecognizeProductResponse>(
+      "/products/recognize",
+      { imageUrl }
+    )
+
     return response.data
   } catch (error: any) {
+    // 서버에서 내려준 에러 포맷이 있는 경우 그대로 반환
     if (error.response?.data) {
-      return error.response.data
+      return error.response.data as RecognizeProductResponse
     }
+
+    // 네트워크 에러 / 예상 못한 에러는 throw
     throw error
   }
 }

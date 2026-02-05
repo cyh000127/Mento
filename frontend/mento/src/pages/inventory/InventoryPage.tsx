@@ -637,15 +637,33 @@ export default function InventoryPage() {
 
     setPhotoStep("loading");
     setPhotoError(null);
+
     try {
       const response = await recognizeProductByImage(capturedImage);
-      if (!response.success || !response.data) {
-        const message = response.error?.message || "상품 인식에 실패했습니다.";
-        setPhotoError(message);
+
+      // 응답 자체가 없는 경우
+      if (!response) {
+        setPhotoError("상품 인식에 실패했습니다.");
         setPhotoStep("preview");
         return;
       }
-      setRecognizedProduct(response.data);
+
+      // 서버에서 실패 응답
+      if (response.status !== "success") {
+        setPhotoError(response.message ?? "상품 인식에 실패했습니다.");
+        setPhotoStep("preview");
+        return;
+      }
+
+      // 인식된 상품 후보 없음
+      if (!response.items || response.items.length === 0) {
+        setPhotoError("인식된 상품 후보가 없습니다.");
+        setPhotoStep("preview");
+        return;
+      }
+
+      // 첫 번째 상품 사용 (추후 선택 UI 가능)
+      setRecognizedProduct(response.items[0]);
       setPhotoStep("result");
     } catch (error) {
       setPhotoError("상품 인식 중 오류가 발생했습니다.");
