@@ -235,17 +235,17 @@ export default function ConsultationManagementPage() {
 
         const params: ReservationListParams = searchParams
           ? {
-              startDate: searchParams.startDate,
-              endDate: searchParams.endDate,
-              page: currentPage,
-              size: pageSize,
-            }
+            startDate: searchParams.startDate,
+            endDate: searchParams.endDate,
+            page: currentPage,
+            size: pageSize,
+          }
           : {
-              startDate: "",
-              endDate: "",
-              page: currentPage,
-              size: pageSize,
-            };
+            startDate: "",
+            endDate: "",
+            page: currentPage,
+            size: pageSize,
+          };
 
         const requestKey = JSON.stringify({
           startDate: params.startDate,
@@ -362,8 +362,8 @@ export default function ConsultationManagementPage() {
   };
 
   const handleEnterRoom = (reservationId: number) => {
-    // Navigate to video consultation room
-    navigate(`/consultation-room/${reservationId}`);
+    const encodedId = btoa(reservationId.toString());
+    navigate(`/consultation-room/${encodedId}`);
   };
 
   const handleBookConsultation = () => {
@@ -380,8 +380,8 @@ export default function ConsultationManagementPage() {
     navigate("/consultation", {
       state: {
         reservationId: consultation.reservationId,
-        step: 4, // 결제 단계
-      },
+        step: 4 // 결제 단계
+      }
     });
   };
 

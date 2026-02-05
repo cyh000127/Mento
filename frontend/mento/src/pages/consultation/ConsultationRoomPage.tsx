@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useConsultationSession } from "@/hooks/useConsultationSession";
 import { VideoTrack } from "@/components/consultation/VideoTrack";
@@ -7,7 +7,17 @@ import { useConsultationStore } from "@/stores/useConsultationStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 export function ConsultationRoomPage() {
-  const { reservationId } = useParams<{ reservationId: string }>();
+  const { roomId } = useParams<{ roomId: string }>();
+  const reservationId = useMemo(() => {
+    if (!roomId) return null;
+    try {
+      return atob(roomId);
+    } catch (e) {
+      console.error("Invalid room ID format", e);
+      return null;
+    }
+  }, [roomId]);
+
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const {
@@ -63,10 +73,11 @@ export function ConsultationRoomPage() {
     console.log("🔑 인증 상태 확인:", {
       hasRefreshToken: localStorage.getItem("hasRefreshToken"),
       reservationId: id,
+      roomId: roomId // Log obfuscated ID
     });
 
     connect(id);
-  }, [reservationId, connect, navigate]);
+  }, [reservationId, roomId, connect, navigate]);
 
   // 연결 해제 핸들러
   const handleDisconnect = () => {
