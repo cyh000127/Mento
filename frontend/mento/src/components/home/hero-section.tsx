@@ -329,7 +329,7 @@ export function HeroSection(props: HeroSectionProps) {
               {/* CTA Buttons */}
               <div className="animate-fade-in-up flex flex-wrap items-center justify-center gap-4" style={{ animationDelay: "0.4s", animationFillMode: "backwards" }}>
                 <Link
-                  to="/recommend"
+                  to="/inventory"
                   className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-4 text-base font-semibold text-dark-bg shadow-lg shadow-primary-500/25 transition-all hover:bg-primary-400 hover:shadow-xl hover:shadow-primary-500/40 hover:scale-105"
                 >
                   시작하기

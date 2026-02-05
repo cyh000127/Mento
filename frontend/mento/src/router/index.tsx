@@ -10,7 +10,6 @@ import { ConsultationRoomPage } from "@/pages/consultation/ConsultationRoomPage"
 import GuidePage from "@/pages/guide/GuidePage";
 import GuideDetailPage from "@/pages/guide/GuideDetailPage";
 import MentoringPage from "@/pages/mentoring/MentoringPage";
-import RecommendPage from "@/pages/recommend/RecommendPage";
 import InventoryPage from "@/pages/inventory/InventoryPage";
 import ConsultationManagementPage from "@/pages/mypage/ConsultationManagementPage";
 import AiSkincareHistoryPage from "@/pages/mypage/AiSkincareHistoryPage";
@@ -77,10 +76,6 @@ const router = createBrowserRouter([
               {
                 path: "mentoring",
                 element: <MentoringPage />,
-              },
-              {
-                path: "recommend",
-                element: <RecommendPage />,
               },
               {
                 path: "inventory",

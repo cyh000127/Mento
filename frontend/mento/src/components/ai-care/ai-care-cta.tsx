@@ -31,13 +31,6 @@ export function AiCareCta() {
                 무료 분석 시작
                 <Sparkles className="h-4 w-4" />
               </button>
-              <Link
-                to="/recommend"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/20 px-8 py-3.5 font-medium text-white transition-all hover:bg-white/10"
-              >
-                추천 제품 보기
-                <ArrowRight className="h-4 w-4" />
-              </Link>
             </div>
           </div>
         </div>

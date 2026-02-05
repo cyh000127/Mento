@@ -40,7 +40,7 @@ export function CtaSection() {
 
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link
-                to="/recommend"
+                to="/inventory"
                 className="group inline-flex items-center gap-2 rounded-xl bg-primary-500 px-10 py-4 text-base font-semibold text-dark-bg shadow-lg shadow-primary-500/30 transition-all hover:bg-primary-400 hover:shadow-2xl hover:shadow-primary-500/40 hover:scale-105"
               >
                 시작하기
