@@ -1,4 +1,4 @@
-import { api } from "./axios"
+import {api, ocrApi} from "./axios"
 import type {
   InventoryResponse,
   InventoryFilters,
@@ -177,7 +177,7 @@ export async function recognizeProductByImage(
   imageUrl: string
 ): Promise<ApiResponse<ProductListItem>> {
   try {
-    const response = await api.post<ApiResponse<ProductListItem>>("/products/recognize", {
+    const response = await ocrApi.post<ApiResponse<ProductListItem>>("/products/recognize", {
       imageUrl,
     })
     return response.data
