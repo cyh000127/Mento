@@ -195,9 +195,10 @@ services:
     env_file:
       - .env
     environment:
-      NAVER_OCR_URL: ${NAVER_OCR_URL}
-      NAVER_SECRET_KEY: ${NAVER_SECRET_KEY}
-      ES_URL: ${ES_URL:-http://elasticsearch:9200}
+      - NAVER_OCR_URL=${NAVER_OCR_URL}
+      - NAVER_SECRET_KEY=${NAVER_SECRET_KEY}
+      - ES_URL=${ES_URL:-http://elasticsearch:9200}
+      - PYTHONUNBUFFERED=1
     networks:
       - app-network
     deploy:
