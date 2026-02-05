@@ -87,8 +87,9 @@ export default function AiSkincareHistoryPage() {
   }, [startYear, startMonth, startDay, endYear, endMonth, endDay]);
 
   const filteredDiagnoses = useMemo(() => {
+    // Show all diagnoses by default when page loads
     if (!isSearched || !searchParams) {
-      return [];
+      return diagnoses;
     }
 
     const rangeStart = new Date(searchParams.startDate);
@@ -208,12 +209,8 @@ export default function AiSkincareHistoryPage() {
                 </div>
 
                 {/* Diagnosis List or Empty State */}
-                {isSearched ? (
-                  filteredDiagnoses.length > 0 ? (
-                    <AiSkincareList diagnoses={filteredDiagnoses} onViewDetail={handleViewDetail} />
-                  ) : (
-                    <AiSkincareEmpty onStartDiagnosis={handleStartDiagnosis} />
-                  )
+                {filteredDiagnoses.length > 0 ? (
+                  <AiSkincareList diagnoses={filteredDiagnoses} onViewDetail={handleViewDetail} />
                 ) : (
                   <AiSkincareEmpty onStartDiagnosis={handleStartDiagnosis} />
                 )}
