@@ -198,10 +198,10 @@ class OCRData(BaseModel):
 
 # FE가 최종적으로 수신할 공통 래퍼(Wrapper) 모델
 class FinalOCRResponse(BaseModel):
-    success: bool
-    data: Optional[OCRData] = None
-    error: Optional[str] = None
-    timestamp: str
+    status: str
+    ocr_text: Optional[str] = None
+    items: List[MatchedProduct] = []
+    message: str
 
 # ==========================================
 # SECTION 2: 고도화된 전처리 (Slicing & Mapping)
@@ -293,26 +293,19 @@ async def search_products_in_es(ocr_text: str, limit: int = 5):
 # ==========================================
 @app.post("/api/ocr/products/recognize", response_model=FinalOCRResponse)
 async def scan_cosmetic(request: OCRRequest):
-    # 응답에 사용할 현재 시각 생성
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
     try:
-        # 1. Base64 데이터 디코딩 및 포맷 판별
+        # 1. Base64 데이터 디코딩 (기존 로직 동일)
         image_raw = request.imageUrl
         if "," in image_raw:
             header, image_raw = image_raw.split(",", 1)
-            # jpeg/png 등 확장자 추출 로직
             file_ext = header.split(';')[0].split('/')[-1]
             if file_ext == 'jpeg': file_ext = 'jpg'
         else:
             file_ext = 'jpg'
 
-        try:
-            content = base64.b64decode(image_raw)
-        except Exception:
-            raise HTTPException(status_code=400, detail="유효하지 않은 Base64 데이터입니다.")
+        content = base64.b64decode(image_raw)
 
-        # 2. Naver Clova OCR 요청 구성
+        # 2. Naver Clova OCR 요청 구성 (기존 로직 동일)
         request_json = {
             'images': [{'format': file_ext, 'name': 'product_image'}],
             'requestId': str(uuid.uuid4()),
@@ -320,71 +313,53 @@ async def scan_cosmetic(request: OCRRequest):
             'timestamp': int(round(time.time() * 1000))
         }
 
-        print(f"🚀 [OCR] 요청 시작 (ext: {file_ext})")
-
-        # 3. 비동기 HTTP 클라이언트를 사용한 OCR 호출
+        # 3. OCR 호출 (기존 로직 동일)
         async with httpx.AsyncClient() as client:
             headers = {'X-OCR-SECRET': NAVER_SECRET_KEY}
             payload = {'message': json.dumps(request_json)}
             files = {'file': (f"image.{file_ext}", content)}
-
-            ocr_response = await client.post(
-                NAVER_OCR_URL,
-                headers=headers,
-                data=payload,
-                files=files,
-                timeout=15.0
-            )
+            ocr_response = await client.post(NAVER_OCR_URL, headers=headers, data=payload, files=files, timeout=15.0)
 
         if ocr_response.status_code != 200:
-            raise HTTPException(status_code=500, detail=f"OCR 서비스 응답 오류: {ocr_response.status_code}")
+            return FinalOCRResponse(status="error", items=[], message="OCR 서비스 응답 오류")
 
-
-        # 4. OCR 결과 분석 및 ES 검색 연동
+        # 4. 결과 분석 및 반환 구조 변경
         res_data = ocr_response.json()
 
         if 'images' in res_data and res_data['images'][0]['inferResult'] == 'SUCCESS':
             image_res = res_data['images'][0]
-            fields = image_res['fields']
-            full_text = " ".join([field['inferText'] for field in fields])
+            full_text = " ".join([field['inferText'] for field in image_res['fields']])
 
-            # Clova에서 반환한 전체 인식 신뢰도 추출
-            confidence = image_res.get('confidence', 0.0)
-
-            print(f"✅ [OCR] 텍스트 추출 성공: {full_text[:50]}...")
-
-            # 검색 로직 호출
+            # 검색 로직 호출 (이미 리스트를 반환함)
             candidate_products = await search_products_in_es(full_text, limit=5)
-            print(f"🔍 [ES] 검색 결과: {len(candidate_products)}건 매칭됨")
 
-            # FE 규격에 맞게 중첩된 data 객체 구성
-            ocr_result_data = OCRData(
-                recognized=True,
-                confidence=round(confidence, 2),
-                matchedProducts=candidate_products  # search_products_in_es 결과가 이미 리스트
-            )
-
-            return FinalOCRResponse(
-                success=True,
-                data=ocr_result_data,
-                error=None,
-                timestamp=current_time
-            )
+            if candidate_products:
+                return FinalOCRResponse(
+                    status="success",
+                    ocr_text=full_text,
+                    items=candidate_products, # List[MatchedProduct] 형태
+                    message="유사한 상품 후보를 찾았습니다."
+                )
+            else:
+                return FinalOCRResponse(
+                    status="partial_success",
+                    ocr_text=full_text,
+                    items=[],
+                    message="텍스트는 인식했으나 일치하는 상품 후보가 없습니다."
+                )
         else:
             return FinalOCRResponse(
-                success=False,
-                data=None,
-                error="이미지 인식에 실패했습니다.",
-                timestamp=current_time
+                status="fail",
+                items=[],
+                message="이미지 인식에 실패했습니다."
             )
 
     except Exception as e:
         print(f"❌ 오류 발생: {e}")
         return FinalOCRResponse(
-            success=False,
-            data=None,
-            error=str(e),
-            timestamp=current_time
+            status="error",
+            items=[],
+            message=f"서버 내부 오류: {str(e)}"
         )
 
 if __name__ == "__main__":
