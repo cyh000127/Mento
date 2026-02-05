@@ -17,16 +17,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 load_dotenv()
 
 app = FastAPI(title="Cosmetic OCR Scanner API")
-
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://i14a704.p.ssafy.io", "http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["*"], # POST, OPTIONS 등을 모두 허용
-    allow_headers=["*"],
-)
 
 # 환경 변수 및 설정 값
 NAVER_OCR_URL = os.getenv("NAVER_OCR_URL")
@@ -309,6 +300,8 @@ async def scan_cosmetic(request: OCRRequest):
             'timestamp': int(round(time.time() * 1000))
         }
 
+        print(f"🚀 [OCR] 요청 시작 (ext: {file_ext})")
+
         # 3. 비동기 HTTP 클라이언트를 사용한 OCR 호출
         async with httpx.AsyncClient() as client:
             headers = {'X-OCR-SECRET': NAVER_SECRET_KEY}
@@ -333,8 +326,11 @@ async def scan_cosmetic(request: OCRRequest):
             fields = res_data['images'][0]['fields']
             full_text = " ".join([field['inferText'] for field in fields])
 
+            print(f"✅ [OCR] 텍스트 추출 성공: {full_text[:50]}...")
+
             # 검색 로직 호출 (await 사용)
             candidate_products = await search_products_in_es(full_text, limit=5)
+            print(f"🔍 [ES] 검색 결과: {len(candidate_products)}건 매칭됨")
 
             if candidate_products:
                 return ProductResponse(
