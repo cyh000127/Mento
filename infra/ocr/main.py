@@ -207,37 +207,42 @@ class FinalOCRResponse(BaseModel):
 # SECTION 2: 고도화된 전처리 (Slicing & Mapping)
 # ==========================================
 def preprocess_ocr_text(full_text: str):
-    """
-    OCR로 추출된 텍스트에서 노이즈를 제거하고 검색 키워드를 확장합니다.
-    """
-    # 1. 특수문자 제거
-    text = re.sub(r'[^가-힣a-zA-Z0-9\s]', ' ', full_text)
+    # 1. 원본 보존 및 대문자화
+    full_text_upper = full_text.upper()
 
-    # 2. [전략 1: 노이즈 키워드 기반 절단]
-    noise_keywords = ["사용방법", "주의사항", "전성분", "제조번호", "책임판매", "제조원", "MADE IN"]
+    # 2. 노이즈 키워드 기반 절단 (문장 중반 이후에 나올 때만 작동하도록 보완)
+    noise_keywords = ["사용방법", "주의사항", "전성분", "제조번호", "책임판매", "제조원", "MADE IN", "INGREDIENTS"]
+    clean_text = full_text_upper
     for keyword in noise_keywords:
-        if keyword in text:
-            text = text.split(keyword)[0]
+        idx = clean_text.find(keyword)
+        if idx > 15:  # 상품명 앞부분에 키워드가 있을 경우를 대비해 여유값 부여
+            clean_text = clean_text[:idx]
+            break
 
-    # 3. 상위 단어 추출 (상품명은 보통 상단에 위치)
-    words = text.split()
-    top_words = words[:20]
+    # 3. 특수문자 제거 (정규식 최적화)
+    clean_text = re.sub(r'[^가-힣A-Z0-9\s]', ' ', clean_text)
 
-    # 4. [전략 2: 한/영 동의어 확장]
+    # 4. 단위 제거 (공백 대응: 50 ML, 50ML 모두 제거)
+    clean_text = re.sub(r'\d+\s*(ML|G|매|EA|PCS|호)', ' ', clean_text)
+
+    # 5. 한/영 동의어 확장 (효율적인 매칭)
     search_terms = []
+    # 공백 제거된 텍스트로 사전 매핑 확인
     match_target = clean_text.replace(" ", "")
-
     for kor_key, eng_val in MAPPING_DICT.items():
         if kor_key in match_target or eng_val.replace(" ", "").upper() in match_target:
             search_terms.append(kor_key)
             search_terms.append(eng_val)
 
-    # 5. 원본에서 추출한 단어 중 너무 짧은 단어(1글자) 제외하고 추가
+    # 6. 유효 단어 추출 (2글자 이상만)
     words = [w for w in clean_text.split() if len(w) > 1]
-    search_terms.extend(words[:15]) # 상위 15개 핵심 단어만 사용
+    search_terms.extend(words[:15])
 
-    # 중복 제거 후 쿼리 스트링 반환
-    return " ".join(list(dict.fromkeys(search_terms)))
+    # 7. 중복 제거 및 결과 반환
+    final_query = " ".join(list(dict.fromkeys(search_terms)))
+
+    print(f"🔍 [Final Query]: {final_query}") # 디버깅용
+    return final_query
 
 # ==========================================
 # SECTION 3: Elasticsearch 검색 (비동기 POST 방식)
