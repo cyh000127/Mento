@@ -338,12 +338,12 @@ async def scan_cosmetic(
 
     # 1. 헤더 체크
     if not authorization or not authorization.startswith("Bearer "):
-        return FinalOCRResponse(status="fail", items=[], message="인증 헤더가 누락되었습니다.")
+        return FinalOCRResponse(status="fail", items=[], message="로그인이 필요합니다.")
 
     # 2. 토큰에서 user_id 추출
     user_id = get_user_id_from_token(authorization)
     if not user_id:
-        return FinalOCRResponse(status="fail", items=[], message="유효하지 않은 토큰입니다.")
+        return FinalOCRResponse(status="fail", items=[], message="잘못된 요청입니다.")
 
     # 3. Spring Boot에 유저 확인 요청 (프록시 승인)
     try:
@@ -355,11 +355,11 @@ async def scan_cosmetic(
             auth_res = await client.get(target_url, headers={"Authorization": authorization}, timeout=3.0)
 
         if auth_res.status_code != 200:
-            return FinalOCRResponse(status="fail", items=[], message="인증 서버로부터 승인을 받지 못했습니다.")
+            return FinalOCRResponse(status="fail", items=[], message="잘못된 요청입니다.")
 
     except Exception as e:
         print(f"❌ BE 통신 에러: {e}")
-        return FinalOCRResponse(status="error", items=[], message="인증 서버와 통신할 수 없습니다.")
+        return FinalOCRResponse(status="error", items=[], message="잠시 후 다시 시도하시기 바랍니다.")
 
     try:
         # 1. Base64 데이터 디코딩 (기존 로직 동일)
