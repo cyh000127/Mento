@@ -57,7 +57,7 @@ springdoc:
     groups:
       enabled: true
   swagger-ui:
-    path: /swagger
+    path: /1q2w3e4r
     display-request-duration: true
     operations-sorter: alpha
     groups-order: asc
