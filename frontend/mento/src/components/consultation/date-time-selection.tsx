@@ -269,18 +269,17 @@ export function DateTimeSelection({ selectedDate, selectedTime, selectedCategory
                   }}
                   disabled={disabled}
                   className={`relative flex h-12 flex-col items-center justify-center rounded-lg text-sm transition-all
-                    ${
-                      disabled
-                        ? "cursor-not-allowed bg-transparent text-gray-300"
-                        : selected
+                    ${disabled
+                      ? "cursor-not-allowed bg-transparent text-gray-300"
+                      : selected
                         ? "bg-primary-500 font-semibold text-dark-bg shadow-md"
                         : !inCurrentMonth
-                        ? "bg-transparent text-text-secondary/40"
-                        : dayOfWeek === 0
-                        ? "text-red-400 hover:bg-muted"
-                        : dayOfWeek === 6
-                        ? "text-blue-400 hover:bg-muted"
-                        : "text-text-primary hover:bg-muted"
+                          ? "bg-transparent text-text-secondary/40"
+                          : dayOfWeek === 0
+                            ? "text-red-400 hover:bg-muted"
+                            : dayOfWeek === 6
+                              ? "text-blue-400 hover:bg-muted"
+                              : "text-text-primary hover:bg-muted"
                     }
                   `}
                 >
@@ -298,8 +297,11 @@ export function DateTimeSelection({ selectedDate, selectedTime, selectedCategory
           <h3 className="mb-6 text-lg font-bold text-text-primary">시간 선택</h3>
 
           {/* Morning */}
-          <div className="mb-6">
-            <h4 className="mb-3 text-sm font-medium text-text-secondary">오전</h4>
+          <div className={`mb-6 ${!selectedDate ? "opacity-40 pointer-events-none" : ""}`}>
+            <div className="flex justify-between items-center mb-3">
+              <h4 className="text-sm font-medium text-text-secondary">오전</h4>
+              {!selectedDate && <span className="text-xs text-red-500 font-medium">* 날짜를 먼저 선택해주세요</span>}
+            </div>
             <div className="grid grid-cols-4 gap-2">
               {morningTimes.map((time) => {
                 const isUnavailable = isTimeUnavailable(time);
@@ -315,13 +317,12 @@ export function DateTimeSelection({ selectedDate, selectedTime, selectedCategory
                       onTimeSelect(time, slot?.slotId ?? null);
                     }}
                     disabled={isUnavailable}
-                    className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-all ${
-                      isSelected
+                    className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-all ${isSelected
                         ? "border-primary-500 bg-primary-500 text-dark-bg shadow-md"
                         : isUnavailable
-                        ? "cursor-not-allowed border-border bg-muted/50 text-text-secondary/40"
-                        : "border-border bg-background text-text-primary hover:border-primary-300 hover:bg-primary-100"
-                    }`}
+                          ? "cursor-not-allowed border-border bg-muted/50 text-text-secondary/40"
+                          : "border-border bg-background text-text-primary hover:border-primary-300 hover:bg-primary-100"
+                      }`}
                   >
                     {time}
                   </button>
@@ -331,7 +332,7 @@ export function DateTimeSelection({ selectedDate, selectedTime, selectedCategory
           </div>
 
           {/* Afternoon */}
-          <div>
+          <div className={`${!selectedDate ? "opacity-40 pointer-events-none" : ""}`}>
             <h4 className="mb-3 text-sm font-medium text-text-secondary">오후</h4>
             <div className="grid grid-cols-4 gap-2">
               {afternoonTimes.map((time) => {
@@ -348,13 +349,12 @@ export function DateTimeSelection({ selectedDate, selectedTime, selectedCategory
                       onTimeSelect(time, slot?.slotId ?? null);
                     }}
                     disabled={isUnavailable}
-                    className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-all ${
-                      isSelected
+                    className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-all ${isSelected
                         ? "border-primary-500 bg-primary-500 text-dark-bg shadow-md"
                         : isUnavailable
-                        ? "cursor-not-allowed border-border bg-muted/50 text-text-secondary/40"
-                        : "border-border bg-background text-text-primary hover:border-primary-300 hover:bg-primary-100"
-                    }`}
+                          ? "cursor-not-allowed border-border bg-muted/50 text-text-secondary/40"
+                          : "border-border bg-background text-text-primary hover:border-primary-300 hover:bg-primary-100"
+                      }`}
                   >
                     {time}
                   </button>
@@ -384,9 +384,8 @@ export function DateTimeSelection({ selectedDate, selectedTime, selectedCategory
           type="button"
           onClick={onNext}
           disabled={!canProceed}
-          className={`flex items-center gap-2 rounded-xl px-8 py-3 text-base font-semibold transition-all ${
-            canProceed ? "bg-primary-500 text-dark-bg hover:bg-primary-400 shadow-lg shadow-primary-500/30" : "cursor-not-allowed bg-muted text-muted-foreground"
-          }`}
+          className={`flex items-center gap-2 rounded-xl px-8 py-3 text-base font-semibold transition-all ${canProceed ? "bg-primary-500 text-dark-bg hover:bg-primary-400 shadow-lg shadow-primary-500/30" : "cursor-not-allowed bg-muted text-muted-foreground"
+            }`}
         >
           다음 단계
           <ArrowRight className="h-5 w-5" />

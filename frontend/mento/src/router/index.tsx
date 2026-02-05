@@ -91,7 +91,7 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: "/consultation-room/:reservationId",
+    path: "/consultation-room/:roomId",
     element: <ConsultationRoomPage />,
   },
   {
