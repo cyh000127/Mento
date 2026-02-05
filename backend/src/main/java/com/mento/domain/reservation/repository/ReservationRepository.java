@@ -20,7 +20,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 	@EntityGraph(attributePaths = {"user", "mentor", "slot", "slot.timetable", "slot.mentorType"})
 	Optional<Reservation> findWithDetailsById(Long id);
 
-	@EntityGraph(attributePaths = {"slot", "slot.timetable", "slot.mentorType"})
+	@EntityGraph(attributePaths = {"slot", "slot.timetable", "slot.mentorType", "consultingReport"})
 	@Query("""
 		SELECT r
 		FROM Reservation r

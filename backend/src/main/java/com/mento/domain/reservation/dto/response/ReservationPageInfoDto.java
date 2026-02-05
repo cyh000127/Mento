@@ -15,6 +15,9 @@ public record ReservationPageInfoDto(
 	@Schema(description = "예약 ID")
 	Long reservationId,
 
+	@Schema(description = "상담 요약본 ID")
+	Long reportId,
+
 	@Schema(description = "상담 일자", example = "2025-01-29")
 	@DateTimeFormat(pattern = "yyyy-MM-dd")
 	LocalDate scheduledDate,

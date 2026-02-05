@@ -132,6 +132,8 @@ public enum ErrorCode {
 	AI_REPORT_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CON-004", "AI 보고서 생성에 실패했습니다."),
 	REPORT_GENERATION_IN_PROGRESS(HttpStatus.CONFLICT, "CON-005", "이미 보고서 생성이 진행 중입니다."),
 	MISSING_CONSULTING_REPORT(HttpStatus.BAD_REQUEST, "CON-006", "상담 요약본 정보를 찾을 수 없습니다"),
+	CONSULTING_REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "CON-007", "상담 요악본을 찾을 수 없습니다."),
+	REPORT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "CON-008", "해당 상담 보고서에 접근 권한이 없습니다."),
 
 	/**
 	 * Notification Error (N-xxx)

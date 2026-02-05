@@ -1,4 +1,4 @@
-package com.mento.domain.consulting.service.query;
+package com.mento.domain.consulting.service.query.impl;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -7,6 +7,7 @@ import com.mento.common.error.ErrorCode;
 import com.mento.domain.consulting.entity.Consulting;
 import com.mento.domain.consulting.exception.ConsultingException;
 import com.mento.domain.consulting.repository.ConsultingRepository;
+import com.mento.domain.consulting.service.query.ConsultingQueryService;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
