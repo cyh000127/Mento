@@ -7,9 +7,10 @@ interface ConsultationListProps {
   onViewDetail: (consultation: Consultation) => void;
   onEnterRoom: (reservationId: number) => void;
   onGoToPayment: (consultation: Consultation) => void;
+  onViewReport: (consultation: Consultation) => void;
 }
 
-export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onGoToPayment }: ConsultationListProps) {
+export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onGoToPayment, onViewReport }: ConsultationListProps) {
   const formatDateTime = (dateStr: string, timeStr: string) => {
     return `${dateStr.replace(/-/g, ".")} ${timeStr}`;
   };
@@ -18,10 +19,11 @@ export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onG
     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       {/* Table Header */}
       <div className="text-center grid grid-cols-12 gap-4 bg-muted px-6 py-4 text-sm font-semibold text-foreground border-b border-border">
-        <div className="col-span-3">상담 일자</div>
+        <div className="col-span-2">상담 일자</div>
         <div className="col-span-2">유형</div>
-        <div className="col-span-3">예약 사전 정보 확인</div>
-        <div className="col-span-4">상태</div>
+        <div className="col-span-3">상태</div>
+        <div className="col-span-3">AI 리포트</div>
+        <div className="col-span-2">상세 확인</div>
       </div>
 
       {/* Table Body */}
@@ -29,23 +31,15 @@ export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onG
         {consultations.map((consultation) => (
           <div key={consultation.id} className="grid grid-cols-12 gap-4 px-6 py-5 hover:bg-muted/30 transition-colors">
             {/* Date Time */}
-            <div className="col-span-3 flex items-center text-sm text-foreground justify-center">{formatDateTime(consultation.scheduledDate, consultation.scheduledTime)}</div>
+            <div className="col-span-2 flex items-center text-sm text-foreground justify-center">{formatDateTime(consultation.scheduledDate, consultation.scheduledTime)}</div>
 
             {/* Category */}
             <div className="col-span-2 flex items-center justify-center">
               <span className="text-sm text-foreground">{consultation.mentorTypeName}</span>
             </div>
 
-            {/* Pre-consultation Info Link */}
-            <div className="col-span-3 flex items-center justify-center">
-              <button onClick={() => onViewDetail(consultation)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                입력한 사전 정보 보러가기
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-
             {/* Status Buttons */}
-            <div className="col-span-4 flex items-center gap-2 justify-center">
+            <div className="col-span-3 flex items-center gap-2 justify-center">
               {consultation.status === "pending" && (
                 <>
                   <Button size="sm" variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-300">
@@ -61,12 +55,7 @@ export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onG
                   <Button size="sm" variant="outline" className="bg-muted text-foreground hover:bg-muted/80" disabled>
                     예약 완료
                   </Button>
-                  <Button 
-                    size="sm" 
-                    onClick={() => onEnterRoom(consultation.reservationId!)} 
-                    className="bg-muted text-foreground hover:bg-muted/80"
-                    disabled={!consultation.reservationId}
-                  >
+                  <Button size="sm" onClick={() => onEnterRoom(consultation.reservationId!)} className="bg-muted text-foreground hover:bg-muted/80" disabled={!consultation.reservationId}>
                     상담 방 이동
                   </Button>
                 </>
@@ -76,6 +65,22 @@ export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onG
                   상담 완료
                 </Button>
               )}
+            </div>
+
+            {/* ai 리포트 */}
+            <div className="col-span-3 flex items-center justify-center">
+              <Button onClick={() => onViewReport(consultation)} className="h-[36px] bg-muted text-foreground hover:bg-muted/80">
+                보러 가기
+                {/* <ChevronRight className="h-4 w-4" /> */}
+              </Button>
+            </div>
+
+            {/* Pre-consultation Info Link */}
+            <div className="col-span-2 flex items-center justify-center">
+              <button onClick={() => onViewDetail(consultation)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                자세히 보기
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
           </div>
         ))}

@@ -43,37 +43,9 @@ export function CtaSection() {
                 to="/recommend"
                 className="group inline-flex items-center gap-2 rounded-xl bg-primary-500 px-10 py-4 text-base font-semibold text-dark-bg shadow-lg shadow-primary-500/30 transition-all hover:bg-primary-400 hover:shadow-2xl hover:shadow-primary-500/40 hover:scale-105"
               >
-                무료로 시작하기
+                시작하기
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Link>
-              <Link
-                to="/guide"
-                className="inline-flex items-center gap-2 rounded-xl border-2 border-white/30 bg-white/10 backdrop-blur-sm px-10 py-4 text-base font-semibold text-white transition-all hover:bg-white/20 hover:border-white/50"
-              >
-                더 알아보기
-              </Link>
-            </div>
-
-            {/* Stats */}
-            <div className="mt-16 grid w-full max-w-3xl grid-cols-3 gap-8 border-t border-white/10 pt-12 md:gap-16">
-              <div className="group transition-all hover:-translate-y-1">
-                <p className="mb-2 text-3xl font-bold text-primary-400 transition-colors group-hover:text-primary-300 md:text-4xl">
-                  10K+
-                </p>
-                <p className="text-sm text-white/70 md:text-base">활성 사용자</p>
-              </div>
-              <div className="group transition-all hover:-translate-y-1">
-                <p className="mb-2 text-3xl font-bold text-primary-400 transition-colors group-hover:text-primary-300 md:text-4xl">
-                  50+
-                </p>
-                <p className="text-sm text-white/70 md:text-base">전문 멘토</p>
-              </div>
-              <div className="group transition-all hover:-translate-y-1">
-                <p className="mb-2 text-3xl font-bold text-primary-400 transition-colors group-hover:text-primary-300 md:text-4xl">
-                  4.9
-                </p>
-                <p className="text-sm text-white/70 md:text-base">평균 평점</p>
-              </div>
             </div>
           </div>
         </div>
