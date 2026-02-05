@@ -1,6 +1,9 @@
 package com.mento.domain.product.controller.query;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -9,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mento.common.response.BaseResponse;
+import com.mento.common.response.PageResponse;
 import com.mento.common.util.ResponseUtils;
 import com.mento.domain.product.dto.response.ProductListResDto;
 import com.mento.domain.product.dto.response.ProductResDto;
@@ -44,5 +48,15 @@ public class ProductQueryController {
 	) {
 		Page<ProductListResDto> response = productFacadeService.getProducts(page, size);
 		return ResponseUtils.ok(response);
+	}
+
+	@Operation(summary = "상품 검색", description = "상품을 검색합니다.")
+	@GetMapping("/search")
+	public ResponseEntity<PageResponse<ProductListResDto>> search(
+		@RequestParam(name = "q") final String query,
+		@ParameterObject @PageableDefault final Pageable pageable
+	) {
+		Page<ProductListResDto> response = productFacadeService.search(query, pageable);
+		return ResponseUtils.page(response);
 	}
 }

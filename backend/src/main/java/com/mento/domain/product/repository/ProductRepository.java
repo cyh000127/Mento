@@ -1,7 +1,10 @@
 package com.mento.domain.product.repository;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -18,4 +21,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 		JOIN p.brand b
 		""")
 	Page<ProductListResDto> findAllProductsProjected(Pageable pageable);
+
+	@EntityGraph(attributePaths = {"brand"})
+	List<Product> findAllByIdIn(List<Long> ids);
 }

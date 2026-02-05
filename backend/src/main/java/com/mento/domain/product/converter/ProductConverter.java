@@ -4,6 +4,7 @@ import com.mento.common.converter.JsonStringConverter;
 import com.mento.domain.brand.entity.Brand;
 import com.mento.domain.product.dto.common.ProductInfoDto;
 import com.mento.domain.product.dto.request.ProductCreateReqDto;
+import com.mento.domain.product.dto.response.ProductListResDto;
 import com.mento.domain.product.dto.response.ProductResDto;
 import com.mento.domain.product.entity.Product;
 
@@ -63,6 +64,16 @@ public class ProductConverter {
 			.categoryMedium(product.getCategoryMedium())
 			.imageUrl(product.getImageUrl())
 			.productUrl(product.getProductUrl())
+			.build();
+	}
+
+	public ProductListResDto toProductListResDto(Product product) {
+		return ProductListResDto.builder()
+			.productId(product.getId())
+			.name(product.getName())
+			.brandName(product.getBrand().getBrandName())
+			.categoryMedium(product.getCategoryMedium())
+			.imageUrl(product.getImageUrl())
 			.build();
 	}
 
