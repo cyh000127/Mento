@@ -15,8 +15,8 @@ import {
   getInventoryItemDetail,
   updateInventoryItemStatus,
   getStatusUpdateErrorMessage,
-  toggleInventoryItemFavorite,  
-  recognizeProductByImage
+  toggleInventoryItemFavorite,
+  recognizeProductByImage,
 } from "@/api/inventoryApi";
 import type { ItemStatus } from "@/types/inventory";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -25,8 +25,8 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertModal } from "@/components/common/alert-modal";
 import { ConfirmModal } from "@/components/common/confirm-modal";
 import type { AlertModalType } from "@/components/common/alert-modal";
-import type { ProductListItem } from "@/types/product"
-type PhotoStep = "camera" | "preview" | "loading" | "result"
+import type { ProductListItem } from "@/types/product";
+type PhotoStep = "camera" | "preview" | "loading" | "result";
 
 export default function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -45,11 +45,12 @@ export default function InventoryPage() {
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [photoStep, setPhotoStep] = useState<PhotoStep>("camera")
-  const [capturedImage, setCapturedImage] = useState<string | null>(null)
-  const [recognizedProduct, setRecognizedProduct] = useState<ProductListItem | null>(null)
-  const [photoError, setPhotoError] = useState<string | null>(null)
-  const [registering, setRegistering] = useState(false)
+  const [cameraLoading, setCameraLoading] = useState(false);
+  const [photoStep, setPhotoStep] = useState<PhotoStep>("camera");
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [recognizedProduct, setRecognizedProduct] = useState<ProductListItem | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [registering, setRegistering] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const { toast } = useToast();
@@ -319,17 +320,17 @@ export default function InventoryPage() {
   };
 
   const handleAddPhoto = () => {
-    setPhotoModalOpen(true)
-  }
+    setPhotoModalOpen(true);
+  };
 
   const resetPhotoFlow = useCallback(() => {
-    setPhotoStep("camera")
-    setCapturedImage(null)
-    setRecognizedProduct(null)
-    setPhotoError(null)
-    setCameraError(null)
-    setRegistering(false)
-  }, [])
+    setPhotoStep("camera");
+    setCapturedImage(null);
+    setRecognizedProduct(null);
+    setPhotoError(null);
+    setCameraError(null);
+    setRegistering(false);
+  }, []);
 
   const handleProductsAdded = async (selectedProducts: Product[]) => {
     try {
@@ -487,34 +488,88 @@ export default function InventoryPage() {
 
   const stopCamera = useCallback(() => {
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => track.stop())
-      mediaStreamRef.current = null
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
     }
     if (videoRef.current) {
-      videoRef.current.srcObject = null
+      videoRef.current.srcObject = null;
     }
-  }, [])
+    setCameraLoading(false);
+  }, []);
 
   const startCamera = useCallback(async () => {
     try {
-      setCameraError(null)
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-      mediaStreamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
+      setCameraError(null);
+      setCameraLoading(true);
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraError("이 브라우저에서는 카메라를 사용할 수 없습니다.");
+        return;
       }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: "environment",
+        },
+        audio: false,
+      });
+
+      if (!videoRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        setCameraError("비디오 요소를 찾을 수 없습니다.");
+        return;
+      }
+
+      mediaStreamRef.current = stream;
+      videoRef.current.srcObject = stream;
+
+      await new Promise<void>((resolve, reject) => {
+        const video = videoRef.current;
+        if (!video) {
+          reject(new Error("비디오 요소가 손실되었습니다."));
+          return;
+        }
+
+        video.onloadedmetadata = async () => {
+          try {
+            await video.play();
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+        };
+
+        setTimeout(() => reject(new Error("Timeout")), 5000);
+      });
     } catch (error) {
-      setCameraError("카메라 접근이 거부되었습니다.")
+      if (error instanceof Error) {
+        if (error.name === "NotAllowedError") {
+          setCameraError("카메라 접근 권한이 거부되었습니다.");
+        } else if (error.name === "NotFoundError") {
+          setCameraError("카메라를 찾을 수 없습니다.");
+        } else if (error.name === "NotReadableError") {
+          setCameraError("다른 앱에서 카메라를 사용 중입니다.");
+        } else if (error.message.includes("Timeout")) {
+          setCameraError("카메라 로딩 시간이 초과되었습니다.");
+        } else {
+          setCameraError(`카메라를 시작할 수 없습니다: ${error.message}`);
+        }
+      } else {
+        setCameraError("카메라를 시작할 수 없습니다.");
+      }
+    } finally {
+      setCameraLoading(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    let isActive = true
+    let isActive = true;
 
     const openCamera = async () => {
-      await startCamera()
+      await startCamera();
       if (!isActive) {
-        stopCamera()
+        stopCamera();
       }
     };
 
@@ -523,97 +578,105 @@ export default function InventoryPage() {
     }
 
     return () => {
-      isActive = false
-      stopCamera()
-    }
-  }, [photoModalOpen, photoStep, startCamera, stopCamera])
+      isActive = false;
+      stopCamera();
+    };
+  }, [photoModalOpen, photoStep, startCamera, stopCamera]);
 
   useEffect(() => {
     if (!photoModalOpen) {
-      resetPhotoFlow()
-      stopCamera()
+      resetPhotoFlow();
+      stopCamera();
     }
-  }, [photoModalOpen, resetPhotoFlow, stopCamera])
+  }, [photoModalOpen, resetPhotoFlow, stopCamera]);
 
   const handleTakePhoto = () => {
+    if (cameraLoading) {
+      setPhotoError("카메라를 준비하는 중입니다.");
+      return;
+    }
     if (!videoRef.current) {
-      setPhotoError("카메라가 준비되지 않았습니다.")
-      return
+      setPhotoError("카메라가 준비되지 않았습니다.");
+      return;
     }
 
-    const video = videoRef.current
-    const canvas = document.createElement("canvas")
-    const width = video.videoWidth || 640
-    const height = video.videoHeight || 480
-    canvas.width = width
-    canvas.height = height
+    const video = videoRef.current;
+    const canvas = document.createElement("canvas");
+    const width = video.videoWidth || 640;
+    const height = video.videoHeight || 480;
+    if (!width || !height) {
+      setPhotoError("카메라 영상이 준비되지 않았습니다.");
+      return;
+    }
+    canvas.width = width;
+    canvas.height = height;
 
-    const context = canvas.getContext("2d")
+    const context = canvas.getContext("2d");
     if (!context) {
-      setPhotoError("이미지 캡처에 실패했습니다.")
-      return
+      setPhotoError("이미지 캡처에 실패했습니다.");
+      return;
     }
 
-    context.drawImage(video, 0, 0, width, height)
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.9)
-    setCapturedImage(dataUrl)
-    setPhotoStep("preview")
-    stopCamera()
-  }
+    context.drawImage(video, 0, 0, width, height);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    setCapturedImage(dataUrl);
+    setPhotoStep("preview");
+    stopCamera();
+  };
 
   const handleRetake = () => {
-    setCapturedImage(null)
-    setRecognizedProduct(null)
-    setPhotoError(null)
-    setCameraError(null)
-    setPhotoStep("camera")
-  }
+    setCapturedImage(null);
+    setRecognizedProduct(null);
+    setPhotoError(null);
+    setCameraError(null);
+    setPhotoStep("camera");
+  };
 
   const handleConfirmPhoto = async () => {
-    if (!capturedImage || photoStep === "loading") return
+    if (!capturedImage || photoStep === "loading") return;
 
-    setPhotoStep("loading")
-    setPhotoError(null)
+    setPhotoStep("loading");
+    setPhotoError(null);
     try {
-      const response = await recognizeProductByImage(capturedImage)
+      const response = await recognizeProductByImage(capturedImage);
       if (!response.success || !response.data) {
-        const message = response.error?.message || "상품 인식에 실패했습니다."
-        setPhotoError(message)
-        setPhotoStep("preview")
-        return
+        const message = response.error?.message || "상품 인식에 실패했습니다.";
+        setPhotoError(message);
+        setPhotoStep("preview");
+        return;
       }
-      setRecognizedProduct(response.data)
-      setPhotoStep("result")
+      setRecognizedProduct(response.data);
+      setPhotoStep("result");
     } catch (error) {
-      setPhotoError("상품 인식 중 오류가 발생했습니다.")
-      setPhotoStep("preview")
+      setPhotoError("상품 인식 중 오류가 발생했습니다.");
+      setPhotoStep("preview");
     }
-  }
+  };
 
   const handleRegisterRecognized = async () => {
-    if (!recognizedProduct || registering) return
-    setRegistering(true)
-    setPhotoError(null)
+    if (!recognizedProduct || registering) return;
+    setRegistering(true);
+    setPhotoError(null);
     try {
-      await addInventoryItem({ productId: recognizedProduct.productId })
-      await fetchInventory()
+      await addInventoryItem({ productId: recognizedProduct.productId });
+      await fetchInventory();
       toast({
         title: "등록 완료",
         description: "인식된 상품이 인벤토리에 추가되었습니다.",
-      })
-      setPhotoModalOpen(false)
+      });
+      setPhotoModalOpen(false);
     } catch (error: any) {
-      const message = error?.response?.data?.message || "상품 등록 중 오류가 발생했습니다."
-      setPhotoError(message)
+      const message = error?.response?.data?.message || "상품 등록 중 오류가 발생했습니다.";
+      setPhotoError(message);
     } finally {
-      setRegistering(false)
+      setRegistering(false);
     }
-  }
+  };
 
   const handleRegisterViaText = () => {
-    setPhotoModalOpen(false)
-    setRegisterModalOpen(true)
-  }
+    setPhotoModalOpen(false);
+    setRegisterModalOpen(true);
+  };
 
   const isEmptyState = hasFetched && !loading && products.length === 0;
   const fallbackProduct: Product = {
@@ -693,8 +756,8 @@ export default function InventoryPage() {
       <Dialog
         open={photoModalOpen}
         onOpenChange={(open) => {
-          if (photoStep === "loading") return
-          setPhotoModalOpen(open)
+          if (photoStep === "loading") return;
+          setPhotoModalOpen(open);
         }}
       >
         <DialogContent className="max-w-xl">
@@ -708,21 +771,11 @@ export default function InventoryPage() {
                   <p className="text-sm text-muted-foreground">{cameraError}</p>
                 ) : (
                   <div className="overflow-hidden rounded-lg border border-border bg-black">
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="h-[360px] w-full object-cover"
-                    />
+                    <video ref={videoRef} autoPlay playsInline muted className="h-[360px] w-full object-cover" />
                   </div>
                 )}
-                <Button
-                  onClick={handleTakePhoto}
-                  disabled={!!cameraError}
-                  className="w-full bg-primary-500 text-dark-bg hover:bg-primary-400"
-                >
-                  사진 촬영
+                <Button onClick={handleTakePhoto} disabled={!!cameraError || cameraLoading} className="w-full bg-primary-500 text-dark-bg hover:bg-primary-400">
+                  {cameraLoading ? "카메라 준비 중..." : "사진 촬영"}
                 </Button>
               </>
             )}
@@ -739,10 +792,7 @@ export default function InventoryPage() {
                   <Button variant="outline" onClick={handleRetake} className="flex-1">
                     다시 촬영
                   </Button>
-                  <Button
-                    onClick={handleConfirmPhoto}
-                    className="flex-1 bg-primary-500 text-dark-bg hover:bg-primary-400"
-                  >
+                  <Button onClick={handleConfirmPhoto} className="flex-1 bg-primary-500 text-dark-bg hover:bg-primary-400">
                     확인
                   </Button>
                 </div>
@@ -760,11 +810,7 @@ export default function InventoryPage() {
               <>
                 <div className="flex items-center gap-4 rounded-lg border border-border p-4">
                   <div className="h-20 w-20 overflow-hidden rounded-md border border-border bg-muted">
-                    <img
-                      src={recognizedProduct.imageUrl}
-                      alt={recognizedProduct.name}
-                      className="h-full w-full object-cover"
-                    />
+                    <img src={recognizedProduct.imageUrl} alt={recognizedProduct.name} className="h-full w-full object-cover" />
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm font-semibold text-foreground">{recognizedProduct.name}</p>
@@ -778,11 +824,7 @@ export default function InventoryPage() {
                     <Button variant="outline" onClick={handleRetake} className="flex-1" disabled={registering}>
                       다시 촬영
                     </Button>
-                    <Button
-                      onClick={handleRegisterRecognized}
-                      className="flex-1 bg-primary-500 text-dark-bg hover:bg-primary-400"
-                      disabled={registering}
-                    >
+                    <Button onClick={handleRegisterRecognized} className="flex-1 bg-primary-500 text-dark-bg hover:bg-primary-400" disabled={registering}>
                       등록
                     </Button>
                   </div>
