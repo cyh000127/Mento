@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 
 export default function InventoryPage() {
@@ -40,7 +41,6 @@ export default function InventoryPage() {
   const [favoriteLoading, setFavoriteLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
-  const [hasNext, setHasNext] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | "all">("all")
   const [sortOption, setSortOption] = useState<SortOption>("recent")
@@ -87,7 +87,6 @@ export default function InventoryPage() {
       const mappedProducts = response.content.map(mapApiItemToProduct)
       setProducts(mappedProducts)
       setTotalPages(response.totalPages)
-      setHasNext(response.hasNext)
     } catch (error) {
       console.error("Failed to fetch inventory:", error)
       setProducts([])
@@ -115,6 +114,8 @@ export default function InventoryPage() {
     }
     return true
   })
+  const shouldShowPagination = totalPages > 1
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index)
 
   const mapDetailCategoryToUI = useCallback((categoryMedium?: string): ProductCategory => {
     const categoryMap: Record<string, ProductCategory> = {
@@ -486,6 +487,43 @@ export default function InventoryPage() {
               selectedProductId={selectedProduct?.id}
               onProductSelect={handleProductSelect}
             />
+            {shouldShowPagination && (
+              <div className="mt-16 flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  variant="outline"
+                  className="h-9 w-9 p-0"
+                  disabled={currentPage === 0}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  ←
+                </Button>
+                {pageNumbers.map((page) => {
+                  const isActive = page === currentPage
+                  return (
+                    <Button
+                      key={page}
+                      variant="outline"
+                      className={`h-9 w-9 p-0 ${
+                        isActive
+                          ? "border-primary-500 bg-primary-500 text-dark-bg hover:bg-primary-400"
+                          : "text-muted-foreground"
+                      }`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page + 1}
+                    </Button>
+                  )
+                })}
+                <Button
+                  variant="outline"
+                  className="h-9 w-9 p-0"
+                  disabled={currentPage >= totalPages - 1}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  →
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Right Section - Product Detail */}
