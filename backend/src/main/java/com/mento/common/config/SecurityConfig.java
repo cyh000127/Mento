@@ -45,7 +45,9 @@ public class SecurityConfig {
 		"/test/v1/**",
 
 		//livekit
-		"/api/v1/consulting/session/**"
+		"/api/v1/consulting/session/**",
+		"/api/v1/recordings/start",
+		"/api/v1/recordings/stop"
 	};
 	private final CorsConfig corsFilter;
 	private final CustomOAuth2UserService customOAuth2UserService;
