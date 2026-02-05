@@ -50,12 +50,16 @@ const RIGHT_IMAGES = [
   nix2,           // lifestyle grooming
 ]
 
-export function HeroSection() {
+interface HeroSectionProps {
+  showIntro: boolean
+  onIntroComplete: () => void
+}
+
+export function HeroSection({ showIntro, onIntroComplete }: HeroSectionProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const sectionRefs = useRef<HTMLElement[]>([])
   const [currentScene, setCurrentScene] = useState(0)
   const [sectionCount, setSectionCount] = useState(0)
-  const [showIntro, setShowIntro] = useState(true)
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
@@ -90,32 +94,12 @@ export function HeroSection() {
   }, [])
 
   useEffect(() => {
-    if (showIntro) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = "auto"
-    }
-
-    return () => {
-      document.body.style.overflow = "auto"
-    }
-  }, [showIntro])
-
-  useEffect(() => {
     if (videoRef.current && currentScene === 2) {
       videoRef.current.play().catch((error) => {
         console.log("Video autoplay failed:", error)
       })
     }
   }, [currentScene])
-
-  useEffect(() => {
-    // Check if user has seen intro before (using sessionStorage)
-    const hasSeenIntro = sessionStorage.getItem("hasSeenIntro")
-    if (hasSeenIntro) {
-      setShowIntro(false)
-    }
-  }, [])
 
   useEffect(() => {
     if (showIntro || !imagesLoaded) return
@@ -151,34 +135,7 @@ export function HeroSection() {
 
 
   const handleIntroComplete = () => {
-    sessionStorage.setItem("hasSeenIntro", "true")
-    setShowIntro(false)
-  }
-
-  <section
-  data-home-section
-  className="relative h-screen w-full snap-start snap-always bg-background"
->
-  {showIntro && <LoadingIntro onComplete={handleIntroComplete} />}
-
-  {!showIntro && (
-    <>
-      {/* 기존 Hero 콘텐츠 */}
-    </>
-  )}
-</section>
-
-
-  // Show loading overlay if images are not ready
-  if (!imagesLoaded) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" />
-          <p className="text-sm text-text-secondary">Loading...</p>
-        </div>
-      </div>
-    )
+    onIntroComplete()
   }
 
   const handleLearnMore = () => {
@@ -188,6 +145,8 @@ export function HeroSection() {
 
   return (
     <>
+      {showIntro && <LoadingIntro onComplete={handleIntroComplete} />}
+
       {/* Progress indicator */}
       <div className="fixed right-8 top-1/2 z-50 flex -translate-y-1/2 flex-col gap-3">
         {Array.from({ length: sectionCount }, (_, index) => (

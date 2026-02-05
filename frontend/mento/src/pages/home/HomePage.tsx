@@ -12,8 +12,10 @@ if (typeof window !== "undefined" && "scrollRestoration" in history) {
 export default function HomePage() {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
-  const [snapEnabled, setSnapEnabled] = useState(false)
-  const [isScrollReady, setIsScrollReady] = useState(false)
+  const [showIntro, setShowIntro] = useState(() => {
+    if (typeof window === "undefined") return true
+    return localStorage.getItem("hasVisitedHome") !== "true"
+  })
 
   const resetScroll = useCallback(() => {
     const container = scrollContainerRef.current
@@ -22,6 +24,11 @@ export default function HomePage() {
     } else {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" })
     }
+  }, [])
+
+  const handleIntroComplete = useCallback(() => {
+    localStorage.setItem("hasVisitedHome", "true")
+    setShowIntro(false)
   }, [])
 
   useEffect(() => {
@@ -36,6 +43,17 @@ export default function HomePage() {
     }
   }, [isLoggedIn])
 
+  useEffect(() => {
+    if (showIntro) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = "auto"
+    }
+
+    return () => {
+      document.body.style.overflow = "auto"
+    }
+  }, [showIntro])
 
   useEffect(() => {
     const handlePageShow = () => resetScroll()
@@ -44,20 +62,19 @@ export default function HomePage() {
   }, [resetScroll])
 
   useLayoutEffect(() => {
-    setSnapEnabled(false)
-    setIsScrollReady(false)
     resetScroll()
-  
-    const timeoutId = setTimeout(() => {
-      requestAnimationFrame(() => {
-        resetScroll()
-        setSnapEnabled(true)
-        setIsScrollReady(true)
-      })
-    }, 150) // Hero 레이아웃 안정화 대기
-  
-    return () => clearTimeout(timeoutId)
   }, [isLoggedIn, resetScroll])
+
+  useLayoutEffect(() => {
+    if (showIntro) {
+      resetScroll()
+      return
+    }
+
+    requestAnimationFrame(() => {
+      resetScroll()
+    })
+  }, [showIntro, resetScroll])
 
   const scrollContainerHeight = isLoggedIn ? "h-[calc(100vh-3.5rem)]" : "h-screen"
 
@@ -76,12 +93,12 @@ export default function HomePage() {
         }
       `}</style>
       <div
-        className={`${scrollContainerHeight} overflow-y-scroll ${snapEnabled ? "snap-y snap-mandatory" : "snap-none"} ${isScrollReady ? "opacity-100" : "opacity-0"} ${isScrollReady ? "scroll-smooth" : "scroll-auto"} overscroll-y-contain transition-opacity duration-150`}
+        className={`${scrollContainerHeight} ${showIntro ? "overflow-hidden snap-none scroll-auto" : "overflow-y-scroll snap-y snap-mandatory scroll-smooth"} overscroll-y-contain`}
         data-home-scroll
         ref={scrollContainerRef}
       >
       {/* Hero with 3 scenes */}
-      <HeroSection />
+      <HeroSection showIntro={showIntro} onIntroComplete={handleIntroComplete} />
 
       {/* Additional sections */}
       <FeaturesSection />
