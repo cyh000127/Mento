@@ -16,3 +16,18 @@ export interface AiSkincareFilters {
   startDate?: string;
   endDate?: string;
 }
+
+// AI 피부 진단 상세 정보
+export interface SkinAnalysisDetail {
+  score: number;
+  grade: number;
+  raw_value: number;
+  description: string;
+}
+
+export interface SkinAnalysisDetailData {
+  total_score: number;
+  total_grade: number;
+  skin_type_summary: string;
+  details: Record<string, SkinAnalysisDetail>;
+}

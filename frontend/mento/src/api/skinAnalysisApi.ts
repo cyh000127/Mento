@@ -54,3 +54,22 @@ export const getSkinAnalysisHistory = async (params: SkinAnalysisListParams = {}
 
   return response.data;
 };
+
+type SkinAnalysisDetail = {
+  score: number;
+  grade: number;
+  raw_value: number;
+  description: string;
+};
+
+type SkinAnalysisDetailResponse = {
+  total_score: number;
+  total_grade: number;
+  skin_type_summary: string;
+  details: Record<string, SkinAnalysisDetail>;
+};
+
+export const getSkinAnalysisDetail = async (id: number) => {
+  const response = await api.get<{ success: boolean; data: SkinAnalysisDetailResponse }>(`/skin-analysis/${id}`);
+  return response.data.data;
+};

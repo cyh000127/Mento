@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { MyPageSidebar } from "@/components/mypage/mypage-sidebar";
 import { PeriodDateFilters } from "@/components/mypage/consultation-filters";
 import { AiSkincareList } from "@/components/mypage/ai-skincare-list";
 import { AiSkincareEmpty } from "@/components/mypage/ai-skincare-empty";
-import type { AiSkincareDiagnosis, PeriodFilter } from "@/types/ai-skincare";
-import { getSkinAnalysisHistory } from "@/api/skinAnalysisApi";
+import { SkinAnalysisResult } from "@/components/ai-care/skin-analysis-result";
+import type { AiSkincareDiagnosis, PeriodFilter, SkinAnalysisDetailData } from "@/types/ai-skincare";
+import { getSkinAnalysisHistory, getSkinAnalysisDetail } from "@/api/skinAnalysisApi";
 
 export default function AiSkincareHistoryPage() {
   // Filter states
@@ -24,6 +26,12 @@ export default function AiSkincareHistoryPage() {
   // Data state
   const [diagnoses, setDiagnoses] = useState<AiSkincareDiagnosis[]>([]);
   const hasFetchedRef = useRef(false);
+
+  // Detail view states
+  const [selectedDiagnosis, setSelectedDiagnosis] = useState<AiSkincareDiagnosis | null>(null);
+  const [detailData, setDetailData] = useState<SkinAnalysisDetailData | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   useEffect(() => {
     if (hasFetchedRef.current) return;
@@ -109,8 +117,27 @@ export default function AiSkincareHistoryPage() {
     });
   };
 
-  const handleViewDetail = (diagnosis: AiSkincareDiagnosis) => {
-    void diagnosis;
+  const handleViewDetail = async (diagnosis: AiSkincareDiagnosis) => {
+    setSelectedDiagnosis(diagnosis);
+    setIsLoadingDetail(true);
+    setDetailError(null);
+    setDetailData(null);
+
+    try {
+      const data = await getSkinAnalysisDetail(diagnosis.id);
+      setDetailData(data);
+    } catch (error) {
+      console.error("Failed to fetch detail:", error);
+      setDetailError("상세 정보를 불러오는데 실패했습니다.");
+    } finally {
+      setIsLoadingDetail(false);
+    }
+  };
+
+  const handleBackToList = () => {
+    setSelectedDiagnosis(null);
+    setDetailData(null);
+    setDetailError(null);
   };
 
   const handleStartDiagnosis = () => {};
@@ -126,36 +153,71 @@ export default function AiSkincareHistoryPage() {
               <h1 className="text-2xl font-bold text-foreground pb-3">AI CARE 내역</h1>
             </div>
 
-            {/* Filters */}
-            <div className="mb-6 rounded-xl border border-border bg-card p-6 shadow-sm">
-              <PeriodDateFilters
-                selectedPeriod={selectedPeriod}
-                onPeriodChange={handlePeriodChange}
-                startYear={startYear}
-                onStartYearChange={setStartYear}
-                startMonth={startMonth}
-                onStartMonthChange={setStartMonth}
-                startDay={startDay}
-                onStartDayChange={setStartDay}
-                endYear={endYear}
-                onEndYearChange={setEndYear}
-                endMonth={endMonth}
-                onEndMonthChange={setEndMonth}
-                endDay={endDay}
-                onEndDayChange={setEndDay}
-                onSearch={handleSearch}
-              />
-            </div>
+            {selectedDiagnosis ? (
+              // Detail View
+              <div>
+                {/* Back Button */}
+                <button onClick={handleBackToList} className="mb-6 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <ChevronLeft className="h-4 w-4" />
+                  목록으로 돌아가기
+                </button>
 
-            {/* Diagnosis List or Empty State */}
-            {isSearched ? (
-              filteredDiagnoses.length > 0 ? (
-                <AiSkincareList diagnoses={filteredDiagnoses} onViewDetail={handleViewDetail} />
-              ) : (
-                <AiSkincareEmpty onStartDiagnosis={handleStartDiagnosis} />
-              )
+                {/* Loading State */}
+                {isLoadingDetail && (
+                  <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
+                    <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-primary-100">
+                      <Loader2 className="h-12 w-12 animate-spin text-primary-500" />
+                    </div>
+                    <h2 className="mb-4 text-2xl font-bold text-text-primary md:text-3xl">데이터를 불러오고 있습니다</h2>
+                    <p className="text-text-secondary">잠시만 기다려주세요.</p>
+                  </div>
+                )}
+
+                {/* Error State */}
+                {detailError && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+                    <p className="text-red-600">{detailError}</p>
+                  </div>
+                )}
+
+                {/* Detail Result */}
+                {detailData && !isLoadingDetail && <SkinAnalysisResult analysisResult={detailData} showRetryButton={false} />}
+              </div>
             ) : (
-              <AiSkincareEmpty onStartDiagnosis={handleStartDiagnosis} />
+              // List View
+              <>
+                {/* Filters */}
+                <div className="mb-6 rounded-xl border border-border bg-card p-6 shadow-sm">
+                  <PeriodDateFilters
+                    selectedPeriod={selectedPeriod}
+                    onPeriodChange={handlePeriodChange}
+                    startYear={startYear}
+                    onStartYearChange={setStartYear}
+                    startMonth={startMonth}
+                    onStartMonthChange={setStartMonth}
+                    startDay={startDay}
+                    onStartDayChange={setStartDay}
+                    endYear={endYear}
+                    onEndYearChange={setEndYear}
+                    endMonth={endMonth}
+                    onEndMonthChange={setEndMonth}
+                    endDay={endDay}
+                    onEndDayChange={setEndDay}
+                    onSearch={handleSearch}
+                  />
+                </div>
+
+                {/* Diagnosis List or Empty State */}
+                {isSearched ? (
+                  filteredDiagnoses.length > 0 ? (
+                    <AiSkincareList diagnoses={filteredDiagnoses} onViewDetail={handleViewDetail} />
+                  ) : (
+                    <AiSkincareEmpty onStartDiagnosis={handleStartDiagnosis} />
+                  )
+                ) : (
+                  <AiSkincareEmpty onStartDiagnosis={handleStartDiagnosis} />
+                )}
+              </>
             )}
           </div>
         </div>
