@@ -1,6 +1,5 @@
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ConsultationReport } from "@/components/consultation/ConsultationReport";
 import type { Consultation, ConsultationStatus } from "@/types/consultation";
 
 interface ConsultationDetailProps {
@@ -77,19 +76,6 @@ export function ConsultationDetail({ consultation, onBack, onGoToPayment }: Cons
                 </div>
               </div>
             )}
-
-            {/* Consultation Report */}
-            {/* Consultation Report */}
-            <div className="flex items-start gap-20">
-              <span className="text-sm font-medium text-foreground min-w-[80px]">AI 리포트</span>
-              <div className="flex-1">
-                {consultation.report ? (
-                  <ConsultationReport report={consultation.report} />
-                ) : (
-                  <p className="text-sm text-muted-foreground">상담이 끝나고 생성이 완료되면 리포트를 확인할 수 있습니다.</p>
-                )}
-              </div>
-            </div>
           </div>
         </div>
       </div>
