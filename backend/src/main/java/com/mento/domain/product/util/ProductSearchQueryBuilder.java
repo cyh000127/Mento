@@ -15,7 +15,7 @@ public class ProductSearchQueryBuilder {
 	private static final float BOOST_BRAND = 2.0f;
 	private static final String MINIMUM_SHOULD_MATCH = "1";
 
-	public NativeQuery build(String searchKeyword, Pageable pageable) {
+	public NativeQuery build(final String searchKeyword, final Pageable pageable) {
 		return NativeQuery.builder()
 			.withQuery(q -> q.bool(b -> b
 				.minimumShouldMatch(MINIMUM_SHOULD_MATCH)

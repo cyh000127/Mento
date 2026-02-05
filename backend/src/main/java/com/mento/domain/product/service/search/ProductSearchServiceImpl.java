@@ -31,7 +31,7 @@ public class ProductSearchServiceImpl implements ProductSearchService {
 	private final ElasticsearchOperations operations;
 	private final ProductRepository productRepository;
 
-	public Page<Product> search(String refinedQuery, Pageable pageable) {
+	public Page<Product> search(final String refinedQuery, final Pageable pageable) {
 		NativeQuery query = ProductSearchQueryBuilder.build(refinedQuery, pageable);
 		SearchHits<ProductDocument> searchHits = operations.search(query, ProductDocument.class);
 
@@ -48,7 +48,7 @@ public class ProductSearchServiceImpl implements ProductSearchService {
 		return new PageImpl<>(sortedProducts, pageable, searchHits.getTotalHits());
 	}
 
-	private List<Product> fetchAndSortProducts(List<Long> productIds) {
+	private List<Product> fetchAndSortProducts(final List<Long> productIds) {
 		List<Product> products = productRepository.findAllByIdIn(productIds);
 
 		Map<Long, Product> productMap = products.stream()

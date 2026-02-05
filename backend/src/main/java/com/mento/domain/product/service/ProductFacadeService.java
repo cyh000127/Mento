@@ -45,7 +45,7 @@ public class ProductFacadeService {
 		return productQueryService.getProducts(pageable);
 	}
 
-	public Page<ProductListResDto> search(String query, Pageable pageable) {
+	public Page<ProductListResDto> search(final String query, final Pageable pageable) {
 		Page<Product> productPage = productSearchService.search(query, pageable);
 		return productPage.map(ProductConverter::toProductListResDto);
 	}
