@@ -8,6 +8,7 @@ import java.util.List;
 
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.timetable.exception.TimetableException;
 
 import jakarta.persistence.CascadeType;
@@ -51,7 +52,7 @@ public class Timetable extends BaseEntity {
 	private LocalDateTime deletedAt;
 
 	public void withdraw() {
-		this.deletedAt = LocalDateTime.now();
+		this.deletedAt = TimeUtils.nowAsLocalDateTime();
 		slots.forEach(TimetableSlot::withdraw);
 	}
 

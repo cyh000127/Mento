@@ -7,6 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.entity.ItemHistory;
 import com.mento.domain.item.enums.ItemHistoryAction;
@@ -35,7 +36,7 @@ public class ItemExpirationSchedulingService {
 	public void expireOverdueItems() {
 		log.info("[ItemExpirationScheduler] 만료 아이템 처리 시작");
 
-		LocalDate today = LocalDate.now();
+		LocalDate today = TimeUtils.nowAsLocalDate();
 		List<Item> overdueItems = itemQueryService.findOverdueItems(today);
 
 		int updatedCount = itemCommandService.expireOverdueItems(today);
