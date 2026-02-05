@@ -1,4 +1,4 @@
-import { api } from "./axios";
+import { api, testApi } from "./axios";
 import type { ConsultationSessionData, ConsultationSessionResponse } from "@/types/consultation";
 
 /**
@@ -16,13 +16,13 @@ import type { ConsultationSessionData, ConsultationSessionResponse } from "@/typ
  */
 export async function createConsultationSession(reservationId: number): Promise<ConsultationSessionData> {
   console.log("📡 API 호출 시작:", {
-    url: `/test/reservations/${reservationId}/sessions`,
+    url: `/reservations/${reservationId}/sessions`,
     method: "POST",
-    baseURL: "http://localhost:8080/api/v1",
+    baseURL: testApi,
   });
 
   try {
-    const response = await api.post<ConsultationSessionResponse>(`/test/reservations/${reservationId}/sessions`);
+    const response = await testApi.post<ConsultationSessionResponse>(`/reservations/${reservationId}/sessions`);
 
     console.log("✅ API 응답 성공:", response.data);
 

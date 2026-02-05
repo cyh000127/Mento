@@ -198,7 +198,8 @@ export function useConsultationSession(): UseConsultationSessionReturn {
 
         setSessionData(session);
         processedReservationId.current = reservationId;
-
+        session.livekitUrl = "wss://i14a704.p.ssafy.io/rtc/";
+        
         if (!session.roomToken || !session.livekitUrl || !session.roomName) {
           throw new Error("LiveKit 접속 정보가 올바르지 않습니다.");
         }
