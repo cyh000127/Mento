@@ -11,7 +11,6 @@ type MainCategory = {
 const mainCategories: MainCategory[] = [
   { id: "skinCare", label: "Skin Care" },
   { id: "beauty", label: "Beauty" },
-  { id: "hair", label: "Hair" },
 ]
 
 export function MainCategoryTabs({

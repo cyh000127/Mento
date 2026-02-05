@@ -1,7 +1,7 @@
 import { ProductTypeCard } from "./ProductTypeCard"
 
 interface ProductTypeGridProps {
-  productTypes: string[]
+  productTypes: { id: string; label: string; image?: string }[]
   selectedType: string
   onTypeSelect: (type: string) => void
 }
@@ -23,11 +23,12 @@ export function ProductTypeGrid({
     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
       {productTypes.map((type) => (
         <ProductTypeCard
-          key={type}
-          id={type}
-          label={type}
-          isSelected={selectedType === type}
-          onClick={() => onTypeSelect(type)}
+          key={type.id}
+          id={type.id}
+          label={type.label}
+          image={type.image}
+          isSelected={selectedType === type.id}
+          onClick={() => onTypeSelect(type.id)}
         />
       ))}
     </div>
