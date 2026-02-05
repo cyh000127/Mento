@@ -18,8 +18,8 @@ public class RecordingFacadeService {
 		return recordingCommandService.startRecording(request);
 	}
 
-	public RecordingResDto stopRecording(final String egressId) {
-		return recordingCommandService.stopRecording(egressId);
+	public RecordingResDto stopRecording(final String roomId) {
+		return recordingCommandService.stopRecording(roomId);
 	}
 
 	public void handleWebhook(final String body, final String authHeader) {

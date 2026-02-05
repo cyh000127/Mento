@@ -3,6 +3,7 @@ package com.mento.domain.livekit.service.command;
 import java.io.IOException;
 
 import org.jspecify.annotations.NonNull;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +39,7 @@ public class RecordingCommandService {
 	private static final String EGRESS_COMPLETE_STATUS = "EGRESS_COMPLETE";
 	private static final String EGRESS_FAILED_STATUS = "EGRESS_FAILED";
 
+	private final RedisTemplate<String, String> redisTemplate;
 	private final EgressServiceClient egressServiceClient;
 	private final CloudflareProperties cloudflareProperties;
 	private final WebhookReceiver webhookReceiver;
@@ -50,15 +52,17 @@ public class RecordingCommandService {
 		EgressInfo egressInfo = executeStartEgress(request, fileOutput);
 
 		log.info("[Recording] 녹화 시작 완료 {egressId: {}, roomId: {}}", egressInfo.getEgressId(), roomId);
+		redisTemplate.opsForValue().set(roomId, egressInfo.getEgressId());
 		return RecordingConverter.toStartResDto(egressInfo.getEgressId(), roomId);
 	}
 
-	public RecordingResDto stopRecording(final String egressId) {
-		log.info("[Recording] 녹화 중지 요청 {egressId: {}}", egressId);
+	public RecordingResDto stopRecording(final String roomId) {
+		String egressId = redisTemplate.opsForValue().getAndDelete(roomId);
+		log.info("[Recording] 녹화 중지 요청 {roomId: {}, egressId: {}}", roomId, egressId);
 
 		executeStopEgress(egressId);
+		log.info("[Recording] 녹화 중지 완료 {roomId: {}, egressId: {}}", roomId, egressId);
 
-		log.info("[Recording] 녹화 중지 완료 {egressId: {}}", egressId);
 		return RecordingConverter.toStopResDto(egressId);
 	}
 
