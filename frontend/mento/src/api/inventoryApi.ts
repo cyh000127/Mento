@@ -80,7 +80,7 @@ export const STATUS_LABELS: Record<ItemStatus, string> = {
   UNAVAILABLE: "사용 불가",
   PURCHASING: "구매 중",
   RECOMMENDED: "추천 제품",
-  OVER_DATED: "사용 완료",
+  OVER_DATED: "기한 만료",
 }
 
 /**
