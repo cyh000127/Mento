@@ -15,6 +15,10 @@ spring:
     multipart:
       max-file-size: 100MB
       max-request-size: 500MB
+  elasticsearch:
+    uris: ${ELASTIC_SEARCH_URL}
+    connection-timeout: 5s
+    socket-timeout: 3s
 
   security:
     oauth2:
