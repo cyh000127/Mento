@@ -162,7 +162,7 @@ export function SkinAnalysisResult({ analysisResult, onRetry, showRetryButton = 
                     const angle = [0, 72, 144, 216, 288][idx];
                     const radian = ((angle - 90) * Math.PI) / 180;
                     // 점수가 낮을수록 바깥쪽 (100 - value로 반전, 그리고 1.8배 스케일)
-                    const radius = (100 - detail.score) * 1.8;
+                    const radius = detail.score * 1.8;
                     const x = 250 + radius * Math.cos(radian);
                     const y = 250 + radius * Math.sin(radian);
                     return `${x},${y}`;
@@ -195,7 +195,7 @@ export function SkinAnalysisResult({ analysisResult, onRetry, showRetryButton = 
               {orderedMetrics.map(({ detail, style }, idx) => {
                 const angle = [0, 72, 144, 216, 288][idx];
                 const radian = ((angle - 90) * Math.PI) / 180;
-                const radius = (100 - detail.score) * 1.8;
+                const radius = detail.score * 1.8;
                 // SVG viewBox는 500x500이고, 중심은 250,250
                 // 실제 위치 계산: 중심(250) + radius * cos/sin
                 const svgX = 250 + radius * Math.cos(radian);
@@ -280,8 +280,9 @@ export function SkinAnalysisResult({ analysisResult, onRetry, showRetryButton = 
                   {[...Array(5)].map((_, i) => (
                     <div key={i} className={`h-2 w-2 rounded-full ${i < getUiLevelFromGrade(detail.grade) ? "bg-[#22c55e]" : "bg-gray-300"}`} />
                   ))}
-                  <span className="ml-2 text-sm text-text-secondary">{detail.grade}/5 단계</span>
+                  <span className="ml-2 text-sm text-text-secondary">{detail.grade}등급</span>
                 </div>
+
                 <p className="text-sm leading-relaxed text-text-secondary">{detail.description}</p>
               </div>
             </div>
