@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { MyPageSidebar } from "@/components/mypage/mypage-sidebar";
 import { PeriodDateFilters } from "@/components/mypage/consultation-filters";
 import { AiSkincareList } from "@/components/mypage/ai-skincare-list";
@@ -149,19 +150,13 @@ export default function AiSkincareHistoryPage() {
         <MyPageSidebar />
         <div className="flex-1">
           <div className="mx-auto max-w-7xl px-6 py-8">
-            {/* Page Header */}
-            <div className="pl-1">
-              <h1 className="text-2xl font-bold text-foreground pb-3">AI CARE 내역</h1>
-            </div>
-
             {selectedDiagnosis ? (
               // Detail View
               <div>
-                {/* Back Button */}
-                <button onClick={handleBackToList} className="mb-6 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  <ChevronLeft className="h-4 w-4" />
-                  목록으로 돌아가기
-                </button>
+                <Button onClick={handleBackToList} variant="ghost" className="text-muted-foreground hover:text-foreground">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  목록으로
+                </Button>
 
                 {/* Loading State */}
                 {isLoadingDetail && (
@@ -209,11 +204,7 @@ export default function AiSkincareHistoryPage() {
                 </div>
 
                 {/* Diagnosis List or Empty State */}
-                {filteredDiagnoses.length > 0 ? (
-                  <AiSkincareList diagnoses={filteredDiagnoses} onViewDetail={handleViewDetail} />
-                ) : (
-                  <AiSkincareEmpty onStartDiagnosis={handleStartDiagnosis} />
-                )}
+                {filteredDiagnoses.length > 0 ? <AiSkincareList diagnoses={filteredDiagnoses} onViewDetail={handleViewDetail} /> : <AiSkincareEmpty onStartDiagnosis={handleStartDiagnosis} />}
               </>
             )}
           </div>
