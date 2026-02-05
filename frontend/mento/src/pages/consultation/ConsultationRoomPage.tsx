@@ -282,6 +282,13 @@ export function ConsultationRoomPage() {
                 )}
               </button>
 
+              {/* AI 리포트 생성 버튼 (멘토 전용) */}
+              {isMentor && (
+                <button className="h-12 px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors" type="button" title="AI 리포트 생성">
+                  AI 리포트 요청 
+                </button>
+              )}
+
               {/* 통화 종료 버튼 */}
               <button className="p-3 rounded-full bg-red-600 hover:bg-red-700 transition-colors" onClick={handleDisconnect} title="통화 종료">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
