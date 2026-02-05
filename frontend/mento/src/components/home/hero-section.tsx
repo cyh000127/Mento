@@ -51,11 +51,13 @@ const RIGHT_IMAGES = [
 ];
 
 interface HeroSectionProps {
-  showIntro: boolean;
-  onIntroComplete: () => void;
+  showIntro?: boolean;
+  onIntroComplete?: () => void;
 }
 
-export function HeroSection({ showIntro, onIntroComplete }: HeroSectionProps) {
+const INTRO_STORAGE_KEY = "hasVisitedHome";
+
+export function HeroSection(props: HeroSectionProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const sectionRefs = useRef<HTMLElement[]>([]);
   const [currentScene, setCurrentScene] = useState(0);
@@ -63,6 +65,10 @@ export function HeroSection({ showIntro, onIntroComplete }: HeroSectionProps) {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const [showIntro, setShowIntro] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(INTRO_STORAGE_KEY) !== "true";
+  });
 
   // Preload images
   useEffect(() => {
@@ -132,7 +138,9 @@ export function HeroSection({ showIntro, onIntroComplete }: HeroSectionProps) {
   }, [showIntro, imagesLoaded]);
 
   const handleIntroComplete = () => {
-    onIntroComplete();
+    localStorage.setItem(INTRO_STORAGE_KEY, "true");
+    setShowIntro(false);
+    props.onIntroComplete?.();
   };
 
   const handleLearnMore = () => {
@@ -140,10 +148,10 @@ export function HeroSection({ showIntro, onIntroComplete }: HeroSectionProps) {
     sectionRefs.current[nextIndex]?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  return (
+  return showIntro ? (
+    <LoadingIntro onComplete={handleIntroComplete} />
+  ) : (
     <>
-      {showIntro && <LoadingIntro onComplete={handleIntroComplete} />}
-
       {/* Progress indicator */}
       <div className="fixed right-8 top-1/2 z-50 flex -translate-y-1/2 flex-col gap-3">
         {Array.from({ length: sectionCount }, (_, index) => (
