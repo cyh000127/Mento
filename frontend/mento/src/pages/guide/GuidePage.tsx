@@ -11,7 +11,7 @@ export default function GuidePage() {
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-pastel-blue-100/50 via-background to-primary-100/30">
-        <div className="mx-auto max-w-[1400px] px-6 py-12 md:py-16">
+        <div className="mx-auto max-w-[1200px] px-6 py-12 md:py-16">
           <div className="flex flex-col items-center text-center">
             {/* Badge */}
             <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary-100 px-4 py-1.5">
