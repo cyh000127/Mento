@@ -41,31 +41,6 @@ export function AiCareHero() {
             <Sparkles className="h-5 w-5" />
             무료 피부 분석 시작
           </button>
-
-          {/* Stats */}
-          <div className="mt-16 grid w-full max-w-2xl grid-cols-3 gap-6">
-            <div className="rounded-2xl bg-white/5 p-6 backdrop-blur-sm">
-              <div className="mb-2 flex items-center justify-center">
-                <Zap className="h-6 w-6 text-primary-400" />
-              </div>
-              <p className="text-2xl font-bold text-white">98%</p>
-              <p className="text-sm text-white/60">분석 정확도</p>
-            </div>
-            <div className="rounded-2xl bg-white/5 p-6 backdrop-blur-sm">
-              <div className="mb-2 flex items-center justify-center">
-                <Cpu className="h-6 w-6 text-primary-400" />
-              </div>
-              <p className="text-2xl font-bold text-white">3초</p>
-              <p className="text-sm text-white/60">분석 속도</p>
-            </div>
-            <div className="rounded-2xl bg-white/5 p-6 backdrop-blur-sm">
-              <div className="mb-2 flex items-center justify-center">
-                <Sparkles className="h-6 w-6 text-primary-400" />
-              </div>
-              <p className="text-2xl font-bold text-white">50K+</p>
-              <p className="text-sm text-white/60">분석 완료</p>
-            </div>
-          </div>
         </div>
       </div>
     </section>
