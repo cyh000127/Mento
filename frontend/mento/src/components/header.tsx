@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Bell, Package, Menu, X } from "lucide-react";
 import { LoginModal } from "./login-modal";
-import { LogoutConfirmModal } from "./logout-confirm-modal";
 import { NotificationModal } from "./notification-modal";
+import { ConfirmModal } from "@/components/common/confirm-modal";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { authApi } from "@/api/authApi";
 
@@ -138,9 +138,7 @@ export function Header() {
               <div className="hidden items-center gap-3 md:flex">
                 {user && (
                   <Link to="/mypage/consultations">
-                    <span className="text-sm font-medium text-dark-bg/90">
-                      {user.name}님
-                    </span>
+                    <span className="text-sm font-medium text-dark-bg/90">{user.name}님</span>
                   </Link>
                 )}
                 <button onClick={() => setIsLogoutConfirmOpen(true)} className="rounded-full bg-dark-bg px-4 py-1.5 text-sm text-primary-500">
@@ -218,10 +216,18 @@ export function Header() {
       )}
 
       <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
-      <LogoutConfirmModal
-        isOpen={isLogoutConfirmOpen}
-        onClose={() => setIsLogoutConfirmOpen(false)}
-        onConfirm={handleLogout}
+      <ConfirmModal
+        open={isLogoutConfirmOpen}
+        onOpenChange={setIsLogoutConfirmOpen}
+        onConfirm={() => {
+          handleLogout();
+          setIsLogoutConfirmOpen(false);
+        }}
+        title="로그아웃"
+        message="로그아웃 하시겠습니까?"
+        type="warning"
+        confirmText="로그아웃"
+        cancelText="취소"
       />
     </>
   );
