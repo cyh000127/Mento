@@ -13,6 +13,11 @@ export const api = axios.create({
   withCredentials: true, // refreshToken 쿠키를 위해 필수
 });
 
+export const ocrApi = axios.create({
+    baseURL: `${API_ORIGIN}/api/ocr`,
+    withCredentials: true, // refreshToken 쿠키를 위해 필수
+});
+
 // /api/v1 미포함 Origin (OAuth 등 특수 용도)
 export const API_BASE = API_ORIGIN;
 
