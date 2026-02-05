@@ -10,11 +10,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
-import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mento.common.config.restclient.ElasticsearchOperationsContainer;
 import com.mento.domain.product.entity.Product;
 import com.mento.domain.product.entity.ProductDocument;
 import com.mento.domain.product.repository.ProductRepository;
@@ -28,12 +28,12 @@ import lombok.RequiredArgsConstructor;
 @Transactional(readOnly = true)
 public class ProductSearchServiceImpl implements ProductSearchService {
 
-	private final ElasticsearchOperations operations;
+	private final ElasticsearchOperationsContainer operationsContainer;
 	private final ProductRepository productRepository;
 
 	public Page<Product> search(final String refinedQuery, final Pageable pageable) {
 		NativeQuery query = ProductSearchQueryBuilder.build(refinedQuery, pageable);
-		SearchHits<ProductDocument> searchHits = operations.search(query, ProductDocument.class);
+		SearchHits<ProductDocument> searchHits = operationsContainer.get().search(query, ProductDocument.class);
 
 		if (searchHits.getTotalHits() <= 0) {
 			return Page.empty(pageable);
