@@ -1,4 +1,4 @@
-package com.mento.domain.consulting.controller;
+package com.mento.domain.consulting.controller.command;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
