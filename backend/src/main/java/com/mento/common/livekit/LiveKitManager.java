@@ -88,6 +88,6 @@ public class LiveKitManager {
 	}
 
 	public String getUrl() {
-		return liveKitProperties.getUrl();
+		return liveKitProperties.getHost();
 	}
 }
