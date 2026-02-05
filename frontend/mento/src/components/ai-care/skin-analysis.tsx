@@ -115,11 +115,13 @@ export function SkinAnalysis() {
   };
 
   const getStatusFromGrade = (grade: number) => {
-    if (grade >= 5) return "우수";
-    if (grade === 4) return "양호";
+    if (grade === 1) return "우수";
+    if (grade === 2) return "양호";
     if (grade === 3) return "보통";
     return "주의";
   };
+
+  const getUiLevelFromGrade = (grade: number) => 6 - grade;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, position: "left" | "front" | "right") => {
     const file = e.target.files?.[0];
@@ -298,6 +300,7 @@ export function SkinAnalysis() {
   const totalScore = analysisResult?.total_score;
   const totalGrade = analysisResult?.total_grade;
   const totalStatus = totalGrade ? getStatusFromGrade(totalGrade) : "";
+  const totalLevel = totalGrade ? getUiLevelFromGrade(totalGrade) : 0;
   const skinType = analysisResult?.skin_type_summary ?? "";
   const details = analysisResult?.details;
   const metricOrder: Array<keyof typeof METRIC_STYLE_MAP> = ["moisture", "pore", "wrinkle", "pigmentation", "sagging"];
@@ -559,7 +562,7 @@ export function SkinAnalysis() {
                     <p className="text-2xl font-semibold text-white">점</p>
                     <div className="flex gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
-                        <div key={star} className={`h-4 w-4 rounded-full ${totalGrade && star <= totalGrade ? "bg-white" : "bg-white/40"}`} />
+                        <div key={star} className={`h-4 w-4 rounded-full ${totalLevel && star <= totalLevel ? "bg-white" : "bg-white/40"}`} />
                       ))}
                     </div>
                   </div>
@@ -726,7 +729,7 @@ export function SkinAnalysis() {
                     <div className="p-6">
                       <div className="mb-3 flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
-                          <div key={i} className={`h-2 w-2 rounded-full ${i < detail.grade ? "bg-[#22c55e]" : "bg-gray-300"}`} />
+                          <div key={i} className={`h-2 w-2 rounded-full ${i < getUiLevelFromGrade(detail.grade) ? "bg-[#22c55e]" : "bg-gray-300"}`} />
                         ))}
                         <span className="ml-2 text-sm text-text-secondary">{detail.grade}/5 단계</span>
                       </div>
