@@ -1,8 +1,7 @@
 package com.mento.domain.skinanalysis.service.command;
 
-import com.mento.domain.skinanalysis.dto.request.SkinAnalysisClientReqDto;
-import com.mento.domain.skinanalysis.dto.response.SkinAnalysisDetailResDto;
+import com.mento.domain.skinanalysis.entity.SkinAnalysis;
 
 public interface SkinAnalysisCommandService {
-	SkinAnalysisDetailResDto analyze(Long userId, SkinAnalysisClientReqDto dto);
+	SkinAnalysis save(SkinAnalysis skinAnalysis);
 }
