@@ -248,17 +248,17 @@ export default function ConsultationManagementPage() {
 
         const params: ReservationListParams = searchParams
           ? {
-              startDate: searchParams.startDate,
-              endDate: searchParams.endDate,
-              page: currentPage,
-              size: pageSize,
-            }
+            startDate: searchParams.startDate,
+            endDate: searchParams.endDate,
+            page: currentPage,
+            size: pageSize,
+          }
           : {
-              startDate: "",
-              endDate: "",
-              page: currentPage,
-              size: pageSize,
-            };
+            startDate: "",
+            endDate: "",
+            page: currentPage,
+            size: pageSize,
+          };
 
         const requestKey = JSON.stringify({
           startDate: params.startDate,
@@ -387,8 +387,8 @@ export default function ConsultationManagementPage() {
   };
 
   const handleEnterRoom = (reservationId: number) => {
-    // Navigate to video consultation room
-    navigate(`/consultation-room/${reservationId}`);
+    const encodedId = btoa(reservationId.toString());
+    navigate(`/consultation-room/${encodedId}`);
   };
 
   const handleBookConsultation = () => {
@@ -402,11 +402,11 @@ export default function ConsultationManagementPage() {
       return;
     }
     // 결제 페이지로 이동 - 예약 ID와 함께 상담 예약 페이지로 이동
-    navigate("/consultation", { 
-      state: { 
+    navigate("/consultation", {
+      state: {
         reservationId: consultation.reservationId,
         step: 4 // 결제 단계
-      } 
+      }
     });
   };
 
