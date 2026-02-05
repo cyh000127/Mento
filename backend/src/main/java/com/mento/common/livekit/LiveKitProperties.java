@@ -11,7 +11,7 @@ import lombok.Setter;
 @Configuration
 @ConfigurationProperties(prefix = "livekit")
 public class LiveKitProperties {
-	private String url;
+	private String host;
 	private String apiKey;
 	private String secret;
 }

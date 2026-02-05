@@ -86,6 +86,7 @@ jwt:
 
 livekit:
   url: ${LIVEKIT_URL}
+  host: ${LIVEKIT_HOST}
   api-key: ${LIVEKIT_API_KEY}
   secret: ${LIVEKIT_API_SECRET}
 

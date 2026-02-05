@@ -11,6 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.service.query.ItemQueryService;
 import com.mento.domain.notification.converter.NotificationConverter;
@@ -40,7 +41,7 @@ public class ItemExpiryNotificationScheduleService {
 	public void checkAndNotifyExpiringItems() {
 		log.info("[ItemExpiryNotification] 만료 예정 아이템 알림 체크 시작");
 
-		LocalDate today = LocalDate.now();
+		LocalDate today = TimeUtils.nowAsLocalDate();
 		LocalDate oneWeekLater = today.plusDays(EXPIRY_NOTIFICATION_DAY);
 
 		List<Item> expiringItems = itemQueryService.findItemsExpiringBetween(today, oneWeekLater);

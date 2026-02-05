@@ -21,7 +21,7 @@ import io.livekit.server.RoomServiceClient;
 @ContextConfiguration(classes = {LiveKitManager.class, LiveKitProperties.class,
 	LiveKitConfigurationTest.MockConfig.class}, initializers = ConfigDataApplicationContextInitializer.class)
 @TestPropertySource(properties = {
-	"livekit.url=wss://dummy.url",
+	"livekit.host=wss://dummy.url",
 	"livekit.api-key=dummyKey",
 	"livekit.secret=dummySecret"
 })
@@ -46,9 +46,9 @@ class LiveKitConfigurationTest {
 	@DisplayName("LiveKit 설정 로드 및 빈 주입 검증")
 	void verifyLiveKitConfiguration() {
 		assertThat(liveKitProperties).isNotNull();
-		assertThat(liveKitProperties.getUrl()).isEqualTo("wss://dummy.url");
+		assertThat(liveKitProperties.getHost()).isEqualTo("wss://dummy.url");
 
 		assertThat(liveKitManager).isNotNull();
-		assertThat(liveKitManager.getUrl()).isEqualTo(liveKitProperties.getUrl());
+		assertThat(liveKitManager.getUrl()).isEqualTo(liveKitProperties.getHost());
 	}
 }

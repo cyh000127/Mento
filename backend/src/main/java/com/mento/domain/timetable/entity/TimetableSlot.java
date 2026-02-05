@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.timetable.exception.TimetableException;
 
@@ -62,7 +63,7 @@ public class TimetableSlot extends BaseEntity {
 	private LocalDateTime deletedAt;
 
 	public void withdraw() {
-		this.deletedAt = LocalDateTime.now();
+		this.deletedAt = TimeUtils.nowAsLocalDateTime();
 		this.status = SlotStatus.CLOSED;
 	}
 
