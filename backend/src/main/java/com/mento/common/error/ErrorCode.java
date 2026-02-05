@@ -140,9 +140,14 @@ public enum ErrorCode {
 	SCHEDULER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "N-002", "스케줄러 실행 중 오류가 발생했습니다."),
 
 	/**
+	 * Skin Analysis Error (SA-xxx)
+	 */
+	MISSING_SKIN_ANALYSIS(HttpStatus.BAD_REQUEST, "SA-001", "피부분석 정보를 찾을 수 없습니다."),
+
+	/**
 	 * LiveKit Error (LK-xxx)
 	 */
-	LIVEKIT_ROOM_FULL(HttpStatus.CONFLICT, "L-001", "방 인원이 초과되었습니다.");
+	LIVEKIT_ROOM_FULL(HttpStatus.CONFLICT, "L-001", "방 인원이 초과되었습니다."),
 	RECORDING_START_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "LK-001", "녹화 시작에 실패했습니다."),
 	RECORDING_STOP_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "LK-002", "녹화 중지에 실패했습니다."),
 	WEBHOOK_VERIFICATION_FAILED(HttpStatus.UNAUTHORIZED, "LK-003", "웹훅 검증에 실패했습니다.");
