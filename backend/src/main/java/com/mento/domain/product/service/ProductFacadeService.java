@@ -14,6 +14,7 @@ import com.mento.domain.product.dto.response.ProductResDto;
 import com.mento.domain.product.entity.Product;
 import com.mento.domain.product.service.command.ProductCommandService;
 import com.mento.domain.product.service.query.ProductQueryService;
+import com.mento.domain.product.service.search.ProductSearchService;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class ProductFacadeService {
 
 	private final ProductCommandService productCommandService;
 	private final ProductQueryService productQueryService;
+	private final ProductSearchService productSearchService;
 	private final BrandQueryService brandQueryService;
 
 	public ProductResDto createProduct(final ProductCreateReqDto reqDto) {
@@ -41,5 +43,10 @@ public class ProductFacadeService {
 	public Page<ProductListResDto> getProducts(final int page, final int size) {
 		Pageable pageable = PageRequest.of(page, size);
 		return productQueryService.getProducts(pageable);
+	}
+
+	public Page<ProductListResDto> search(String query, Pageable pageable) {
+		Page<Product> productPage = productSearchService.search(query, pageable);
+		return productPage.map(ProductConverter::toProductListResDto);
 	}
 }
