@@ -27,7 +27,8 @@ public class ItemConverter {
 
 	public ItemPageResDto toItemPageResDto(final Item item) {
 		return ItemPageResDto.builder()
-			.id(item.getId())
+			.itemId(item.getId())
+			.productId(item.getProduct().getId())
 			.productName(item.getProduct().getName())
 			.productImageUrl(item.getProduct().getImageUrl())
 			.brandName(item.getProduct().getBrand().getBrandName())

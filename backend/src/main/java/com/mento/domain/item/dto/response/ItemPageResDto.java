@@ -11,7 +11,10 @@ import lombok.Builder;
 public record ItemPageResDto(
 	@NotNull
 	@Schema(description = "아이템 ID", example = "1")
-	Long id,
+	Long itemId,
+
+	@Schema(description = "상품 Id", example = "2")
+	Long productId,
 
 	@NotNull
 	@Schema(description = "상품명", example = "토너 패드")

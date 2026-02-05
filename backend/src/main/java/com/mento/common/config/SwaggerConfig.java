@@ -59,7 +59,7 @@ public class SwaggerConfig {
 	public GroupedOpenApi productionApi() {
 		return GroupedOpenApi.builder()
 			.group("1. Production APIs")
-z			.displayName("Production APIs (Requires Auth)")
+			.displayName("Production APIs (Requires Auth)")
 			.pathsToMatch("/api/**")
 			.pathsToExclude("/test/**")
 			.build();
