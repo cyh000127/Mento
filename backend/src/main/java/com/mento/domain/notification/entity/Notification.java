@@ -43,8 +43,9 @@ public class Notification extends BaseEntity implements Serializable {
 	@Column(name = "type", nullable = false)
 	private NotificationType type;
 
+	@Builder.Default
 	@Column(name = "content")
-	private String content;
+	private String content = "";
 
 	@Column(name = "expired_at", nullable = false)
 	private LocalDateTime expiredAt;

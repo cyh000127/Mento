@@ -7,6 +7,7 @@ import static org.mockito.BDDMockito.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
@@ -268,7 +269,14 @@ class ReservationFacadeServiceTest {
 
 		User user = createUser(userId);
 		User mentor = createMentorUser(mentorId);
-		Timetable timetable = createTimetable(timetableId, LocalDate.now(), LocalTime.now().minusMinutes(15));
+
+		ZoneId seoulZone = ZoneId.of("Asia/Seoul");
+		LocalDateTime baseTime = LocalDateTime.now(seoulZone).minusMinutes(15);
+		Timetable timetable = createTimetable(
+			timetableId,
+			baseTime.toLocalDate(),
+			baseTime.toLocalTime()
+		);
 		TimetableSlot slot = createSlot(1L, timetable);
 		Reservation reservation = createReservation(reservationId, user, mentor, slot, ReservationStatus.CONFIRMED);
 

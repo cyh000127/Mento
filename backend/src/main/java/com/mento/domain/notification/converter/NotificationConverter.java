@@ -21,6 +21,15 @@ public class NotificationConverter {
 			.build();
 	}
 
+	public Notification toEntity(final Long userId, final NotificationType type, final LocalDateTime expiredAt) {
+		return Notification.builder()
+			.userId(userId)
+			.type(type)
+			.expiredAt(expiredAt)
+			.build();
+	}
+
+
 	public Notification toEntity(final Long userId, final NotificationType type, final String content,
 		final LocalDateTime expiredAt) {
 		return Notification.builder()
