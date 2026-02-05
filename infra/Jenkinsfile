@@ -50,7 +50,7 @@ pipeline {
 
                         changedFiles.each { line ->
                             // 1. APP 구역 (Compose 또는 Nginx 설정 변경 시)
-                            if (line.startsWith("infra/compose/") || line.startsWith("infra/nginx/")) {
+                            if (line.startsWith("infra/compose/") || line.startsWith("infra/nginx/") || line.startsWith("infra/ocr/")) {
                                 targets << 'app'
                             }
                             // 2. LIVE 구역 (LiveKit, Agent, Egress 등)
