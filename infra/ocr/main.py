@@ -6,6 +6,7 @@ import time
 import os
 import httpx  # 비동기 통신을 위해 httpx 사용
 import asyncio
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 from pydantic import BaseModel
@@ -18,6 +19,14 @@ load_dotenv()
 app = FastAPI(title="Cosmetic OCR Scanner API")
 
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://i14a704.p.ssafy.io", "http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"], # POST, OPTIONS 등을 모두 허용
+    allow_headers=["*"],
+)
 
 # 환경 변수 및 설정 값
 NAVER_OCR_URL = os.getenv("NAVER_OCR_URL")
