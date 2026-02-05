@@ -674,9 +674,11 @@ export default function InventoryPage() {
   const handleRegisterRecognized = async () => {
     if (!recognizedProduct || registering) return;
 
+    const recognizedProductId = recognizedProduct.productId;
+
     //  프론트 중복 체크 (productId 기준)
     const isDuplicate = products.some(
-      (p) => p.id === recognizedProduct.productId.toString()
+      (p) => p.productId === recognizedProductId
     );
 
     if (isDuplicate) {
