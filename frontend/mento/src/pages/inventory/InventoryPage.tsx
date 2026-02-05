@@ -673,6 +673,21 @@ export default function InventoryPage() {
 
   const handleRegisterRecognized = async () => {
     if (!recognizedProduct || registering) return;
+
+    //  프론트 중복 체크 (productId 기준)
+    const isDuplicate = products.some(
+      (p) => p.id === recognizedProduct.productId.toString()
+    );
+
+    if (isDuplicate) {
+      showAlert({
+        title: "이미 등록된 상품",
+        message: "이 상품은 이미 인벤토리에 등록되어 있습니다.",
+        type: "info",
+      });
+      return;
+    }
+    
     setRegistering(true);
     setPhotoError(null);
     try {
