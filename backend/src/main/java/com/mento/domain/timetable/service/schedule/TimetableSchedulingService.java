@@ -5,4 +5,6 @@ public interface TimetableSchedulingService {
 	void createScheduledTimetables();
 
 	void deleteExpiredTimetables();
+
+	void expirePastTimetableSlots();
 }

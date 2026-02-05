@@ -57,6 +57,17 @@ public class JwtTokenProvider {
 		);
 	}
 
+	/**
+	 * 시현용 테스트 코드 (토큰 발행)
+	 */
+	public Token createTestToken(final User user) {
+		long testExpiration = 86400000L;
+		return new Token(
+			generateToken(user, ACCESS_TOKEN, testExpiration),
+			generateToken(user, REFRESH_TOKEN, testExpiration)
+		);
+	}
+
 	private SecretKey generateSecretKey() {
 		return Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
 	}

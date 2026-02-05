@@ -53,7 +53,7 @@ public class ReservationQueryController {
 		@AuthenticationPrincipal final AuthenticatedUser authUser,
 		@Validated @ModelAttribute final ReservationHistoryReqDto reqDto
 	) {
-		Page<ReservationPageInfoDto> response = facadeService.findAllByUserIdAndDateRange(authUser.getId(), reqDto);
+		Page<ReservationPageInfoDto> response = facadeService.findAllByAuthUserAndDateRange(authUser, reqDto);
 		return ResponseUtils.page(response);
 	}
 }

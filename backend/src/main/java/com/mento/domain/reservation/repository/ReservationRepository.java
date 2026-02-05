@@ -24,14 +24,16 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 	@Query("""
 		SELECT r
 		FROM Reservation r
-		WHERE r.user.id = :userId
+		WHERE (:userId IS NULL OR r.user.id = :userId)
+			AND (:mentorId IS NULL OR r.mentor.id = :mentorId)
 			AND (:startDate IS NULL OR r.slot.timetable.scheduledDate >= :startDate)
 			AND (:endDate IS NULL OR r.slot.timetable.scheduledDate <= :endDate)
 			AND (:status IS NULL OR r.status = :status)
 		ORDER BY r.id DESC
 		""")
-	Page<Reservation> findAllByUserIdAndDateRange(
+	Page<Reservation> findAllByCondition(
 		@Param("userId") Long userId,
+		@Param("mentorId") Long mentorId,
 		@Param("startDate") LocalDate startDate,
 		@Param("endDate") LocalDate endDate,
 		@Param("status") ReservationStatus status,
@@ -43,4 +45,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 	Optional<Reservation> findBySlotTimetableId(Long timetableId);
 
 	List<Reservation> findAllBySlotTimetableIdIn(List<Long> timetableIds);
+
+
 }

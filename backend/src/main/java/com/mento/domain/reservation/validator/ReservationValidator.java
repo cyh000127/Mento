@@ -28,7 +28,7 @@ public class ReservationValidator {
 	}
 
 	private void validateReservationBelongsToMentor(final Long id, final Reservation reservation) {
-		if (!reservation.getMentor().getId().equals(id)) {
+		if (reservation.getMentor() == null || !reservation.getMentor().getId().equals(id)) {
 			throw new ReservationException(ErrorCode.RESERVATION_ACCESS_DENIED);
 		}
 	}

@@ -1,6 +1,8 @@
 package com.mento.domain.timetable.service.schedule;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.scheduling.annotation.Scheduled;
@@ -82,6 +84,23 @@ public class TimetableSchedulingServiceImpl implements TimetableSchedulingServic
 
 		log.info("[TimetableScheduling] 만료된 타임테이블 삭제 완료 {날짜: {}, 타임테이블: {}개, 슬롯: {}개}",
 			now, expiredTimetables.size(), expiredSlots.size());
+	}
+
+	@Override
+	@Scheduled(cron = "0 0 * * * *")
+	public void expirePastTimetableSlots() {
+		LocalDateTime now = TimeUtils.nowAsLocalDateTime();
+		LocalDate currentDate = now.toLocalDate();
+		LocalTime currentTime = now.toLocalTime();
+
+		List<TimetableSlot> expiredSlots = timetableSlotQueryService.findAllActiveSlotsBefore(currentDate, currentTime);
+
+		if (expiredSlots.isEmpty()) {
+			return;
+		}
+
+		expiredSlots.forEach(TimetableSlot::withdraw);
+		log.info("[TimetableScheduling] 지난 타임테이블 슬롯 만료 처리 완료 {기준시간: {}, 처리건수: {}건}", now, expiredSlots.size());
 	}
 }
 

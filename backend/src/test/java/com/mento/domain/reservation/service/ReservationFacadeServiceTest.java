@@ -332,12 +332,17 @@ class ReservationFacadeServiceTest {
 		Page<Reservation> reservationPage = new PageImpl<>(reservations, PageRequest.of(0, 10),
 			reservations.size());
 
-		given(reservationQueryService.findAllByUserIdAndStatusWithPageable(
-			eq(userId), eq(reqDto.status()), eq(reqDto.startDate()), eq(reqDto.endDate()), any()
+		given(reservationQueryService.findAllByRoleAndIdAndStatusWithPageable(
+			eq(userId), eq(Role.USER), eq(reqDto.status()), eq(reqDto.startDate()), eq(reqDto.endDate()), any()
 		)).willReturn(reservationPage);
 
+		AuthenticatedUser authUser = AuthenticatedUser.builder()
+			.id(userId)
+			.role(Role.USER.name())
+			.build();
+
 		// When
-		Page<ReservationPageInfoDto> result = reservationFacadeService.findAllByUserIdAndDateRange(userId, reqDto);
+		Page<ReservationPageInfoDto> result = reservationFacadeService.findAllByAuthUserAndDateRange(authUser, reqDto);
 
 		// Then
 		assertThat(result).isNotNull();
@@ -350,8 +355,8 @@ class ReservationFacadeServiceTest {
 		assertThat(first.mentorType()).isNotNull();
 		assertThat(first.status()).isEqualTo(ReservationStatus.CONFIRMED);
 
-		then(reservationQueryService).should().findAllByUserIdAndStatusWithPageable(
-			eq(userId), eq(reqDto.status()), eq(reqDto.startDate()), eq(reqDto.endDate()), any()
+		then(reservationQueryService).should().findAllByRoleAndIdAndStatusWithPageable(
+			eq(userId), eq(Role.USER), eq(reqDto.status()), eq(reqDto.startDate()), eq(reqDto.endDate()), any()
 		);
 	}
 
@@ -370,12 +375,17 @@ class ReservationFacadeServiceTest {
 		Page<Reservation> reservationPage = new PageImpl<>(reservations, PageRequest.of(0, 10),
 			reservations.size());
 
-		given(reservationQueryService.findAllByUserIdAndStatusWithPageable(
-			eq(userId), isNull(), isNull(), isNull(), any()
+		given(reservationQueryService.findAllByRoleAndIdAndStatusWithPageable(
+			eq(userId), eq(Role.USER), isNull(), isNull(), isNull(), any()
 		)).willReturn(reservationPage);
 
+		AuthenticatedUser authUser = AuthenticatedUser.builder()
+			.id(userId)
+			.role(Role.USER.name())
+			.build();
+
 		// When
-		Page<ReservationPageInfoDto> result = reservationFacadeService.findAllByUserIdAndDateRange(userId, reqDto);
+		Page<ReservationPageInfoDto> result = reservationFacadeService.findAllByAuthUserAndDateRange(authUser, reqDto);
 
 		// Then
 		assertThat(result).isNotNull();
@@ -387,8 +397,8 @@ class ReservationFacadeServiceTest {
 		assertThat(result.getContent().get(1).reservationId()).isEqualTo(2L);
 		assertThat(result.getContent().get(2).reservationId()).isEqualTo(1L);
 
-		then(reservationQueryService).should().findAllByUserIdAndStatusWithPageable(
-			eq(userId), isNull(), isNull(), isNull(), any()
+		then(reservationQueryService).should().findAllByRoleAndIdAndStatusWithPageable(
+			eq(userId), eq(Role.USER), isNull(), isNull(), isNull(), any()
 		);
 	}
 
