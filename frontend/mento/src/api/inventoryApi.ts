@@ -161,7 +161,8 @@ export function mapApiItemToProduct(apiItem: ApiItem): Product {
   const category = apiItem.categoryMedium ? (categoryMap[apiItem.categoryMedium] || "skin") : "skin"
 
   return {
-    id: apiItem.id.toString(),
+    id: apiItem.itemId.toString(),
+    productId: apiItem.productId,
     name: apiItem.productName,
     brand: apiItem.brandName,
     category: category,
