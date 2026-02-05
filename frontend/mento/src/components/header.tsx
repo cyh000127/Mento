@@ -68,8 +68,7 @@ export function Header() {
     });
 
     eventSource.onerror = (e) => {
-      console.error("SSE Error:", e);
-      eventSource.close();
+      console.error("SSE Error (재연결 중...):", e);
     };
 
     return () => {
