@@ -2,6 +2,9 @@ import { Link } from "react-router-dom"
 import { ArrowRight, ChevronDown } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { LoadingIntro } from "./loading-intro"
+import { Button } from "@/components/ui/button"
+import { LoginModal } from "@/components/login-modal"
+import { useAuthStore } from "@/stores/useAuthStore"
 
 // Import grooming images
 import curology1 from "@/assets/images/curology-iKoH1gNON70-unsplash.jpg"
@@ -20,6 +23,8 @@ import sunny from "@/assets/images/sunny-ng-KVIlNRoGwxk-unsplash.jpg"
 import tarah from "@/assets/images/tarah-dane-4JsvuH-pRzo-unsplash.jpg"
 import nix1 from "@/assets/images/the-nix-company-3_KYuMVl1Q8-unsplash.jpg"
 import nix2 from "@/assets/images/the-nix-company-QanhCEMlSdk-unsplash.jpg"
+
+import dryingHairVideo from "@/assets/videos/drying_hair.mp4"
 
 // Left film strip images - grooming process shots
 const LEFT_IMAGES = [
@@ -45,12 +50,19 @@ const RIGHT_IMAGES = [
   nix2,           // lifestyle grooming
 ]
 
-export function HeroSection() {
-  const containerRef = useRef<HTMLDivElement>(null)
+interface HeroSectionProps {
+  showIntro: boolean
+  onIntroComplete: () => void
+}
+
+export function HeroSection({ showIntro, onIntroComplete }: HeroSectionProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const sectionRefs = useRef<HTMLElement[]>([])
   const [currentScene, setCurrentScene] = useState(0)
-  const [showIntro, setShowIntro] = useState(true)
+  const [sectionCount, setSectionCount] = useState(0)
   const [imagesLoaded, setImagesLoaded] = useState(false)
+  const [isLoginOpen, setIsLoginOpen] = useState(false)
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
 
   // Preload images
   useEffect(() => {
@@ -82,37 +94,6 @@ export function HeroSection() {
   }, [])
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (!containerRef.current) return
-
-      const container = containerRef.current
-      const scrollTop = window.scrollY
-      const containerTop = container.offsetTop
-      const containerHeight = container.offsetHeight
-      const windowHeight = window.innerHeight
-
-      // Calculate progress through the hero section
-      const progress = Math.min(
-        Math.max((scrollTop - containerTop) / (containerHeight - windowHeight), 0),
-        1
-      )
-
-      // Determine current scene (0, 1, or 2)
-      if (progress < 0.33) {
-        setCurrentScene(0)
-      } else if (progress < 0.66) {
-        setCurrentScene(1)
-      } else {
-        setCurrentScene(2)
-      }
-    }
-
-    window.addEventListener("scroll", handleScroll)
-    handleScroll() // Initial check
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
-
-  useEffect(() => {
     if (videoRef.current && currentScene === 2) {
       videoRef.current.play().catch((error) => {
         console.log("Video autoplay failed:", error)
@@ -121,47 +102,58 @@ export function HeroSection() {
   }, [currentScene])
 
   useEffect(() => {
-    // Check if user has seen intro before (using sessionStorage)
-    const hasSeenIntro = sessionStorage.getItem("hasSeenIntro")
-    if (hasSeenIntro) {
-      setShowIntro(false)
-    }
-  }, [])
+    if (showIntro || !imagesLoaded) return
+
+    const scrollContainer = document.querySelector("[data-home-scroll]") as HTMLElement | null
+    if (!scrollContainer) return
+
+    const sectionElements = Array.from(
+      scrollContainer.querySelectorAll<HTMLElement>("[data-home-section]")
+    )
+    sectionRefs.current = sectionElements
+    setSectionCount(sectionElements.length)
+    if (sectionElements.length === 0) return
+    setCurrentScene(0)
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return
+          const index = sectionRefs.current.indexOf(entry.target as HTMLElement)
+          if (index >= 0) setCurrentScene(index)
+        })
+      },
+      { root: scrollContainer, threshold: 0.6 }
+    )
+
+    sectionRefs.current.forEach((section) => {
+      observer.observe(section)
+    })
+
+    return () => observer.disconnect()
+  }, [showIntro, imagesLoaded])
+
 
   const handleIntroComplete = () => {
-    sessionStorage.setItem("hasSeenIntro", "true")
-    setShowIntro(false)
+    onIntroComplete()
   }
 
-  if (showIntro) {
-    return <LoadingIntro onComplete={handleIntroComplete} />
-  }
-
-  // Show loading overlay if images are not ready
-  if (!imagesLoaded) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" />
-          <p className="text-sm text-text-secondary">Loading...</p>
-        </div>
-      </div>
-    )
+  const handleLearnMore = () => {
+    const nextIndex = Math.min(currentScene + 1, sectionRefs.current.length - 1)
+    sectionRefs.current[nextIndex]?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="relative h-[300vh] w-full bg-background animate-fade-in"
-    >
+    <>
+      {showIntro && <LoadingIntro onComplete={handleIntroComplete} />}
+
       {/* Progress indicator */}
       <div className="fixed right-8 top-1/2 z-50 flex -translate-y-1/2 flex-col gap-3">
-        {[0, 1, 2].map((index) => (
+        {Array.from({ length: sectionCount }, (_, index) => (
           <button
             key={index}
             onClick={() => {
-              const targetScroll = containerRef.current!.offsetTop + (index * containerRef.current!.offsetHeight / 3)
-              window.scrollTo({ top: targetScroll, behavior: 'smooth' })
+              sectionRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "start" })
             }}
             className="group relative"
             aria-label={`Scene ${index + 1}`}
@@ -180,15 +172,12 @@ export function HeroSection() {
         ))}
       </div>
 
-      {/* Sticky container for scenes */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden">
-        {/* Scene 1: Film Strip Intro */}
-        <div
-          className={`absolute inset-0 transition-opacity duration-1000 ${
-            currentScene === 0 ? "opacity-100" : "opacity-0 pointer-events-none"
-          }`}
-        >
-          <div className="flex h-full w-full">
+      {/* Scene 1: Film Strip Intro */}
+      <section
+        data-home-section
+        className="relative h-screen w-full snap-start snap-always bg-background animate-fade-in"
+      >
+        <div className="flex h-full w-full">
             {/* Left Film Strip */}
             <div className="w-[20%] overflow-hidden border-r border-border/30 bg-black">
               <div className="animate-scroll-up flex flex-col">
@@ -229,7 +218,29 @@ export function HeroSection() {
                   MENTO와 함께 새로운 루틴을 시작하세요
                 </p>
 
-                <div className="animate-fade-in-up" style={{ animationDelay: '0.6s', animationFillMode: 'backwards' }}>
+                <div
+                  className="animate-fade-in-up mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row"
+                  style={{ animationDelay: '0.8s', animationFillMode: 'backwards' }}
+                >
+                  {!isLoggedIn && (
+                    <Button size="lg" onClick={() => setIsLoginOpen(true)} className="w-full sm:w-auto">
+                      로그인
+                    </Button>
+                  )}
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={handleLearnMore}
+                    className="w-full sm:w-auto"
+                  >
+                    더 알아보기
+                  </Button>
+                </div>
+
+                <div
+                  className="animate-fade-in-up mt-4"
+                  style={{ animationDelay: '0.6s', animationFillMode: 'backwards' }}
+                >
                   <div className="animate-bounce">
                     <ChevronDown className="mx-auto h-8 w-8 text-primary-500" />
                   </div>
@@ -253,135 +264,146 @@ export function HeroSection() {
               </div>
             </div>
           </div>
-        </div>
+      </section>
 
-        {/* Scene 2: Film Strip Climax */}
-        <div
-          className={`absolute inset-0 transition-opacity duration-1000 ${
-            currentScene === 1 ? "opacity-100" : "opacity-0 pointer-events-none"
-          }`}
-        >
-          <div className="flex h-full w-full">
-            {/* Left Film Strip */}
-            <div className="w-[20%] overflow-hidden border-r border-border/30 bg-black">
-              <div className="animate-scroll-up flex flex-col">
-                {[...LEFT_IMAGES, ...LEFT_IMAGES].map((img, index) => (
-                  <div key={index} className="relative h-[300px] w-full flex-shrink-0 border-b border-border/20">
-                    <div className="absolute inset-0 bg-black/40 z-10" />
-                    <img
-                      src={img}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Center Content */}
-            <div className="relative flex w-[60%] flex-col items-center justify-center bg-background px-8">
-              <div className="text-center">
-                <h2 className="animate-scale-in mb-6 text-balance text-4xl font-bold text-text-primary md:text-5xl lg:text-6xl">
-                  AI 기반
-                  <br />
-                  <span className="bg-gradient-to-r from-primary-500 to-primary-300 bg-clip-text text-transparent">
-                    스마트 스킨케어
-                  </span>
-                </h2>
-
-                <p className="animate-fade-in-up mx-auto max-w-2xl text-pretty text-lg leading-relaxed text-text-secondary md:text-xl" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
-                  개인 맞춤 분석과 데이터 기반 추천으로
-                  <br />
-                  더 나은 당신을 만들어갑니다
-                </p>
-              </div>
-            </div>
-
-            {/* Right Film Strip */}
-            <div className="w-[20%] overflow-hidden border-l border-border/30 bg-black">
-              <div className="animate-scroll-down flex flex-col">
-                {[...RIGHT_IMAGES, ...RIGHT_IMAGES].map((img, index) => (
-                  <div key={index} className="relative h-[300px] w-full flex-shrink-0 border-b border-border/20">
-                    <div className="absolute inset-0 bg-black/40 z-10" />
-                    <img
-                      src={img}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
+      {/* Scene 2: Film Strip Climax */}
+      <section
+        data-home-section
+        className="relative h-screen w-full snap-start snap-always bg-background"
+      >
+        <div className="flex h-full w-full">
+          {/* Left Film Strip */}
+          <div className="w-[20%] overflow-hidden border-r border-border/30 bg-black">
+            <div className="animate-scroll-up flex flex-col">
+              {[...LEFT_IMAGES, ...LEFT_IMAGES].map((img, index) => (
+                <div key={index} className="relative h-[300px] w-full flex-shrink-0 border-b border-border/20">
+                  <div className="absolute inset-0 bg-black/40 z-10" />
+                  <img
+                    src={img}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ))}
             </div>
           </div>
-        </div>
 
-        {/* Scene 3: Video Hero */}
-        <div
-          className={`absolute inset-0 transition-opacity duration-1000 ${
-            currentScene === 2 ? "opacity-100" : "opacity-0 pointer-events-none"
-          }`}
-        >
-          <div className="relative h-full w-full">
-            {/* Video Background */}
-            <video
-              ref={videoRef}
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="absolute inset-0 h-full w-full object-cover"
-            >
-              <source src="/videos/hero-grooming.mp4" type="video/mp4" />
-            </video>
+          {/* Center Content */}
+          <div className="relative flex w-[60%] flex-col items-center justify-center bg-background px-8">
+            <div className="text-center">
+              <h2 className="animate-scale-in mb-6 text-balance text-4xl font-bold text-text-primary md:text-5xl lg:text-6xl">
+                AI 기반
+                <br />
+                <span className="bg-gradient-to-r from-primary-500 to-primary-300 bg-clip-text text-transparent">
+                  스마트 스킨케어
+                </span>
+              </h2>
 
-            {/* Video placeholder overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-muted/60 to-background/60" />
-
-            {/* Content Overlay */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-background/40 via-background/20 to-background/40 px-8 text-center">
-              <div>
-                <h2 className="animate-scale-in mb-6 text-balance text-5xl font-bold text-text-primary drop-shadow-lg md:text-6xl lg:text-7xl">
-                  완성된
-                  <br />
-                  <span className="text-primary-500">
-                    뷰티 루틴
-                  </span>
-                </h2>
-
-                <p className="animate-fade-in-up mx-auto mb-10 max-w-2xl text-pretty text-lg leading-relaxed text-text-primary/90 drop-shadow md:text-xl" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
-                  개인 뷰티 인벤토리 관리부터 AI 스킨케어 분석, 전문가 멘토링까지
-                  <br />
-                  MENTO와 함께 체계적인 뷰티 루틴을 시작하세요
-                </p>
-
-                {/* CTA Buttons */}
-                <div className="animate-fade-in-up flex flex-wrap items-center justify-center gap-4" style={{ animationDelay: '0.4s', animationFillMode: 'backwards' }}>
-                  <Link
-                    to="/recommend"
-                    className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-4 text-base font-semibold text-dark-bg shadow-lg shadow-primary-500/25 transition-all hover:bg-primary-400 hover:shadow-xl hover:shadow-primary-500/40 hover:scale-105"
-                  >
-                    시작하기
-                    <ArrowRight className="h-5 w-5" />
-                  </Link>
-                  <Link
-                    to="/guide"
-                    className="inline-flex items-center gap-2 rounded-xl border-2 border-white/50 bg-white/20 backdrop-blur-md px-8 py-4 text-base font-semibold text-text-primary transition-all hover:bg-white/30 hover:border-white/70"
-                  >
-                    서비스 소개
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Video placeholder text */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center">
-              <p className="text-sm text-text-secondary/80">
-                Video: /public/videos/hero-grooming.mp4
+              <p className="animate-fade-in-up mx-auto max-w-2xl text-pretty text-lg leading-relaxed text-text-secondary md:text-xl" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
+                개인 맞춤 분석과 데이터 기반 추천으로
+                <br />
+                더 나은 당신을 만들어갑니다
               </p>
             </div>
+
+            <div
+              className="animate-fade-in-up mt-4"
+              style={{ animationDelay: '0.6s', animationFillMode: 'backwards' }}
+            >
+              <div className="animate-bounce">
+                <ChevronDown className="mx-auto h-8 w-8 text-primary-500" />
+              </div>
+            </div>
+          </div>
+
+          
+
+          {/* Right Film Strip */}
+          <div className="w-[20%] overflow-hidden border-l border-border/30 bg-black">
+            <div className="animate-scroll-down flex flex-col">
+              {[...RIGHT_IMAGES, ...RIGHT_IMAGES].map((img, index) => (
+                <div key={index} className="relative h-[300px] w-full flex-shrink-0 border-b border-border/20">
+                  <div className="absolute inset-0 bg-black/40 z-10" />
+                  <img
+                    src={img}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      {/* Scene 3: Video Hero */}
+      <section
+        data-home-section
+        className="relative h-screen w-full snap-start snap-always bg-background"
+      >
+        <div className="relative h-full w-full">
+          {/* Video Background */}
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover opacity-30"
+            src={dryingHairVideo}
+          />
+
+          {/* Video overlay */}
+          <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+
+          {/* Content Overlay */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-background/40 via-background/20 to-background/40 px-8 text-center">
+            <div>
+              <h2 className="animate-scale-in mb-6 text-balance text-5xl font-bold text-text-primary drop-shadow-lg md:text-6xl lg:text-7xl">
+                완성된
+                <br />
+                <span className="text-primary-500">
+                  뷰티 루틴
+                </span>
+              </h2>
+
+              <p className="animate-fade-in-up mx-auto mb-10 max-w-2xl text-pretty text-lg leading-relaxed text-text-primary/90 drop-shadow md:text-xl" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
+                개인 뷰티 인벤토리 관리부터 AI 스킨케어 분석, 전문가 멘토링까지
+                <br />
+                MENTO와 함께 체계적인 뷰티 루틴을 시작하세요
+              </p>
+
+              {/* CTA Buttons */}
+              <div className="animate-fade-in-up flex flex-wrap items-center justify-center gap-4" style={{ animationDelay: '0.4s', animationFillMode: 'backwards' }}>
+                <Link
+                  to="/recommend"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-4 text-base font-semibold text-dark-bg shadow-lg shadow-primary-500/25 transition-all hover:bg-primary-400 hover:shadow-xl hover:shadow-primary-500/40 hover:scale-105"
+                >
+                  시작하기
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+                <Link
+                  to="/guide"
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-white/50 bg-white/20 backdrop-blur-md px-8 py-4 text-base font-semibold text-text-primary transition-all hover:bg-white/30 hover:border-white/70"
+                >
+                  서비스 소개
+                </Link>
+              </div>
+            </div>
+
+            <div
+              className="animate-fade-in-up mt-4"
+              style={{ animationDelay: '0.6s', animationFillMode: 'backwards' }}
+            >
+              <div className="animate-bounce">
+                <ChevronDown className="mx-auto h-8 w-8 text-primary-500" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+    </>
   )
 }

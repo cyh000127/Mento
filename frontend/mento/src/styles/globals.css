@@ -158,6 +158,10 @@
   }
 }
 
+html[data-hide-header="true"] header {
+  display: none;
+}
+
 /* ===============================
    Scrollbar
 ================================ */
