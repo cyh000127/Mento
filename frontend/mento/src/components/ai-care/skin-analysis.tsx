@@ -3,6 +3,8 @@ import { Upload, Sparkles, X, Loader2, Droplets, Search, Minus, Sun, Dumbbell } 
 import { api } from "@/api/axios";
 import { userApi } from "@/api/userApi";
 import { requestSkinAnalysis } from "../../api/skinAnalysisApi";
+import { AlertModal } from "@/components/common/alert-modal";
+import type { AlertModalType } from "@/components/common/alert-modal";
 
 interface UploadedImage {
   file: File;
@@ -82,10 +84,27 @@ export function SkinAnalysis() {
   const [rightImage, setRightImage] = useState<UploadedImage | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [analysisResult, setAnalysisResult] = useState<SkinAnalysisResult | null>(null);
+  const [alertState, setAlertState] = useState({
+    open: false,
+    title: "알림",
+    message: "",
+    type: "info" as AlertModalType,
+    confirmText: "확인",
+  });
 
   const leftInputRef = useRef<HTMLInputElement>(null);
   const frontInputRef = useRef<HTMLInputElement>(null);
   const rightInputRef = useRef<HTMLInputElement>(null);
+
+  const showAlert = (options: { title?: string; message: string; type?: AlertModalType; confirmText?: string }) => {
+    setAlertState({
+      open: true,
+      title: options.title ?? "알림",
+      message: options.message,
+      type: options.type ?? "info",
+      confirmText: options.confirmText ?? "확인",
+    });
+  };
 
   const getStatusTextClass = (status: string) => {
     if (status === "우수") return "text-green-700";
@@ -108,13 +127,21 @@ export function SkinAnalysis() {
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      alert("이미지 파일만 업로드 가능합니다.");
+      showAlert({
+        title: "파일 형식 오류",
+        message: "이미지 파일만 업로드 가능합니다.",
+        type: "warning",
+      });
       return;
     }
 
     // Validate file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert("파일 크기는 10MB 이하여야 합니다.");
+      showAlert({
+        title: "파일 크기 초과",
+        message: "파일 크기는 10MB 이하여야 합니다.",
+        type: "warning",
+      });
       return;
     }
 
@@ -156,17 +183,29 @@ export function SkinAnalysis() {
 
   const handleStartAnalysis = async () => {
     if (!gender) {
-      alert("성별을 선택해주세요.");
+      showAlert({
+        title: "필수 입력",
+        message: "성별을 선택해주세요.",
+        type: "warning",
+      });
       return;
     }
 
     if (!birthDate) {
-      alert("생년월일을 입력해주세요.");
+      showAlert({
+        title: "필수 입력",
+        message: "생년월일을 입력해주세요.",
+        type: "warning",
+      });
       return;
     }
 
     if (!leftImage || !frontImage || !rightImage) {
-      alert("모든 사진을 업로드해주세요.");
+      showAlert({
+        title: "필수 입력",
+        message: "모든 사진을 업로드해주세요.",
+        type: "warning",
+      });
       return;
     }
 
@@ -245,7 +284,11 @@ export function SkinAnalysis() {
       console.error("분석 실패:", error);
       clearInterval(progressInterval);
       const errorMessage = error instanceof Error ? error.message : "분석 중 오류가 발생했습니다.";
-      alert(errorMessage);
+      showAlert({
+        title: "분석 실패",
+        message: errorMessage,
+        type: "error",
+      });
       setState("upload");
       setLoadingProgress(0);
       setAnalysisResult(null);
@@ -714,6 +757,14 @@ export function SkinAnalysis() {
             </div>
           </div>
         )}
+        <AlertModal
+          open={alertState.open}
+          onOpenChange={(open) => setAlertState((prev) => ({ ...prev, open }))}
+          title={alertState.title}
+          message={alertState.message}
+          type={alertState.type}
+          confirmText={alertState.confirmText}
+        />
       </div>
     </section>
   );

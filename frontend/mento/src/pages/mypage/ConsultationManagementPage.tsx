@@ -1,11 +1,14 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { MyPageSidebar } from "@/components/mypage/mypage-sidebar";
 import { PeriodDateFilters } from "@/components/mypage/consultation-filters";
 import { ConsultationCategoryFilter } from "@/components/mypage/consultation-category-filter";
 import { ConsultationList } from "@/components/mypage/consultation-list";
 import { ConsultationEmpty } from "@/components/mypage/consultation-empty";
 import { ConsultationDetail } from "@/components/mypage/consultation-detail";
+import { ReportDetail } from "@/components/mypage/report-detail";
 import { getReservationDetail, getReservationList } from "@/api/reservationApi";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { Consultation, PeriodFilter, ConsultationStatus, PreConsultationQA } from "@/types/consultation";
@@ -149,6 +152,7 @@ export default function ConsultationManagementPage() {
   const detailCacheRef = useRef<Map<number, Consultation>>(new Map());
   // View state
   const [selectedConsultation, setSelectedConsultation] = useState<Consultation | null>(null);
+  const [selectedReportConsultation, setSelectedReportConsultation] = useState<Consultation | null>(null);
 
   // Filter states
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>("1month");
@@ -406,6 +410,42 @@ export default function ConsultationManagementPage() {
     });
   };
 
+  const handleViewReport = (consultation: Consultation) => {
+    setSelectedReportConsultation(consultation);
+  };
+
+  const handleBackFromReport = () => {
+    setSelectedReportConsultation(null);
+  };
+
+  // Show report detail view if report consultation is selected
+  if (selectedReportConsultation) {
+    return (
+      <div className="flex min-h-screen bg-background justify-center">
+        <div className="flex w-full max-w-[1200px]">
+          <MyPageSidebar />
+          <div className="flex-1">
+            <div className="bg-background py-8">
+              <div className="mx-auto px-6">
+                <div className="space-y-6">
+                  {/* Header with Back Button */}
+                  <div className="flex items-center justify-between border-b border-border pb-3">
+                    <h1 className="text-2xl font-bold text-foreground">AI 리포트</h1>
+                    <Button onClick={handleBackFromReport} variant="ghost" className="text-muted-foreground hover:text-foreground">
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      목록으로
+                    </Button>
+                  </div>
+                  <ReportDetail report={selectedReportConsultation.report} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Show detail view if consultation is selected
   if (selectedConsultation) {
     return (
@@ -459,7 +499,7 @@ export default function ConsultationManagementPage() {
             {/* Consultation List or Empty State */}
             {isSearched ? (
               sortedConsultations.length > 0 ? (
-                <ConsultationList consultations={sortedConsultations} onViewDetail={handleViewDetail} onEnterRoom={handleEnterRoom} onGoToPayment={handleGoToPayment} />
+                <ConsultationList consultations={sortedConsultations} onViewDetail={handleViewDetail} onEnterRoom={handleEnterRoom} onGoToPayment={handleGoToPayment} onViewReport={handleViewReport} />
               ) : (
                 <ConsultationEmpty onBookConsultation={handleBookConsultation} />
               )

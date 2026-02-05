@@ -1,4 +1,4 @@
-import { api } from "./axios"
+import {api, ocrApi} from "./axios"
 import type {
   InventoryResponse,
   InventoryFilters,
@@ -17,6 +17,14 @@ import type {
   InventoryHistoryResponse,
   ActionType,
 } from "@/types/inventory"
+import type { ApiResponse, ProductListItem } from "@/types/product"
+
+export interface RecognizeProductResponse {
+  status: "success" | "fail"
+  message: string
+  ocr_text?: string
+  items?: ProductListItem[]
+}
 
 /**
  * 인벤토리 목록 조회 API
@@ -80,7 +88,7 @@ export const STATUS_LABELS: Record<ItemStatus, string> = {
   UNAVAILABLE: "사용 불가",
   PURCHASING: "구매 중",
   RECOMMENDED: "추천 제품",
-  OVER_DATED: "사용 완료",
+  OVER_DATED: "기한 만료",
 }
 
 /**
@@ -191,6 +199,30 @@ export async function addInventoryItem(request: AddInventoryItemRequest): Promis
     console.error("인벤토리 추가 에러:", error)
     console.error("에러 상태:", error.response?.status)
     console.error("에러 응답:", error.response?.data)
+    throw error
+  }
+}
+
+/**
+ * 이미지 기반 상품 인식 API (OCR)
+ */
+export async function recognizeProductByImage(
+  imageUrl: string
+): Promise<RecognizeProductResponse> {
+  try {
+    const response = await ocrApi.post<RecognizeProductResponse>(
+      "/products/recognize",
+      { imageUrl }
+    )
+
+    return response.data
+  } catch (error: any) {
+    // 서버에서 내려준 에러 포맷이 있는 경우 그대로 반환
+    if (error.response?.data) {
+      return error.response.data as RecognizeProductResponse
+    }
+
+    // 네트워크 에러 / 예상 못한 에러는 throw
     throw error
   }
 }

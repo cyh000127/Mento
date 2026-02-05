@@ -16,13 +16,13 @@ import type { ConsultationSessionData, ConsultationSessionResponse } from "@/typ
  */
 export async function createConsultationSession(reservationId: number): Promise<ConsultationSessionData> {
   console.log("📡 API 호출 시작:", {
-    url: `/reservations/${reservationId}/sessions`,
+    url: `/test/reservations/${reservationId}/sessions`,
     method: "POST",
     baseURL: "http://localhost:8080/api/v1",
   });
 
   try {
-    const response = await api.post<ConsultationSessionResponse>(`/reservations/${reservationId}/sessions`);
+    const response = await api.post<ConsultationSessionResponse>(`/test/reservations/${reservationId}/sessions`);
 
     console.log("✅ API 응답 성공:", response.data);
 
