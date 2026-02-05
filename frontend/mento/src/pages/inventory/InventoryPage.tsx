@@ -521,7 +521,7 @@ export default function InventoryPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-[1400px] px-6 py-8">
+      <div className="mx-auto max-w-[1200px] px-6 py-8">
         {/* Main Content */}
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Left Section - Product List */}
