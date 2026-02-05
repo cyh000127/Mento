@@ -53,8 +53,6 @@ export function NotificationModal({
         navigate("/inventory")
         break
       case "CONSULTING_STARTED":
-        navigate("/consultation-room")
-        break
       case "RESERVATION_CONFIRMED":
       case "RESERVATION_REMINDER":
       case "RESERVATION_CANCELLED":

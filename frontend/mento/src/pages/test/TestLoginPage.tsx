@@ -22,7 +22,7 @@ export default function TestLoginPage() {
         setLoading(true);
 
         try {
-            const response = await api.post("auth/login/mentor", {
+            const response = await api.post("test/auth/login", {
                 email,
                 password,
             });
@@ -79,9 +79,10 @@ export default function TestLoginPage() {
 
                         <div className="mt-4 p-4 bg-slate-50 rounded text-xs text-gray-500">
                             <p className="font-bold mb-1">테스트 계정 정보:</p>
-                            <p>Email: skincare01@example.com</p>
-                            <p>Email: beauty01@example.com</p>
-                            <p>Email: hair01@example.com</p>
+                            <p>MENTOR: skincare01@example.com</p>
+                            <p>MENTOR: beauty01@example.com</p>
+                            <p>MENTOR: hair01@example.com</p>
+                            <p>USER: user01@example.com</p>
                             <p>PW: test1234</p>
                         </div>
                     </form>
