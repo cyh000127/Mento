@@ -13,6 +13,7 @@ export type SortOption = "recent" | "alphabetical" | "expiring"
 
 export interface Product {
   id: string
+  productId: number // 상품 마스터 ID
   name: string
   brand: string
   category: ProductCategory
