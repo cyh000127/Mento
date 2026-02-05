@@ -3,11 +3,14 @@ import { ArrowRight, Sparkles } from "lucide-react"
 
 export function CtaSection() {
   return (
-    <section className="relative bg-dark-bg py-24 md:py-32">
+    <section
+      data-home-section
+      className="relative h-screen snap-start snap-always bg-dark-bg overflow-hidden"
+    >
       {/* Background pattern */}
       <div className="absolute inset-0 bg-gradient-to-b from-dark-bg via-dark-bg/95 to-dark-bg" />
       
-      <div className="relative mx-auto max-w-[1200px] px-6">
+      <div className="relative mx-auto flex h-full max-w-[1200px] flex-col justify-center px-6 py-20">
         <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary-500/20 via-primary-400/15 to-primary-300/10 p-12 md:p-16 lg:p-20 border border-primary-500/20">
           {/* Background decoration */}
           <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-primary-500/30 blur-[100px]" />
