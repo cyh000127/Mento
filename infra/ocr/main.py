@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from typing import List, Optional
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+from datetime import datetime
+
 
 # 1. 환경 변수 로드
 load_dotenv()
@@ -176,12 +178,30 @@ MAPPING_DICT = {
 class OCRRequest(BaseModel):
     imageUrl: str  # FE에서 보낸 Base64 데이터
 
-# 응답 데이터 모델 (선택 사항이나 구조화를 위해 권장)
-class ProductResponse(BaseModel):
-    status: str
-    ocr_text: Optional[str] = None
-    items: List[dict] = []
-    message: str
+
+# 기존 MatchedProduct는 유지하되 items 대신 matchedProducts로 쓰기 위해 리스트 구성용으로 사용
+class MatchedProduct(BaseModel):
+    productId: int
+    name: str
+    brandName: str
+    categoryMedium: str
+    categorySmall: str
+    price: int
+    imageUrl: str
+    matchScore: float
+
+# data 필드 내부에 들어갈 실제 OCR 결과 데이터
+class OCRData(BaseModel):
+    recognized: bool
+    confidence: float
+    matchedProducts: List[MatchedProduct]
+
+# FE가 최종적으로 수신할 공통 래퍼(Wrapper) 모델
+class FinalOCRResponse(BaseModel):
+    success: bool
+    data: Optional[OCRData] = None
+    error: Optional[str] = None
+    timestamp: str
 
 # ==========================================
 # SECTION 2: 고도화된 전처리 (Slicing & Mapping)
@@ -271,11 +291,11 @@ async def search_products_in_es(ocr_text: str, limit: int = 5):
 # ==========================================
 # SECTION 4: 메인 비즈니스 로직 (OCR 스캔)
 # ==========================================
-@app.post("/api/ocr/products/recognize", response_model=ProductResponse)
+@app.post("/api/ocr/products/recognize", response_model=FinalOCRResponse)
 async def scan_cosmetic(request: OCRRequest):
-    """
-    Base64 이미지를 전달받아 비동기로 OCR 분석 및 상품 매칭 결과를 반환합니다.
-    """
+    # 응답에 사용할 현재 시각 생성
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     try:
         # 1. Base64 데이터 디코딩 및 포맷 판별
         image_raw = request.imageUrl
@@ -319,42 +339,53 @@ async def scan_cosmetic(request: OCRRequest):
         if ocr_response.status_code != 200:
             raise HTTPException(status_code=500, detail=f"OCR 서비스 응답 오류: {ocr_response.status_code}")
 
-        res_data = ocr_response.json()
 
         # 4. OCR 결과 분석 및 ES 검색 연동
+        res_data = ocr_response.json()
+
         if 'images' in res_data and res_data['images'][0]['inferResult'] == 'SUCCESS':
-            fields = res_data['images'][0]['fields']
+            image_res = res_data['images'][0]
+            fields = image_res['fields']
             full_text = " ".join([field['inferText'] for field in fields])
+
+            # Clova에서 반환한 전체 인식 신뢰도 추출
+            confidence = image_res.get('confidence', 0.0)
 
             print(f"✅ [OCR] 텍스트 추출 성공: {full_text[:50]}...")
 
-            # 검색 로직 호출 (await 사용)
+            # 검색 로직 호출
             candidate_products = await search_products_in_es(full_text, limit=5)
             print(f"🔍 [ES] 검색 결과: {len(candidate_products)}건 매칭됨")
 
-            if candidate_products:
-                return ProductResponse(
-                    status="success",
-                    ocr_text=full_text,
-                    items=candidate_products,
-                    message="유사한 상품 후보를 찾았습니다."
-                )
-            else:
-                return ProductResponse(
-                    status="partial_success",
-                    ocr_text=full_text,
-                    items=[],
-                    message="텍스트는 인식했으나 일치하는 상품 후보가 없습니다."
-                )
-        else:
-            return ProductResponse(status="fail", message="이미지 인식에 실패했습니다.")
+            # FE 규격에 맞게 중첩된 data 객체 구성
+            ocr_result_data = OCRData(
+                recognized=True,
+                confidence=round(confidence, 2),
+                matchedProducts=candidate_products  # search_products_in_es 결과가 이미 리스트
+            )
 
-    except httpx.RequestError as e:
-        print(f"❌ 외부 통신 오류: {e}")
-        raise HTTPException(status_code=502, detail="OCR/ES 서버 통신 중 오류가 발생했습니다.")
+            return FinalOCRResponse(
+                success=True,
+                data=ocr_result_data,
+                error=None,
+                timestamp=current_time
+            )
+        else:
+            return FinalOCRResponse(
+                success=False,
+                data=None,
+                error="이미지 인식에 실패했습니다.",
+                timestamp=current_time
+            )
+
     except Exception as e:
-        print(f"❌ 서버 내부 오류: {e}")
-        raise HTTPException(status_code=500, detail="서버 처리 중 오류가 발생했습니다.")
+        print(f"❌ 오류 발생: {e}")
+        return FinalOCRResponse(
+            success=False,
+            data=None,
+            error=str(e),
+            timestamp=current_time
+        )
 
 if __name__ == "__main__":
     import uvicorn
