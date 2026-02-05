@@ -1,24 +1,27 @@
+import base64
 import re
 import json
 import uuid
 import time
 import os
-import requests
-from fastapi import FastAPI, File, UploadFile, HTTPException
+import httpx  # 비동기 통신을 위해 httpx 사용
+import asyncio
+from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
+from pydantic import BaseModel
+from typing import List, Optional
 
-# 1. 환경 변수 로드 세팅
+# 1. 환경 변수 로드
 load_dotenv()
 
-app = FastAPI()
+app = FastAPI(title="Cosmetic OCR Scanner API")
 
 # 환경 변수 및 설정 값
 NAVER_OCR_URL = os.getenv("NAVER_OCR_URL")
 NAVER_SECRET_KEY = os.getenv("NAVER_SECRET_KEY")
-# Docker 내부망 주소 고려 (기본값 설정)
 ES_URL = os.getenv("ES_URL", "http://elasticsearch:9200")
 
-# [전략 2: 한/영 매칭 사전] - 내용 생략 (기존 리스트 유지)
+# [전략 2: 한/영 매칭 사전] - 요청하신 대로 생략
 MAPPING_DICT = {
     "비레디": "B.READY",
     "올인원": "All-in-one",
@@ -166,6 +169,17 @@ MAPPING_DICT = {
     "스프레이": "Spray"
 }
 
+# 요청 데이터 모델
+class OCRRequest(BaseModel):
+    imageUrl: str  # FE에서 보낸 Base64 데이터
+
+# 응답 데이터 모델 (선택 사항이나 구조화를 위해 권장)
+class ProductResponse(BaseModel):
+    status: str
+    ocr_text: Optional[str] = None
+    items: List[dict] = []
+    message: str
+
 # ==========================================
 # SECTION 2: 고도화된 전처리 (Slicing & Mapping)
 # ==========================================
@@ -182,7 +196,7 @@ def preprocess_ocr_text(full_text: str):
         if keyword in text:
             text = text.split(keyword)[0]
 
-    # 3. Sliding Window (상위 20개 단어 추출)
+    # 3. 상위 단어 추출 (상품명은 보통 상단에 위치)
     words = text.split()
     top_words = words[:20]
 
@@ -193,76 +207,109 @@ def preprocess_ocr_text(full_text: str):
         if word in MAPPING_DICT:
             search_terms.append(MAPPING_DICT[word])
 
-    # 중복 제거 후 하나의 쿼리 스트링으로 반환
+    # 중복 제거 후 쿼리 스트링 반환
     return " ".join(list(dict.fromkeys(search_terms)))
 
 # ==========================================
-# SECTION 3: Elasticsearch 검색 (Nori Analyzer 활용)
+# SECTION 3: Elasticsearch 검색 (비동기 POST 방식)
 # ==========================================
-def search_products_in_es(ocr_text: str, limit: int = 5):
+async def search_products_in_es(ocr_text: str, limit: int = 5):
     """
-    정제된 텍스트를 바탕으로 ES 'products' 인덱스에서 검색을 수행합니다.
+    정제된 텍스트를 바탕으로 ES 'products' 인덱스에서 비동기로 검색을 수행합니다.
     """
     refined_query = preprocess_ocr_text(ocr_text)
     if not refined_query:
         return []
 
-    # [수정] 이전 대화에서 확인된 매핑 필드명 'product_name' 반영
+    # 1. 쿼리 필드명을 새로운 인덱스 구조(name, brandName)에 맞게 수정
     search_query = {
         "size": limit,
         "query": {
             "bool": {
                 "should": [
-                    # 상품명에 가장 높은 가중치 부여 (nori_analyzer 적용 필드)
-                    { "match": { "product_name": { "query": refined_query, "boost": 5 } } },
-                    # 브랜드명 검색 (nori_analyzer 적용 필드)
-                    { "match": { "brand_name": { "query": refined_query, "boost": 2 } } },
-                    # 오타 보정을 위한 Fuzzy 검색
-                    { "match": { "product_name": { "query": refined_query, "fuzziness": "AUTO" } } }
+                    { "match": { "name": { "query": refined_query, "boost": 5 } } },
+                    { "match": { "brandName": { "query": refined_query, "boost": 2 } } },
+                    { "match": { "name": { "query": refined_query, "fuzziness": "AUTO" } } }
                 ]
             }
         }
     }
 
     try:
-        # 인덱스 경로를 포함한 최종 URL 구성
         target_url = f"{ES_URL}/products/_search"
-        response = requests.get(target_url, json=search_query, timeout=5)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(target_url, json=search_query, timeout=5.0)
 
         if response.status_code == 200:
-            hits = response.json().get('hits', {}).get('hits', [])
-            return [hit['_source'] for hit in hits]
+            hits_data = response.json().get('hits', {}).get('hits', [])
+            matched_products = []
 
-        print(f"⚠️ ES 응답 오류: {response.status_code} - {response.text}")
+            # 2. 검색 결과를 FE가 원하는 형식으로 매핑
+            for hit in hits_data:
+                source = hit['_source']
+                matched_products.append({
+                    "productId": source.get("productId"),
+                    "name": source.get("name"),
+                    "brandName": source.get("brandName"),
+                    "categoryMedium": source.get("categoryMedium"),
+                    "categorySmall": source.get("categorySmall"),
+                    "price": source.get("price"),
+                    "imageUrl": source.get("imageUrl"),
+                    "matchScore": round(hit.get("_score", 0), 2)  # ES 점수를 matchScore로 추가
+                })
+            return matched_products
+
+        print(f"⚠️ ES 응답 오류: {response.status_code}")
         return []
     except Exception as e:
-        print(f"❌ ES 검색 중 네트워크/로직 오류: {e}")
+        print(f"❌ ES 검색 중 오류: {e}")
         return []
 
-@app.post("/api/ocr/scan-cosmetic")
-async def scan_cosmetic(file: UploadFile = File(...)):
+# ==========================================
+# SECTION 4: 메인 비즈니스 로직 (OCR 스캔)
+# ==========================================
+@app.post("/api/ocr/scan-cosmetic", response_model=ProductResponse)
+async def scan_cosmetic(request: OCRRequest):
     """
-    이미지를 업로드받아 OCR 분석 및 상품 매칭 결과를 반환합니다.
+    Base64 이미지를 전달받아 비동기로 OCR 분석 및 상품 매칭 결과를 반환합니다.
     """
-    # 1. 파일 데이터 읽기
-    content = await file.read()
-    file_ext = file.filename.split('.')[-1]
-
-    # 2. Naver Clova OCR 요청 구성
-    request_json = {
-        'images': [{'format': file_ext, 'name': 'product_image'}],
-        'requestId': str(uuid.uuid4()),
-        'version': 'V2',
-        'timestamp': int(round(time.time() * 1000))
-    }
-
-    payload = {'message': json.dumps(request_json)}
-    files = [('file', (file.filename, content))]
-    headers = {'X-OCR-SECRET': NAVER_SECRET_KEY}
-
     try:
-        # 3. OCR 호출
-        ocr_response = requests.post(NAVER_OCR_URL, headers=headers, data=payload, files=files, timeout=10)
+        # 1. Base64 데이터 디코딩 및 포맷 판별
+        image_raw = request.imageUrl
+        if "," in image_raw:
+            header, image_raw = image_raw.split(",", 1)
+            # jpeg/png 등 확장자 추출 로직
+            file_ext = header.split(';')[0].split('/')[-1]
+            if file_ext == 'jpeg': file_ext = 'jpg'
+        else:
+            file_ext = 'jpg'
+
+        try:
+            content = base64.b64decode(image_raw)
+        except Exception:
+            raise HTTPException(status_code=400, detail="유효하지 않은 Base64 데이터입니다.")
+
+        # 2. Naver Clova OCR 요청 구성
+        request_json = {
+            'images': [{'format': file_ext, 'name': 'product_image'}],
+            'requestId': str(uuid.uuid4()),
+            'version': 'V2',
+            'timestamp': int(round(time.time() * 1000))
+        }
+
+        # 3. 비동기 HTTP 클라이언트를 사용한 OCR 호출
+        async with httpx.AsyncClient() as client:
+            headers = {'X-OCR-SECRET': NAVER_SECRET_KEY}
+            payload = {'message': json.dumps(request_json)}
+            files = {'file': (f"image.{file_ext}", content)}
+
+            ocr_response = await client.post(
+                NAVER_OCR_URL,
+                headers=headers,
+                data=payload,
+                files=files,
+                timeout=15.0
+            )
 
         if ocr_response.status_code != 200:
             raise HTTPException(status_code=500, detail=f"OCR 서비스 응답 오류: {ocr_response.status_code}")
@@ -274,35 +321,34 @@ async def scan_cosmetic(file: UploadFile = File(...)):
             fields = res_data['images'][0]['fields']
             full_text = " ".join([field['inferText'] for field in fields])
 
-            # 전처리와 검색 로직 실행
-            candidate_products = search_products_in_es(full_text, limit=5)
+            # 검색 로직 호출 (await 사용)
+            candidate_products = await search_products_in_es(full_text, limit=5)
 
             if candidate_products:
-                return {
-                    "status": "success",
-                    "ocr_text": full_text,
-                    "items": candidate_products,
-                    "count": len(candidate_products),
-                    "message": "유사한 상품 후보를 찾았습니다."
-                }
+                return ProductResponse(
+                    status="success",
+                    ocr_text=full_text,
+                    items=candidate_products,
+                    message="유사한 상품 후보를 찾았습니다."
+                )
             else:
-                return {
-                    "status": "partial_success",
-                    "ocr_text": full_text,
-                    "items": [],
-                    "message": "텍스트는 인식했으나 일치하는 상품 후보가 없습니다."
-                }
+                return ProductResponse(
+                    status="partial_success",
+                    ocr_text=full_text,
+                    items=[],
+                    message="텍스트는 인식했으나 일치하는 상품 후보가 없습니다."
+                )
         else:
-            return {"status": "fail", "message": "이미지 인식에 실패했습니다."}
+            return ProductResponse(status="fail", message="이미지 인식에 실패했습니다.")
 
-    except requests.exceptions.RequestException as e:
+    except httpx.RequestError as e:
         print(f"❌ 외부 통신 오류: {e}")
-        raise HTTPException(status_code=502, detail="외부 서비스(OCR/ES) 통신 실패")
+        raise HTTPException(status_code=502, detail="OCR/ES 서버 통신 중 오류가 발생했습니다.")
     except Exception as e:
-        print(f"❌ 서버 로직 오류: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"❌ 서버 내부 오류: {e}")
+        raise HTTPException(status_code=500, detail="서버 처리 중 오류가 발생했습니다.")
 
 if __name__ == "__main__":
     import uvicorn
-    # Nginx 및 Docker 설정에 맞춘 포트 1000번 실행
+    # 포트 1000번에서 실행
     uvicorn.run(app, host="0.0.0.0", port=1000)
