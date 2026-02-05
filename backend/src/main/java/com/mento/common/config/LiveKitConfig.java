@@ -20,7 +20,7 @@ public class LiveKitConfig {
 
 	@Bean
 	public RoomServiceClient roomServiceClient() {
-		return RoomServiceClient.createClient(
+		return RoomServiceClient.create(
 			liveKitProperties.getUrl(),
 			liveKitProperties.getApiKey(),
 			liveKitProperties.getSecret()
@@ -29,7 +29,7 @@ public class LiveKitConfig {
 
 	@Bean
 	public EgressServiceClient egressServiceClient() {
-		return EgressServiceClient.createClient(
+		return EgressServiceClient.create(
 			liveKitProperties.getUrl(),
 			liveKitProperties.getApiKey(),
 			liveKitProperties.getSecret()
