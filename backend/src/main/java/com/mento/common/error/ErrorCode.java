@@ -25,6 +25,8 @@ public enum ErrorCode {
 	DATA_INTEGRITY_VIOLATION(HttpStatus.CONFLICT, "C-010", "데이터 무결성 위반입니다."),
 	ENCRYPT_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C-011", "데이터 암호화 중 오류가 발생했습니다."),
 	DECRYPT_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C-012", "데이터 복호화 중 오류가 발생했습니다."),
+	EXTERNAL_API_ERROR(HttpStatus.BAD_GATEWAY, "C-013", "외부 API 요청 중 오류가 발생했습니다."),
+	EXTERNAL_SERVER_ERROR(HttpStatus.BAD_GATEWAY, "C-014", "외부 서버 오류가 발생했습니다."),
 
 	/**
 	 * File Error (F-xxx)
@@ -45,6 +47,7 @@ public enum ErrorCode {
 	MISSING_USER(HttpStatus.BAD_REQUEST, "U-005", "사용자 정보가 누락되었습니다."),
 	USER_NOT_MENTOR(HttpStatus.FORBIDDEN, "U-006", "멘토 권한이 없는 사용자입니다."),
 	INVALID_MENTOR_TYPE(HttpStatus.BAD_REQUEST, "U-007", "잘못된 멘토 타입입니다."),
+	MISSING_SKIN_ANALYSIS(HttpStatus.BAD_REQUEST, "U-008", "피부 분석 정보가 누락되었습니다."),
 
 	/**
 	 * Auth Error (A-xxx)
