@@ -14,13 +14,17 @@ export default function InventoryHistoryPage() {
 
   // Filter states
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>("1month");
-  const [startYear, setStartYear] = useState("2026");
-  const [startMonth, setStartMonth] = useState("1");
-  const [startDay, setStartDay] = useState("3");
-  const [endYear, setEndYear] = useState("2026");
-  const [endMonth, setEndMonth] = useState("2");
-  const [endDay, setEndDay] = useState("3");
+  const [startYear, setStartYear] = useState("");
+  const [startMonth, setStartMonth] = useState("");
+  const [startDay, setStartDay] = useState("");
+  const [endYear, setEndYear] = useState("");
+  const [endMonth, setEndMonth] = useState("");
+  const [endDay, setEndDay] = useState("");
   const [isSearched, setIsSearched] = useState(false);
+  const [searchParams, setSearchParams] = useState<{
+    startDate: string;
+    endDate: string;
+  } | null>(null);
 
   // Data state
   const [histories, setHistories] = useState<InventoryHistoryItem[]>([]);
@@ -64,6 +68,10 @@ export default function InventoryHistoryPage() {
 
   // Calculate date range based on dropdowns
   const dateRange = useMemo(() => {
+    if (!startYear || !startMonth || !startDay || !endYear || !endMonth || !endDay) {
+      return { start: "", end: "" };
+    }
+
     return {
       start: `${startYear}-${startMonth.padStart(2, "0")}-${startDay.padStart(2, "0")}`,
       end: `${endYear}-${endMonth.padStart(2, "0")}-${endDay.padStart(2, "0")}`,
@@ -72,6 +80,8 @@ export default function InventoryHistoryPage() {
 
   // Fetch histories
   const fetchHistories = async (page: number = 0) => {
+    if (!searchParams) return;
+
     setIsLoading(true);
     setError(null);
 
@@ -79,8 +89,8 @@ export default function InventoryHistoryPage() {
       const response = await getInventoryHistories({
         page,
         size: pageSize,
-        startDate: dateRange.start,
-        endDate: dateRange.end,
+        startDate: searchParams.startDate,
+        endDate: searchParams.endDate,
       });
 
       setHistories(response.data.content);
@@ -108,7 +118,15 @@ export default function InventoryHistoryPage() {
 
   // Handlers
   const handleSearch = () => {
+    if (!dateRange.start || !dateRange.end) {
+      return;
+    }
+
     setIsSearched(true);
+    setSearchParams({
+      startDate: dateRange.start,
+      endDate: dateRange.end,
+    });
     setCurrentPage(0);
     fetchHistories(0);
   };
@@ -221,7 +239,7 @@ export default function InventoryHistoryPage() {
             {!isLoading && !isSearched && (
               <div className="rounded-xl border border-border bg-card p-12 shadow-sm">
                 <div className="flex items-center justify-center">
-                  <p className="text-muted-foreground">조회 기간을 선택하고 검색 버튼을 클릭하세요.</p>
+                  <p className="text-muted-foreground">조회 기간을 선택해주세요.</p>
                 </div>
               </div>
             )}
