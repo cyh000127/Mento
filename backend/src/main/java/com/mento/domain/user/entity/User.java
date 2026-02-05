@@ -11,6 +11,7 @@ import com.mento.domain.item.entity.Item;
 import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.product.exception.ProductException;
 import com.mento.domain.reservation.entity.Reservation;
+import com.mento.domain.skinanalysis.entity.SkinAnalysis;
 import com.mento.domain.user.exception.UserException;
 
 import jakarta.persistence.CascadeType;
@@ -25,6 +26,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -52,6 +54,10 @@ public class User extends BaseEntity {
 	@Builder.Default
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Item> items = new ArrayList<>();
+
+	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JoinColumn(name = "skin_analysis_id")
+	private SkinAnalysis skinAnalysis;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "mentor_type_id")
@@ -121,6 +127,13 @@ public class User extends BaseEntity {
 			throw new UserException(ErrorCode.MISSING_MENTOR_TYPE);
 		}
 		this.mentorType = mentorType;
+	}
+
+	public void assignSkinAnalysis(final SkinAnalysis skinAnalysis) {
+		if (skinAnalysis == null) {
+			throw new UserException(ErrorCode.MISSING_SKIN_ANALYSIS);
+		}
+		this.skinAnalysis = skinAnalysis;
 	}
 
 	public boolean isMentor() {
