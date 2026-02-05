@@ -29,6 +29,9 @@ public class SecurityConfig {
 	private static final String[] WHITELIST = {
 		"/swagger-ui/**",
 		"/v3/api-docs/**",
+		"/swagger",
+		"/api-docs/**",
+		"/test-swagger",
 		"/error",
 		"/",
 
@@ -37,8 +40,8 @@ public class SecurityConfig {
 		"/api/v1/auth/reissue",
 		"/api/v1/auth/login/mentor",
 		
-		// Test
-		"/api/v1/test/**",
+		// Test API (개발 전용 - 인증 우회)
+		"/test/v1/**",
 
 		//livekit
 		"/api/v1/consulting/session/**"
