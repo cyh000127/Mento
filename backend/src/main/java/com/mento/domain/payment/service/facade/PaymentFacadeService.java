@@ -10,9 +10,12 @@ import com.mento.common.error.exception.PaymentException;
 import com.mento.domain.consulting.entity.Consulting;
 import com.mento.domain.consulting.factory.ConsultingFactory;
 import com.mento.domain.consulting.service.command.ConsultingCommandService;
+import com.mento.domain.mentor.entity.MentorType;
+import com.mento.domain.mentor.exception.MentortTypeException;
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.service.NotificationFacadeService;
+import com.mento.domain.payment.converter.PaymentConverter;
 import com.mento.domain.payment.dto.request.PaymentApproveReqDto;
 import com.mento.domain.payment.dto.request.PaymentReadyReqDto;
 import com.mento.domain.payment.dto.response.PaymentApproveResDto;
@@ -38,6 +41,10 @@ import lombok.extern.slf4j.Slf4j;
 public class PaymentFacadeService {
 
 	private static final int NOTIFICATION_MINUTES = 10;
+	private static final Long SKINCARE_MENTOR_ID = 1L;
+	private static final Long BEAUTY_MENTOR_ID = 6L;
+	private static final Long HAIR_MENTOR_ID = 11L;
+
 	private final PaymentCommandService paymentCommandService;
 	private final PaymentQueryService paymentQueryService;
 	private final NotificationFacadeService notificationFacadeService;
@@ -56,7 +63,8 @@ public class PaymentFacadeService {
 	}
 
 	public PaymentInfoDto findPaymentById(final Long paymentId) {
-		return paymentQueryService.findPaymentById(paymentId);
+		Payment payment = paymentQueryService.findById(paymentId);
+		return PaymentConverter.toPaymentResDto(payment);
 	}
 
 	@Transactional
@@ -66,26 +74,48 @@ public class PaymentFacadeService {
 	) {
 		paymentCommandService.approve(request, userId);
 
-		Payment payment = paymentQueryService.findById(request.paymentId());
+		Payment payment = paymentQueryService.findDetailsById(request.paymentId());
 		Reservation reservation = payment.getReservation();
 
 		if (reservation == null) {
 			throw new PaymentException(ErrorCode.RESERVATION_NOT_FOUND);
 		}
 
-		//테스트용 활성화 추후 수정 예정
-		User mentor = userQueryService.findById(1L);
-
 		reservation.getSlot().increaseCapacity();
-		reservation.assignMentor(mentor);
+		assignMentorToReservation(reservation);
 		reservation.confirm();
 
 		log.info("[Payment] 결제 승인 및 예약 확정 완료 {paymentId: {}, reservationId: {}, mentorId: {}}",
-			payment.getId(), reservation.getId(), mentor.getId());
+			payment.getId(), reservation.getId(), reservation.getMentor().getId());
 
 		Consulting consulting = consultingFactory.createConsulting(reservation.getId());
 		consultingCommandService.saveDraftConsulting(consulting);
 
+		sendReservationConfirmNotification(reservation);
+
+		return ReservationConverter.toReservationDetailResDto(reservation);
+	}
+
+	private void assignMentorToReservation(final Reservation reservation) {
+		MentorType mentorType = reservation.getSlot().getMentorType();
+		Long mentorId = getMentorIdByType(mentorType.getTypeName());
+		User mentor = userQueryService.findById(mentorId);
+		reservation.assignMentor(mentor);
+
+		log.info("[Payment] 멘토 배정 완료 {reservationId: {}, mentorId: {}, mentorType: {}}",
+			reservation.getId(), mentorId, mentorType.getTypeName());
+	}
+
+	private Long getMentorIdByType(final String typeName) {
+		return switch (typeName) {
+			case "SKINCARE" -> SKINCARE_MENTOR_ID;
+			case "BEAUTY" -> BEAUTY_MENTOR_ID;
+			case "HAIR" -> HAIR_MENTOR_ID;
+			default -> throw new MentortTypeException(ErrorCode.INVALID_MENTOR_TYPE);
+		};
+	}
+
+	private void sendReservationConfirmNotification(final Reservation reservation) {
 		try {
 			Timetable timetable = reservation.getSlot().getTimetable();
 			LocalDateTime consultingStartTime = LocalDateTime.of(
@@ -101,13 +131,12 @@ public class PaymentFacadeService {
 				.expiredAt(notificationExpiry)
 				.build()
 			);
+
 			log.info("[Payment] 예약 확정 알림 발송 성공 {reservationId: {}, userId: {}}",
 				reservation.getId(), reservation.getUser().getId());
 		} catch (Exception e) {
 			log.error("[Payment] 예약 확정 알림 발송 실패 {reservationId: {}, userId: {}, error: {}}",
 				reservation.getId(), reservation.getUser().getId(), e.getMessage());
 		}
-
-		return ReservationConverter.toReservationDetailResDto(reservation);
 	}
 }
