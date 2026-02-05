@@ -10,11 +10,14 @@ from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from typing import List, Optional
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 # 1. 환경 변수 로드
 load_dotenv()
 
 app = FastAPI(title="Cosmetic OCR Scanner API")
+
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 
 # 환경 변수 및 설정 값
 NAVER_OCR_URL = os.getenv("NAVER_OCR_URL")
@@ -268,7 +271,7 @@ async def search_products_in_es(ocr_text: str, limit: int = 5):
 # ==========================================
 # SECTION 4: 메인 비즈니스 로직 (OCR 스캔)
 # ==========================================
-@app.post("/api/ocr/scan-cosmetic", response_model=ProductResponse)
+@app.post("/api/ocr/products/recognize", response_model=ProductResponse)
 async def scan_cosmetic(request: OCRRequest):
     """
     Base64 이미지를 전달받아 비동기로 OCR 분석 및 상품 매칭 결과를 반환합니다.
