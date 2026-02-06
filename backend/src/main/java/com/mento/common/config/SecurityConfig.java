@@ -40,14 +40,17 @@ public class SecurityConfig {
 		"/login/oauth/**",
 		"/api/v1/auth/reissue",
 		"/api/v1/test/auth/login/**",
-		
+
 		// Test API (개발 전용 - 인증 우회)
 		"/test/v1/**",
 
 		//livekit
 		"/api/v1/consulting/session/**",
 		"/api/v1/recordings/start",
-		"/api/v1/recordings/stop"
+		"/api/v1/recordings/stop",
+
+		// Product
+		"/api/v1/products/search/**"
 	};
 	private final CorsConfig corsFilter;
 	private final CustomOAuth2UserService customOAuth2UserService;

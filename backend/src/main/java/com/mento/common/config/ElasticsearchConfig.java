@@ -29,8 +29,8 @@ public class ElasticsearchConfig extends ElasticsearchConfiguration {
 			.withSocketTimeout(properties.socketTimeout())
 			.withHeaders(() -> {
 				HttpHeaders headers = new HttpHeaders();
-				// Accept 헤더만 8버전 호환성으로 설정 (Content-Type은 라이브러리 자동 설정에 맡김)
-				headers.set("Accept", "application/vnd.elasticsearch+json; compatible-with=8");
+				headers.add("Content-Type", "application/json");
+				headers.add("Accept", "application/json");
 				return headers;
 			})
 			.build();
