@@ -15,6 +15,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.PaymentException;
+import com.mento.domain.consulting.entity.ConsultingReport;
+import com.mento.domain.consulting.factory.ConsultingReportFactory;
+import com.mento.domain.consulting.service.command.impl.ConsultingReportCommandServiceImpl;
 import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.service.NotificationFacadeService;
@@ -33,7 +36,7 @@ import com.mento.domain.timetable.entity.Timetable;
 import com.mento.domain.timetable.entity.TimetableSlot;
 import com.mento.domain.user.entity.Role;
 import com.mento.domain.user.entity.User;
-import com.mento.domain.user.service.query.UserQueryServiceImpl;
+import com.mento.domain.user.service.query.UserQueryService;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentFacadeServiceTest {
@@ -45,11 +48,16 @@ class PaymentFacadeServiceTest {
 	private PaymentQueryService paymentQueryService;
 
 	@Mock
-	private UserQueryServiceImpl userQueryService;
-
+	private UserQueryService userQueryService;
 
 	@Mock
 	private NotificationFacadeService notificationFacadeService;
+
+	@Mock
+	private ConsultingReportFactory consultingReportFactory;
+
+	@Mock
+	private ConsultingReportCommandServiceImpl consultingReportCommandService;
 
 	@InjectMocks
 	private PaymentFacadeService paymentFacadeService;
@@ -141,6 +149,12 @@ class PaymentFacadeServiceTest {
 		given(userQueryService.findById(SKINCARE_MENTOR_ID))
 			.willReturn(mentor);
 		willDoNothing().given(notificationFacadeService).sendNotification(any(NotificationSendReqDto.class));
+
+		ConsultingReport mockReport = mock(ConsultingReport.class);
+		given(consultingReportFactory.createInitReport())
+			.willReturn(mockReport);
+		given(consultingReportCommandService.save(any(ConsultingReport.class)))
+			.willReturn(mockReport);
 
 		// When
 		ReservationDetailResDto result = paymentFacadeService.approvePaymentAndConfirmReservation(request, userId);

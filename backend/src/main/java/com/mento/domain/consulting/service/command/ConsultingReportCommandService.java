@@ -4,4 +4,6 @@ import com.mento.domain.consulting.entity.ConsultingReport;
 
 public interface ConsultingReportCommandService {
 	ConsultingReport save(ConsultingReport consultingReport);
+
+	void updateVideo(Long reservationId, String mediaUrl);
 }

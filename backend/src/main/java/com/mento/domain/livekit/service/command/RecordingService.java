@@ -12,10 +12,9 @@ import org.springframework.util.CollectionUtils;
 
 import com.mento.common.config.properties.CloudflareProperties;
 import com.mento.common.error.ErrorCode;
-import com.mento.domain.consulting.entity.ConsultingReport;
 import com.mento.domain.consulting.event.ConsultingReportEvent;
 import com.mento.domain.consulting.factory.ConsultingReportFactory;
-import com.mento.domain.consulting.service.query.ConsultingReportQueryService;
+import com.mento.domain.consulting.service.command.ConsultingReportCommandService;
 import com.mento.domain.consulting.vo.ChatLogEntryVo;
 import com.mento.domain.livekit.converter.RecordingConverter;
 import com.mento.domain.livekit.dto.RecordingReqDto;
@@ -59,6 +58,7 @@ public class RecordingService {
 
 	// Redis 키
 	private static final String CHAT_LOG_KEY_PREFIX = "chat:log:";
+	public static final String RECORDING_DIR = "recordings/";
 
 	private final RedisTemplate<String, String> redisTemplate;
 	private final RedisTemplate<String, ChatLogEntryVo> chatLogRedisTemplate;
@@ -68,7 +68,7 @@ public class RecordingService {
 	private final ReservationQueryService reservationQueryService;
 	private final ApplicationEventPublisher eventPublisher;
 	private final ConsultingReportFactory consultingReportFactory;
-	private final ConsultingReportQueryService consultingReportQueryService;
+	private final ConsultingReportCommandService consultingReportCommandService;
 
 	public RecordingResDto startRecording(final RecordingReqDto request) {
 		String roomId = request.roomId();
@@ -194,7 +194,7 @@ public class RecordingService {
 
 		return EncodedFileOutput.newBuilder()
 			.setFileType(EncodedFileType.MP4)
-			.setFilepath("recordings/" + roomId + "_{time}.mp4")
+			.setFilepath(RECORDING_DIR + roomId + "_{time}.mp4")
 			.setS3(r2Output)
 			.build();
 	}
@@ -227,27 +227,12 @@ public class RecordingService {
 			Response<EgressInfo> response = egressServiceClient.stopEgress(egressId).execute();
 			validateResponse(response, ErrorCode.RECORDING_STOP_FAILED);
 
-			String mediaUrl = extractMediaUrl(response.body());
-			Long reservationId = extractReservationId(roomId);
-			updateConsultingReportVideo(reservationId, mediaUrl);
-
 		} catch (IOException e) {
 			log.error("[Recording] 녹화 중지 실패 {egressId: {}, error: {}}", egressId, e.getMessage());
 			throw new LiveKitException(ErrorCode.RECORDING_STOP_FAILED);
 		}
 	}
 
-	private String extractMediaUrl(final EgressInfo egressInfo) {
-		return egressInfo.getFileResultsList().stream()
-			.map(FileInfo::getLocation)
-			.findFirst()
-			.orElseThrow(() -> new LiveKitException(ErrorCode.RECORDING_STOP_FAILED));
-	}
-
-	private void updateConsultingReportVideo(final Long reservationId, final String mediaUrl) {
-		ConsultingReport consultingReport = consultingReportQueryService.findByReservationId(reservationId);
-		consultingReport.updateVideo(mediaUrl);
-	}
 
 	private void validateResponse(final Response<EgressInfo> response, final ErrorCode errorCode) {
 		if (!response.isSuccessful() || response.body() == null) {
@@ -260,7 +245,23 @@ public class RecordingService {
 			return;
 		}
 		FileInfo fileInfo = egressInfo.getFileResultsList().getFirst();
+
+		Long reservationId = extractReservationId(egressInfo.getRoomName());
+		String publicUrl = convertToPublicUrl(fileInfo.getLocation());
+		consultingReportCommandService.updateVideo(reservationId, publicUrl);
+
 		log.info("[Recording] 녹화 성공 {filePath: {}, fileSize: {} bytes}",
-			fileInfo.getLocation(), fileInfo.getSize());
+			publicUrl, fileInfo.getSize());
+	}
+
+	private String convertToPublicUrl(final String originalUrl) {
+		int recordingsIndex = originalUrl.indexOf(RECORDING_DIR);
+		if (recordingsIndex == -1) {
+			log.warn("[Recording] URL에서 recordings 경로를 찾을 수 없습니다 {url: {}}", originalUrl);
+			return originalUrl;
+		}
+		String outerPrefix = cloudflareProperties.outerPrefix();
+		String filePath = originalUrl.substring(recordingsIndex);
+		return outerPrefix.endsWith("/") ? outerPrefix + filePath : outerPrefix + "/" + filePath;
 	}
 }
