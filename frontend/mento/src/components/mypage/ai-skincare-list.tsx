@@ -25,7 +25,7 @@ export function AiSkincareList({ diagnoses, onViewDetail }: AiSkincareListProps)
             {/* View Detail Link */}
             <div className="col-span-8 flex items-center justify-center">
               <button onClick={() => onViewDetail(diagnosis)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                {diagnosis.total_score}점 · {diagnosis.skin_type_summary} / 상세보기
+                {100 - diagnosis.total_score}점 · {diagnosis.skin_type_summary} / 상세보기
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>

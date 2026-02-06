@@ -150,6 +150,12 @@ export default function AiSkincareHistoryPage() {
         <MyPageSidebar />
         <div className="flex-1">
           <div className="mx-auto max-w-7xl px-6 py-8">
+            {/* 페이지 헤더 */}
+            {!selectedDiagnosis && (
+              <div className="pl-1">
+                <h1 className="text-2xl font-bold text-foreground pb-3">AI CARE</h1>
+              </div>
+            )}
             {selectedDiagnosis ? (
               // Detail View
               <div>

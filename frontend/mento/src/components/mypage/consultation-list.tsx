@@ -13,9 +13,10 @@ interface ConsultationListProps {
   onViewDetail: (consultation: Consultation) => void;
   onEnterRoom: (reservationId: number) => void;
   onGoToPayment: (consultation: Consultation) => void;
+  onViewReport: (consultation: Consultation) => void;
 }
 
-export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onGoToPayment }: ConsultationListProps) {
+export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onGoToPayment, onViewReport }: ConsultationListProps) {
   const formatDateTime = (dateStr: string, timeStr: string) => {
     return `${dateStr.replace(/-/g, ".")} ${timeStr}`;
   };
@@ -49,6 +50,11 @@ export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onG
         message: "아직 생성된 상담 리포트가 없습니다.",
         type: "warning",
       });
+      return;
+    }
+
+    if (onViewReport) {
+      onViewReport(consultation);
       return;
     }
 

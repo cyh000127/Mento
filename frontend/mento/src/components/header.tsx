@@ -38,8 +38,8 @@ export function Header() {
     const eventSource = new EventSource(url);
 
     // 연결 성공 (디버깅용)
-    eventSource.addEventListener("connect", (e: MessageEvent) => {
-      console.log("SSE Connected:", e.data);
+    eventSource.addEventListener("connect", () => {
+
     });
 
     // 초기 알림 데이터 수신
@@ -67,8 +67,8 @@ export function Header() {
       }
     });
 
-    eventSource.onerror = (e) => {
-      console.error("SSE Error (재연결 중...):", e);
+    eventSource.onerror = () => {
+      // console.error("SSE Error (재연결 중...):", e);
     };
 
     return () => {
