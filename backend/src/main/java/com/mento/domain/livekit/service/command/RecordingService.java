@@ -46,6 +46,8 @@ public class RecordingService {
 	private static final String EGRESS_ENDED_EVENT = "egress_ended";
 	private static final String EGRESS_COMPLETE_STATUS = "EGRESS_COMPLETE";
 	private static final String EGRESS_FAILED_STATUS = "EGRESS_FAILED";
+
+	private static final String ROOM_FINISHED_STATUS = "room_finished";
 	private static final String CHAT_LOG_KEY_PREFIX = "chat:log:";
 	private static final String ROOM_NAME_PREFIX = "room_";
 
@@ -99,8 +101,15 @@ public class RecordingService {
 			case EGRESS_STARTED_EVENT -> handleEgressStarted(egressInfo);
 			case EGRESS_UPDATED_EVENT -> handleEgressUpdated(egressInfo);
 			case EGRESS_ENDED_EVENT -> handleEgressEnded(egressInfo);
+			case ROOM_FINISHED_STATUS -> handleRoomEnded(egressInfo);
 			default -> log.debug("[Recording] 처리하지 않는 이벤트 타입 {eventType: {}}", eventType);
 		}
+	}
+
+	private void handleRoomEnded(final EgressInfo egressInfo) {
+		String egressId = egressInfo.getEgressId();
+		log.info("[Recording] Room 종료 이벤트 수신 {egressId: {}, status: {}}", egressId, egressInfo.getRoomId());
+		publishConsultingReportEvent(egressId);
 	}
 
 	private void handleEgressStarted(final EgressInfo egressInfo) {
@@ -126,7 +135,6 @@ public class RecordingService {
 
 		if (EGRESS_COMPLETE_STATUS.equals(status)) {
 			handleEgressComplete(egressInfo);
-			publishConsultingReportEvent(egressId);
 		}
 	}
 
