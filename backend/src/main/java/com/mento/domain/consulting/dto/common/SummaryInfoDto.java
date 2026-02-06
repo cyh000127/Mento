@@ -1,22 +1,26 @@
 package com.mento.domain.consulting.dto.common;
 
+import java.util.List;
+
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
-@Schema(description = "상담 보고서 요약 정보 DTO")
+@Schema(description = "상담 보고서 요약 정보")
 @Builder
 public record SummaryInfoDto(
 	@Schema(description = "보고서 ID", example = "1")
-	@NotNull(message = "보고서 ID는 필수입니다")
 	Long reportId,
 
-	@Schema(description = "보고서 내용")
-	@NotBlank(message = "내용은 필수입니다")
+	@Schema(description = "보고서 내용 (상담 요약, AI 생성 내용)", example = "상담 진행 결과 고객님의 피부 타입은 지성 피부로 확인되었습니다...")
 	String content,
 
-	@Schema(description = "미디어 URL", example = "https://example.com/media/report.mp4")
-	String mediaUrl
+	@ArraySchema(
+		schema = @Schema(
+			description = "보고서 관련 미디어 파일 URL 목록 (영상 녹화본 등)",
+			example = "https://example.com/media/report-video.mp4"
+		)
+	)
+	List<String> mediaUrls
 ) {
 }
