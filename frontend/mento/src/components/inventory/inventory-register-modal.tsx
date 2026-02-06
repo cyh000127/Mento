@@ -184,7 +184,6 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
           keyword: trimmedQuery,
           page: currentPage - 1, // API는 0부터 시작
           size: itemsPerPage,
-          sort: "relevance",
         });
 
         setApiProducts(response.content);
