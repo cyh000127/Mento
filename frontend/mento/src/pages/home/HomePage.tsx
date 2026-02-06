@@ -6,6 +6,7 @@ import { AiSkinAnalysisSection } from "@/components/home/ai-skin-analysis-sectio
 import { HowItWorksSection } from "@/components/home/how-it-works-section"
 import { CtaSection } from "@/components/home/cta-section"
 import { useAuthStore } from "@/stores/useAuthStore"
+import { MentoringSection } from "@/components/home/mentoring-section"
 
 if (typeof window !== "undefined" && "scrollRestoration" in history) {
   history.scrollRestoration = "manual"
@@ -104,6 +105,7 @@ export default function HomePage() {
 
       {/* Additional sections */}
       <InventorySection />
+      <MentoringSection />
       <AiSkinAnalysisSection />
       <FeaturesSection />
       <HowItWorksSection />
