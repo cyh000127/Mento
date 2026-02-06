@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MyPageSidebar } from "@/components/mypage/mypage-sidebar";
 import { PeriodDateFilters } from "@/components/mypage/consultation-filters";
@@ -37,6 +37,17 @@ export default function InventoryHistoryPage() {
   const [hasNext, setHasNext] = useState(false);
   const pageSize = 20;
 
+  const formatDateParts = (date: Date) => ({
+    year: date.getFullYear().toString(),
+    month: (date.getMonth() + 1).toString(),
+    day: date.getDate().toString(),
+  });
+
+  const formatDateString = (date: Date) => {
+    const { year, month, day } = formatDateParts(date);
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  };
+
   // Initialize dates on period change
   const handlePeriodChange = (period: PeriodFilter) => {
     setSelectedPeriod(period);
@@ -65,6 +76,31 @@ export default function InventoryHistoryPage() {
     setEndMonth((today.getMonth() + 1).toString());
     setEndDay(today.getDate().toString());
   };
+
+  useEffect(() => {
+    const today = new Date();
+    const start = new Date();
+    start.setMonth(today.getMonth() - 1);
+
+    const startParts = formatDateParts(start);
+    const endParts = formatDateParts(today);
+
+    setStartYear(startParts.year);
+    setStartMonth(startParts.month);
+    setStartDay(startParts.day);
+    setEndYear(endParts.year);
+    setEndMonth(endParts.month);
+    setEndDay(endParts.day);
+
+    const nextParams = {
+      startDate: formatDateString(start),
+      endDate: formatDateString(today),
+    };
+    setIsSearched(true);
+    setSearchParams(nextParams);
+    setCurrentPage(0);
+    fetchHistories(0, nextParams);
+  }, []);
 
   // Calculate date range based on dropdowns
   const dateRange = useMemo(() => {

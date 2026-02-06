@@ -198,6 +198,7 @@ export default function InventoryPage() {
         const normalizedStatus = data.status === "IN_USE" ? "OWNED" : data.status;
         const detailedProduct: Product = {
           id: data.id.toString(),
+          productId: data.productInfoDto.id,
           name: data.productInfoDto.name,
           brand: data.productInfoDto.brandName ?? product.brand,
           category: mapDetailCategoryToUI(categoryMedium),
@@ -706,6 +707,7 @@ export default function InventoryPage() {
   const isEmptyState = hasFetched && !loading && products.length === 0;
   const fallbackProduct: Product = {
     id: "",
+    productId: 0,
     name: "-",
     brand: "-",
     category: "skin",
