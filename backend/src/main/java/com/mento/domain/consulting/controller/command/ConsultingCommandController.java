@@ -40,12 +40,4 @@ public class ConsultingCommandController {
 		facadeService.endConsultingSession(roomId);
 		return ResponseUtils.noContent();
 	}
-
-	@PostMapping("/reports/{reservationId}")
-	public ResponseEntity<BaseResponse<Void>> generateConsultingReport(
-		@PathVariable final Long reservationId
-	) {
-		facadeService.generateConsultingReport(reservationId);
-		return ResponseUtils.noContent();
-	}
 }
