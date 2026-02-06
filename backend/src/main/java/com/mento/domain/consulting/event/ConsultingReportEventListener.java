@@ -19,6 +19,8 @@ import com.mento.domain.consulting.entity.ConsultingReport;
 import com.mento.domain.consulting.factory.ConsultingReportFactory;
 import com.mento.domain.consulting.service.command.ConsultingReportCommandService;
 import com.mento.domain.consulting.vo.ChatLogEntryVo;
+import com.mento.domain.reservation.entity.Reservation;
+import com.mento.domain.reservation.service.query.ReservationQueryServiceImpl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +41,7 @@ public class ConsultingReportEventListener {
 	private final ConsultingReportFactory consultingReportFactory;
 	private final RetryTemplate aiRetryTemplate;
 	private final PromptProperties promptProperties;
+	private final ReservationQueryServiceImpl reservationQueryService;
 
 	@Async("aiUploadThreadPoolExecutor")
 	@EventListener
@@ -56,7 +59,10 @@ public class ConsultingReportEventListener {
 			});
 
 			ConsultingReport consultingReport = consultingReportFactory.createReport(aiResult);
-			event.getReservation().assignConsultingReport(consultingReport);
+
+			Reservation reservation = reservationQueryService.findById(reservationId);
+			reservation.assignConsultingReport(consultingReport);
+
 			consultingReportCommandService.save(consultingReport);
 
 			log.info("[Consulting] AI 보고서 생성 완료 {reservationId: {}}", reservationId);
