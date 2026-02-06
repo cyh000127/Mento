@@ -439,12 +439,17 @@ export default function ConsultationManagementPage() {
     setSelectedReportConsultation(null);
   };
 
+  const resetViewState = () => {
+    setSelectedConsultation(null);
+    setSelectedReportConsultation(null);
+  };
+
   // Show report detail view if report consultation is selected
   if (selectedReportConsultation) {
     return (
       <div className="flex min-h-screen bg-background justify-center">
         <div className="flex w-full max-w-[1200px]">
-          <MyPageSidebar />
+          <MyPageSidebar onNavigate={resetViewState} />
           <div className="flex-1">
             <div className="bg-background py-8">
               <div className="mx-auto px-6">
@@ -480,7 +485,7 @@ export default function ConsultationManagementPage() {
     return (
       <div className="flex min-h-screen bg-background justify-center">
         <div className="flex w-full max-w-[1200px]">
-          <MyPageSidebar />
+          <MyPageSidebar onNavigate={resetViewState} />
           <div className="flex-1">
             <ConsultationDetail consultation={selectedConsultation} onBack={handleBackToList} onGoToPayment={handleGoToPayment} />
           </div>
@@ -492,7 +497,7 @@ export default function ConsultationManagementPage() {
   return (
     <div className="flex min-h-screen bg-background justify-center">
       <div className="flex w-full max-w-[1200px]">
-        <MyPageSidebar />
+        <MyPageSidebar onNavigate={resetViewState} />
         <div className="flex-1">
           <div className="mx-auto max-w-7xl px-6 py-8">
             {/* Page Header */}
