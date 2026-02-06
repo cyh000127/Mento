@@ -29,6 +29,7 @@ import livekit.LivekitEgress.EncodedFileOutput;
 import livekit.LivekitEgress.EncodedFileType;
 import livekit.LivekitEgress.FileInfo;
 import livekit.LivekitEgress.S3Upload;
+import livekit.LivekitModels;
 import livekit.LivekitWebhook.WebhookEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -68,7 +69,6 @@ public class RecordingService {
 
 		log.info("[Recording] 녹화 시작 완료 {egressId: {}, roomId: {}}", egressInfo.getEgressId(), roomId);
 		redisTemplate.opsForValue().set(roomId, egressInfo.getEgressId());
-		redisTemplate.opsForValue().set(egressInfo.getEgressId(), roomId);
 		return RecordingConverter.toStartResDto(egressInfo.getEgressId(), roomId);
 	}
 
@@ -95,21 +95,22 @@ public class RecordingService {
 
 	private void processWebhookEvent(final WebhookEvent event) {
 		String eventType = event.getEvent();
+		event.getRoom().getName();
 		EgressInfo egressInfo = event.getEgressInfo();
 
 		switch (eventType) {
 			case EGRESS_STARTED_EVENT -> handleEgressStarted(egressInfo);
 			case EGRESS_UPDATED_EVENT -> handleEgressUpdated(egressInfo);
 			case EGRESS_ENDED_EVENT -> handleEgressEnded(egressInfo);
-			case ROOM_FINISHED_STATUS -> handleRoomEnded(egressInfo);
+			case ROOM_FINISHED_STATUS -> handleRoomEnded(event);
 			default -> log.debug("[Recording] 처리하지 않는 이벤트 타입 {eventType: {}}", eventType);
 		}
 	}
 
-	private void handleRoomEnded(final EgressInfo egressInfo) {
-		String egressId = egressInfo.getEgressId();
-		log.info("[Recording] Room 종료 이벤트 수신 {egressId: {}, status: {}}", egressId, egressInfo.getRoomId());
-		publishConsultingReportEvent(egressId);
+	private void handleRoomEnded(final WebhookEvent event) {
+		LivekitModels.Room room = event.getRoom();
+		log.info("[Recording] Room 종료 이벤트 수신 {egressId: {}, status: {}}", room.getSid(), room.getName());
+		publishConsultingReportEvent(room.getName());
 	}
 
 	private void handleEgressStarted(final EgressInfo egressInfo) {
@@ -138,13 +139,7 @@ public class RecordingService {
 		}
 	}
 
-	private void publishConsultingReportEvent(final String egressId) {
-		String roomId = redisTemplate.opsForValue().getAndDelete(egressId);
-		if (roomId == null) {
-			log.error("[ConsultingReport] Redis에서 roomId를 찾을 수 없습니다 {egressId: {}}", egressId);
-			return;
-		}
-
+	private void publishConsultingReportEvent(final String roomId) {
 		if (!roomId.startsWith(ROOM_NAME_PREFIX)) {
 			log.error("[ConsultingReport] 잘못된 roomId 형식 {roomId: {}}", roomId);
 			return;
