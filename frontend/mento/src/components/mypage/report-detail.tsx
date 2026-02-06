@@ -22,10 +22,12 @@ export function ReportDetail() {
     parsedReport = undefined;
   }
 
+  const mediaUrls = reportData.mediaUrls ?? [];
+
   return (
     <div className="flex items-start gap-20">
       <div className="flex-1">
-        <ConsultationReport report={parsedReport} mediaUrl={reportData.mediaUrl} />
+        <ConsultationReport report={parsedReport} mediaUrls={mediaUrls} />
       </div>
     </div>
   );
