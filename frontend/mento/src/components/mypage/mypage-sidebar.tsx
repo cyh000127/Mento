@@ -8,6 +8,11 @@ interface MenuItem {
   path: string;
 }
 
+/** 🔹 부모에서 상태 초기화를 넘겨받기 위한 props */
+interface MyPageSidebarProps {
+  onNavigate?: () => void;
+}
+
 const menuItems: MenuItem[] = [
   {
     id: "consultations",
@@ -35,22 +40,27 @@ const menuItems: MenuItem[] = [
   },
 ];
 
-export function MyPageSidebar() {
+export function MyPageSidebar({ onNavigate }: MyPageSidebarProps) {
   const location = useLocation();
 
   return (
     <aside className="w-64 border-r border-border min-h-screen">
       <div className="sticky top-0 py-8 px-6">
         <h2 className="mb-6 text-xl font-bold text-foreground">마이페이지</h2>
+
         <nav className="space-y-2">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
+
             return (
               <Link
                 key={item.id}
                 to={item.path}
+                onClick={onNavigate}   
                 className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
-                  isActive ? "bg-primary-500 text-dark-bg" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  isActive
+                    ? "bg-primary-500 text-dark-bg"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
                 {item.icon}
