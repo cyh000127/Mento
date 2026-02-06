@@ -15,7 +15,7 @@ __all__ = ["from_data_folder", "from_image_folder"]
 
 def _is_not_top_level_file(path: str, *, root: pathlib.Path) -> bool:
     rel_path = pathlib.Path(path).relative_to(root)
-    return rel_path.is_dir() or rel_path.parent != pathlib.Path(".")
+    return rel_path.is_dir() or rel_path.parent != pathlib.Path("")
 
 
 def _prepare_sample(

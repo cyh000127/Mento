@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional
 
 import torch
 from torch import nn
-from torchvision.ops.misc import Conv3dNormActivation
+from torchvision.ops import Conv3dNormActivation
 
 from ...transforms._presets import VideoClassification
 from ...utils import _log_api_usage_once

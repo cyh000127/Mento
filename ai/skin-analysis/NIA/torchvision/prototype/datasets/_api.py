@@ -1,7 +1,7 @@
 import pathlib
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 
-from torchvision.prototype.datasets import home
+from torchvision.prototype import home
 from torchvision.prototype.datasets.utils import Dataset
 from torchvision.prototype.utils._internal import add_suggestion
 

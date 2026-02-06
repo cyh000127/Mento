@@ -31,7 +31,7 @@ class Mask(TVTensor):
         requires_grad: Optional[bool] = None,
     ) -> Mask:
         if isinstance(data, PIL.Image.Image):
-            from torchvision.transforms.v2 import functional as F
+            from ..transforms.v2 import functional as F
 
             data = F.pil_to_tensor(data)
 

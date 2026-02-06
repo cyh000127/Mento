@@ -1,7 +1,8 @@
 from typing import Any, Dict, Union
 
 from torchvision import tv_tensors
-from torchvision.transforms.v2 import functional as F, Transform
+from torchvision.transforms.v2 import Transform
+from torchvision.transforms.v2 import functional as F
 
 
 class ConvertBoundingBoxFormat(Transform):

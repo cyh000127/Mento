@@ -9,7 +9,8 @@ from collections import defaultdict
 
 import torch
 
-from torchvision import datasets, tv_tensors
+from torchvision import datasets
+from torchvision import tv_tensors
 from torchvision.transforms.v2 import functional as F
 
 __all__ = ["wrap_dataset_for_transforms_v2"]

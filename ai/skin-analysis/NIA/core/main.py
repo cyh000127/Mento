@@ -1,6 +1,5 @@
 import os
 import sys
-import uuid
 import math
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -24,7 +23,6 @@ import argparse
 from torch.utils.data import WeightedRandomSampler
 
 from core.model import Model
-from torchvision import models
 import wandb
 import timm
 

@@ -3,7 +3,7 @@ from typing import Any, Optional, Union
 
 from torch import nn, Tensor
 from torch.ao.quantization import DeQuantStub, QuantStub
-from torchvision.models.mobilenetv2 import InvertedResidual, MobileNet_V2_Weights, MobileNetV2
+from torchvision.models import InvertedResidual, MobileNet_V2_Weights, MobileNetV2
 
 from ...ops.misc import Conv2dNormActivation
 from ...transforms._presets import ImageClassification

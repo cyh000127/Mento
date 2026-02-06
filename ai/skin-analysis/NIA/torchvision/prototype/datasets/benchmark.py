@@ -105,7 +105,7 @@ class DatasetBenchmark:
         self.name = name
         self.variant = variant
 
-        self.new_raw_dataset = new_datasets._api.find(name)
+        self.new_raw_dataset = backup.torchvision.prototype.datasets._api.find(name)
         self.legacy_cls = legacy_cls or self._find_legacy_cls()
 
         if new_config is None:
@@ -174,7 +174,7 @@ class DatasetBenchmark:
             ("check_integrity", dict(new=lambda path, md5=None: os.path.isfile(path))),
         ]
         dataset_module = sys.modules[self.legacy_cls.__module__]
-        utils_module = legacy_datasets.utils
+        utils_module = backup.torchvision.datasets.utils
         with contextlib.ExitStack() as stack:
             for name, patch_kwargs in patches:
                 patch_module = dataset_module if name in dir(dataset_module) else utils_module

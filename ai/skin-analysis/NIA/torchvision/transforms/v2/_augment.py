@@ -7,8 +7,8 @@ import PIL.Image
 import torch
 from torch.nn.functional import one_hot
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision import transforms as _transforms, tv_tensors
-from torchvision.transforms.v2 import functional as F
+from ... import transforms as _transforms, tv_tensors
+from . import functional as F
 
 from ._transform import _RandomApplyTransform, Transform
 from ._utils import _parse_labels_getter, has_any, is_pure_tensor, query_chw, query_size

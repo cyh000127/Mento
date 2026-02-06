@@ -5,8 +5,9 @@ import torch
 
 from torchvision import tv_tensors
 from torchvision.prototype.tv_tensors import Label, OneHotLabel
-from torchvision.transforms.v2 import functional as F, Transform
-from torchvision.transforms.v2._utils import (
+from torchvision.transforms.v2 import Transform
+from torchvision.transforms.v2 import functional as F
+from torchvision.transforms.v2 import (
     _FillType,
     _get_fill,
     _setup_fill_arg,

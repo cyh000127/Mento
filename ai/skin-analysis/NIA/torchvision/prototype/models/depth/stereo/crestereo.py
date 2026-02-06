@@ -10,9 +10,9 @@ import torchvision.models.optical_flow.raft as raft
 from torch import Tensor
 from torchvision.models._api import register_model, Weights, WeightsEnum
 from torchvision.models._utils import handle_legacy_interface
-from torchvision.models.optical_flow._utils import grid_sample, make_coords_grid, upsample_flow
+from torchvision.models import grid_sample, make_coords_grid, upsample_flow
 from torchvision.ops import Conv2dNormActivation
-from torchvision.prototype.transforms._presets import StereoMatching
+from torchvision.prototype.transforms import StereoMatching
 
 all = (
     "CREStereo",

@@ -4,8 +4,8 @@ import PIL.Image
 import torch
 from torch.nn.functional import conv2d
 from torchvision import tv_tensors
-from torchvision.transforms import _functional_pil as _FP
-from torchvision.transforms._functional_tensor import _max_value
+from ... import _functional_pil as _FP
+from torchvision.transforms import _max_value
 
 from torchvision.utils import _log_api_usage_once
 

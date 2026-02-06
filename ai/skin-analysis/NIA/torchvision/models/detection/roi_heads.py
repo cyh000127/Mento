@@ -4,7 +4,8 @@ import torch
 import torch.nn.functional as F
 import torchvision
 from torch import nn, Tensor
-from torchvision.ops import boxes as box_ops, roi_align
+from torchvision.ops import roi_align
+from ...ops import boxes as box_ops
 
 from . import _utils as det_utils
 

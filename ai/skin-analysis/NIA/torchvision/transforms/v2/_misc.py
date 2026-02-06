@@ -6,8 +6,9 @@ import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
 
-from torchvision import transforms as _transforms, tv_tensors
-from torchvision.transforms.v2 import functional as F, Transform
+from ... import transforms as _transforms, tv_tensors
+from torchvision.transforms.v2 import Transform
+from . import functional as F
 
 from ._utils import _parse_labels_getter, _setup_number_or_seq, _setup_size, get_bounding_boxes, has_any, is_pure_tensor
 

@@ -2,8 +2,9 @@ import collections.abc
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
-from torchvision import transforms as _transforms
-from torchvision.transforms.v2 import functional as F, Transform
+from ... import transforms as _transforms
+from torchvision.transforms.v2 import Transform
+from . import functional as F
 
 from ._transform import _RandomApplyTransform
 from ._utils import query_chw
