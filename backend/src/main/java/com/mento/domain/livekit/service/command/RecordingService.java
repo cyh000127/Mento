@@ -39,7 +39,7 @@ import retrofit2.Response;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class RecordingCommandService {
+public class RecordingService {
 
 	private static final String EGRESS_STARTED_EVENT = "egress_started";
 	private static final String EGRESS_UPDATED_EVENT = "egress_updated";
@@ -132,6 +132,15 @@ public class RecordingCommandService {
 
 	private void publishConsultingReportEvent(final String egressId) {
 		String roomId = redisTemplate.opsForValue().getAndDelete(egressId);
+		if (roomId == null) {
+			log.error("[ConsultingReport] Redis에서 roomId를 찾을 수 없습니다 {egressId: {}}", egressId);
+			return;
+		}
+
+		if (!roomId.startsWith(ROOM_NAME_PREFIX)) {
+			log.error("[ConsultingReport] 잘못된 roomId 형식 {roomId: {}}", roomId);
+			return;
+		}
 
 		List<ChatLogEntryVo> chatLogs = chatLogRedisTemplate.opsForList().range(CHAT_LOG_KEY_PREFIX + roomId, 0, -1);
 		if (CollectionUtils.isEmpty(chatLogs)) {

@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service;
 
 import com.mento.domain.livekit.dto.RecordingReqDto;
 import com.mento.domain.livekit.dto.RecordingResDto;
-import com.mento.domain.livekit.service.command.RecordingCommandService;
+import com.mento.domain.livekit.service.command.RecordingService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -12,17 +12,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RecordingFacadeService {
 
-	private final RecordingCommandService recordingCommandService;
+	private final RecordingService recordingService;
 
 	public RecordingResDto startRecording(final RecordingReqDto request) {
-		return recordingCommandService.startRecording(request);
+		return recordingService.startRecording(request);
 	}
 
 	public RecordingResDto stopRecording(final String roomId) {
-		return recordingCommandService.stopRecording(roomId);
+		return recordingService.stopRecording(roomId);
 	}
 
 	public void handleWebhook(final String body, final String authHeader) {
-		recordingCommandService.handleWebhook(body, authHeader);
+		recordingService.handleWebhook(body, authHeader);
 	}
 }
