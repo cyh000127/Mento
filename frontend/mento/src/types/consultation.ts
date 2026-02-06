@@ -74,7 +74,7 @@ export interface ConsultationSessionResponse {
 export interface ConsultationReportData {
   reportId: number;
   content: string; // JSON String
-  mediaUrl: string | null;
+  mediaUrls: string[] | null;
 }
 
 export interface ConsultationReportResponse {
