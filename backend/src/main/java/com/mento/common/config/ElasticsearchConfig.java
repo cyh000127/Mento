@@ -29,8 +29,8 @@ public class ElasticsearchConfig extends ElasticsearchConfiguration {
 			.withSocketTimeout(properties.socketTimeout())
 			.withHeaders(() -> {
 				HttpHeaders headers = new HttpHeaders();
-				headers.add("Content-Type", "application/json");
-				headers.add("Accept", "application/json");
+				headers.set("Content-Type", "application/json");
+				headers.set("Accept", "application/json");
 				return headers;
 			})
 			.build();

@@ -53,10 +53,10 @@ public class ProductQueryController {
 	@Operation(summary = "상품 검색", description = "상품을 검색합니다.")
 	@GetMapping("/search")
 	public ResponseEntity<PageResponse<ProductListResDto>> search(
-		@RequestParam(name = "q") final String query,
+		@RequestParam(name = "keyword") final String keyword,
 		@ParameterObject @PageableDefault final Pageable pageable
 	) {
-		Page<ProductListResDto> response = productFacadeService.search(query, pageable);
+		Page<ProductListResDto> response = productFacadeService.search(keyword, pageable);
 		return ResponseUtils.page(response);
 	}
 }

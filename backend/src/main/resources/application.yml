@@ -77,10 +77,6 @@ springdoc:
 logging:
   level:
     org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver: ERROR
-    org.springframework.data.elasticsearch.client.WIRE: TRACE
-    org.apache.hc.client5.http.wire: DEBUG
-    co.elastic.clients.transport: TRACE
-
 
 cloudflare:
   r2:
