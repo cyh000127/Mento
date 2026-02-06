@@ -103,6 +103,7 @@ const mapReservationToConsultation = (reservation: ReservationListItem): Consult
     mentorTypeName: reservation.mentorType.name,
     memo: reservation.mentorType.description,
     reservationId: reservation.reservationId,
+    reportId: reservation.reportId,
   };
 };
 
@@ -118,6 +119,7 @@ const mapReservationDetailToConsultation = (reservation: ReservationDetailData):
     preConsultationQA,
     surveyInfo: preConsultationQA ? { surveys: preConsultationQA } : undefined,
     reservationId: reservation.reservationId,
+    reportId: reservation.reportId,
   };
 
   if (reservation.mentorInfo) {
@@ -390,7 +392,7 @@ export default function ConsultationManagementPage() {
 
   const handleViewReport = async (consultation: Consultation) => {
     if (!consultation.reportId) return;
-    
+
     try {
       const report = await getConsultingReportDetail(consultation.reportId);
       setReport(report);
@@ -485,13 +487,7 @@ export default function ConsultationManagementPage() {
             {/* Consultation List or Empty State */}
             {isSearched ? (
               sortedConsultations.length > 0 ? (
-                <ConsultationList
-                  consultations={sortedConsultations}
-                  onViewDetail={handleViewDetail}
-                  onEnterRoom={handleEnterRoom}
-                  onGoToPayment={handleGoToPayment}
-                  onViewReport={handleViewReport}
-                />
+                <ConsultationList consultations={sortedConsultations} onViewDetail={handleViewDetail} onEnterRoom={handleEnterRoom} onGoToPayment={handleGoToPayment} onViewReport={handleViewReport} />
               ) : (
                 <ConsultationEmpty onBookConsultation={handleBookConsultation} />
               )
