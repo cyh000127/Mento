@@ -66,6 +66,7 @@ services:
     image: mento-backend:latest
     environment:
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - GIT_COMMIT_SHORT=${GIT_COMMIT_SHORT:-unknown}
     restart: unless-stopped
     env_file:
       - .env

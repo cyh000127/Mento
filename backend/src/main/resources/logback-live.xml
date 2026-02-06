@@ -30,39 +30,76 @@
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
 
-        <!-- Logstash JSON Encoder -->
+        <!-- ECS 형식 JSON Encoder -->
         <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
             <providers>
                 <timestamp>
-                    <fieldName>timestamp</fieldName>
-                    <timeZone>Asia/Seoul</timeZone>
-                    <pattern>yyyy-MM-dd'T'HH:mm:ss.SSS</pattern>
+                    <fieldName>@timestamp</fieldName>
+                    <timeZone>UTC</timeZone>
+                    <pattern>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</pattern>
                 </timestamp>
+
                 <logLevel>
-                    <fieldName>level</fieldName>
+                    <fieldName>log.level</fieldName>
                 </logLevel>
+
+                <pattern>
+                    <pattern>
+                        {
+                          "service.name": "mento-backend",
+                          "environment": "live"
+                        }
+                    </pattern>
+                </pattern>
+
                 <loggerName>
-                    <fieldName>logger</fieldName>
+                    <fieldName>event.name</fieldName>
                 </loggerName>
                 <threadName>
-                    <fieldName>thread</fieldName>
+                    <fieldName>process.thread.name</fieldName>
                 </threadName>
                 <message>
                     <fieldName>message</fieldName>
                 </message>
                 <throwableClassName>
-                    <fieldName>exception</fieldName>
+                    <fieldName>error.type</fieldName>
                 </throwableClassName>
                 <stackTrace>
-                    <fieldName>stacktrace</fieldName>
+                    <fieldName>error.stack_trace</fieldName>
                 </stackTrace>
+
                 <mdc>
                     <includeMdcKeyName>traceId</includeMdcKeyName>
-                    <includeMdcKeyName>userId</includeMdcKeyName>
-                    <includeMdcKeyName>requestUri</includeMdcKeyName>
-                    <includeMdcKeyName>httpMethod</includeMdcKeyName>
-                    <includeMdcKeyName>executionTime</includeMdcKeyName>
+                    <mdcKeyFieldName>traceId:trace.id</mdcKeyFieldName>
                 </mdc>
+
+                <mdc>
+                    <includeMdcKeyName>userId</includeMdcKeyName>
+                    <mdcKeyFieldName>userId:user.id</mdcKeyFieldName>
+                </mdc>
+
+                <mdc>
+                    <includeMdcKeyName>httpMethod</includeMdcKeyName>
+                    <mdcKeyFieldName>httpMethod:http.request.method</mdcKeyFieldName>
+                </mdc>
+
+                <mdc>
+                    <includeMdcKeyName>requestUri</includeMdcKeyName>
+                    <mdcKeyFieldName>requestUri:url.path</mdcKeyFieldName>
+                </mdc>
+
+                <mdc>
+                    <includeMdcKeyName>executionTime</includeMdcKeyName>
+                    <mdcKeyFieldName>executionTime:duration_ms</mdcKeyFieldName>
+                </mdc>
+
+                <pattern>
+                    <pattern>
+                        {
+                          "git.commit_short": "${GIT_COMMIT_SHORT:-unknown}"
+                        }
+                    </pattern>
+                </pattern>
             </providers>
         </encoder>
     </appender>
