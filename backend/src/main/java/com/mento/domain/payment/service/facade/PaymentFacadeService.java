@@ -7,6 +7,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.PaymentException;
+import com.mento.domain.consulting.entity.ConsultingReport;
+import com.mento.domain.consulting.factory.ConsultingReportFactory;
+import com.mento.domain.consulting.service.command.impl.ConsultingReportCommandServiceImpl;
 import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.mentor.exception.MentortTypeException;
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
@@ -37,15 +40,22 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class PaymentFacadeService {
 
-	private static final int NOTIFICATION_MINUTES = 10;
+	private static final int NOTIFICATION_EXPIRY_MINUTES = 10;
+
 	private static final Long SKINCARE_MENTOR_ID = 1L;
 	private static final Long BEAUTY_MENTOR_ID = 6L;
 	private static final Long HAIR_MENTOR_ID = 11L;
+
+	private static final String SKINCARE_TYPE = "스킨케어";
+	private static final String BEAUTY_TYPE = "뷰티";
+	private static final String HAIR_TYPE = "헤어";
 
 	private final PaymentCommandService paymentCommandService;
 	private final PaymentQueryService paymentQueryService;
 	private final NotificationFacadeService notificationFacadeService;
 	private final UserQueryService userQueryService;
+	private final ConsultingReportFactory consultingReportFactory;
+	private final ConsultingReportCommandServiceImpl consultingReportCommandService;
 
 	@Transactional
 	public PaymentReadyResDto preparePayment(final PaymentReadyReqDto request, final Long userId) {
@@ -70,15 +80,9 @@ public class PaymentFacadeService {
 		paymentCommandService.approve(request, userId);
 
 		Payment payment = paymentQueryService.findDetailsById(request.paymentId());
-		Reservation reservation = payment.getReservation();
+		Reservation reservation = validateAndGetReservation(payment);
 
-		if (reservation == null) {
-			throw new PaymentException(ErrorCode.RESERVATION_NOT_FOUND);
-		}
-
-		reservation.getSlot().increaseCapacity();
-		assignMentorToReservation(reservation);
-		reservation.confirm();
+		processReservationConfirmation(reservation);
 
 		log.info("[Payment] 결제 승인 및 예약 확정 완료 {paymentId: {}, reservationId: {}, mentorId: {}}",
 			payment.getId(), reservation.getId(), reservation.getMentor().getId());
@@ -86,6 +90,24 @@ public class PaymentFacadeService {
 		sendReservationConfirmNotification(reservation);
 
 		return ReservationConverter.toReservationDetailResDto(reservation);
+	}
+
+	private Reservation validateAndGetReservation(final Payment payment) {
+		Reservation reservation = payment.getReservation();
+		if (reservation == null) {
+			throw new PaymentException(ErrorCode.RESERVATION_NOT_FOUND);
+		}
+		return reservation;
+	}
+
+	private void processReservationConfirmation(final Reservation reservation) {
+		ConsultingReport consultingReport = consultingReportFactory.createInitReport();
+		reservation.assignConsultingReport(consultingReport);
+		consultingReportCommandService.save(consultingReport);
+
+		reservation.getSlot().increaseCapacity();
+		assignMentorToReservation(reservation);
+		reservation.confirm();
 	}
 
 	private void assignMentorToReservation(final Reservation reservation) {
@@ -100,9 +122,9 @@ public class PaymentFacadeService {
 
 	private Long getMentorIdByType(final String typeName) {
 		return switch (typeName) {
-			case "스킨케어" -> SKINCARE_MENTOR_ID;
-			case "뷰티" -> BEAUTY_MENTOR_ID;
-			case "헤어" -> HAIR_MENTOR_ID;
+			case SKINCARE_TYPE -> SKINCARE_MENTOR_ID;
+			case BEAUTY_TYPE -> BEAUTY_MENTOR_ID;
+			case HAIR_TYPE -> HAIR_MENTOR_ID;
 			default -> throw new MentortTypeException(ErrorCode.INVALID_MENTOR_TYPE);
 		};
 	}
@@ -114,7 +136,7 @@ public class PaymentFacadeService {
 				timetable.getScheduledDate(),
 				timetable.getScheduledTime()
 			);
-			LocalDateTime notificationExpiry = consultingStartTime.plusMinutes(NOTIFICATION_MINUTES);
+			LocalDateTime notificationExpiry = consultingStartTime.plusMinutes(NOTIFICATION_EXPIRY_MINUTES);
 
 			notificationFacadeService.sendNotification(NotificationSendReqDto.builder()
 				.targetMemberId(reservation.getUser().getId())
