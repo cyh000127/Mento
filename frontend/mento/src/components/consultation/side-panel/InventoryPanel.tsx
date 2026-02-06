@@ -11,6 +11,28 @@ import type { AlertModalType } from "@/components/common/alert-modal";
 
 const FALLBACK_IMAGE_URL = "https://via.placeholder.com/80";
 
+const parseItemDate = (value?: string) => {
+  if (!value) return NaN;
+  return Date.parse(value);
+};
+
+const getItemTimestamp = (item: ApiItem) => {
+  const createdAt = parseItemDate(item.createdAt);
+  if (!Number.isNaN(createdAt)) return createdAt;
+  const updatedAt = parseItemDate(item.updatedAt);
+  if (!Number.isNaN(updatedAt)) return updatedAt;
+  const purchaseDate = parseItemDate(item.purchaseDate);
+  if (!Number.isNaN(purchaseDate)) return purchaseDate;
+  return 0;
+};
+
+const sortInventoryByNewest = (items: ApiItem[]) => {
+  const timestamps = items.map(getItemTimestamp);
+  const hasValidTimestamp = timestamps.some((value) => Number.isFinite(value) && value > 0);
+  if (!hasValidTimestamp) return [...items].reverse();
+  return [...items].sort((a, b) => getItemTimestamp(b) - getItemTimestamp(a));
+};
+
 export function InventoryPanel() {
   const { roomId } = useParams<{ roomId: string }>();
   const userRole = useAuthStore((state) => state.user?.role);
@@ -104,10 +126,11 @@ export function InventoryPanel() {
             size: 100,
           });
 
+          const sortedItems = sortInventoryByNewest(inventory.content ?? []);
           if (!canUpdate || canUpdate()) {
-            setItems(inventory.content ?? []);
+            setItems(sortedItems);
           }
-          return inventory.content ?? [];
+          return sortedItems;
         }
         // ✅ 일반 사용자 → 본인 인벤토리
         const inventory = await getInventoryItems({ page: 0, size: 100 });
