@@ -2,10 +2,8 @@ fastapi
 uvicorn
 httpx
 python-multipart
-# AI Core
-torch>=2.0.0
-torchvision
-timm
+# AI Runtime (No Torch!)
+onnxruntime
 mediapipe
 # Image Processing
 opencv-python-headless
