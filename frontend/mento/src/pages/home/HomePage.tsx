@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { HeroSection } from "@/components/home/hero-section"
 import { FeaturesSection } from "@/components/home/features-section"
+import { InventorySection } from "@/components/home/inventory-section"
 import { HowItWorksSection } from "@/components/home/how-it-works-section"
 import { CtaSection } from "@/components/home/cta-section"
 import { useAuthStore } from "@/stores/useAuthStore"
@@ -101,6 +102,7 @@ export default function HomePage() {
       <HeroSection showIntro={showIntro} onIntroComplete={handleIntroComplete} />
 
       {/* Additional sections */}
+      <InventorySection />
       <FeaturesSection />
       <HowItWorksSection />
       <CtaSection />
