@@ -18,19 +18,13 @@ import com.mento.common.ai.service.AiService;
 import com.mento.common.config.properties.PromptProperties;
 import com.mento.common.util.TimeUtils;
 import com.mento.domain.consulting.entity.ConsultingReport;
-import com.mento.domain.consulting.factory.ConsultingReportFactory;
-import com.mento.domain.consulting.service.command.ConsultingReportCommandService;
+import com.mento.domain.consulting.service.query.ConsultingReportQueryService;
 import com.mento.domain.consulting.vo.ChatLogEntryVo;
 import com.mento.domain.notification.converter.NotificationConverter;
 import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.event.NotificationEvent;
 import com.mento.domain.notification.service.command.NotificationCommandService;
-import com.mento.domain.reservation.entity.Reservation;
-import com.mento.domain.reservation.service.query.ReservationQueryServiceImpl;
-
-import com.mento.domain.consulting.service.query.ConsultingReportQueryService;
-import com.mento.domain.consulting.vo.ChatLogEntryVo;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
