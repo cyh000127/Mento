@@ -12,7 +12,7 @@ public class ConsultingReportConverter {
 		return SummaryInfoDto.builder()
 			.reportId(consultingReport.getId())
 			.content(consultingReport.getContent())
-			.mediaUrl(consultingReport.getMediaUrl())
+			.mediaUrls(consultingReport.getMediaUrl())
 			.build();
 	}
 }

@@ -6,9 +6,9 @@ import com.mento.domain.consulting.entity.ConsultingReport;
 
 @Component
 public class ConsultingReportFactory {
-	public ConsultingReport createReport(final String consultingReport) {
+
+	public ConsultingReport createInitReport() {
 		return ConsultingReport.builder()
-			.content(consultingReport)
 			.build();
 	}
 }

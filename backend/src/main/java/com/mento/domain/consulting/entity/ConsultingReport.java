@@ -1,5 +1,8 @@
 package com.mento.domain.consulting.entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.reservation.entity.Reservation;
@@ -36,8 +39,9 @@ public class ConsultingReport extends BaseEntity {
 	@Column(name = "content", columnDefinition = "longtext")
 	private String content;
 
+	@Builder.Default
 	@Column(name = "media_url")
-	private String mediaUrl;
+	private List<String> mediaUrl = new ArrayList<>();
 
 	public void assignReservation(final Reservation reservation) {
 		if (reservation == null) {
@@ -46,4 +50,11 @@ public class ConsultingReport extends BaseEntity {
 		this.reservation = reservation;
 	}
 
+	public void updateVideo(final String mediaUrl) {
+		this.mediaUrl.add(mediaUrl);
+	}
+
+	public void updateContent(final String content) {
+		this.content = content;
+	}
 }

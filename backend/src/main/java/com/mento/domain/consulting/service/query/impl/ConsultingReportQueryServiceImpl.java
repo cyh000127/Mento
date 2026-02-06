@@ -19,13 +19,22 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class ConsultingReportQueryServiceImpl implements ConsultingReportQueryService {
 
-	private final ConsultingReportRepository consultingRepository;
+	private final ConsultingReportRepository consultingReportRepository;
 
 	@Override
 	public ConsultingReport findById(final Long id) {
-		ConsultingReport consultingReport = consultingRepository.findById(id)
+		ConsultingReport consultingReport = consultingReportRepository.findById(id)
 			.orElseThrow(() -> new ConsultingException(ErrorCode.CONSULTING_REPORT_NOT_FOUND));
 		log.info("[ConsultingReport] 상담 요약본 조회 성공 - id: {}", consultingReport.getId());
+		return consultingReport;
+	}
+
+	@Override
+	public ConsultingReport findByReservationId(final Long reservationId) {
+		ConsultingReport consultingReport = consultingReportRepository.findByReservationId(reservationId)
+			.orElseThrow(() -> new ConsultingException(ErrorCode.CONSULTING_REPORT_NOT_FOUND));
+		log.info("[ConsultingReport] 상담 요약본 조회 성공 - {reservationId : {}, reportId : {}}", reservationId,
+			consultingReport.getId());
 		return consultingReport;
 	}
 }
