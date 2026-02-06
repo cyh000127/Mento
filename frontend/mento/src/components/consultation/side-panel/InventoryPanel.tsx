@@ -11,10 +11,42 @@ import type { AlertModalType } from "@/components/common/alert-modal";
 
 const FALLBACK_IMAGE_URL = "https://via.placeholder.com/80";
 
+const parseItemDate = (value?: string) => {
+  if (!value) return NaN;
+  return Date.parse(value);
+};
+
+const getItemTimestamp = (item: ApiItem) => {
+  const createdAt = parseItemDate(item.createdAt);
+  if (!Number.isNaN(createdAt)) return createdAt;
+  const updatedAt = parseItemDate(item.updatedAt);
+  if (!Number.isNaN(updatedAt)) return updatedAt;
+  const purchaseDate = parseItemDate(item.purchaseDate);
+  if (!Number.isNaN(purchaseDate)) return purchaseDate;
+  return 0;
+};
+
+const sortInventoryByNewest = (items: ApiItem[]) => {
+  const timestamps = items.map(getItemTimestamp);
+  const hasValidTimestamp = timestamps.some((value) => Number.isFinite(value) && value > 0);
+  if (!hasValidTimestamp) return [...items].reverse();
+  return [...items].sort((a, b) => getItemTimestamp(b) - getItemTimestamp(a));
+};
+
 export function InventoryPanel() {
-  const { reservationId } = useParams<{ reservationId: string }>();
+  const { roomId } = useParams<{ roomId: string }>();
   const userRole = useAuthStore((state) => state.user?.role);
   const isConsultant = userRole === "MENTOR";
+
+  const reservationId = useMemo(() => {
+    if (!roomId) return null;
+    try {
+      return atob(roomId);
+    } catch (e) {
+      console.error("Invalid room ID format", e);
+      return null;
+    }
+  }, [roomId]);
 
   const reservationIdNumber = useMemo(() => {
     if (!reservationId) return null;
@@ -91,16 +123,17 @@ export function InventoryPanel() {
           setCustomerUserId(customerUserId);
           const inventory = await getCustomerInventory(customerUserId, reservationIdNumber, {
             page: 0,
-            size: 20,
+            size: 100,
           });
 
+          const sortedItems = sortInventoryByNewest(inventory.content ?? []);
           if (!canUpdate || canUpdate()) {
-            setItems(inventory.content ?? []);
+            setItems(sortedItems);
           }
-          return inventory.content ?? [];
+          return sortedItems;
         }
         // ✅ 일반 사용자 → 본인 인벤토리
-        const inventory = await getInventoryItems({ page: 0, size: 20 });
+        const inventory = await getInventoryItems({ page: 0, size: 100 });
         if (!canUpdate || canUpdate()) {
           setItems(inventory.content ?? []);
         }

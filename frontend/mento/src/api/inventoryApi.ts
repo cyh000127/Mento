@@ -87,7 +87,7 @@ export async function getCustomerInventory(
 ): Promise<InventoryResponse> {
   const params = new URLSearchParams()
 
-  // 🔑 예약 ID 추가
+  // 예약 ID 추가
   params.append("reservationId", reservationId.toString())
 
   if (filters.page !== undefined) params.append("page", filters.page.toString())
