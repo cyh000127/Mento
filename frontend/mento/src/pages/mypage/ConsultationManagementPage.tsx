@@ -55,11 +55,7 @@ const mapReservationStatusToConsultationStatus = (status: string): ConsultationS
 
 const normalizeScheduledDateTime = (scheduledDate: string, scheduledTime?: string) => {
   if (scheduledTime) {
-    const dateOnly = scheduledDate.includes("T")
-      ? scheduledDate.split("T")[0]
-      : scheduledDate.includes(" ")
-        ? scheduledDate.split(" ")[0]
-        : scheduledDate;
+    const dateOnly = scheduledDate.includes("T") ? scheduledDate.split("T")[0] : scheduledDate.includes(" ") ? scheduledDate.split(" ")[0] : scheduledDate;
 
     return { date: dateOnly, time: scheduledTime };
   }
@@ -67,9 +63,7 @@ const normalizeScheduledDateTime = (scheduledDate: string, scheduledTime?: strin
   return parseScheduledDateTime(scheduledDate);
 };
 
-const normalizeSurveyItems = (
-  items?: { question: string; answer: string }[]
-): PreConsultationQA[] | undefined => {
+const normalizeSurveyItems = (items?: { question: string; answer: string }[]): PreConsultationQA[] | undefined => {
   if (!items || items.length === 0) return undefined;
 
   const normalized = items
@@ -86,9 +80,7 @@ const parseSurveyDataToQA = (surveyData?: string): PreConsultationQA[] | undefin
   if (!surveyData) return undefined;
 
   try {
-    const parsed = JSON.parse(surveyData) as
-      | { items?: { question: string; answer: string }[] }
-      | { question: string; answer: string }[];
+    const parsed = JSON.parse(surveyData) as { items?: { question: string; answer: string }[] } | { question: string; answer: string }[];
 
     const items = Array.isArray(parsed) ? parsed : parsed.items;
     return normalizeSurveyItems(items);
@@ -113,13 +105,8 @@ const mapReservationToConsultation = (reservation: ReservationListItem): Consult
 };
 
 const mapReservationDetailToConsultation = (reservation: ReservationDetailData): Consultation => {
-  const { date, time } = normalizeScheduledDateTime(
-    reservation.scheduledDate,
-    reservation.scheduledTime
-  );
-  const preConsultationQA =
-    normalizeSurveyItems(reservation.surveyInfo?.surveys) ??
-    parseSurveyDataToQA(reservation.surveyData);
+  const { date, time } = normalizeScheduledDateTime(reservation.scheduledDate, reservation.scheduledTime);
+  const preConsultationQA = normalizeSurveyItems(reservation.surveyInfo?.surveys) ?? parseSurveyDataToQA(reservation.surveyData);
 
   const consultation: Consultation = {
     id: reservation.reservationId.toString(),
@@ -344,13 +331,7 @@ export default function ConsultationManagementPage() {
     if (cached) {
       setSelectedConsultation(cached);
       // 캐시된 데이터로 목록도 업데이트
-      setConsultations((prev) =>
-        prev.map((item) =>
-          item.id === consultation.id
-            ? { ...item, status: cached.status }
-            : item
-        )
-      );
+      setConsultations((prev) => prev.map((item) => (item.id === consultation.id ? { ...item, status: cached.status } : item)));
       return;
     }
 
@@ -367,13 +348,7 @@ export default function ConsultationManagementPage() {
       setSelectedConsultation(mapped);
 
       // 목록의 해당 항목도 업데이트 (status 동기화)
-      setConsultations((prev) =>
-        prev.map((item) =>
-          item.id === consultation.id
-            ? { ...item, status: mapped.status }
-            : item
-        )
-      );
+      setConsultations((prev) => prev.map((item) => (item.id === consultation.id ? { ...item, status: mapped.status } : item)));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error(message);
@@ -468,7 +443,7 @@ export default function ConsultationManagementPage() {
           <div className="mx-auto max-w-7xl px-6 py-8">
             {/* Page Header */}
             <div className="pl-1">
-              <h1 className="text-2xl font-bold text-foreground pb-3">상담 관리</h1>
+              <h1 className="text-2xl font-bold text-foreground pb-3">상담 내역</h1>
             </div>
 
             {/* Filters */}

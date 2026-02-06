@@ -3,6 +3,7 @@ import { LocalParticipant, Track } from "livekit-client";
 import { startRecording, stopRecording } from "@/api/record";
 import type { EgressRequestPayload } from "@/types/record";
 import type { ConnectionState } from "@/hooks/useConsultationSession";
+import { useRecordingStore } from "@/stores/useRecordingStore";
 
 export interface RecordPanelProps {
   isMentor?: boolean;
@@ -19,9 +20,14 @@ export function RecordPanel({
   localParticipant,
   connectionState = "disconnected",
 }: RecordPanelProps) {
-  const [isRecording, setIsRecording] = useState(false);
+  const { 
+    isRecording, 
+    egressId, 
+    startRecording: setStartRecording, 
+    stopRecording: setStopRecording 
+  } = useRecordingStore();
+  
   const [isLoading, setIsLoading] = useState(false);
-  const [egressId, setEgressId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const isConnected = connectionState === "connected";
@@ -51,15 +57,14 @@ export function RecordPanel({
         videoTrackSid: getTrackSid(Track.Source.Camera),
       };
       const response = await startRecording(payload);
-      setEgressId(response.egressId);
-      setIsRecording(true);
+      setStartRecording(response.egressId);
     } catch (error) {
       console.error("녹화 시작 실패:", error);
       setErrorMessage(error instanceof Error ? error.message : "녹화 시작에 실패했습니다.");
     } finally {
       setIsLoading(false);
     }
-  }, [canRecord, roomId, mentorId, localParticipant, getTrackSid]);
+  }, [canRecord, roomId, mentorId, localParticipant, getTrackSid, setStartRecording]);
 
   const handleStop = useCallback(async () => {
     if (!roomId) return;
@@ -67,22 +72,22 @@ export function RecordPanel({
     setErrorMessage(null);
     try {
       await stopRecording(roomId);
-      setIsRecording(false);
-      setEgressId(null);
+      setStopRecording();
     } catch (error) {
       console.error("녹화 종료 실패:", error);
       setErrorMessage(error instanceof Error ? error.message : "녹화 종료에 실패했습니다.");
     } finally {
       setIsLoading(false);
     }
-  }, [roomId]);
+  }, [roomId, setStopRecording]);
 
   useEffect(() => {
     if (!isConnected) {
-      setIsRecording(false);
-      setEgressId(null);
+      if (isRecording) {
+         setStopRecording();
+      }
     }
-  }, [isConnected]);
+  }, [isConnected, isRecording, setStopRecording]);
 
   return (
     <div className="flex flex-col h-full p-6 text-gray-200">

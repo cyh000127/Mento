@@ -1,4 +1,4 @@
-import { Cpu, Sparkles, Zap } from "lucide-react";
+import { Cpu, Sparkles } from "lucide-react";
 
 export function AiCareHero() {
   return (

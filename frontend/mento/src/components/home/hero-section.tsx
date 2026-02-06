@@ -51,11 +51,13 @@ const RIGHT_IMAGES = [
 ];
 
 interface HeroSectionProps {
-  showIntro: boolean;
-  onIntroComplete: () => void;
+  showIntro?: boolean;
+  onIntroComplete?: () => void;
 }
 
-export function HeroSection({ showIntro, onIntroComplete }: HeroSectionProps) {
+const INTRO_STORAGE_KEY = "hasVisitedHome";
+
+export function HeroSection(props: HeroSectionProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const sectionRefs = useRef<HTMLElement[]>([]);
   const [currentScene, setCurrentScene] = useState(0);
@@ -63,6 +65,10 @@ export function HeroSection({ showIntro, onIntroComplete }: HeroSectionProps) {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const [showIntro, setShowIntro] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(INTRO_STORAGE_KEY) !== "true";
+  });
 
   // Preload images
   useEffect(() => {
@@ -132,7 +138,9 @@ export function HeroSection({ showIntro, onIntroComplete }: HeroSectionProps) {
   }, [showIntro, imagesLoaded]);
 
   const handleIntroComplete = () => {
-    onIntroComplete();
+    localStorage.setItem(INTRO_STORAGE_KEY, "true");
+    setShowIntro(false);
+    props.onIntroComplete?.();
   };
 
   const handleLearnMore = () => {
@@ -140,10 +148,10 @@ export function HeroSection({ showIntro, onIntroComplete }: HeroSectionProps) {
     sectionRefs.current[nextIndex]?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  return (
+  return showIntro ? (
+    <LoadingIntro onComplete={handleIntroComplete} />
+  ) : (
     <>
-      {showIntro && <LoadingIntro onComplete={handleIntroComplete} />}
-
       {/* Progress indicator */}
       <div className="fixed right-8 top-1/2 z-50 flex -translate-y-1/2 flex-col gap-3">
         {Array.from({ length: sectionCount }, (_, index) => (
@@ -209,7 +217,7 @@ export function HeroSection({ showIntro, onIntroComplete }: HeroSectionProps) {
               <div className="animate-fade-in-up mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row" style={{ animationDelay: "0.8s", animationFillMode: "backwards" }}>
                 {!isLoggedIn && (
                   <Button size="lg" onClick={() => setIsLoginOpen(true)} className="w-full sm:w-auto">
-                    시작하기
+                    로그인
                     <ArrowRight className="h-5 w-5" />
                   </Button>
                 )}
@@ -321,7 +329,7 @@ export function HeroSection({ showIntro, onIntroComplete }: HeroSectionProps) {
               {/* CTA Buttons */}
               <div className="animate-fade-in-up flex flex-wrap items-center justify-center gap-4" style={{ animationDelay: "0.4s", animationFillMode: "backwards" }}>
                 <Link
-                  to="/recommend"
+                  to="/inventory"
                   className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-4 text-base font-semibold text-dark-bg shadow-lg shadow-primary-500/25 transition-all hover:bg-primary-400 hover:shadow-xl hover:shadow-primary-500/40 hover:scale-105"
                 >
                   시작하기
