@@ -143,9 +143,16 @@ export function HeroSection(props: HeroSectionProps) {
     props.onIntroComplete?.();
   };
 
+  const scrollToSection = (index: number) => {
+    const scrollContainer = document.querySelector("[data-home-scroll]") as HTMLElement | null;
+    const targetSection = sectionRefs.current[index];
+    if (!scrollContainer || !targetSection) return;
+    scrollContainer.scrollTo({ top: targetSection.offsetTop, behavior: "smooth" });
+  };
+
   const handleLearnMore = () => {
     const nextIndex = Math.min(currentScene + 1, sectionRefs.current.length - 1);
-    sectionRefs.current[nextIndex]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollToSection(nextIndex);
   };
 
   return showIntro ? (
@@ -158,7 +165,7 @@ export function HeroSection(props: HeroSectionProps) {
           <button
             key={index}
             onClick={() => {
-              sectionRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "start" });
+              scrollToSection(index);
             }}
             className="group relative"
             aria-label={`Scene ${index + 1}`}
