@@ -61,7 +61,11 @@ export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onG
       navigate(`/consultations/${consultation.id}/report`);
     } catch (error) {
       console.error("상담 보고서 조회 실패", error);
-      alert("상담 보고서를 불러오지 못했습니다.");
+      showAlert({
+        title: "상담 보고서 조회 실패",
+        message: "상담 보고서를 불러오지 못했습니다.",
+        type: "error",
+      });
     }
   };
 

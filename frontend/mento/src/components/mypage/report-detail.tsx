@@ -25,7 +25,7 @@ export function ReportDetail() {
   return (
     <div className="flex items-start gap-20">
       <div className="flex-1">
-        <ConsultationReport report={parsedReport} />
+        <ConsultationReport report={parsedReport} mediaUrl={reportData.mediaUrl} />
       </div>
     </div>
   );

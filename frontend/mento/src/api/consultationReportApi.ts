@@ -16,11 +16,6 @@ import type { ConsultationReportData, ConsultationReportResponse } from "@/types
  * @throws {Error} API 호출 실패 시
  */
 export async function getConsultingReportDetail(reportId: number | string): Promise<ConsultationReportData> {
-  console.log("📡 상담 보고서 상세 조회 API 호출:", {
-    url: `/consulting/${reportId}`,
-    method: "GET",
-  });
-
   try {
     const response = await api.get<ConsultationReportResponse>(`/consulting/${reportId}`);
 
