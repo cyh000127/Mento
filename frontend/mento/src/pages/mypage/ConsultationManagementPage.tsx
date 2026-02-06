@@ -417,9 +417,9 @@ export default function ConsultationManagementPage() {
   //     });
   //     return;
   //   }
-  
+
   //   if (!consultation.reservationId) return;
-  
+
   //   const encodedId = btoa(consultation.reservationId.toString());
   //   navigate(`/consultation-room/${encodedId}`);
   // };
@@ -444,10 +444,10 @@ export default function ConsultationManagementPage() {
   };
 
   const handleViewReport = async (consultation: Consultation) => {
-    if (!consultation.reportId) {
+    if (consultation.status !== "completed") {
       showAlert({
-        title: "리포트 생성 중",
-        message: "아직 생성된 상담 리포트가 없습니다.",
+        title: "상담 완료 후 리포트 조회 가능",
+        message: "아직 상담이 진행되지 않았습니다.",
         type: "warning",
       });
       return;
@@ -460,9 +460,9 @@ export default function ConsultationManagementPage() {
     } catch (error) {
       console.error("Failed to fetch report:", error);
       showAlert({
-        title: "상담 보고서 조회 실패",
-        message: "상담 보고서를 불러오지 못했습니다.",
-        type: "error",
+        title: "리포트 생성 중",
+        message: "아직 생성된 상담 리포트가 없습니다.",
+        type: "warning",
       });
     }
   };
