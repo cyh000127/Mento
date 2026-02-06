@@ -13,6 +13,8 @@ import { getReservationDetail, getReservationList } from "@/api/reservationApi";
 import { getConsultingReportDetail } from "@/api/consultationReportApi";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useConsultationReportStore } from "@/stores/useConsultationReportStore";
+import { AlertModal } from "@/components/common/alert-modal";
+import type { AlertModalType } from "@/components/common/alert-modal";
 import type { Consultation, PeriodFilter, ConsultationStatus, PreConsultationQA } from "@/types/consultation";
 import type { ReservationListItem, ReservationListParams } from "@/types/reservationList";
 import type { ReservationDetailData } from "@/types/reservationDetail";
@@ -173,6 +175,25 @@ export default function ConsultationManagementPage() {
     isLast: true,
   });
   const [currentPage, setCurrentPage] = useState(0);
+
+  // Alert state
+  const [alertState, setAlertState] = useState({
+    open: false,
+    title: "알림",
+    message: "",
+    type: "info" as AlertModalType,
+    confirmText: "확인",
+  });
+
+  const showAlert = (options: { title?: string; message: string; type?: AlertModalType; confirmText?: string }) => {
+    setAlertState({
+      open: true,
+      title: options.title ?? "알림",
+      message: options.message,
+      type: options.type ?? "info",
+      confirmText: options.confirmText ?? "확인",
+    });
+  };
 
   // Initialize dates on period change
   const handlePeriodChange = (period: PeriodFilter) => {
@@ -391,7 +412,14 @@ export default function ConsultationManagementPage() {
   };
 
   const handleViewReport = async (consultation: Consultation) => {
-    if (!consultation.reportId) return;
+    if (!consultation.reportId) {
+      showAlert({
+        title: "리포트 생성 중",
+        message: "아직 생성된 상담 리포트가 없습니다.",
+        type: "warning",
+      });
+      return;
+    }
 
     try {
       const report = await getConsultingReportDetail(consultation.reportId);
@@ -399,6 +427,11 @@ export default function ConsultationManagementPage() {
       setSelectedReportConsultation(consultation);
     } catch (error) {
       console.error("Failed to fetch report:", error);
+      showAlert({
+        title: "상담 보고서 조회 실패",
+        message: "상담 보고서를 불러오지 못했습니다.",
+        type: "error",
+      });
     }
   };
 
@@ -430,6 +463,14 @@ export default function ConsultationManagementPage() {
             </div>
           </div>
         </div>
+        <AlertModal
+          open={alertState.open}
+          onOpenChange={(open) => setAlertState((prev) => ({ ...prev, open }))}
+          title={alertState.title}
+          message={alertState.message}
+          type={alertState.type}
+          confirmText={alertState.confirmText}
+        />
       </div>
     );
   }
@@ -497,6 +538,14 @@ export default function ConsultationManagementPage() {
           </div>
         </div>
       </div>
+      <AlertModal
+        open={alertState.open}
+        onOpenChange={(open) => setAlertState((prev) => ({ ...prev, open }))}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+      />
     </div>
   );
 }
