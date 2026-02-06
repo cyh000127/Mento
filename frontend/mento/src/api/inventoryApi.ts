@@ -30,7 +30,6 @@ export interface ProductSearchParams {
   keyword: string
   page?: number
   size?: number
-  sort?: string
 }
 
 export interface ProductSearchResponse {
@@ -71,7 +70,6 @@ export async function searchProducts(params: ProductSearchParams): Promise<Produ
 
   if (params.page !== undefined) queryParams.page = params.page
   if (params.size !== undefined) queryParams.size = params.size
-  if (params.sort) queryParams.sort = params.sort
 
   const response = await api.get<ProductSearchResponse>("/products/search", {
     params: queryParams,
