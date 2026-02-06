@@ -5,4 +5,6 @@ import com.mento.domain.consulting.entity.ConsultingReport;
 public interface ConsultingReportQueryService {
 
 	ConsultingReport findById(Long id);
+
+	ConsultingReport findByReservationId(Long reservationId);
 }
