@@ -79,8 +79,12 @@ export default function InventoryHistoryPage() {
   }, [startYear, startMonth, startDay, endYear, endMonth, endDay]);
 
   // Fetch histories
-  const fetchHistories = async (page: number = 0) => {
-    if (!searchParams) return;
+  const fetchHistories = async (
+    page: number = 0,
+    params?: { startDate: string; endDate: string }
+  ) => {
+    const effectiveParams = params ?? searchParams;
+    if (!effectiveParams) return;
 
     setIsLoading(true);
     setError(null);
@@ -89,8 +93,8 @@ export default function InventoryHistoryPage() {
       const response = await getInventoryHistories({
         page,
         size: pageSize,
-        startDate: searchParams.startDate,
-        endDate: searchParams.endDate,
+        startDate: effectiveParams.startDate,
+        endDate: effectiveParams.endDate,
       });
 
       setHistories(response.data.content);
@@ -123,12 +127,13 @@ export default function InventoryHistoryPage() {
     }
 
     setIsSearched(true);
-    setSearchParams({
+    const nextParams = {
       startDate: dateRange.start,
       endDate: dateRange.end,
-    });
+    };
+    setSearchParams(nextParams);
     setCurrentPage(0);
-    fetchHistories(0);
+    fetchHistories(0, nextParams);
   };
 
   const handlePreviousPage = () => {
