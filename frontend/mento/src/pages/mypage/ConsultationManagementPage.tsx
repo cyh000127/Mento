@@ -136,6 +136,22 @@ const mapReservationDetailToConsultation = (reservation: ReservationDetailData):
   return consultation;
 };
 
+// 시연 끝나고 살리기기 kjm 2026-02-06
+// const canEnterConsultationRoom = (consultation: Consultation) => {
+//   const { scheduledDate, scheduledTime } = consultation;
+
+//   if (!scheduledDate || !scheduledTime) return false;
+
+//   // 상담 시작 시간
+//   const startDateTime = new Date(`${scheduledDate}T${scheduledTime}:00`);
+//   const now = new Date();
+
+//   // 상담 시작 10분 전부터 입장 가능
+//   const enterAvailableTime = new Date(startDateTime.getTime() - 10 * 60 * 1000);
+
+//   return now >= enterAvailableTime;
+// };
+
 export default function ConsultationManagementPage() {
   const navigate = useNavigate();
   const { user, accessToken } = useAuthStore();
@@ -391,6 +407,22 @@ export default function ConsultationManagementPage() {
     const encodedId = btoa(reservationId.toString());
     navigate(`/consultation-room/${encodedId}`);
   };
+  // 시연 끝나고 살리기 kjm 2026-02-06
+  // const handleEnterRoom = (consultation: Consultation) => {
+  //   if (!canEnterConsultationRoom(consultation)) {
+  //     showAlert({
+  //       title: "입장 불가",
+  //       message: "상담 시작 10분 전부터 상담방에 입장할 수 있습니다.",
+  //       type: "warning",
+  //     });
+  //     return;
+  //   }
+  
+  //   if (!consultation.reservationId) return;
+  
+  //   const encodedId = btoa(consultation.reservationId.toString());
+  //   navigate(`/consultation-room/${encodedId}`);
+  // };
 
   const handleBookConsultation = () => {
     // Navigate to consultation booking page
