@@ -11,10 +11,10 @@ export interface ReportData {
 
 interface ConsultationReportProps {
   report?: ReportData;
-  mediaUrl?: string | null;
+  mediaUrls?: string[] | null;
 }
 
-export function ConsultationReport({ report, mediaUrl }: ConsultationReportProps) {
+export function ConsultationReport({ report, mediaUrls }: ConsultationReportProps) {
   if (!report?.sessions || report.sessions.length === 0) {
     return null;
   }
@@ -52,12 +52,16 @@ export function ConsultationReport({ report, mediaUrl }: ConsultationReportProps
         ))}
       </div>
       {/* 상담 녹화 영상 */}
-      {mediaUrl && (
+      {mediaUrls && mediaUrls.length > 0 && (
         <section className="space-y-4">
           <h2 className="text-lg font-bold pl-3 border-l-4 border-primary-500">상담 녹화 영상</h2>
 
-          <div className="overflow-hidden rounded-lg border border-border bg-black">
-            <video src={mediaUrl} controls className="w-full max-h-[480px]" />
+          <div className="space-y-4">
+            {mediaUrls.map((url, index) => (
+              <div key={`${url}-${index}`} className="overflow-hidden rounded-lg border border-border bg-black">
+                <video src={url} controls className="w-full max-h-[480px]" />
+              </div>
+            ))}
           </div>
         </section>
       )}

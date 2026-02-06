@@ -11,7 +11,7 @@ import type { ConsultationReportData, ConsultationReportResponse } from "@/types
  * content는 JSON 문자열 형태이며, 호출부에서 파싱하여 사용해야 합니다.
  *
  * @param reportId - 상담 보고서 ID
- * @returns 상담 보고서 상세 데이터 (reportId, content, mediaUrl)
+ * @returns 상담 보고서 상세 데이터 (reportId, content, mediaUrls)
  *
  * @throws {Error} API 호출 실패 시
  */
