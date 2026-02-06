@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Video, VideoOff } from "lucide-react";
+
 
 export function ConsultationWaitingRoomPage() {
     const { roomId } = useParams<{ roomId: string }>();
@@ -18,7 +18,7 @@ export function ConsultationWaitingRoomPage() {
         }
     }, [roomId]);
 
-    const [hasPermission, setHasPermission] = useState(false);
+
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [isMicEnabled, setIsMicEnabled] = useState(true);
     const [isCameraEnabled, setIsCameraEnabled] = useState(true);
@@ -35,7 +35,7 @@ export function ConsultationWaitingRoomPage() {
                 });
 
                 setStream(localStream);
-                setHasPermission(true);
+
 
                 if (videoRef.current) {
                     videoRef.current.srcObject = localStream;
@@ -43,7 +43,6 @@ export function ConsultationWaitingRoomPage() {
             } catch (err) {
                 console.error("Failed to access media devices:", err);
                 setError("카메라 또는 마이크에 접근할 수 없습니다. 권한을 확인해주세요.");
-                setHasPermission(false);
             }
         };
 
