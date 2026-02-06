@@ -53,13 +53,16 @@ export function ConsultationReport({ report, mediaUrls }: ConsultationReportProp
       </div>
       {/* 상담 녹화 영상 */}
       {mediaUrls && mediaUrls.length > 0 && (
-        <section className="space-y-4">
+        <section className="space-y-6">
           <h2 className="text-lg font-bold pl-3 border-l-4 border-primary-500">상담 녹화 영상</h2>
 
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {mediaUrls.map((url, index) => (
-              <div key={`${url}-${index}`} className="overflow-hidden rounded-lg border border-border bg-black">
-                <video src={url} controls className="w-full max-h-[480px]" />
+              <div key={`${url}-${index}`} className="group overflow-hidden rounded-xl border border-border bg-black shadow-sm transition-all hover:shadow-md">
+                <video src={url} controls className="w-full aspect-video object-contain bg-black" />
+
+                {/* optional: 하단 캡션 */}
+                <div className="px-3 py-2 text-xs text-muted-foreground bg-background">상담 녹화 #{index + 1}</div>
               </div>
             ))}
           </div>
