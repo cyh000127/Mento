@@ -277,17 +277,17 @@ export default function ConsultationManagementPage() {
 
         const params: ReservationListParams = searchParams
           ? {
-              startDate: searchParams.startDate,
-              endDate: searchParams.endDate,
-              page: currentPage,
-              size: pageSize,
-            }
+            startDate: searchParams.startDate,
+            endDate: searchParams.endDate,
+            page: currentPage,
+            size: pageSize,
+          }
           : {
-              startDate: "",
-              endDate: "",
-              page: currentPage,
-              size: pageSize,
-            };
+            startDate: "",
+            endDate: "",
+            page: currentPage,
+            size: pageSize,
+          };
 
         const requestKey = JSON.stringify({
           startDate: params.startDate,
@@ -405,7 +405,7 @@ export default function ConsultationManagementPage() {
 
   const handleEnterRoom = (reservationId: number) => {
     const encodedId = btoa(reservationId.toString());
-    navigate(`/consultation-room/${encodedId}`);
+    navigate(`/consultation-waiting-room/${encodedId}`);
   };
   // 시연 끝나고 살리기 kjm 2026-02-06
   // const handleEnterRoom = (consultation: Consultation) => {

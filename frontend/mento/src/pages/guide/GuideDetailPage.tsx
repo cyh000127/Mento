@@ -396,7 +396,7 @@ export default function GuideDetailPage() {
   const contentTypes = PRODUCT_SUBTYPES[productType || ""] || PRODUCT_SUBTYPES["default"];
 
   // State 1: Face Area (Controls AR/Masking only)
-  const [selectedArea, setSelectedArea] = useState<string>("t-zone");
+  const [selectedArea, setSelectedArea] = useState<string>("");
 
   // State 2: Content Type (Controls Text Guide)
   // Initialize with the first available type's id

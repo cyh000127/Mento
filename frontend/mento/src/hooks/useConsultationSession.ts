@@ -25,7 +25,7 @@ export interface UseConsultationSessionReturn {
   drawCommands: DrawCommand[];
 
   // 연결 제어
-  connect: (reservationId: number) => Promise<void>;
+  connect: (reservationId: number, options?: { initialMic: boolean; initialCamera: boolean }) => Promise<void>;
   disconnect: () => void;
   sendMaskUpdate: (maskType: MaskType) => void;
   sendMediaShare: (files: SharedMediaFile[]) => void;
@@ -173,7 +173,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
    * 상담 세션 생성 및 LiveKit 연결
    */
   const connect = useCallback(
-    async (reservationId: number) => {
+    async (reservationId: number, options: { initialMic: boolean; initialCamera: boolean } = { initialMic: true, initialCamera: true }) => {
       // 중복 연결 방지
       if (isConnecting.current || connectionState !== "disconnected") {
         console.warn("⚠️ 이미 연결 중이거나 연결되어 있습니다.");
@@ -199,7 +199,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         setSessionData(session);
         processedReservationId.current = reservationId;
         session.livekitUrl = "wss://i14a704.p.ssafy.io/rtc/";
-        
+
         if (!session.roomToken || !session.livekitUrl || !session.roomName) {
           throw new Error("LiveKit 접속 정보가 올바르지 않습니다.");
         }
@@ -292,11 +292,11 @@ export function useConsultationSession(): UseConsultationSessionReturn {
             return;
           }
 
-        if (parseImageClear(payload)) {
-          setSharedImageUrl(null);
-          setDrawCommands([]);
-          return;
-        }
+          if (parseImageClear(payload)) {
+            setSharedImageUrl(null);
+            setDrawCommands([]);
+            return;
+          }
 
           if (parseWhiteboardClear(payload)) {
             setDrawCommands([]);
@@ -322,8 +322,16 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         setRoom(newRoom);
 
         // 6. 카메라와 마이크 활성화
-        console.log("🎥 카메라와 마이크 활성화 중...");
+        console.log("🎥 카메라와 마이크 활성화 중... (설정값)", options);
         await newRoom.localParticipant.enableCameraAndMicrophone();
+
+        // 초기 상태 적용 (enableCameraAndMicrophone은 기본적으로 둘 다 켬)
+        if (!options.initialMic) {
+          await newRoom.localParticipant.setMicrophoneEnabled(false);
+        }
+        if (!options.initialCamera) {
+          await newRoom.localParticipant.setCameraEnabled(false);
+        }
 
         // 7. 트랙 publish 대기
         console.log("⏳ 트랙 publish 대기 중...");
@@ -343,8 +351,8 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         });
 
         // 8. 미디어 상태 업데이트
-        setIsMicEnabled(true);
-        setIsCameraEnabled(true);
+        setIsMicEnabled(options.initialMic);
+        setIsCameraEnabled(options.initialCamera);
         setRemoteMaskType(null);
         setRemoteMaskUpdateSeq(0);
         setSharedMediaFiles([]);
