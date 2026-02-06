@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, type ChangeEvent, type PointerEvent } from "react";
 import { uploadConsultationMedia } from "@/api/consultationMediaApi";
-import { ALLOWED_IMAGE_EXTENSIONS, ALLOWED_VIDEO_EXTENSIONS, MAX_SINGLE_FILE_BYTES, MAX_TOTAL_BYTES, type SharedMediaFile, type DrawCommand, type DrawPoint } from "@/types/consultationMedia";
+import { ALLOWED_IMAGE_EXTENSIONS, MAX_SINGLE_FILE_BYTES, MAX_TOTAL_BYTES, type SharedMediaFile, type DrawCommand, type DrawPoint } from "@/types/consultationMedia";
 
 export interface SharePanelProps {
   reservationId: number | null;
@@ -23,9 +23,6 @@ const resolveFileType = (file: File): SharedMediaFile["fileType"] | null => {
   const extension = getFileExtension(file.name);
   if (ALLOWED_IMAGE_EXTENSIONS.includes(extension as (typeof ALLOWED_IMAGE_EXTENSIONS)[number])) {
     return "IMAGE";
-  }
-  if (ALLOWED_VIDEO_EXTENSIONS.includes(extension as (typeof ALLOWED_VIDEO_EXTENSIONS)[number])) {
-    return "VIDEO";
   }
   return null;
 };
@@ -371,9 +368,7 @@ export function SharePanel({ reservationId, onShare, sharedImageUrl, drawCommand
 
       {!sharedImageUrl && !canDraw && (
         <div className="p-4">
-          <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-4 text-sm text-gray-400 text-center">
-            공유된 사진이 없습니다
-          </div>
+          <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-4 text-sm text-gray-400 text-center">공유된 사진이 없습니다</div>
         </div>
       )}
 
@@ -381,7 +376,7 @@ export function SharePanel({ reservationId, onShare, sharedImageUrl, drawCommand
         <div className={`p-3 space-y-3 ${sharedImageUrl ? "border-t border-gray-800" : ""}`}>
           {/* 파일 선택 영역 */}
           <div className="relative">
-            <input ref={inputRef} type="file" accept=".jpg,.jpeg,.png,.webp,.mp4,.mov,.webm,.mkv" onChange={handleFileChange} className="hidden" />
+            <input ref={inputRef} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handleFileChange} className="hidden" />
             <div onClick={handleBrowseClick} className="border-2 border-dashed border-gray-700 rounded-lg px-3 py-2 cursor-pointer hover:border-cyan-500 hover:bg-gray-800/50 transition-all">
               <div className="flex items-center gap-3">
                 <svg className="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -389,7 +384,7 @@ export function SharePanel({ reservationId, onShare, sharedImageUrl, drawCommand
                 </svg>
                 <div className="flex flex-col">
                   <p className="text-xs text-gray-400">클릭하여 파일 선택</p>
-                  <p className="text-[11px] text-gray-600">JPG, PNG, WEBP, MP4, MOV, WEBM, MKV</p>
+                  <p className="text-[11px] text-gray-600">JPG, PNG, WEBP</p>
                 </div>
               </div>
             </div>

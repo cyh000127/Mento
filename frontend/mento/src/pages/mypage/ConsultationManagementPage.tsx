@@ -10,7 +10,9 @@ import { ConsultationEmpty } from "@/components/mypage/consultation-empty";
 import { ConsultationDetail } from "@/components/mypage/consultation-detail";
 import { ReportDetail } from "@/components/mypage/report-detail";
 import { getReservationDetail, getReservationList } from "@/api/reservationApi";
+import { getConsultingReportDetail } from "@/api/consultationReportApi";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useConsultationReportStore } from "@/stores/useConsultationReportStore";
 import type { Consultation, PeriodFilter, ConsultationStatus, PreConsultationQA } from "@/types/consultation";
 import type { ReservationListItem, ReservationListParams } from "@/types/reservationList";
 import type { ReservationDetailData } from "@/types/reservationDetail";
@@ -133,6 +135,7 @@ const mapReservationDetailToConsultation = (reservation: ReservationDetailData):
 export default function ConsultationManagementPage() {
   const navigate = useNavigate();
   const { user, accessToken } = useAuthStore();
+  const { setReport } = useConsultationReportStore();
   const lastRequestKeyRef = useRef<string | null>(null);
   const isFetchingRef = useRef(false);
   const detailFetchingIdRef = useRef<number | null>(null);
@@ -235,17 +238,17 @@ export default function ConsultationManagementPage() {
 
         const params: ReservationListParams = searchParams
           ? {
-            startDate: searchParams.startDate,
-            endDate: searchParams.endDate,
-            page: currentPage,
-            size: pageSize,
-          }
+              startDate: searchParams.startDate,
+              endDate: searchParams.endDate,
+              page: currentPage,
+              size: pageSize,
+            }
           : {
-            startDate: "",
-            endDate: "",
-            page: currentPage,
-            size: pageSize,
-          };
+              startDate: "",
+              endDate: "",
+              page: currentPage,
+              size: pageSize,
+            };
 
         const requestKey = JSON.stringify({
           startDate: params.startDate,
@@ -380,13 +383,21 @@ export default function ConsultationManagementPage() {
     navigate("/consultation", {
       state: {
         reservationId: consultation.reservationId,
-        step: 4 // 결제 단계
-      }
+        step: 4, // 결제 단계
+      },
     });
   };
 
-  const handleViewReport = (consultation: Consultation) => {
-    setSelectedReportConsultation(consultation);
+  const handleViewReport = async (consultation: Consultation) => {
+    if (!consultation.reportId) return;
+    
+    try {
+      const report = await getConsultingReportDetail(consultation.reportId);
+      setReport(report);
+      setSelectedReportConsultation(consultation);
+    } catch (error) {
+      console.error("Failed to fetch report:", error);
+    }
   };
 
   const handleBackFromReport = () => {
@@ -411,7 +422,7 @@ export default function ConsultationManagementPage() {
                       목록으로
                     </Button>
                   </div>
-                  <ReportDetail report={selectedReportConsultation.report} />
+                  <ReportDetail />
                 </div>
               </div>
             </div>
@@ -443,7 +454,7 @@ export default function ConsultationManagementPage() {
           <div className="mx-auto max-w-7xl px-6 py-8">
             {/* Page Header */}
             <div className="pl-1">
-              <h1 className="text-2xl font-bold text-foreground pb-3">상담 내역</h1>
+              <h1 className="text-2xl font-bold text-foreground pb-3">상담</h1>
             </div>
 
             {/* Filters */}
@@ -474,7 +485,13 @@ export default function ConsultationManagementPage() {
             {/* Consultation List or Empty State */}
             {isSearched ? (
               sortedConsultations.length > 0 ? (
-                <ConsultationList consultations={sortedConsultations} onViewDetail={handleViewDetail} onEnterRoom={handleEnterRoom} onGoToPayment={handleGoToPayment} onViewReport={handleViewReport} />
+                <ConsultationList
+                  consultations={sortedConsultations}
+                  onViewDetail={handleViewDetail}
+                  onEnterRoom={handleEnterRoom}
+                  onGoToPayment={handleGoToPayment}
+                  onViewReport={handleViewReport}
+                />
               ) : (
                 <ConsultationEmpty onBookConsultation={handleBookConsultation} />
               )
