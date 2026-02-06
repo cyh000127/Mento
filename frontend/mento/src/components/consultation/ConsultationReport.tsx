@@ -1,12 +1,12 @@
-interface ReportData {
+export interface ReportData {
   sessions?: {
-    sessionId?: string
-    sessionTitle?: string
+    sessionId?: string;
+    sessionTitle?: string;
     subSections?: {
-      subTitle?: string
-      descriptions?: string[]
-    }[]
-  }[]
+      subTitle?: string;
+      descriptions?: string[];
+    }[];
+  }[];
 }
 
 interface ConsultationReportProps {
