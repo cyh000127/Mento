@@ -6,7 +6,7 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.validation.constraints.Min;
 
 @Validated
-@ConfigurationProperties(prefix = "async.ai-upload")
+@ConfigurationProperties(prefix = "ai.async")
 public record AsyncProperties(
 	@Min(1) int corePoolSize,
 	@Min(1) int maxPoolSize,
