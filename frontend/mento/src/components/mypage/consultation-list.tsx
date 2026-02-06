@@ -6,6 +6,8 @@ interface ConsultationListProps {
   consultations: Consultation[];
   onViewDetail: (consultation: Consultation) => void;
   onEnterRoom: (reservationId: number) => void;
+  // 시연 끝나고 살리기 kjm 2026-02-06
+  // onEnterRoom: (consultation: Consultation) => void; 
   onGoToPayment: (consultation: Consultation) => void;
   onViewReport: (consultation: Consultation) => void;
 }
@@ -59,8 +61,10 @@ export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onG
                   <Button size="sm" variant="outline" className="bg-muted text-foreground hover:bg-muted/80" disabled>
                     예약 완료
                   </Button>
+                  {/* 시연 끝나고 살리기 kjm 2026-02-06 */}
+                  {/* <Button size="sm" onClick={() => onEnterRoom(consultation)} className="bg-muted text-foreground hover:bg-muted/80" disabled={!consultation.reservationId}> */}
                   <Button size="sm" onClick={() => onEnterRoom(consultation.reservationId!)} className="bg-muted text-foreground hover:bg-muted/80" disabled={!consultation.reservationId}>
-                    상담 방 이동
+                    상담방 이동
                   </Button>
                 </>
               )}

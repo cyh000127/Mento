@@ -1,4 +1,5 @@
-import { api, testApi } from "./axios";
+// import { api } from "./axios";
+import { testApi } from "./axios";
 import type { ConsultationSessionData, ConsultationSessionResponse } from "@/types/consultation";
 
 /**

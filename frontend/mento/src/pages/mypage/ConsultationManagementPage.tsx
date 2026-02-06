@@ -136,6 +136,22 @@ const mapReservationDetailToConsultation = (reservation: ReservationDetailData):
   return consultation;
 };
 
+// 시연 끝나고 살리기기 kjm 2026-02-06
+// const canEnterConsultationRoom = (consultation: Consultation) => {
+//   const { scheduledDate, scheduledTime } = consultation;
+
+//   if (!scheduledDate || !scheduledTime) return false;
+
+//   // 상담 시작 시간
+//   const startDateTime = new Date(`${scheduledDate}T${scheduledTime}:00`);
+//   const now = new Date();
+
+//   // 상담 시작 10분 전부터 입장 가능
+//   const enterAvailableTime = new Date(startDateTime.getTime() - 10 * 60 * 1000);
+
+//   return now >= enterAvailableTime;
+// };
+
 export default function ConsultationManagementPage() {
   const navigate = useNavigate();
   const { user, accessToken } = useAuthStore();
@@ -391,6 +407,22 @@ export default function ConsultationManagementPage() {
     const encodedId = btoa(reservationId.toString());
     navigate(`/consultation-room/${encodedId}`);
   };
+  // 시연 끝나고 살리기 kjm 2026-02-06
+  // const handleEnterRoom = (consultation: Consultation) => {
+  //   if (!canEnterConsultationRoom(consultation)) {
+  //     showAlert({
+  //       title: "입장 불가",
+  //       message: "상담 시작 10분 전부터 상담방에 입장할 수 있습니다.",
+  //       type: "warning",
+  //     });
+  //     return;
+  //   }
+
+  //   if (!consultation.reservationId) return;
+
+  //   const encodedId = btoa(consultation.reservationId.toString());
+  //   navigate(`/consultation-room/${encodedId}`);
+  // };
 
   const handleBookConsultation = () => {
     // Navigate to consultation booking page
@@ -412,10 +444,10 @@ export default function ConsultationManagementPage() {
   };
 
   const handleViewReport = async (consultation: Consultation) => {
-    if (!consultation.reportId) {
+    if (consultation.status !== "completed") {
       showAlert({
-        title: "리포트 생성 중",
-        message: "아직 생성된 상담 리포트가 없습니다.",
+        title: "상담 완료 후 리포트 조회 가능",
+        message: "아직 상담이 진행되지 않았습니다.",
         type: "warning",
       });
       return;
@@ -428,9 +460,9 @@ export default function ConsultationManagementPage() {
     } catch (error) {
       console.error("Failed to fetch report:", error);
       showAlert({
-        title: "상담 보고서 조회 실패",
-        message: "상담 보고서를 불러오지 못했습니다.",
-        type: "error",
+        title: "리포트 생성 중",
+        message: "아직 생성된 상담 리포트가 없습니다.",
+        type: "warning",
       });
     }
   };

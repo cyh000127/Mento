@@ -21,7 +21,7 @@ export interface Consultation {
   roomUrl?: string;
   memo?: string;
   reservationId?: number;
-  reportId?: number;
+  reportId: number;
   paymentId?: number;
   report?: {
     sessions?: {
