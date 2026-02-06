@@ -5,22 +5,22 @@ const steps = [
   {
     number: "01",
     title: "AI 피부 분석 시작",
-    description: "간편한 로그인 후 피부 사진을 업로드하면 AI가 피부 타입과 상태를 분석합니다.",
+    description: "로그인 후 피부 사진을 업로드하면\nAI가 피부 타입과 상태를 분석합니다.",
   },
   {
     number: "02",
     title: "멘토링 상담",
-    description: "전문 멘토와 상담하며 나에게 맞는 관리 방향을 설계합니다.",
+    description: "전문 멘토와 상담하며 나에게\n맞는 관리 방향을 설계합니다.",
   },
   {
     number: "03",
     title: "사용법 가이드",
-    description: "추천된 제품의 올바른 사용법을 안내합니다.",
+    description: "추천된 제품의 올바른\n사용법을 안내합니다.",
   },
   {
     number: "04",
     title: "인벤토리 관리",
-    description: "보유 중인 제품을 인벤토리로 관리하며 상담 내용과 루틴을 지속적으로 관리하세요.",
+    description: "보유 중인 제품을 인벤토리로 관리하며 상담 내용과 루틴을 관리하세요.",
   },
 ];
 
@@ -74,7 +74,9 @@ export function HowItWorksSection() {
 
                 {/* Content */}
                 <h3 className="mb-3 text-xl font-bold text-text-primary transition-colors group-hover:text-primary-500">{step.title}</h3>
-                <p className="text-base leading-relaxed text-text-secondary">{step.description}</p>
+                <p className="whitespace-pre-line text-base leading-relaxed text-text-secondary">
+                  {step.description}
+                </p>
 
                 {/* Arrow for mobile */}
                 {index < steps.length - 1 && (

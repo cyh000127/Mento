@@ -5,7 +5,7 @@ const features = [
   {
     icon: Package,
     title: "뷰티 인벤토리",
-    description: "사용 중인 제품을 한눈에 관리하고 유통기한과 교체 시기를 알림으로 받아보세요.",
+    description: "사용 중인 제품을 한눈에 관리하고\n교체 시기를 알림으로 받아보세요.",
     color: "bg-pastel-blue-100",
     gradient: "from-pastel-blue-200/20 to-primary-100/20",
     iconColor: "text-primary-500",
@@ -13,7 +13,7 @@ const features = [
   {
     icon: Brain,
     title: "AI 스킨 분석",
-    description: "AI가 피부 상태를 분석하고 맞춤형 스킨케어 루틴을 제안합니다.",
+    description: "AI가 피부 상태를 분석하고 맞춤형\n스킨케어 루틴을 제안합니다.",
     color: "bg-pastel-purple-100",
     gradient: "from-pastel-purple-200/20 to-pastel-purple-100/20",
     iconColor: "text-text-primary",
@@ -21,15 +21,15 @@ const features = [
   {
     icon: MessageCircle,
     title: "전문가 멘토링",
-    description: "검증된 뷰티 전문가와 1:1 상담으로 개인화된 조언을 받으세요.",
+    description: "검증된 뷰티 전문가와 1:1 상담으로\n개인화된 조언을 받으세요.",
     color: "bg-pastel-green-100",
     gradient: "from-pastel-green-200/20 to-pastel-green-100/20",
     iconColor: "text-text-primary",
   },
   {
     icon: BarChart3,
-    title: "피부 트래킹",
-    description: "일일 피부 상태를 기록하고 장기적인 변화 추이를 확인하세요.",
+    title: "사용법 제공",
+    description: "처음 사용하는 제품도 걱정 없이\n올바른 사용법을 확인해보세요.",
     color: "bg-primary-100",
     gradient: "from-primary-200/20 to-primary-100/20",
     iconColor: "text-primary-500",
@@ -101,7 +101,7 @@ export function FeaturesSection() {
                 <h3 className="mb-3 text-xl font-bold text-text-primary">
                   {feature.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-text-secondary">
+                <p className="whitespace-pre-line text-sm leading-relaxed text-text-secondary">
                   {feature.description}
                 </p>
               </div>
