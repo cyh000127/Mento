@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import com.mento.common.error.ErrorCode;
+import com.mento.domain.brand.entity.Brand;
 import com.mento.domain.product.dto.response.ProductListResDto;
 import com.mento.domain.product.entity.Product;
 import com.mento.domain.product.exception.ProductException;
@@ -58,6 +59,43 @@ class ProductQueryServiceTest {
 
 		// when & then
 		assertThatThrownBy(() -> productQueryService.findById(productId))
+			.isInstanceOf(ProductException.class)
+			.hasMessageContaining(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
+	}
+
+	@Test
+	@DisplayName("상품_상세_조회_성공")
+	void 상품_상세_조회_성공() {
+		// given
+		Long productId = 1L;
+		Brand brand = Brand.builder().brandName("Test Brand").build();
+		Product product = Product.builder()
+			.id(productId)
+			.name("Detail Product")
+			.brand(brand)
+			.build();
+
+		given(productRepository.findWithBrandById(productId)).willReturn(Optional.of(product));
+
+		// when
+		Product result = productQueryService.findDetailById(productId);
+
+		// then
+		assertThat(result.getId()).isEqualTo(productId);
+		assertThat(result.getName()).isEqualTo("Detail Product");
+		assertThat(result.getBrand().getBrandName()).isEqualTo("Test Brand");
+		then(productRepository).should(times(1)).findWithBrandById(productId);
+	}
+
+	@Test
+	@DisplayName("상품_상세_조회_실패_없음")
+	void 상품_상세_조회_실패_없음() {
+		// given
+		Long productId = 999L;
+		given(productRepository.findWithBrandById(productId)).willReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> productQueryService.findDetailById(productId))
 			.isInstanceOf(ProductException.class)
 			.hasMessageContaining(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
 	}

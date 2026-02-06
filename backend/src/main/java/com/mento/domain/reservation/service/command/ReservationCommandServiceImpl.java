@@ -25,15 +25,5 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
 			savedReservation.getStatus());
 		return savedReservation;
 	}
-
-	@Override
-	public void completeReservation(final Long reservationId) {
-		Reservation reservation = reservationRepository.findById(reservationId)
-			.orElseThrow(() -> new com.mento.common.error.exception.ReservationException(
-				com.mento.common.error.ErrorCode.RESERVATION_NOT_FOUND));
-		
-		reservation.complete();
-		log.info("[Reservation] 예약 상태 완료 변경 {id: {}}", reservationId);
-	}
 }
 

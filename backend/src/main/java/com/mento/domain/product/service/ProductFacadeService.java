@@ -36,7 +36,7 @@ public class ProductFacadeService {
 	}
 
 	public ProductResDto getProduct(final Long id) {
-		Product product = productQueryService.findById(id);
+		Product product = productQueryService.findDetailById(id);
 		return ProductConverter.toProductResDto(product);
 	}
 

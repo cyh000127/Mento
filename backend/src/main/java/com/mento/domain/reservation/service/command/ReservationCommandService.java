@@ -5,6 +5,4 @@ import com.mento.domain.reservation.entity.Reservation;
 public interface ReservationCommandService {
 
 	Reservation save(Reservation reservation);
-
-	void completeReservation(Long reservationId);
 }

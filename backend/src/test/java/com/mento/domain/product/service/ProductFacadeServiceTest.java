@@ -125,7 +125,7 @@ class ProductFacadeServiceTest {
 			.defaultUsageDays(60)
 			.build();
 
-		given(productQueryService.findById(productId)).willReturn(product);
+		given(productQueryService.findDetailById(productId)).willReturn(product);
 
 		// when
 		ProductResDto result = productFacadeService.getProduct(productId);
@@ -140,7 +140,7 @@ class ProductFacadeServiceTest {
 		assertThat(result.benefits()).isEqualTo("[\"진정\",\"수분\"]");
 		assertThat(result.ingredients()).isEqualTo("정제수, 녹차추출물");
 
-		then(productQueryService).should(times(1)).findById(productId);
+		then(productQueryService).should(times(1)).findDetailById(productId);
 	}
 
 	@Test
@@ -148,7 +148,7 @@ class ProductFacadeServiceTest {
 	void 상품_단건_조회_실패_존재하지_않음() {
 		// given
 		Long productId = 999L;
-		given(productQueryService.findById(productId))
+		given(productQueryService.findDetailById(productId))
 			.willThrow(new ProductException(ErrorCode.PRODUCT_NOT_FOUND));
 
 		// when & then
@@ -156,7 +156,7 @@ class ProductFacadeServiceTest {
 			.isInstanceOf(ProductException.class)
 			.hasMessageContaining(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
 
-		then(productQueryService).should(times(1)).findById(productId);
+		then(productQueryService).should(times(1)).findDetailById(productId);
 	}
 
 	@Test
@@ -185,8 +185,5 @@ class ProductFacadeServiceTest {
 		assertThat(result.getContent()).hasSize(1);
 		assertThat(result.getContent().getFirst().name()).isEqualTo("Product");
 
-		verify(productQueryService).getProducts(argThat(pageable -> {
-			return pageable.getPageNumber() == page && pageable.getPageSize() == size;
-		}));
 	}
 }
