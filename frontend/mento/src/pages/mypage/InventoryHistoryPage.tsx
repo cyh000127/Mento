@@ -48,6 +48,16 @@ export default function InventoryHistoryPage() {
     return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
   };
 
+  const isEmptyHistoryError = (status?: number, errorCode?: string) => {
+    return (
+      status === 404 ||
+      errorCode === "HISTORY_NOT_FOUND" ||
+      errorCode === "INVENTORY_HISTORY_NOT_FOUND" ||
+      errorCode === "NO_HISTORY" ||
+      errorCode === "NO_DATA"
+    );
+  };
+
   // Initialize dates on period change
   const handlePeriodChange = (period: PeriodFilter) => {
     setSelectedPeriod(period);
@@ -141,6 +151,15 @@ export default function InventoryHistoryPage() {
       console.error("히스토리 조회 실패:", err);
       const status = err.response?.status;
       const errorCode = err.response?.data?.code;
+
+      if (isEmptyHistoryError(status, errorCode)) {
+        setHistories([]);
+        setCurrentPage(0);
+        setTotalPages(0);
+        setHasNext(false);
+        setError(null);
+        return;
+      }
 
       if (status === 400 && errorCode === "INVALID_DATE_RANGE") {
         setError(err.response?.data?.message || "유효하지 않은 날짜 범위입니다.");
