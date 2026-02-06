@@ -1,6 +1,12 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Consultation } from "@/types/consultation";
+import { getConsultingReportDetail } from "@/api/consultationReportApi";
+import { useConsultationReportStore } from "@/stores/useConsultationReportStore";
+import { AlertModal } from "@/components/common/alert-modal";
+import type { AlertModalType } from "@/components/common/alert-modal";
 
 interface ConsultationListProps {
   consultations: Consultation[];
@@ -15,6 +21,60 @@ export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onG
     return `${dateStr.replace(/-/g, ".")} ${timeStr}`;
   };
 
+  const [alertState, setAlertState] = useState({
+    open: false,
+    title: "알림",
+    message: "",
+    type: "info" as AlertModalType,
+    confirmText: "확인",
+  });
+
+  const showAlert = (options: { title?: string; message: string; type?: AlertModalType; confirmText?: string }) => {
+    setAlertState({
+      open: true,
+      title: options.title ?? "알림",
+      message: options.message,
+      type: options.type ?? "info",
+      confirmText: options.confirmText ?? "확인",
+    });
+  };
+
+  const navigate = useNavigate();
+  const { setReport } = useConsultationReportStore();
+  const handleViewReport = async (consultation: Consultation) => {
+    // reportId 존재 여부 체크
+    if (!consultation.reportId) {
+      // 리포트 미존재
+      showAlert({
+        title: "리포트 생성 중",
+        message: "아직 생성된 상담 리포트가 없습니다.",
+        type: "warning",
+      });
+      return;
+    }
+
+    if (onViewReport) {
+      onViewReport(consultation);
+      return;
+    }
+
+    try {
+      // 상담 보고서 상세 API 호출
+      const report = await getConsultingReportDetail(consultation.reportId);
+      // 전역 store에 저장
+      setReport(report);
+      // 보고서 상세 페이지로 이동
+      navigate(`/consultations/${consultation.id}/report`);
+    } catch (error) {
+      console.error("상담 보고서 조회 실패", error);
+      showAlert({
+        title: "상담 보고서 조회 실패",
+        message: "상담 보고서를 불러오지 못했습니다.",
+        type: "error",
+      });
+    }
+  };
+
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       {/* Table Header */}
@@ -23,7 +83,7 @@ export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onG
         <div className="col-span-2">유형</div>
         <div className="col-span-3">상태</div>
         <div className="col-span-3">AI 리포트</div>
-        <div className="col-span-2">상세 확인</div>
+        <div className="col-span-2">상세</div>
       </div>
 
       {/* Table Body */}
@@ -69,9 +129,8 @@ export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onG
 
             {/* ai 리포트 */}
             <div className="col-span-3 flex items-center justify-center">
-              <Button onClick={() => onViewReport(consultation)} className="h-[36px] bg-muted text-foreground hover:bg-muted/80">
+              <Button onClick={() => handleViewReport(consultation)} className="h-[36px] bg-muted text-foreground hover:bg-muted/80">
                 보러 가기
-                {/* <ChevronRight className="h-4 w-4" /> */}
               </Button>
             </div>
 
@@ -85,6 +144,14 @@ export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onG
           </div>
         ))}
       </div>
+      <AlertModal
+        open={alertState.open}
+        onOpenChange={(open) => setAlertState((prev) => ({ ...prev, open }))}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+      />
     </div>
   );
 }

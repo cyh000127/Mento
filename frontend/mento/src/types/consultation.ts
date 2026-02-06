@@ -21,6 +21,7 @@ export interface Consultation {
   roomUrl?: string;
   memo?: string;
   reservationId?: number;
+  reportId?: number;
   paymentId?: number;
   report?: {
     sessions?: {
@@ -66,6 +67,19 @@ export interface ConsultationSessionData {
 export interface ConsultationSessionResponse {
   success: boolean;
   data: ConsultationSessionData;
+  error: null | { message: string };
+  timestamp: string;
+}
+
+export interface ConsultationReportData {
+  reportId: number;
+  content: string; // JSON String
+  mediaUrl: string | null;
+}
+
+export interface ConsultationReportResponse {
+  success: boolean;
+  data: ConsultationReportData;
   error: null | { message: string };
   timestamp: string;
 }
