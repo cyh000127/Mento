@@ -16,6 +16,7 @@ export interface ReservationMentorType {
 
 export interface ReservationListItem {
   reservationId: number
+  reportId: number
   scheduledDate: string
   scheduledTime?: string
   mentorType: ReservationMentorType
