@@ -83,8 +83,8 @@ export async function searchProducts(params: ProductSearchParams): Promise<Produ
 export async function getCustomerInventory(id: number, reservationId: number, filters: InventoryFilters = {}): Promise<InventoryResponse> {
   const params = new URLSearchParams();
 
-  // 🔑 예약 ID 추가
-  params.append("reservationId", reservationId.toString());
+  // 예약 ID 추가
+  params.append("reservationId", reservationId.toString())
 
   if (filters.page !== undefined) params.append("page", filters.page.toString());
   if (filters.size !== undefined) params.append("size", filters.size.toString());

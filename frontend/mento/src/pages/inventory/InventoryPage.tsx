@@ -279,15 +279,6 @@ export default function InventoryPage() {
     const previousSelectedProduct = selectedProduct;
 
     try {
-      // UI에서 즉시 제거
-      setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
-
-      // 선택된 제품이 삭제된 경우 다른 제품 선택
-      if (selectedProduct?.id === productToDelete.id) {
-        const remainingProducts = products.filter((p) => p.id !== productToDelete.id);
-        setSelectedProduct(remainingProducts.length > 0 ? remainingProducts[0] : null);
-      }
-
       // API 호출
       await deleteInventoryItem(productToDelete.id);
 
@@ -300,6 +291,7 @@ export default function InventoryPage() {
 
       setDeleteDialogOpen(false);
       setProductToDelete(null);
+      window.location.reload();
     } catch (error: any) {
       // 실패 시 원래 상태로 복원
       setProducts(previousProducts);
