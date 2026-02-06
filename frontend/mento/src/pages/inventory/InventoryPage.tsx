@@ -294,7 +294,7 @@ export default function InventoryPage() {
       // 성공 알림
       toast({
         title: "삭제 완료",
-        description: "아이템이 인벤토리에서 제거되었습니다.",
+        description: "아이템이 인벤토리에서 삭제되었습니다.",
         variant: "default",
       });
 
@@ -677,9 +677,7 @@ export default function InventoryPage() {
     const recognizedProductId = recognizedProduct.productId;
 
     //  프론트 중복 체크 (productId 기준)
-    const isDuplicate = products.some(
-      (p) => p.productId === recognizedProductId
-    );
+    const isDuplicate = products.some((p) => p.productId === recognizedProductId);
 
     if (isDuplicate) {
       showAlert({
@@ -689,7 +687,7 @@ export default function InventoryPage() {
       });
       return;
     }
-    
+
     setRegistering(true);
     setPhotoError(null);
     try {
@@ -907,7 +905,7 @@ export default function InventoryPage() {
         title="아이템 삭제"
         message={
           <>
-            이 아이템을 인벤토리에서 제거하시겠습니까?
+            이 아이템을 인벤토리에서 삭제하시겠습니까?
             {productToDelete && <span className="mt-2 block font-medium text-foreground">{productToDelete.name}</span>}
           </>
         }
