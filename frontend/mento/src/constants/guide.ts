@@ -41,7 +41,7 @@ export const PRODUCT_SUBTYPES: Record<string, { id: string; label: string }[]> =
     { id: "foundation", label: "파운데이션" },
     { id: "cushion", label: "쿠션" },
     { id: "bb_cc", label: "BB·CC 크림" },
-    { id: "stick_foundation", label: "스틱 파운데이션" },
+    { id: "stick", label: "스틱 파운데이션" },
   ],
   컨실링: [
     { id: "liquid_concealer", label: "리퀴드 컨실러" },
