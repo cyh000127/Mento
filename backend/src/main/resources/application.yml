@@ -105,6 +105,10 @@ skinai:
   base-url: ${SKIN_API_URL}
 
 ai:
+  async:
+    core-pool-size: 5
+    max-pool-size: 20
+    queue-capacity: 1000
   prompts:
     system: ${AI_PROMPT_SYSTEM:classpath:prompts/system.st}
     consulting: ${AI_PROMPT_CONSULTING:classpath:prompts/consulting.st}

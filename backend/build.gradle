@@ -79,6 +79,7 @@ dependencies {
     // tsid
     implementation 'com.github.f4b6a3:tsid-creator:5.2.6'
 
+    implementation 'org.springframework.retry:spring-retry:2.0.12'
 }
 
 tasks.named('test') {

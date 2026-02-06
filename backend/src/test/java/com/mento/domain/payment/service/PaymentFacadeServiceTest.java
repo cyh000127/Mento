@@ -15,9 +15,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.mento.common.error.ErrorCode;
 import com.mento.common.error.exception.PaymentException;
-import com.mento.domain.consulting.entity.Consulting;
-import com.mento.domain.consulting.factory.ConsultingFactory;
-import com.mento.domain.consulting.service.command.impl.ConsultingCommandServiceImpl;
 import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.notification.dto.request.NotificationSendReqDto;
 import com.mento.domain.notification.service.NotificationFacadeService;
@@ -50,11 +47,6 @@ class PaymentFacadeServiceTest {
 	@Mock
 	private UserQueryServiceImpl userQueryService;
 
-	@Mock
-	private ConsultingFactory consultingFactory;
-
-	@Mock
-	private ConsultingCommandServiceImpl consultingCommandService;
 
 	@Mock
 	private NotificationFacadeService notificationFacadeService;
@@ -142,18 +134,12 @@ class PaymentFacadeServiceTest {
 			.paidAt(java.time.LocalDateTime.now())
 			.build();
 
-		Consulting consulting = Consulting.builder()
-			.roomId("room_1")
-			.build();
-
 		given(paymentCommandService.approve(any(PaymentApproveReqDto.class), any(Long.class)))
 			.willReturn(approveResDto);
 		given(paymentQueryService.findDetailsById(paymentId))
 			.willReturn(payment);
 		given(userQueryService.findById(SKINCARE_MENTOR_ID))
 			.willReturn(mentor);
-		given(consultingFactory.createConsulting(anyLong()))
-			.willReturn(consulting);
 		willDoNothing().given(notificationFacadeService).sendNotification(any(NotificationSendReqDto.class));
 
 		// When
@@ -168,8 +154,6 @@ class PaymentFacadeServiceTest {
 		then(paymentCommandService).should(times(1)).approve(request, userId);
 		then(paymentQueryService).should(times(1)).findDetailsById(paymentId);
 		then(userQueryService).should(times(1)).findById(SKINCARE_MENTOR_ID);
-		then(consultingFactory).should(times(1)).createConsulting(anyLong());
-		then(consultingCommandService).should(times(1)).saveDraftConsulting(consulting);
 		then(notificationFacadeService).should(times(1)).sendNotification(any(NotificationSendReqDto.class));
 	}
 

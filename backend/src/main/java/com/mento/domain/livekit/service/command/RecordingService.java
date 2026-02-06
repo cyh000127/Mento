@@ -1,18 +1,26 @@
 package com.mento.domain.livekit.service.command;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
 
 import org.jspecify.annotations.NonNull;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import com.mento.common.config.properties.CloudflareProperties;
 import com.mento.common.error.ErrorCode;
+import com.mento.domain.consulting.event.ConsultingReportEvent;
+import com.mento.domain.consulting.vo.ChatLogEntryVo;
 import com.mento.domain.livekit.converter.RecordingConverter;
 import com.mento.domain.livekit.dto.RecordingReqDto;
 import com.mento.domain.livekit.dto.RecordingResDto;
 import com.mento.domain.livekit.exception.LiveKitException;
+import com.mento.domain.reservation.entity.Reservation;
+import com.mento.domain.reservation.service.query.ReservationQueryService;
 
 import io.livekit.server.EgressServiceClient;
 import io.livekit.server.WebhookReceiver;
@@ -31,18 +39,23 @@ import retrofit2.Response;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class RecordingCommandService {
+public class RecordingService {
 
 	private static final String EGRESS_STARTED_EVENT = "egress_started";
 	private static final String EGRESS_UPDATED_EVENT = "egress_updated";
 	private static final String EGRESS_ENDED_EVENT = "egress_ended";
 	private static final String EGRESS_COMPLETE_STATUS = "EGRESS_COMPLETE";
 	private static final String EGRESS_FAILED_STATUS = "EGRESS_FAILED";
+	private static final String CHAT_LOG_KEY_PREFIX = "chat:log:";
+	private static final String ROOM_NAME_PREFIX = "room_";
 
 	private final RedisTemplate<String, String> redisTemplate;
+	private final RedisTemplate<String, ChatLogEntryVo> chatLogRedisTemplate;
 	private final EgressServiceClient egressServiceClient;
 	private final CloudflareProperties cloudflareProperties;
 	private final WebhookReceiver webhookReceiver;
+	private final ReservationQueryService reservationQueryService;
+	private final ApplicationEventPublisher eventPublisher;
 
 	public RecordingResDto startRecording(final RecordingReqDto request) {
 		String roomId = request.roomId();
@@ -53,6 +66,7 @@ public class RecordingCommandService {
 
 		log.info("[Recording] 녹화 시작 완료 {egressId: {}, roomId: {}}", egressInfo.getEgressId(), roomId);
 		redisTemplate.opsForValue().set(roomId, egressInfo.getEgressId());
+		redisTemplate.opsForValue().set(egressInfo.getEgressId(), roomId);
 		return RecordingConverter.toStartResDto(egressInfo.getEgressId(), roomId);
 	}
 
@@ -105,11 +119,42 @@ public class RecordingCommandService {
 
 		log.info("[Recording] Egress 종료 이벤트 수신 {egressId: {}, status: {}}", egressId, status);
 
+		if (EGRESS_FAILED_STATUS.equals(status)) {
+			log.error("[Recording] 녹화 실패 {egressId: {}, error: {}}", egressId, egressInfo.getError());
+			return;
+		}
+
 		if (EGRESS_COMPLETE_STATUS.equals(status)) {
 			handleEgressComplete(egressInfo);
-		} else if (EGRESS_FAILED_STATUS.equals(status)) {
-			log.error("[Recording] 녹화 실패 {egressId: {}, error: {}}", egressId, egressInfo.getError());
+			publishConsultingReportEvent(egressId);
 		}
+	}
+
+	private void publishConsultingReportEvent(final String egressId) {
+		String roomId = redisTemplate.opsForValue().getAndDelete(egressId);
+		if (roomId == null) {
+			log.error("[ConsultingReport] Redis에서 roomId를 찾을 수 없습니다 {egressId: {}}", egressId);
+			return;
+		}
+
+		if (!roomId.startsWith(ROOM_NAME_PREFIX)) {
+			log.error("[ConsultingReport] 잘못된 roomId 형식 {roomId: {}}", roomId);
+			return;
+		}
+
+		List<ChatLogEntryVo> chatLogs = chatLogRedisTemplate.opsForList().range(CHAT_LOG_KEY_PREFIX + roomId, 0, -1);
+		if (CollectionUtils.isEmpty(chatLogs)) {
+			log.warn("[ConsultingReport] 채팅 로그가 비어있어 AI 보고서 생성을 건너뜁니다 {roomId: {}}", roomId);
+			return;
+		}
+
+		Long reservationId = Long.valueOf(Objects.requireNonNull(roomId).substring(ROOM_NAME_PREFIX.length()));
+		Reservation reservation = reservationQueryService.findWithDetailsById(reservationId);
+		String mentorTypeName = reservation.getSlot().getMentorType().getTypeName();
+
+		eventPublisher.publishEvent(new ConsultingReportEvent(this, reservation, mentorTypeName, chatLogs));
+		log.info("[ConsultingReport] AI 보고서 생성 이벤트 발행 완료 {reservationId: {}, chatLogCount: {}}", reservationId,
+			chatLogs.size());
 	}
 
 	private EncodedFileOutput buildFileOutput(final String roomId) {
