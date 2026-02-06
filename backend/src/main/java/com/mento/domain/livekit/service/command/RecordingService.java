@@ -150,6 +150,8 @@ public class RecordingService {
 
 		Long reservationId = Long.valueOf(Objects.requireNonNull(roomId).substring(ROOM_NAME_PREFIX.length()));
 		Reservation reservation = reservationQueryService.findWithDetailsById(reservationId);
+		reservation.complete();
+
 		String mentorTypeName = reservation.getSlot().getMentorType().getTypeName();
 
 		eventPublisher.publishEvent(new ConsultingReportEvent(this, reservation, mentorTypeName, chatLogs));

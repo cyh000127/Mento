@@ -123,4 +123,8 @@ public class Reservation extends BaseEntity {
 	public void updateStatus(final ReservationStatus status) {
 		this.status = status;
 	}
+
+	public void complete() {
+		this.status = ReservationStatus.COMPLETED;
+	}
 }
