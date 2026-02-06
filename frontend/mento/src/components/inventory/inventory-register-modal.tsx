@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@/components/ui/pagination";
 import { searchProducts } from "@/api/inventoryApi";
+import { getProducts } from "@/api/productsApi";
 import type { ProductListItem } from "@/types/product";
 import type { Product } from "@/types/inventory";
 
@@ -173,27 +174,35 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
   // 페이지 크기
   const itemsPerPage = 6;
 
-  // API에서 상품 목록 조회 (검색어 기준)
+  // API에서 상품 목록 조회 (검색어 기준 / 기본 목록)
   const fetchProducts = useCallback(async () => {
     const trimmedQuery = searchQuery.trim();
-    if (trimmedQuery.length < 2) {
-      setApiProducts([]);
-      setTotalPages(0);
-      setIsLoading(false);
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const response = await searchProducts({
-        keyword: trimmedQuery,
-        page: currentPage - 1, // API는 0부터 시작
-        size: itemsPerPage,
-        sort: "relevance",
-      });
+      if (trimmedQuery.length >= 2) {
+        const response = await searchProducts({
+          keyword: trimmedQuery,
+          page: currentPage - 1, // API는 0부터 시작
+          size: itemsPerPage,
+          sort: "relevance",
+        });
 
-      setApiProducts(response.content);
-      setTotalPages(response.totalPages);
+        setApiProducts(response.content);
+        setTotalPages(response.totalPages);
+      } else {
+        const response = await getProducts({
+          page: currentPage - 1, // API는 0부터 시작
+          size: itemsPerPage,
+        });
+
+        if (response.success && response.data) {
+          setApiProducts(response.data.content);
+          setTotalPages(response.data.totalPages);
+        } else {
+          setApiProducts([]);
+          setTotalPages(0);
+        }
+      }
     } catch (error) {
       console.error("상품 목록 조회 에러:", error);
       setApiProducts([]);
