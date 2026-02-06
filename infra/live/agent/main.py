@@ -36,24 +36,24 @@ async def entrypoint(ctx: JobContext):
     print(f"--- [Room: {ctx.room.name}] agent 시작 ---", flush=True)
     await ctx.connect()
 
-    # 종료 신호 전송을 위한 셧다운 콜백 등록 (함수 최상단에 배치)
-    async def on_shutdown():
-        print(f"--- [Room: {ctx.room.name}] 셧다운 콜백 실행. 종료 API 호출 ---", flush=True)
-
-        # roomId를 경로에 포함하도록 수정
-        room_id = str(ctx.room.name)
-        finish_endpoint = f"http://backend:8080/api/v1/consulting/session/{room_id}/end"
-        finish_payload = {"roomId": room_id}
-
-        # 셧다운 시점에는 새로운 비동기 클라이언트를 생성해서 전송
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(finish_endpoint, json=finish_payload, timeout=3.0)
-                print(f"✅ [종료 신호 성공] Status: {response.status_code}", flush=True)
-            except Exception as e:
-                print(f"❌ [종료 신호 실패]: {e}", flush=True)
-
-    ctx.add_shutdown_callback(on_shutdown)
+    # # 종료 신호 전송을 위한 셧다운 콜백 등록 (함수 최상단에 배치)
+    # async def on_shutdown():
+    #     print(f"--- [Room: {ctx.room.name}] 셧다운 콜백 실행. 종료 API 호출 ---", flush=True)
+    #
+    #     # roomId를 경로에 포함하도록 수정
+    #     room_id = str(ctx.room.name)
+    #     finish_endpoint = f"http://backend:8080/api/v1/consulting/session/{room_id}/end"
+    #     finish_payload = {"roomId": room_id}
+    #
+    #     # 셧다운 시점에는 새로운 비동기 클라이언트를 생성해서 전송
+    #     async with httpx.AsyncClient() as client:
+    #         try:
+    #             response = await client.post(finish_endpoint, json=finish_payload, timeout=3.0)
+    #             print(f"✅ [종료 신호 성공] Status: {response.status_code}", flush=True)
+    #         except Exception as e:
+    #             print(f"❌ [종료 신호 실패]: {e}", flush=True)
+    #
+    # ctx.add_shutdown_callback(on_shutdown)
 
     # 중복 에이전트 체크 로직
     existing_agents = [
