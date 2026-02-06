@@ -7,8 +7,8 @@ import PIL.Image
 import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision import tv_tensors
-from torchvision.transforms.v2._utils import check_type, has_any, is_pure_tensor
+from ... import tv_tensors
+from torchvision.transforms.v2 import check_type, has_any, is_pure_tensor
 from torchvision.utils import _log_api_usage_once
 
 from .functional._utils import _get_kernel

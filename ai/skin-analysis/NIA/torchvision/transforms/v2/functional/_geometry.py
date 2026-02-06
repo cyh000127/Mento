@@ -8,8 +8,8 @@ import torch
 from torch.nn.functional import grid_sample, interpolate, pad as torch_pad
 
 from torchvision import tv_tensors
-from torchvision.transforms import _functional_pil as _FP
-from torchvision.transforms._functional_tensor import _pad_symmetric
+from ... import _functional_pil as _FP
+from torchvision.transforms import _pad_symmetric
 from torchvision.transforms.functional import (
     _check_antialias,
     _compute_resized_output_size as __compute_resized_output_size,

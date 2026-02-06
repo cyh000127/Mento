@@ -1,5 +1,3 @@
-import warnings
-
 from torchvision.transforms._functional_pil import *  # noqa
 
 warnings.warn(

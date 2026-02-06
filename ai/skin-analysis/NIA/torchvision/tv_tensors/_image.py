@@ -37,7 +37,7 @@ class Image(TVTensor):
         requires_grad: Optional[bool] = None,
     ) -> Image:
         if isinstance(data, PIL.Image.Image):
-            from torchvision.transforms.v2 import functional as F
+            from ..transforms.v2 import functional as F
 
             data = F.pil_to_tensor(data)
 

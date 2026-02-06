@@ -1,6 +1,4 @@
-import warnings
-
-from torchvision.transforms._functional_tensor import *  # noqa
+from torchvision.transforms import *  # noqa
 
 warnings.warn(
     "The torchvision.transforms.functional_tensor module is deprecated "

@@ -1,9 +1,8 @@
 import os
 import warnings
-from modulefinder import Module
 
 import torch
-from torchvision import _meta_registrations, datasets, io, models, ops, transforms, utils
+from . import _meta_registrations, io
 
 from .extension import _HAS_OPS
 

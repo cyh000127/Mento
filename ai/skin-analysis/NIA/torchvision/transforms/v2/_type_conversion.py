@@ -5,9 +5,10 @@ import PIL.Image
 import torch
 
 from torchvision import tv_tensors
-from torchvision.transforms.v2 import functional as F, Transform
+from torchvision.transforms.v2 import Transform
+from torchvision.transforms.v2 import functional as F
 
-from torchvision.transforms.v2._utils import is_pure_tensor
+from torchvision.transforms.v2 import is_pure_tensor
 
 
 class PILToTensor(Transform):

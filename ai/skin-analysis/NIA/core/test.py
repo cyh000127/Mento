@@ -19,8 +19,6 @@ from core.utils import resume_checkpoint, fix_seed
 from core.data_loader import CustomDataset
 from core.logger import setup_logger
 from core.model import Model_test
-from core.model import Model_test
-from torchvision import models
 import wandb
 import timm
 

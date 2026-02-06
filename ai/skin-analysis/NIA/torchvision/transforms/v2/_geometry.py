@@ -6,11 +6,12 @@ from typing import Any, Callable, cast, Dict, List, Literal, Optional, Sequence,
 import PIL.Image
 import torch
 
-from torchvision import transforms as _transforms, tv_tensors
+from ... import transforms as _transforms, tv_tensors
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
-from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
-from torchvision.transforms.v2.functional._geometry import _check_interpolation
+from torchvision.transforms.v2 import InterpolationMode, Transform
+from . import functional as F
+from torchvision.transforms.v2.functional import _check_interpolation
 from torchvision.transforms.v2.functional._utils import _FillType
 
 from ._transform import _RandomApplyTransform
@@ -852,7 +853,7 @@ class RandomCrop(Transform):
                 _check_padding_arg(padding)
             _check_padding_mode_arg(padding_mode)
 
-        self.padding = F._geometry._parse_pad_padding(padding) if padding else None  # type: ignore[arg-type]
+        self.padding = torchvision.transforms.v2.functional._geometry._parse_pad_padding(padding) if padding else None  # type: ignore[arg-type]
         self.pad_if_needed = pad_if_needed
         self.fill = fill
         self._fill = _setup_fill_arg(fill)

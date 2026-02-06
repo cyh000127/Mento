@@ -9,7 +9,6 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from torchvision import transforms
-from torchvision import transforms
 from PIL import Image
 from app.analysis.scoring import SkinScorer
 

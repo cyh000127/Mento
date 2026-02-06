@@ -5,10 +5,11 @@ import PIL.Image
 import torch
 
 from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
-from torchvision import transforms as _transforms, tv_tensors
-from torchvision.transforms import _functional_tensor as _FT
-from torchvision.transforms.v2 import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
-from torchvision.transforms.v2.functional._geometry import _check_interpolation
+from ... import transforms as _transforms, tv_tensors
+from .. import _functional_tensor as _FT
+from torchvision.transforms.v2 import AutoAugmentPolicy, InterpolationMode, Transform
+from . import functional as F
+from torchvision.transforms.v2.functional import _check_interpolation
 from torchvision.transforms.v2.functional._meta import get_size
 from torchvision.transforms.v2.functional._utils import _FillType, _FillTypeJIT
 
@@ -56,10 +57,10 @@ class _AutoAugmentBase(Transform):
             if needs_transform and check_type(
                 inpt,
                 (
-                    tv_tensors.Image,
-                    PIL.Image.Image,
-                    is_pure_tensor,
-                    tv_tensors.Video,
+                        tv_tensors.Image,
+                        PIL.Image.Image,
+                        is_pure_tensor,
+                        tv_tensors.Video,
                 ),
             ):
                 image_or_videos.append((idx, inpt))

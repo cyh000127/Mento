@@ -6,10 +6,11 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import tv_tensors
 from torchvision.ops import masks_to_boxes
 from torchvision.prototype import tv_tensors as proto_tv_tensors
-from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
-from torchvision.transforms.v2._utils import is_pure_tensor
+from torchvision.transforms.v2 import InterpolationMode, Transform
+from torchvision.transforms.v2 import functional as F
+from torchvision.transforms.v2 import is_pure_tensor
 
-from torchvision.transforms.v2.functional._geometry import _check_interpolation
+from torchvision.transforms.v2.functional import _check_interpolation
 
 
 class SimpleCopyPaste(Transform):
