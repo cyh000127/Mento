@@ -48,6 +48,7 @@ public class SecurityConfig {
 		"/api/v1/consulting/session/**",
 		"/api/v1/recordings/start",
 		"/api/v1/recordings/stop",
+		"/api/v1/recordings/webhook",
 
 		// Product
 		"/api/v1/products/search/**"
