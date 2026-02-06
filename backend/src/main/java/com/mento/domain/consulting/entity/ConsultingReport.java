@@ -3,12 +3,14 @@ package com.mento.domain.consulting.entity;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.mento.common.converter.StringListConverter;
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.exception.ReservationException;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -40,7 +42,8 @@ public class ConsultingReport extends BaseEntity {
 	private String content;
 
 	@Builder.Default
-	@Column(name = "media_url")
+	@Column(name = "media_url", columnDefinition = "longtext")
+	@Convert(converter = StringListConverter.class)
 	private List<String> mediaUrl = new ArrayList<>();
 
 	public void assignReservation(final Reservation reservation) {
