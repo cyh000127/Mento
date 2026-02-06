@@ -17,13 +17,31 @@ import type {
   InventoryHistoryResponse,
   ActionType,
 } from "@/types/inventory"
-import type { ApiResponse, ProductListItem } from "@/types/product"
+import type { ProductListItem } from "@/types/product"
 
 export interface RecognizeProductResponse {
   status: "success" | "fail"
   message: string
   ocr_text?: string
   items?: ProductListItem[]
+}
+
+export interface ProductSearchParams {
+  keyword: string
+  page?: number
+  size?: number
+  sort?: string
+}
+
+export interface ProductSearchResponse {
+  content: ProductListItem[]
+  hasNext: boolean
+  totalPages: number
+  totalElements: number
+  page: number
+  size: number
+  isFirst: boolean
+  isLast: boolean
 }
 
 /**
@@ -40,6 +58,24 @@ export async function getInventoryItems(filters: InventoryFilters = {}): Promise
   if (filters.sort) params.append("sort", filters.sort)
 
   const response = await api.get<InventoryResponse>(`/items?${params.toString()}`)
+  return response.data
+}
+
+/**
+ * 상품 검색 API
+ */
+export async function searchProducts(params: ProductSearchParams): Promise<ProductSearchResponse> {
+  const queryParams: Record<string, string | number> = {
+    keyword: params.keyword,
+  }
+
+  if (params.page !== undefined) queryParams.page = params.page
+  if (params.size !== undefined) queryParams.size = params.size
+  if (params.sort) queryParams.sort = params.sort
+
+  const response = await api.get<ProductSearchResponse>("/products/search", {
+    params: queryParams,
+  })
   return response.data
 }
 
