@@ -2,7 +2,6 @@ package com.mento.domain.livekit.service.command;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 
 import org.jspecify.annotations.NonNull;
 import org.springframework.context.ApplicationEventPublisher;
@@ -13,7 +12,10 @@ import org.springframework.util.CollectionUtils;
 
 import com.mento.common.config.properties.CloudflareProperties;
 import com.mento.common.error.ErrorCode;
+import com.mento.domain.consulting.entity.ConsultingReport;
 import com.mento.domain.consulting.event.ConsultingReportEvent;
+import com.mento.domain.consulting.factory.ConsultingReportFactory;
+import com.mento.domain.consulting.service.query.ConsultingReportQueryService;
 import com.mento.domain.consulting.vo.ChatLogEntryVo;
 import com.mento.domain.livekit.converter.RecordingConverter;
 import com.mento.domain.livekit.dto.RecordingReqDto;
@@ -42,15 +44,21 @@ import retrofit2.Response;
 @RequiredArgsConstructor
 public class RecordingService {
 
+	// Egress 이벤트 타입
 	private static final String EGRESS_STARTED_EVENT = "egress_started";
 	private static final String EGRESS_UPDATED_EVENT = "egress_updated";
 	private static final String EGRESS_ENDED_EVENT = "egress_ended";
+
+	// Egress 상태
 	private static final String EGRESS_COMPLETE_STATUS = "EGRESS_COMPLETE";
 	private static final String EGRESS_FAILED_STATUS = "EGRESS_FAILED";
 
+	// Room 관련
 	private static final String ROOM_FINISHED_STATUS = "room_finished";
-	private static final String CHAT_LOG_KEY_PREFIX = "chat:log:";
 	private static final String ROOM_NAME_PREFIX = "room_";
+
+	// Redis 키
+	private static final String CHAT_LOG_KEY_PREFIX = "chat:log:";
 
 	private final RedisTemplate<String, String> redisTemplate;
 	private final RedisTemplate<String, ChatLogEntryVo> chatLogRedisTemplate;
@@ -59,6 +67,8 @@ public class RecordingService {
 	private final WebhookReceiver webhookReceiver;
 	private final ReservationQueryService reservationQueryService;
 	private final ApplicationEventPublisher eventPublisher;
+	private final ConsultingReportFactory consultingReportFactory;
+	private final ConsultingReportQueryService consultingReportQueryService;
 
 	public RecordingResDto startRecording(final RecordingReqDto request) {
 		String roomId = request.roomId();
@@ -76,7 +86,7 @@ public class RecordingService {
 		String egressId = redisTemplate.opsForValue().getAndDelete(roomId);
 		log.info("[Recording] 녹화 중지 요청 {roomId: {}, egressId: {}}", roomId, egressId);
 
-		executeStopEgress(egressId);
+		executeStopEgress(egressId, roomId);
 		log.info("[Recording] 녹화 중지 완료 {roomId: {}, egressId: {}}", roomId, egressId);
 
 		return RecordingConverter.toStopResDto(egressId);
@@ -95,21 +105,20 @@ public class RecordingService {
 
 	private void processWebhookEvent(final WebhookEvent event) {
 		String eventType = event.getEvent();
-		event.getRoom().getName();
 		EgressInfo egressInfo = event.getEgressInfo();
 
 		switch (eventType) {
 			case EGRESS_STARTED_EVENT -> handleEgressStarted(egressInfo);
 			case EGRESS_UPDATED_EVENT -> handleEgressUpdated(egressInfo);
 			case EGRESS_ENDED_EVENT -> handleEgressEnded(egressInfo);
-			case ROOM_FINISHED_STATUS -> handleRoomEnded(event);
+			case ROOM_FINISHED_STATUS -> handleRoomFinished(event);
 			default -> log.debug("[Recording] 처리하지 않는 이벤트 타입 {eventType: {}}", eventType);
 		}
 	}
 
-	private void handleRoomEnded(final WebhookEvent event) {
+	private void handleRoomFinished(final WebhookEvent event) {
 		LivekitModels.Room room = event.getRoom();
-		log.info("[Recording] Room 종료 이벤트 수신 {egressId: {}, status: {}}", room.getSid(), room.getName());
+		log.info("[Recording] Room 종료 이벤트 수신 {roomId: {}, roomSid: {}}", room.getName(), room.getSid());
 		publishConsultingReportEvent(room.getName());
 	}
 
@@ -140,26 +149,39 @@ public class RecordingService {
 	}
 
 	private void publishConsultingReportEvent(final String roomId) {
-		if (!roomId.startsWith(ROOM_NAME_PREFIX)) {
+		if (!isValidRoomId(roomId)) {
 			log.error("[ConsultingReport] 잘못된 roomId 형식 {roomId: {}}", roomId);
 			return;
 		}
 
-		List<ChatLogEntryVo> chatLogs = chatLogRedisTemplate.opsForList().range(CHAT_LOG_KEY_PREFIX + roomId, 0, -1);
+		List<ChatLogEntryVo> chatLogs = getChatLogs(roomId);
 		if (CollectionUtils.isEmpty(chatLogs)) {
 			log.warn("[ConsultingReport] 채팅 로그가 비어있어 AI 보고서 생성을 건너뜁니다 {roomId: {}}", roomId);
 			return;
 		}
 
-		Long reservationId = Long.valueOf(Objects.requireNonNull(roomId).substring(ROOM_NAME_PREFIX.length()));
+		Long reservationId = extractReservationId(roomId);
 		Reservation reservation = reservationQueryService.findWithDetailsById(reservationId);
 		reservation.complete();
 
 		String mentorTypeName = reservation.getSlot().getMentorType().getTypeName();
 
 		eventPublisher.publishEvent(new ConsultingReportEvent(this, reservation, mentorTypeName, chatLogs));
-		log.info("[ConsultingReport] AI 보고서 생성 이벤트 발행 완료 {reservationId: {}, chatLogCount: {}}", reservationId,
-			chatLogs.size());
+		log.info("[ConsultingReport] AI 보고서 생성 이벤트 발행 완료 {reservationId: {}, chatLogCount: {}}",
+			reservationId, chatLogs.size());
+	}
+
+	private boolean isValidRoomId(final String roomId) {
+		return roomId != null && roomId.startsWith(ROOM_NAME_PREFIX);
+	}
+
+	private List<ChatLogEntryVo> getChatLogs(final String roomId) {
+		String chatLogKey = CHAT_LOG_KEY_PREFIX + roomId;
+		return chatLogRedisTemplate.opsForList().range(chatLogKey, 0, -1);
+	}
+
+	private Long extractReservationId(final String roomId) {
+		return Long.valueOf(roomId.substring(ROOM_NAME_PREFIX.length()));
 	}
 
 	private EncodedFileOutput buildFileOutput(final String roomId) {
@@ -200,14 +222,31 @@ public class RecordingService {
 		);
 	}
 
-	private void executeStopEgress(final String egressId) {
+	private void executeStopEgress(final String egressId, final String roomId) {
 		try {
 			Response<EgressInfo> response = egressServiceClient.stopEgress(egressId).execute();
 			validateResponse(response, ErrorCode.RECORDING_STOP_FAILED);
+
+			String mediaUrl = extractMediaUrl(response.body());
+			Long reservationId = extractReservationId(roomId);
+			updateConsultingReportVideo(reservationId, mediaUrl);
+
 		} catch (IOException e) {
 			log.error("[Recording] 녹화 중지 실패 {egressId: {}, error: {}}", egressId, e.getMessage());
 			throw new LiveKitException(ErrorCode.RECORDING_STOP_FAILED);
 		}
+	}
+
+	private String extractMediaUrl(final EgressInfo egressInfo) {
+		return egressInfo.getFileResultsList().stream()
+			.map(FileInfo::getLocation)
+			.findFirst()
+			.orElseThrow(() -> new LiveKitException(ErrorCode.RECORDING_STOP_FAILED));
+	}
+
+	private void updateConsultingReportVideo(final Long reservationId, final String mediaUrl) {
+		ConsultingReport consultingReport = consultingReportQueryService.findByReservationId(reservationId);
+		consultingReport.updateVideo(mediaUrl);
 	}
 
 	private void validateResponse(final Response<EgressInfo> response, final ErrorCode errorCode) {

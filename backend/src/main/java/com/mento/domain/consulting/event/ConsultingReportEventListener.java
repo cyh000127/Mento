@@ -16,11 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mento.common.ai.service.AiService;
 import com.mento.common.config.properties.PromptProperties;
 import com.mento.domain.consulting.entity.ConsultingReport;
-import com.mento.domain.consulting.factory.ConsultingReportFactory;
-import com.mento.domain.consulting.service.command.ConsultingReportCommandService;
+import com.mento.domain.consulting.service.query.ConsultingReportQueryService;
 import com.mento.domain.consulting.vo.ChatLogEntryVo;
-import com.mento.domain.reservation.entity.Reservation;
-import com.mento.domain.reservation.service.query.ReservationQueryServiceImpl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,11 +34,9 @@ public class ConsultingReportEventListener {
 	private static final String COLON = ": ";
 
 	private final AiService<String> aiService;
-	private final ConsultingReportCommandService consultingReportCommandService;
-	private final ConsultingReportFactory consultingReportFactory;
 	private final RetryTemplate aiRetryTemplate;
 	private final PromptProperties promptProperties;
-	private final ReservationQueryServiceImpl reservationQueryService;
+	private final ConsultingReportQueryService consultingReportQueryService;
 
 	@Async("aiUploadThreadPoolExecutor")
 	@EventListener
@@ -57,13 +52,8 @@ public class ConsultingReportEventListener {
 				BeanOutputConverter<String> converter = new BeanOutputConverter<>(String.class);
 				return aiService.execute(promptProperties.system(), promptTemplate, converter);
 			});
-
-			ConsultingReport consultingReport = consultingReportFactory.createReport(aiResult);
-
-			Reservation reservation = reservationQueryService.findById(reservationId);
-			reservation.assignConsultingReport(consultingReport);
-
-			consultingReportCommandService.save(consultingReport);
+			ConsultingReport consultingReport = consultingReportQueryService.findByReservationId(reservationId);
+			consultingReport.updateContent(aiResult);
 
 			log.info("[Consulting] AI 보고서 생성 완료 {reservationId: {}}", reservationId);
 		} catch (Exception e) {
