@@ -64,6 +64,12 @@ public class RedisConfig {
 		});
 	}
 
+	@Bean
+	public RedisTemplate<String, String> redisTemplate() {
+		return createGzipJsonRedisTemplate(objectMapper, new TypeReference<>() {
+		});
+	}
+
 	private <V> RedisTemplate<String, V> createGzipJsonRedisTemplate(
 		ObjectMapper objectMapper,
 		TypeReference<V> typeRef

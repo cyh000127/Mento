@@ -40,7 +40,7 @@ public class RecordingCommandController {
 	public ResponseEntity<BaseResponse<RecordingResDto>> stopRecording(
 		@Valid @RequestBody final RecordingStopReqDto request
 	) {
-		return ResponseUtils.ok(recordingFacadeService.stopRecording(request.egressId()));
+		return ResponseUtils.ok(recordingFacadeService.stopRecording(request.roomId()));
 	}
 
 	@Operation(summary = "LiveKit 웹훅 처리", description = "LiveKit 서버에서 발생하는 이벤트를 수신합니다")

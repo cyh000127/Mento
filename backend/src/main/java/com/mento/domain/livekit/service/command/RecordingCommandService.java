@@ -2,6 +2,8 @@ package com.mento.domain.livekit.service.command;
 
 import java.io.IOException;
 
+import org.jspecify.annotations.NonNull;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ import livekit.LivekitEgress.S3Upload;
 import livekit.LivekitWebhook.WebhookEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.Call;
 import retrofit2.Response;
 
 @Slf4j
@@ -36,6 +39,7 @@ public class RecordingCommandService {
 	private static final String EGRESS_COMPLETE_STATUS = "EGRESS_COMPLETE";
 	private static final String EGRESS_FAILED_STATUS = "EGRESS_FAILED";
 
+	private final RedisTemplate<String, String> redisTemplate;
 	private final EgressServiceClient egressServiceClient;
 	private final CloudflareProperties cloudflareProperties;
 	private final WebhookReceiver webhookReceiver;
@@ -45,18 +49,20 @@ public class RecordingCommandService {
 		log.info("[Recording] 녹화 시작 요청 {roomId: {}}", roomId);
 
 		EncodedFileOutput fileOutput = buildFileOutput(roomId);
-		EgressInfo egressInfo = executeStartEgress(roomId, fileOutput);
+		EgressInfo egressInfo = executeStartEgress(request, fileOutput);
 
 		log.info("[Recording] 녹화 시작 완료 {egressId: {}, roomId: {}}", egressInfo.getEgressId(), roomId);
+		redisTemplate.opsForValue().set(roomId, egressInfo.getEgressId());
 		return RecordingConverter.toStartResDto(egressInfo.getEgressId(), roomId);
 	}
 
-	public RecordingResDto stopRecording(final String egressId) {
-		log.info("[Recording] 녹화 중지 요청 {egressId: {}}", egressId);
+	public RecordingResDto stopRecording(final String roomId) {
+		String egressId = redisTemplate.opsForValue().getAndDelete(roomId);
+		log.info("[Recording] 녹화 중지 요청 {roomId: {}, egressId: {}}", roomId, egressId);
 
 		executeStopEgress(egressId);
+		log.info("[Recording] 녹화 중지 완료 {roomId: {}, egressId: {}}", roomId, egressId);
 
-		log.info("[Recording] 녹화 중지 완료 {egressId: {}}", egressId);
 		return RecordingConverter.toStopResDto(egressId);
 	}
 
@@ -121,15 +127,27 @@ public class RecordingCommandService {
 			.build();
 	}
 
-	private EgressInfo executeStartEgress(final String roomId, final EncodedFileOutput fileOutput) {
+	private EgressInfo executeStartEgress(final RecordingReqDto reqDto, final EncodedFileOutput fileOutput) {
 		try {
-			Response<EgressInfo> response = egressServiceClient.startRoomCompositeEgress(roomId, fileOutput).execute();
+			Response<EgressInfo> response = buildEgressInfoCall(reqDto, fileOutput).execute();
 			validateResponse(response, ErrorCode.RECORDING_START_FAILED);
 			return response.body();
 		} catch (IOException e) {
-			log.error("[Recording] 녹화 시작 실패 {roomId: {}, error: {}}", roomId, e.getMessage());
+			log.error("[Recording] 녹화 시작 실패 {roomId: {}, error: {}}", reqDto.roomId(), e.getMessage());
 			throw new LiveKitException(ErrorCode.RECORDING_START_FAILED);
 		}
+	}
+
+	private @NonNull Call<EgressInfo> buildEgressInfoCall(
+		final RecordingReqDto reqDto,
+		final EncodedFileOutput fileOutput
+	) {
+		return egressServiceClient.startTrackCompositeEgress(
+			reqDto.roomId(),
+			fileOutput,
+			reqDto.audioTrackSid(),
+			reqDto.videoTrackSid()
+		);
 	}
 
 	private void executeStopEgress(final String egressId) {
