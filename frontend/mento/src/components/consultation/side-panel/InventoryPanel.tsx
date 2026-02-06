@@ -12,9 +12,19 @@ import type { AlertModalType } from "@/components/common/alert-modal";
 const FALLBACK_IMAGE_URL = "https://via.placeholder.com/80";
 
 export function InventoryPanel() {
-  const { reservationId } = useParams<{ reservationId: string }>();
+  const { roomId } = useParams<{ roomId: string }>();
   const userRole = useAuthStore((state) => state.user?.role);
   const isConsultant = userRole === "MENTOR";
+
+  const reservationId = useMemo(() => {
+    if (!roomId) return null;
+    try {
+      return atob(roomId);
+    } catch (e) {
+      console.error("Invalid room ID format", e);
+      return null;
+    }
+  }, [roomId]);
 
   const reservationIdNumber = useMemo(() => {
     if (!reservationId) return null;
@@ -91,7 +101,7 @@ export function InventoryPanel() {
           setCustomerUserId(customerUserId);
           const inventory = await getCustomerInventory(customerUserId, reservationIdNumber, {
             page: 0,
-            size: 20,
+            size: 100,
           });
 
           if (!canUpdate || canUpdate()) {
@@ -100,7 +110,7 @@ export function InventoryPanel() {
           return inventory.content ?? [];
         }
         // ✅ 일반 사용자 → 본인 인벤토리
-        const inventory = await getInventoryItems({ page: 0, size: 20 });
+        const inventory = await getInventoryItems({ page: 0, size: 100 });
         if (!canUpdate || canUpdate()) {
           setItems(inventory.content ?? []);
         }
