@@ -228,10 +228,6 @@ export function InventoryPanel() {
 
       const results = await Promise.allSettled(
         productsToAdd.map((product) => {
-          const request = {
-            productId: parseInt(product.id),
-            reservationId: reservationIdNumber!,
-          };
 
           const addRequest =
             isConsultant && resolvedCustomerUserId
@@ -326,7 +322,7 @@ export function InventoryPanel() {
       {!loading && !error && items.length > 0 && (
         <div className="grid grid-cols-1 gap-3 overflow-y-auto pr-1">
           {items.map((item) => (
-            <div key={item.id} className="flex gap-3 rounded-lg border border-gray-700 bg-gray-800 p-3">
+            <div key={item.itemId} className="flex gap-3 rounded-lg border border-gray-700 bg-gray-800 p-3">
               <img src={item.productImageUrl || FALLBACK_IMAGE_URL} alt={item.productName} className="h-14 w-14 rounded object-cover" />
 
               <div className="min-w-0 flex-1">
