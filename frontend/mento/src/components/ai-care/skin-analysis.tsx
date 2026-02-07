@@ -1,16 +1,25 @@
 import { useState, useRef, useEffect } from "react";
-import { Upload, Sparkles, X, Loader2 } from "lucide-react";
+import { Upload, Sparkles, X, Loader2, Camera } from "lucide-react";
 import { api } from "@/api/axios";
 import { userApi } from "@/api/userApi";
 import { requestSkinAnalysis } from "../../api/skinAnalysisApi";
 import { SkinAnalysisResult } from "./skin-analysis-result";
 import { AlertModal } from "@/components/common/alert-modal";
+import { WebcamModal } from "./webcam-modal";
+import type { CaptureMode } from "./webcam-modal";
 import type { AlertModalType } from "@/components/common/alert-modal";
 import type { SkinAnalysisDetailData } from "@/types/ai-skincare";
 
 interface UploadedImage {
   file: File;
   preview: string;
+}
+
+interface CapturedImage {
+  id: string;
+  url: string;
+  file: File;
+  mode?: CaptureMode;
 }
 
 type AnalysisState = "upload" | "loading" | "result";
@@ -47,6 +56,44 @@ export function SkinAnalysis({ onResultStateChange }: SkinAnalysisProps) {
       onResultStateChange(state !== "result");
     }
   }, [state, onResultStateChange]);
+
+  // Webcam State
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [capturedImages, setCapturedImages] = useState<CapturedImage[]>([]);
+
+  const handleWebcamCapture = (file: File, mode: CaptureMode) => {
+    const url = URL.createObjectURL(file);
+    const newImage: CapturedImage = { id: Date.now().toString(), url, file, mode };
+
+    setCapturedImages(prev => {
+      if (prev.length >= 5) return prev;
+      return [...prev, newImage];
+    });
+
+    // Auto assign based on mode
+    const uploaded: UploadedImage = { file, preview: url };
+
+    if (mode === "left") setLeftImage(uploaded);
+    if (mode === "front") setFrontImage(uploaded);
+    if (mode === "right") setRightImage(uploaded);
+  };
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+    };
+  }, []);
+
+  const handleAssignImage = (image: CapturedImage, position: "left" | "front" | "right") => {
+    if (leftImage?.preview === image.url && position !== "left") setLeftImage(null);
+    if (frontImage?.preview === image.url && position !== "front") setFrontImage(null);
+    if (rightImage?.preview === image.url && position !== "right") setRightImage(null);
+
+    const uploaded: UploadedImage = { file: image.file, preview: image.url };
+    if (position === "left") setLeftImage(uploaded);
+    if (position === "front") setFrontImage(uploaded);
+    if (position === "right") setRightImage(uploaded);
+  };
 
   const showAlert = (options: { title?: string; message: string; type?: AlertModalType; confirmText?: string }) => {
     setAlertState({
@@ -255,7 +302,7 @@ export function SkinAnalysis({ onResultStateChange }: SkinAnalysisProps) {
           <div className="mx-auto max-w">
             {/* Left - Upload Area */}
             <h2 className="mb-4 text-2xl font-bold text-text-primary md:text-3xl">피부 분석 시작하기</h2>
-            <p className="mb-8 text-text-secondary">사진을 업로드하면 AI가 피부 상태를 분석하여 맞춤 솔루션을 제안합니다.</p>
+            <p className="mb-8 text-text-secondary">얼굴 사진을 통해 AI가 피부 상태를 분석하여 맞춤 솔루션을 제안합니다.</p>
 
             {/* Gender and Birth Date Input */}
             <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -306,6 +353,84 @@ export function SkinAnalysis({ onResultStateChange }: SkinAnalysisProps) {
                 />
               </div>
             </div>
+
+
+
+            {/* Webcam Modal Trigger */}
+            <div className="mb-6">
+              <button
+                onClick={() => setIsCameraOpen(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-white p-4 transition-all hover:border-primary-500 hover:shadow-md"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-600">
+                  <Camera className="h-5 w-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium text-text-primary">실시간 웹캠 촬영</p>
+                  <p className="text-xs text-text-secondary">AI가 얼굴 각도를 분석하여 정확한 촬영을 도와줍니다</p>
+                </div>
+              </button>
+            </div>
+
+            {/* Captured Gallery */}
+            {capturedImages.length > 0 && (
+              <div className="mb-6 rounded-xl bg-muted/50 p-4">
+                <p className="mb-2 text-sm font-medium text-text-primary">촬영 결과 ({capturedImages.length}/5)</p>
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                  {capturedImages.map((img, idx) => (
+                    <div key={img.id} className="relative flex-shrink-0 group w-20">
+                      <div className="aspect-[3/4] overflow-hidden rounded-lg border border-border shadow-sm">
+                        <img src={img.url} alt={`Capture ${idx + 1}`} className="h-full w-full object-cover" />
+                      </div>
+
+                      {/* Assignment Buttons */}
+                      <div className="mt-1.5 flex justify-center gap-1">
+                        <button
+                          onClick={() => handleAssignImage(img, "left")}
+                          className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold transition-colors ${leftImage?.preview === img.url ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
+                          title="좌측면 지정"
+                        >
+                          L
+                        </button>
+                        <button
+                          onClick={() => handleAssignImage(img, "front")}
+                          className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold transition-colors ${frontImage?.preview === img.url ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
+                          title="정면 지정"
+                        >
+                          F
+                        </button>
+                        <button
+                          onClick={() => handleAssignImage(img, "right")}
+                          className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold transition-colors ${rightImage?.preview === img.url ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
+                          title="우측면 지정"
+                        >
+                          R
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          const newImages = capturedImages.filter(i => i.id !== img.id);
+                          setCapturedImages(newImages);
+                          if (leftImage?.preview === img.url) setLeftImage(null);
+                          if (frontImage?.preview === img.url) setFrontImage(null);
+                          if (rightImage?.preview === img.url) setRightImage(null);
+                        }}
+                        className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <WebcamModal
+              open={isCameraOpen}
+              onOpenChange={setIsCameraOpen}
+              onCapture={handleWebcamCapture}
+            />
 
             <p className="mb-6 text-xs text-text-secondary">정확한 피부 분석을 위해 성별과 생년월일을 입력해주세요.</p>
 
