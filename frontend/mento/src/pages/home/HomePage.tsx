@@ -100,10 +100,10 @@ export default function HomePage() {
         data-home-scroll
         ref={scrollContainerRef}
       >
-      {/* Hero with 3 scenes */}
+      {/* 히어로 섹션 */}
       <HeroSection showIntro={showIntro} onIntroComplete={handleIntroComplete} />
 
-      {/* Additional sections */}
+      {/* 추가 섹션 */}
       <InventorySection />
       <MentoringSection />
       <AiSkinAnalysisSection />

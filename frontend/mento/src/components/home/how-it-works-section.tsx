@@ -27,14 +27,14 @@ const steps = [
 export function HowItWorksSection() {
   return (
     <section data-home-section className="relative h-screen snap-start snap-always bg-background overflow-hidden">
-      {/* Background video */}
+      {/* 배경 비디오 */}
       <video autoPlay muted loop playsInline src={dryingHairVideo} className="absolute inset-0 h-full w-full object-cover opacity-30 pointer-events-none" />
       <div className="absolute inset-0 bg-background/60 pointer-events-none" />
-      {/* Subtle background gradient */}
+      {/* 부드러운 배경 그라데이션 */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/10 to-background" />
 
       <div className="relative z-10 mx-auto flex h-full max-w-[1200px] flex-col justify-center px-6 py-20">
-        {/* Section Header */}
+        {/* 섹션 헤더 */}
         <div className="mb-20 text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary-500/20 bg-primary-100/50 px-4 py-2">
             <span className="h-2 w-2 rounded-full bg-primary-500" />
@@ -47,9 +47,9 @@ export function HowItWorksSection() {
           </p>
         </div>
 
-        {/* Steps */}
+        {/* 단계 */}
         <div className="relative">
-          {/* Connection Line - Desktop */}
+          {/* 연결 라인 - 데스크탑 */}
           <div className="absolute left-0 right-0 top-20 hidden h-1 bg-gradient-to-r from-transparent via-primary-300/50 to-transparent lg:block" />
 
           <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
@@ -61,24 +61,24 @@ export function HowItWorksSection() {
                   animationDelay: `${index * 100}ms`,
                 }}
               >
-                {/* Number Badge */}
+                {/* 번호 뱃지 */}
                 <div className="relative mb-8 z-10">
                   <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-400 to-primary-500 shadow-lg shadow-primary-500/30 transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-primary-500/40 group-hover:scale-110 group-hover:rotate-3">
                     <span className="text-2xl font-bold text-dark-bg">{step.number}</span>
                   </div>
-                  {/* Pulse effect */}
+                  {/* 펄스 효과 */}
                   <div className="absolute inset-0 animate-ping rounded-2xl bg-primary-400 opacity-20" />
-                  {/* Glow effect on hover */}
+                  {/* 호버 시 광택 효과 */}
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-500 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-40" />
                 </div>
 
-                {/* Content */}
+                {/* 콘텐츠 */}
                 <h3 className="mb-3 text-xl font-bold text-text-primary transition-colors group-hover:text-primary-500">{step.title}</h3>
                 <p className="whitespace-pre-line text-base leading-relaxed text-text-secondary">
                   {step.description}
                 </p>
 
-                {/* Arrow for mobile */}
+                {/* 모바일 화살표 */}
                 {index < steps.length - 1 && (
                   <div className="my-6 flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-400 md:hidden">
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">

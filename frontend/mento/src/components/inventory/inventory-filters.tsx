@@ -63,7 +63,7 @@ export function InventoryFilters({
 }: InventoryFiltersProps) {
   return (
     <div className="mb-6 space-y-4">
-      {/* Search Bar and Add Button */}
+      {/* 검색 바와 추가 버튼 */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -93,9 +93,9 @@ export function InventoryFilters({
         </div>
       </div>
 
-      {/* Category Filter Buttons and Dropdowns */}
+      {/* 카테고리 필터 버튼과 드롭다운 */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Category Buttons */}
+        {/* 카테고리 버튼 */}
         <div className="flex flex-wrap gap-2">
           {(Object.keys(categoryLabels) as Array<ProductCategory | "all">).map((category) => (
             <button
@@ -111,9 +111,9 @@ export function InventoryFilters({
           ))}
         </div>
 
-        {/* Favorite Filter and Dropdowns */}
+        {/* 즐겨찾기 필터와 드롭다운 */}
         <div className="flex gap-3">
-          {/* Favorite Filter Toggle */}
+          {/* 즐겨찾기 필터 토글 */}
           <button
             onClick={() => onFavoriteOnlyChange(!favoriteOnly)}
             className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${favoriteOnly
@@ -124,7 +124,7 @@ export function InventoryFilters({
             ⭐ 즐겨찾기만
           </button>
 
-          {/* Sort Dropdown */}
+          {/* 정렬 드롭다운 */}
           <Select value={sortOption} onValueChange={(value) => onSortChange(value as SortOption)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="정렬" />
@@ -138,7 +138,7 @@ export function InventoryFilters({
             </SelectContent>
           </Select>
 
-          {/* Status Dropdown */}
+          {/* 상태 드롭다운 */}
           <Select
             value={selectedStatus}
             onValueChange={(value) => onStatusChange(value as ProductStatus | "all")}

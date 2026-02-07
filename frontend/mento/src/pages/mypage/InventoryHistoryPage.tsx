@@ -112,7 +112,7 @@ export default function InventoryHistoryPage() {
     fetchHistories(0, nextParams);
   }, []);
 
-  // Calculate date range based on dropdowns
+  // 날짜 범위 계산
   const dateRange = useMemo(() => {
     if (!startYear || !startMonth || !startDay || !endYear || !endMonth || !endDay) {
       return { start: "", end: "" };
@@ -124,7 +124,7 @@ export default function InventoryHistoryPage() {
     };
   }, [startYear, startMonth, startDay, endYear, endMonth, endDay]);
 
-  // Fetch histories
+  // 히스토리 조회
   const fetchHistories = async (
     page: number = 0,
     params?: { startDate: string; endDate: string }
@@ -175,7 +175,7 @@ export default function InventoryHistoryPage() {
     }
   };
 
-  // Handlers
+  // 핸들러
   const handleSearch = () => {
     if (!dateRange.start || !dateRange.end) {
       return;
@@ -217,12 +217,12 @@ export default function InventoryHistoryPage() {
         <MyPageSidebar />
         <div className="flex-1">
           <div className="mx-auto max-w-7xl px-6 py-8">
-            {/* Page Header */}
+            {/* 페이지 헤더 */}
             <div className="pl-1">
               <h1 className="text-2xl font-bold text-foreground pb-3">인벤토리 내역</h1>
             </div>
 
-            {/* Filters */}
+            {/* 필터 */}
             <div className="mb-6 rounded-xl border border-border bg-card p-6 shadow-sm">
               <PeriodDateFilters
                 selectedPeriod={selectedPeriod}
@@ -243,14 +243,14 @@ export default function InventoryHistoryPage() {
               />
             </div>
 
-            {/* Error Message */}
+            {/* 에러 메시지 */}
             {error && (
               <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4">
                 <p className="text-sm text-red-500">{error}</p>
               </div>
             )}
 
-            {/* Loading State */}
+            {/* 로딩 상태 */}
             {isLoading && (
               <div className="rounded-xl border border-border bg-card p-12 shadow-sm">
                 <div className="flex items-center justify-center">
@@ -259,14 +259,14 @@ export default function InventoryHistoryPage() {
               </div>
             )}
 
-            {/* History List or Empty State */}
+            {/* 히스토리 리스트 또는 빈 상태 */}
             {!isLoading && isSearched && !error && (
               <>
                 {histories.length > 0 ? (
                   <>
                     <InventoryHistoryList histories={histories} />
 
-                    {/* Pagination */}
+                    {/* 페이지네이션 */}
                     {totalPages > 1 && (
                       <div className="mt-6 flex items-center justify-center gap-2">
                         <button
@@ -295,7 +295,7 @@ export default function InventoryHistoryPage() {
               </>
             )}
 
-            {/* Initial State (before search) */}
+            {/* 초기 상태 (검색 전) */}
             {!isLoading && !isSearched && (
               <div className="rounded-xl border border-border bg-card p-12 shadow-sm">
                 <div className="flex items-center justify-center">
