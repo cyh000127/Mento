@@ -441,14 +441,14 @@ export default function ConsultationManagementPage() {
   };
 
   const handleViewReport = async (consultation: Consultation) => {
-    // if (consultation.status !== "completed") {
-    //   showAlert({
-    //     title: "상담 완료 후 리포트 조회 가능",
-    //     message: "아직 상담이 진행되지 않았습니다.",
-    //     type: "warning",
-    //   });
-    //   return;
-    // }
+    if (consultation.status !== "completed") {
+      showAlert({
+        title: "상담 완료 후 리포트 조회 가능",
+        message: "아직 상담이 진행되지 않았습니다.",
+        type: "warning",
+      });
+      return;
+    }
 
     try {
       const report = await getConsultingReportDetail(consultation.reportId);
