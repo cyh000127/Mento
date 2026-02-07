@@ -74,8 +74,11 @@ services:
       - "8080"
     env_file:
       - .env
+    volumes:
+      - backend-logs:/app/logs
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      GIT_COMMIT_SHORT: ${GIT_COMMIT_SHORT:-unknown}
       JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0 -Dfile.encoding=UTF-8"
       DB_HOST: mysql
       DB_PORT: 3306
@@ -263,6 +266,9 @@ volumes:
   mysql_data:
   redis_data:
   fe_dev_node_modules:
+  backend-logs:
+    driver: local
+    name: backend_logs
   es_data:
     driver: local
 

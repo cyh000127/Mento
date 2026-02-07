@@ -122,6 +122,7 @@ services:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/log:/var/log:ro
       - ../promtail/config.yml:/etc/promtail/config.yml
+      - backend-logs:/var/log/backend:ro
     command: -config.file=/etc/promtail/config.yml
     networks:
       - monitoring-network
@@ -132,6 +133,9 @@ volumes:
   loki-data:
   app_mysql_data:
     external: true
+  backend-logs:
+    external: true
+    name: backend_logs
 
 networks:
   monitoring-network:
