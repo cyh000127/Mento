@@ -1,5 +1,5 @@
 import { useEffect, useRef, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useConsultationSession } from "@/hooks/useConsultationSession";
 import { VideoTrack } from "@/components/consultation/VideoTrack";
 import { SidePanel } from "@/components/consultation/side-panel";
@@ -19,6 +19,9 @@ export function ConsultationRoomPage() {
   }, [roomId]);
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const { initialMic, initialCamera } = location.state || { initialMic: true, initialCamera: true };
+
   const { user } = useAuthStore();
   const {
     connectionState,
@@ -76,8 +79,9 @@ export function ConsultationRoomPage() {
       roomId: roomId, // Log obfuscated ID
     });
 
-    connect(id);
-  }, [reservationId, roomId, connect, navigate]);
+    // 대기방에서 설정한 상태로 연결 시작
+    connect(id, { initialMic, initialCamera });
+  }, [reservationId, roomId, connect, navigate, initialMic, initialCamera]);
 
   // 연결 해제 핸들러
   const handleDisconnect = () => {
@@ -97,7 +101,7 @@ export function ConsultationRoomPage() {
   const sharedMaskType = selectedMaskArea;
 
   const topLabel = isMentor ? "멘토 (나)" : mentorParticipant ? `멘토 (${mentorParticipant.identity})` : "멘토";
-  const bottomLabel = isMentor ? (userParticipant ? `고객 (${userParticipant.identity})` : "고객") : "고객 (나)";
+  const bottomLabel = isMentor ? (userParticipant ? `고객 (${userParticipant?.identity})` : "고객") : "고객 (나)";
 
   const sidePanelTabs = isMentor ? (["share", "inventory", "mask", "record"] as const) : (["share", "inventory"] as const);
   const recordProps = {

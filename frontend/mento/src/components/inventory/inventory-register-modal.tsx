@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@/components/ui/pagination";
+import { searchProducts } from "@/api/inventoryApi";
 import { getProducts } from "@/api/productsApi";
 import type { ProductListItem } from "@/types/product";
 import type { Product } from "@/types/inventory";
@@ -173,33 +174,33 @@ export function InventoryRegisterModal({ open, onOpenChange, onConfirm }: Invent
   // 페이지 크기
   const itemsPerPage = 6;
 
-  // API에서 상품 목록 조회 (전체 조회 후 클라이언트에서 필터링)
+  // API에서 상품 목록 조회 (검색어 기준 / 기본 목록)
   const fetchProducts = useCallback(async () => {
+    const trimmedQuery = searchQuery.trim();
     setIsLoading(true);
     try {
-      const response = await getProducts({
-        page: currentPage - 1, // API는 0부터 시작
-        size: itemsPerPage,
-      });
+      if (trimmedQuery.length >= 2) {
+        const response = await searchProducts({
+          keyword: trimmedQuery,
+          page: currentPage - 1, // API는 0부터 시작
+          size: itemsPerPage,
+        });
 
-      if (response.success && response.data) {
-        // 검색어가 있으면 클라이언트에서 필터링
-        let filteredProducts = response.data.content;
-
-        if (searchQuery.trim()) {
-          const query = searchQuery.toLowerCase().trim();
-          filteredProducts = filteredProducts.filter((product) =>
-            product.name.toLowerCase().includes(query) ||
-            product.brandName.toLowerCase().includes(query)
-          );
-        }
-
-        setApiProducts(filteredProducts);
-        setTotalPages(response.data.totalPages);
+        setApiProducts(response.content);
+        setTotalPages(response.totalPages);
       } else {
-        console.error("상품 목록 조회 실패:", response.error);
-        setApiProducts([]);
-        setTotalPages(0);
+        const response = await getProducts({
+          page: currentPage - 1, // API는 0부터 시작
+          size: itemsPerPage,
+        });
+
+        if (response.success && response.data) {
+          setApiProducts(response.data.content);
+          setTotalPages(response.data.totalPages);
+        } else {
+          setApiProducts([]);
+          setTotalPages(0);
+        }
       }
     } catch (error) {
       console.error("상품 목록 조회 에러:", error);

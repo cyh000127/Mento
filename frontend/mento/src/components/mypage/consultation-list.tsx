@@ -1,11 +1,13 @@
-import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Consultation } from "@/types/consultation";
+import { ChevronRight } from "lucide-react";
 
 interface ConsultationListProps {
   consultations: Consultation[];
   onViewDetail: (consultation: Consultation) => void;
   onEnterRoom: (reservationId: number) => void;
+  // 시연 끝나고 살리기 kjm 2026-02-06
+  // onEnterRoom: (consultation: Consultation) => void; 
   onGoToPayment: (consultation: Consultation) => void;
   onViewReport: (consultation: Consultation) => void;
 }
@@ -13,6 +15,10 @@ interface ConsultationListProps {
 export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onGoToPayment, onViewReport }: ConsultationListProps) {
   const formatDateTime = (dateStr: string, timeStr: string) => {
     return `${dateStr.replace(/-/g, ".")} ${timeStr}`;
+  };
+
+  const handleViewReport = (consultation: Consultation) => {
+    onViewReport(consultation);
   };
 
   return (
@@ -23,7 +29,7 @@ export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onG
         <div className="col-span-2">유형</div>
         <div className="col-span-3">상태</div>
         <div className="col-span-3">AI 리포트</div>
-        <div className="col-span-2">상세 확인</div>
+        <div className="col-span-2">상세</div>
       </div>
 
       {/* Table Body */}
@@ -55,8 +61,10 @@ export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onG
                   <Button size="sm" variant="outline" className="bg-muted text-foreground hover:bg-muted/80" disabled>
                     예약 완료
                   </Button>
+                  {/* 시연 끝나고 살리기 kjm 2026-02-06 */}
+                  {/* <Button size="sm" onClick={() => onEnterRoom(consultation)} className="bg-muted text-foreground hover:bg-muted/80" disabled={!consultation.reservationId}> */}
                   <Button size="sm" onClick={() => onEnterRoom(consultation.reservationId!)} className="bg-muted text-foreground hover:bg-muted/80" disabled={!consultation.reservationId}>
-                    상담 방 이동
+                    상담방 이동
                   </Button>
                 </>
               )}
@@ -69,9 +77,8 @@ export function ConsultationList({ consultations, onViewDetail, onEnterRoom, onG
 
             {/* ai 리포트 */}
             <div className="col-span-3 flex items-center justify-center">
-              <Button onClick={() => onViewReport(consultation)} className="h-[36px] bg-muted text-foreground hover:bg-muted/80">
+              <Button onClick={() => handleViewReport(consultation)} className="h-[36px] bg-muted text-foreground hover:bg-muted/80">
                 보러 가기
-                {/* <ChevronRight className="h-4 w-4" /> */}
               </Button>
             </div>
 

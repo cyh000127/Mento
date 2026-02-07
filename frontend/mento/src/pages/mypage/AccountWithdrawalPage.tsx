@@ -15,10 +15,6 @@ export default function AccountWithdrawalPage() {
     setIsModalOpen(true);
   };
 
-  const handleCancel = () => {
-    setIsModalOpen(false);
-  };
-
   const handleConfirmWithdraw = async () => {
     if (isProcessing) return;
 

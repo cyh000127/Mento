@@ -10,7 +10,11 @@ import { ConsultationEmpty } from "@/components/mypage/consultation-empty";
 import { ConsultationDetail } from "@/components/mypage/consultation-detail";
 import { ReportDetail } from "@/components/mypage/report-detail";
 import { getReservationDetail, getReservationList } from "@/api/reservationApi";
+import { getConsultingReportDetail } from "@/api/consultationReportApi";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useConsultationReportStore } from "@/stores/useConsultationReportStore";
+import { AlertModal } from "@/components/common/alert-modal";
+import type { AlertModalType } from "@/components/common/alert-modal";
 import type { Consultation, PeriodFilter, ConsultationStatus, PreConsultationQA } from "@/types/consultation";
 import type { ReservationListItem, ReservationListParams } from "@/types/reservationList";
 import type { ReservationDetailData } from "@/types/reservationDetail";
@@ -101,6 +105,7 @@ const mapReservationToConsultation = (reservation: ReservationListItem): Consult
     mentorTypeName: reservation.mentorType.name,
     memo: reservation.mentorType.description,
     reservationId: reservation.reservationId,
+    reportId: reservation.reportId,
   };
 };
 
@@ -116,6 +121,7 @@ const mapReservationDetailToConsultation = (reservation: ReservationDetailData):
     preConsultationQA,
     surveyInfo: preConsultationQA ? { surveys: preConsultationQA } : undefined,
     reservationId: reservation.reservationId,
+    reportId: reservation.reportId,
   };
 
   if (reservation.mentorInfo) {
@@ -130,9 +136,26 @@ const mapReservationDetailToConsultation = (reservation: ReservationDetailData):
   return consultation;
 };
 
+// 시연 끝나고 살리기기 kjm 2026-02-06
+// const canEnterConsultationRoom = (consultation: Consultation) => {
+//   const { scheduledDate, scheduledTime } = consultation;
+
+//   if (!scheduledDate || !scheduledTime) return false;
+
+//   // 상담 시작 시간
+//   const startDateTime = new Date(`${scheduledDate}T${scheduledTime}:00`);
+//   const now = new Date();
+
+//   // 상담 시작 10분 전부터 입장 가능
+//   const enterAvailableTime = new Date(startDateTime.getTime() - 10 * 60 * 1000);
+
+//   return now >= enterAvailableTime;
+// };
+
 export default function ConsultationManagementPage() {
   const navigate = useNavigate();
   const { user, accessToken } = useAuthStore();
+  const { setReport } = useConsultationReportStore();
   const lastRequestKeyRef = useRef<string | null>(null);
   const isFetchingRef = useRef(false);
   const detailFetchingIdRef = useRef<number | null>(null);
@@ -168,6 +191,25 @@ export default function ConsultationManagementPage() {
     isLast: true,
   });
   const [currentPage, setCurrentPage] = useState(0);
+
+  // Alert state
+  const [alertState, setAlertState] = useState({
+    open: false,
+    title: "알림",
+    message: "",
+    type: "info" as AlertModalType,
+    confirmText: "확인",
+  });
+
+  const showAlert = (options: { title?: string; message: string; type?: AlertModalType; confirmText?: string }) => {
+    setAlertState({
+      open: true,
+      title: options.title ?? "알림",
+      message: options.message,
+      type: options.type ?? "info",
+      confirmText: options.confirmText ?? "확인",
+    });
+  };
 
   // Initialize dates on period change
   const handlePeriodChange = (period: PeriodFilter) => {
@@ -363,8 +405,24 @@ export default function ConsultationManagementPage() {
 
   const handleEnterRoom = (reservationId: number) => {
     const encodedId = btoa(reservationId.toString());
-    navigate(`/consultation-room/${encodedId}`);
+    navigate(`/consultation-waiting-room/${encodedId}`);
   };
+  // 시연 끝나고 살리기 kjm 2026-02-06
+  // const handleEnterRoom = (consultation: Consultation) => {
+  //   if (!canEnterConsultationRoom(consultation)) {
+  //     showAlert({
+  //       title: "입장 불가",
+  //       message: "상담 시작 10분 전부터 상담방에 입장할 수 있습니다.",
+  //       type: "warning",
+  //     });
+  //     return;
+  //   }
+
+  //   if (!consultation.reservationId) return;
+
+  //   const encodedId = btoa(consultation.reservationId.toString());
+  //   navigate(`/consultation-room/${encodedId}`);
+  // };
 
   const handleBookConsultation = () => {
     // Navigate to consultation booking page
@@ -380,16 +438,41 @@ export default function ConsultationManagementPage() {
     navigate("/consultation", {
       state: {
         reservationId: consultation.reservationId,
-        step: 4 // 결제 단계
-      }
+        step: 4, // 결제 단계
+      },
     });
   };
 
-  const handleViewReport = (consultation: Consultation) => {
-    setSelectedReportConsultation(consultation);
+  const handleViewReport = async (consultation: Consultation) => {
+    if (consultation.status !== "completed") {
+      showAlert({
+        title: "상담 완료 후 리포트 조회 가능",
+        message: "아직 상담이 진행되지 않았습니다.",
+        type: "warning",
+      });
+      return;
+    }
+
+    try {
+      const report = await getConsultingReportDetail(consultation.reportId);
+      setReport(report);
+      setSelectedReportConsultation(consultation);
+    } catch (error) {
+      console.error("Failed to fetch report:", error);
+      showAlert({
+        title: "리포트 생성 중",
+        message: "아직 생성된 상담 리포트가 없습니다.",
+        type: "warning",
+      });
+    }
   };
 
   const handleBackFromReport = () => {
+    setSelectedReportConsultation(null);
+  };
+
+  const resetViewState = () => {
+    setSelectedConsultation(null);
     setSelectedReportConsultation(null);
   };
 
@@ -398,7 +481,7 @@ export default function ConsultationManagementPage() {
     return (
       <div className="flex min-h-screen bg-background justify-center">
         <div className="flex w-full max-w-[1200px]">
-          <MyPageSidebar />
+          <MyPageSidebar onNavigate={resetViewState} />
           <div className="flex-1">
             <div className="bg-background py-8">
               <div className="mx-auto px-6">
@@ -411,12 +494,20 @@ export default function ConsultationManagementPage() {
                       목록으로
                     </Button>
                   </div>
-                  <ReportDetail report={selectedReportConsultation.report} />
+                  <ReportDetail />
                 </div>
               </div>
             </div>
           </div>
         </div>
+        <AlertModal
+          open={alertState.open}
+          onOpenChange={(open) => setAlertState((prev) => ({ ...prev, open }))}
+          title={alertState.title}
+          message={alertState.message}
+          type={alertState.type}
+          confirmText={alertState.confirmText}
+        />
       </div>
     );
   }
@@ -426,7 +517,7 @@ export default function ConsultationManagementPage() {
     return (
       <div className="flex min-h-screen bg-background justify-center">
         <div className="flex w-full max-w-[1200px]">
-          <MyPageSidebar />
+          <MyPageSidebar onNavigate={resetViewState} />
           <div className="flex-1">
             <ConsultationDetail consultation={selectedConsultation} onBack={handleBackToList} onGoToPayment={handleGoToPayment} />
           </div>
@@ -438,12 +529,12 @@ export default function ConsultationManagementPage() {
   return (
     <div className="flex min-h-screen bg-background justify-center">
       <div className="flex w-full max-w-[1200px]">
-        <MyPageSidebar />
+        <MyPageSidebar onNavigate={resetViewState} />
         <div className="flex-1">
           <div className="mx-auto max-w-7xl px-6 py-8">
             {/* Page Header */}
             <div className="pl-1">
-              <h1 className="text-2xl font-bold text-foreground pb-3">상담 내역</h1>
+              <h1 className="text-2xl font-bold text-foreground pb-3">상담</h1>
             </div>
 
             {/* Filters */}
@@ -484,6 +575,14 @@ export default function ConsultationManagementPage() {
           </div>
         </div>
       </div>
+      <AlertModal
+        open={alertState.open}
+        onOpenChange={(open) => setAlertState((prev) => ({ ...prev, open }))}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+      />
     </div>
   );
 }

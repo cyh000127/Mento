@@ -146,7 +146,11 @@ export function FaceCameraSection({ selectedArea, onAreaSelect }: FaceCameraSect
 
   // Handle area selection
   const handleAreaSelect = (areaId: string) => {
-    onAreaSelect(areaId);
+    if (selectedArea === areaId) {
+      onAreaSelect("");
+    } else {
+      onAreaSelect(areaId);
+    }
   };
 
   // Cleanup on unmount

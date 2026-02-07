@@ -36,6 +36,17 @@ interface StoredBookingData {
   paymentId: number | null;
 }
 
+const INITIAL_BOOKING_DATA: BookingData = {
+  category: null,
+  date: null,
+  time: "",
+  slotId: null,
+  reservationId: null,
+  draftSlotInfo: null,
+  surveyInfo: null,
+  paymentId: null,
+};
+
 const steps = [
   { id: 1, label: "분야 선택" },
   { id: 2, label: "일정 선택" },
@@ -49,16 +60,7 @@ export default function ConsultationPage() {
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
   const [showSurveyComplete, setShowSurveyComplete] = useState(false);
-  const [bookingData, setBookingData] = useState<BookingData>({
-    category: null,
-    date: null,
-    time: "",
-    slotId: null,
-    reservationId: null,
-    draftSlotInfo: null,
-    surveyInfo: null,
-    paymentId: null,
-  });
+  const [bookingData, setBookingData] = useState<BookingData>(INITIAL_BOOKING_DATA);
   const [answers, setAnswers] = useState<string[]>([]);
   const paymentLoadingRef = useRef(false);
   const [isPaymentDataReady, setIsPaymentDataReady] = useState(false);
@@ -69,12 +71,48 @@ export default function ConsultationPage() {
     localStorage.removeItem("consultationPreQuestions");
   };
 
+  // 세션 스토리지 복원 함수
+  const restoreFromSession = () => {
+    const stored = sessionStorage.getItem("consultationBookingData");
+    if (!stored) return;
+
+    try {
+      const parsed = JSON.parse(stored) as StoredBookingData;
+      setBookingData({
+        category: parsed.category ?? null,
+        date: parsed.date ? new Date(parsed.date) : null,
+        time: parsed.time ?? "",
+        slotId: parsed.slotId ?? null,
+        reservationId: parsed.reservationId ?? null,
+        draftSlotInfo: parsed.draftSlotInfo ?? null,
+        surveyInfo: parsed.surveyInfo ?? null,
+        paymentId: parsed.paymentId ?? null,
+      });
+    } catch {
+      // ignore invalid stored data
+    }
+  };
+
   useEffect(() => {
     const state = location.state as { step?: number; reservationId?: number } | null;
-    if (state?.step === 5) {
-      setCurrentStep(5);
+
+    // 1. 일반 진입 (state.step 없음) -> 초기화
+    if (!state?.step) {
+      setBookingData(INITIAL_BOOKING_DATA);
+      resetSurveyState();
+      sessionStorage.removeItem("consultationBookingData");
+      setCurrentStep(1);
       return;
     }
+
+    // 2. 예약 완료 페이지 진입
+    if (state?.step === 5) {
+      setCurrentStep(5);
+      restoreFromSession();
+      return;
+    }
+
+    // 3. 결제 페이지 진입
     if (state?.step === 4 && state?.reservationId) {
       const targetReservationId = state.reservationId;
       
@@ -141,27 +179,6 @@ export default function ConsultationPage() {
       loadReservationForPayment();
     }
   }, [location.state, navigate]);
-
-  useEffect(() => {
-    const stored = sessionStorage.getItem("consultationBookingData");
-    if (!stored) return;
-
-    try {
-      const parsed = JSON.parse(stored) as StoredBookingData;
-      setBookingData({
-        category: parsed.category ?? null,
-        date: parsed.date ? new Date(parsed.date) : null,
-        time: parsed.time ?? "",
-        slotId: parsed.slotId ?? null,
-        reservationId: parsed.reservationId ?? null,
-        draftSlotInfo: parsed.draftSlotInfo ?? null,
-        surveyInfo: parsed.surveyInfo ?? null,
-        paymentId: parsed.paymentId ?? null,
-      });
-    } catch {
-      // ignore invalid stored data
-    }
-  }, []);
 
   const handleCategorySelect = (category: ConsultationCategory | null) => {
     resetSurveyState();

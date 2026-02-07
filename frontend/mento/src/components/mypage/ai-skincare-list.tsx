@@ -17,7 +17,7 @@ export function AiSkincareList({ diagnoses, onViewDetail }: AiSkincareListProps)
 
       {/* Table Body */}
       <div className="divide-y divide-border">
-        {diagnoses.map((diagnosis, index) => (
+        {diagnoses.map((diagnosis) => (
           <div key={diagnosis.id} className="grid grid-cols-12 gap-4 px-6 py-5 hover:bg-muted/30 transition-colors">
             {/* Diagnosis Date */}
             <div className="col-span-4 flex items-center justify-center text-sm text-foreground">{diagnosis.created_at.slice(0, 10).replace(/-/g, ".")}</div>
@@ -25,7 +25,7 @@ export function AiSkincareList({ diagnoses, onViewDetail }: AiSkincareListProps)
             {/* View Detail Link */}
             <div className="col-span-8 flex items-center justify-center">
               <button onClick={() => onViewDetail(diagnosis)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                {diagnosis.total_score}점 · {diagnosis.skin_type_summary} / 상세보기
+                {100 - diagnosis.total_score}점 · {diagnosis.skin_type_summary} / 상세보기
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>

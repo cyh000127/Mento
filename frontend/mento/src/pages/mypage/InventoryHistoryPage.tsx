@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MyPageSidebar } from "@/components/mypage/mypage-sidebar";
 import { PeriodDateFilters } from "@/components/mypage/consultation-filters";
@@ -37,6 +37,27 @@ export default function InventoryHistoryPage() {
   const [hasNext, setHasNext] = useState(false);
   const pageSize = 20;
 
+  const formatDateParts = (date: Date) => ({
+    year: date.getFullYear().toString(),
+    month: (date.getMonth() + 1).toString(),
+    day: date.getDate().toString(),
+  });
+
+  const formatDateString = (date: Date) => {
+    const { year, month, day } = formatDateParts(date);
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  };
+
+  const isEmptyHistoryError = (status?: number, errorCode?: string) => {
+    return (
+      status === 404 ||
+      errorCode === "HISTORY_NOT_FOUND" ||
+      errorCode === "INVENTORY_HISTORY_NOT_FOUND" ||
+      errorCode === "NO_HISTORY" ||
+      errorCode === "NO_DATA"
+    );
+  };
+
   // Initialize dates on period change
   const handlePeriodChange = (period: PeriodFilter) => {
     setSelectedPeriod(period);
@@ -66,6 +87,31 @@ export default function InventoryHistoryPage() {
     setEndDay(today.getDate().toString());
   };
 
+  useEffect(() => {
+    const today = new Date();
+    const start = new Date();
+    start.setMonth(today.getMonth() - 1);
+
+    const startParts = formatDateParts(start);
+    const endParts = formatDateParts(today);
+
+    setStartYear(startParts.year);
+    setStartMonth(startParts.month);
+    setStartDay(startParts.day);
+    setEndYear(endParts.year);
+    setEndMonth(endParts.month);
+    setEndDay(endParts.day);
+
+    const nextParams = {
+      startDate: formatDateString(start),
+      endDate: formatDateString(today),
+    };
+    setIsSearched(true);
+    setSearchParams(nextParams);
+    setCurrentPage(0);
+    fetchHistories(0, nextParams);
+  }, []);
+
   // Calculate date range based on dropdowns
   const dateRange = useMemo(() => {
     if (!startYear || !startMonth || !startDay || !endYear || !endMonth || !endDay) {
@@ -79,8 +125,12 @@ export default function InventoryHistoryPage() {
   }, [startYear, startMonth, startDay, endYear, endMonth, endDay]);
 
   // Fetch histories
-  const fetchHistories = async (page: number = 0) => {
-    if (!searchParams) return;
+  const fetchHistories = async (
+    page: number = 0,
+    params?: { startDate: string; endDate: string }
+  ) => {
+    const effectiveParams = params ?? searchParams;
+    if (!effectiveParams) return;
 
     setIsLoading(true);
     setError(null);
@@ -89,8 +139,8 @@ export default function InventoryHistoryPage() {
       const response = await getInventoryHistories({
         page,
         size: pageSize,
-        startDate: searchParams.startDate,
-        endDate: searchParams.endDate,
+        startDate: effectiveParams.startDate,
+        endDate: effectiveParams.endDate,
       });
 
       setHistories(response.data.content);
@@ -101,6 +151,15 @@ export default function InventoryHistoryPage() {
       console.error("히스토리 조회 실패:", err);
       const status = err.response?.status;
       const errorCode = err.response?.data?.code;
+
+      if (isEmptyHistoryError(status, errorCode)) {
+        setHistories([]);
+        setCurrentPage(0);
+        setTotalPages(0);
+        setHasNext(false);
+        setError(null);
+        return;
+      }
 
       if (status === 400 && errorCode === "INVALID_DATE_RANGE") {
         setError(err.response?.data?.message || "유효하지 않은 날짜 범위입니다.");
@@ -123,12 +182,13 @@ export default function InventoryHistoryPage() {
     }
 
     setIsSearched(true);
-    setSearchParams({
+    const nextParams = {
       startDate: dateRange.start,
       endDate: dateRange.end,
-    });
+    };
+    setSearchParams(nextParams);
     setCurrentPage(0);
-    fetchHistories(0);
+    fetchHistories(0, nextParams);
   };
 
   const handlePreviousPage = () => {

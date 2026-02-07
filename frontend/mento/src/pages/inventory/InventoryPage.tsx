@@ -198,6 +198,7 @@ export default function InventoryPage() {
         const normalizedStatus = data.status === "IN_USE" ? "OWNED" : data.status;
         const detailedProduct: Product = {
           id: data.id.toString(),
+          productId: data.productInfoDto.id,
           name: data.productInfoDto.name,
           brand: data.productInfoDto.brandName ?? product.brand,
           category: mapDetailCategoryToUI(categoryMedium),
@@ -279,27 +280,19 @@ export default function InventoryPage() {
     const previousSelectedProduct = selectedProduct;
 
     try {
-      // UI에서 즉시 제거
-      setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
-
-      // 선택된 제품이 삭제된 경우 다른 제품 선택
-      if (selectedProduct?.id === productToDelete.id) {
-        const remainingProducts = products.filter((p) => p.id !== productToDelete.id);
-        setSelectedProduct(remainingProducts.length > 0 ? remainingProducts[0] : null);
-      }
-
       // API 호출
       await deleteInventoryItem(productToDelete.id);
 
       // 성공 알림
       toast({
         title: "삭제 완료",
-        description: "아이템이 인벤토리에서 제거되었습니다.",
+        description: "아이템이 인벤토리에서 삭제되었습니다.",
         variant: "default",
       });
 
       setDeleteDialogOpen(false);
       setProductToDelete(null);
+      window.location.reload();
     } catch (error: any) {
       // 실패 시 원래 상태로 복원
       setProducts(previousProducts);
@@ -465,8 +458,20 @@ export default function InventoryPage() {
         setSelectedProduct((prev) => (prev ? { ...prev, status: newUiStatus } : null));
       }
 
-      // API 호출
-      await updateInventoryItemStatus(parseInt(productId), newStatus);
+      // 인벤토리 상태 변경API 호출
+      const updatedItem = await updateInventoryItemStatus(parseInt(productId), newStatus);
+
+      const shouldUpdatePurchaseDate =
+        newStatus === "OWNED" && (product.status === "unavailable" || product.status === "purchasing");
+
+      if (shouldUpdatePurchaseDate && updatedItem.purchaseDate) {
+        setProducts((prev) =>
+          prev.map((p) => (p.id === productId ? { ...p, purchaseDate: updatedItem.purchaseDate } : p))
+        );
+        if (selectedProduct?.id === productId) {
+          setSelectedProduct((prev) => (prev ? { ...prev, purchaseDate: updatedItem.purchaseDate } : null));
+        }
+      }
 
       toast({
         title: "상태 변경 완료",
@@ -677,9 +682,7 @@ export default function InventoryPage() {
     const recognizedProductId = recognizedProduct.productId;
 
     //  프론트 중복 체크 (productId 기준)
-    const isDuplicate = products.some(
-      (p) => p.productId === recognizedProductId
-    );
+    const isDuplicate = products.some((p) => p.productId === recognizedProductId);
 
     if (isDuplicate) {
       showAlert({
@@ -689,7 +692,7 @@ export default function InventoryPage() {
       });
       return;
     }
-    
+
     setRegistering(true);
     setPhotoError(null);
     try {
@@ -716,6 +719,7 @@ export default function InventoryPage() {
   const isEmptyState = hasFetched && !loading && products.length === 0;
   const fallbackProduct: Product = {
     id: "",
+    productId: 0,
     name: "-",
     brand: "-",
     category: "skin",
@@ -907,7 +911,7 @@ export default function InventoryPage() {
         title="아이템 삭제"
         message={
           <>
-            이 아이템을 인벤토리에서 제거하시겠습니까?
+            이 아이템을 인벤토리에서 삭제하시겠습니까?
             {productToDelete && <span className="mt-2 block font-medium text-foreground">{productToDelete.name}</span>}
           </>
         }

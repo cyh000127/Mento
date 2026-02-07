@@ -73,7 +73,7 @@ export function SkinAnalysisResult({ analysisResult, onRetry, showRetryButton = 
 
   const getUiLevelFromGrade = (grade: number) => 6 - grade;
 
-  const totalScore = analysisResult?.total_score;
+  const totalScore = 100 - analysisResult?.total_score;
   const totalGrade = analysisResult?.total_grade;
   const totalStatus = totalGrade ? getStatusFromGrade(totalGrade) : "";
   const totalLevel = totalGrade ? getUiLevelFromGrade(totalGrade) : 0;
@@ -103,20 +103,30 @@ export function SkinAnalysisResult({ analysisResult, onRetry, showRetryButton = 
       {/* Top Summary Section */}
       <div className="mb-8 grid gap-6 md:grid-cols-2">
         {/* Total Score Card */}
-        <div className="rounded-3xl bg-gradient-to-br from-primary-400 to-primary-500 p-8 text-center shadow-xl">
-          <p className="mb-3 text-md font-medium text-white/90">피부 종합 점수</p>
-          <div className="mb-4 flex items-center justify-center gap-3">
-            <p className="text-7xl font-bold text-white">{totalScore ?? ""}</p>
-            <div className="flex flex-col items-start">
-              <p className="text-2xl font-semibold text-white">점</p>
-              <div className="flex gap-1">
+        <div className="relative rounded-3xl bg-gradient-to-br from-primary-400 via-primary-450 to-primary-500 p-10 text-center shadow-xl">
+          {/* 타이틀 */}
+          <p className="mb-4 text-md font-semibold tracking-wide text-white/80">피부 종합 점수</p>
+
+          {/* 점수 영역 */}
+          <div className="mb-6 flex items-end justify-center gap-4">
+            <p className="text-8xl font-extrabold leading-none text-white drop-shadow-sm">{totalScore ?? ""}</p>
+
+            <div className="flex flex-col items-start pb-2">
+              <p className="text-2xl font-semibold text-white/90">점</p>
+              <div className="mt-2 flex gap-1.5">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <div key={star} className={`h-4 w-4 rounded-full ${totalLevel && star <= totalLevel ? "bg-white" : "bg-white/40"}`} />
+                  <span key={star} className={`h-3.5 w-3.5 rounded-full transition-all ${totalLevel && star <= totalLevel ? "bg-white" : "bg-white/30"}`} />
                 ))}
               </div>
             </div>
           </div>
-          <p className="text-md text-white/90">{totalGrade && totalStatus ? `5단계 중 ${totalGrade}단계 - ${totalStatus}` : ""}</p>
+
+          {/* 상태 (양호) */}
+          {totalStatus && (
+            <div className="mx-auto inline-flex items-center justify-center rounded-full bg-white/20 px-8 py-3 backdrop-blur-sm">
+              <p className="text-2xl font-bold tracking-wide text-white">{totalStatus}</p>
+            </div>
+          )}
         </div>
 
         {/* Skin Type Summary Card */}
@@ -162,7 +172,7 @@ export function SkinAnalysisResult({ analysisResult, onRetry, showRetryButton = 
                     const angle = [0, 72, 144, 216, 288][idx];
                     const radian = ((angle - 90) * Math.PI) / 180;
                     // 점수가 낮을수록 바깥쪽 (100 - value로 반전, 그리고 1.8배 스케일)
-                    const radius = detail.score * 1.8;
+                    const radius = (100 - detail.score) * 1.8;
                     const x = 250 + radius * Math.cos(radian);
                     const y = 250 + radius * Math.sin(radian);
                     return `${x},${y}`;
@@ -195,7 +205,7 @@ export function SkinAnalysisResult({ analysisResult, onRetry, showRetryButton = 
               {orderedMetrics.map(({ detail, style }, idx) => {
                 const angle = [0, 72, 144, 216, 288][idx];
                 const radian = ((angle - 90) * Math.PI) / 180;
-                const radius = detail.score * 1.8;
+                const radius = (100 - detail.score) * 1.8;
                 // SVG viewBox는 500x500이고, 중심은 250,250
                 // 실제 위치 계산: 중심(250) + radius * cos/sin
                 const svgX = 250 + radius * Math.cos(radian);
@@ -234,7 +244,7 @@ export function SkinAnalysisResult({ analysisResult, onRetry, showRetryButton = 
                     <span className="font-medium text-text-primary">{style.label}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-md font-semibold text-text-secondary">{detail.score}점</span>
+                    <span className="text-md font-semibold text-text-secondary">{100 - detail.score}점</span>
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-medium ${
                         status === "우수"
@@ -270,7 +280,7 @@ export function SkinAnalysisResult({ analysisResult, onRetry, showRetryButton = 
                     <h4 className="text-xl font-bold">{style.label}</h4>
                   </div>
                   <div className="text-right">
-                    <p className="text-3xl font-bold">{detail.score}</p>
+                    <p className="text-3xl font-bold">{100 - detail.score}</p>
                     <p className="text-xs opacity-90">점</p>
                   </div>
                 </div>
@@ -280,7 +290,7 @@ export function SkinAnalysisResult({ analysisResult, onRetry, showRetryButton = 
                   {[...Array(5)].map((_, i) => (
                     <div key={i} className={`h-2 w-2 rounded-full ${i < getUiLevelFromGrade(detail.grade) ? "bg-[#22c55e]" : "bg-gray-300"}`} />
                   ))}
-                  <span className="ml-2 text-sm text-text-secondary">{detail.grade}등급</span>
+                  <span className="ml-2 text-sm text-text-secondary">{getUiLevelFromGrade(detail.grade)}/5단계</span>
                 </div>
 
                 <p className="text-sm leading-relaxed text-text-secondary">{detail.description}</p>

@@ -13,7 +13,7 @@ interface CategorySelectionProps {
 const categories = [
   {
     id: "skincare" as const,
-    label: "스킨 케어",
+    label: "스킨케어",
     description: "피부 타입 분석 및 맞춤 스킨케어 루틴 상담",
     icon: Droplets,
     gradient: "from-pastel-blue-100 to-pastel-blue-200",

@@ -56,10 +56,9 @@ export function NotificationModal({
       case "RESERVATION_CONFIRMED":
       case "RESERVATION_REMINDER":
       case "RESERVATION_CANCELLED":
-        navigate("/mypage/consultations")
-        break
       case "REPORT_READY":
-        navigate("/mypage/reports") // 리포트 페이지 경로 확인 필요
+        navigate("/mypage/consultations")
+        // navigate("/mypage/reports")
         break
       default:
         break
@@ -98,7 +97,7 @@ export function NotificationModal({
       case "REPORT_READY":
         return "새로운 리포트가 도착했습니다.";
       case "INVENTORY_EXPIRY":
-        return `${content} 아이템이 곧 만료됩니다.`;
+        return `만료 예정인 아이템이 ${content}개 있습니다.`;
       default:
         return content;
     }
@@ -113,7 +112,7 @@ export function NotificationModal({
       case "RESERVATION_CONFIRMED":
       case "RESERVATION_REMINDER":
       case "RESERVATION_CANCELLED":
-        return <>예약<br />확인</>
+        return <>예약 확인</>
       case "REPORT_READY":
         return <>리포트<br />보기</>
       default:

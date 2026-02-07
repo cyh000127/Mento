@@ -27,27 +27,32 @@ export function SidePanel({ allowedTabs, recordProps, shareProps }: SidePanelPro
     }
   }, [activeTab, setActiveTab, visibleTabs]);
 
-  const renderContent = () => {
-    if (!visibleTabs.includes(activeTab)) return null;
-    switch (activeTab) {
-      case 'share':
-        return shareProps ? <SharePanel {...shareProps} /> : null;
-      case 'inventory':
-        return <InventoryPanel />;
-      case 'mask':
-        return <MaskPanel />;
-      case 'record':
-        return <RecordPanel {...recordProps} />;
-      default:
-        return null;
-    }
-  };
+  const isTabVisible = (tab: TabType) => visibleTabs.includes(tab) && activeTab === tab;
 
   return (
     <div className="fixed right-0 top-0 h-screen w-[26rem] bg-gray-900 shadow-2xl flex flex-col">
       <SidePanelTabs allowedTabs={visibleTabs} />
       <div className="flex-1 overflow-y-auto scrollbar-slim">
-        {renderContent()}
+        {visibleTabs.includes('share') && shareProps && (
+          <div className={isTabVisible('share') ? 'block' : 'hidden'} aria-hidden={!isTabVisible('share')}>
+            <SharePanel {...shareProps} />
+          </div>
+        )}
+        {visibleTabs.includes('inventory') && (
+          <div className={isTabVisible('inventory') ? 'block' : 'hidden'} aria-hidden={!isTabVisible('inventory')}>
+            <InventoryPanel />
+          </div>
+        )}
+        {visibleTabs.includes('mask') && (
+          <div className={isTabVisible('mask') ? 'block' : 'hidden'} aria-hidden={!isTabVisible('mask')}>
+            <MaskPanel />
+          </div>
+        )}
+        {visibleTabs.includes('record') && (
+          <div className={isTabVisible('record') ? 'block' : 'hidden'} aria-hidden={!isTabVisible('record')}>
+            <RecordPanel {...recordProps} />
+          </div>
+        )}
       </div>
     </div>
   );
