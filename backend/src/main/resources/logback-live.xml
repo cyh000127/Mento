@@ -68,29 +68,19 @@
                     <fieldName>error.stack_trace</fieldName>
                 </stackTrace>
 
+                <!-- MDC 필드 매핑 (ECS 표준 준수) -->
                 <mdc>
                     <includeMdcKeyName>traceId</includeMdcKeyName>
-                    <mdcKeyFieldName>traceId:trace.id</mdcKeyFieldName>
-                </mdc>
-
-                <mdc>
                     <includeMdcKeyName>userId</includeMdcKeyName>
-                    <mdcKeyFieldName>userId:user.id</mdcKeyFieldName>
-                </mdc>
-
-                <mdc>
                     <includeMdcKeyName>httpMethod</includeMdcKeyName>
-                    <mdcKeyFieldName>httpMethod:http.request.method</mdcKeyFieldName>
-                </mdc>
-
-                <mdc>
                     <includeMdcKeyName>requestUri</includeMdcKeyName>
-                    <mdcKeyFieldName>requestUri:url.path</mdcKeyFieldName>
-                </mdc>
-
-                <mdc>
                     <includeMdcKeyName>executionTime</includeMdcKeyName>
-                    <mdcKeyFieldName>executionTime:duration_ms</mdcKeyFieldName>
+
+                    <mdcKeyFieldName>traceId=trace.id</mdcKeyFieldName>
+                    <mdcKeyFieldName>userId=user.id</mdcKeyFieldName>
+                    <mdcKeyFieldName>httpMethod=http.request.method</mdcKeyFieldName>
+                    <mdcKeyFieldName>requestUri=url.path</mdcKeyFieldName>
+                    <mdcKeyFieldName>executionTime=event.duration</mdcKeyFieldName>
                 </mdc>
 
                 <pattern>
