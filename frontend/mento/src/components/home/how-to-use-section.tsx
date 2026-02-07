@@ -31,7 +31,7 @@ export function HowToUseSection() {
             <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button asChild size="lg">
                 <Link to="/guide">
-                  Go to How to Use
+                  사용법 가기
                   <ArrowRight className="h-5 w-5" />
                 </Link>
               </Button>

@@ -31,7 +31,7 @@ export function MentoringSection() {
             <div className="mt-6 flex justify-center">
               <Button asChild size="lg">
                 <Link to="/mentoring">
-                  Go to Mentoring
+                  멘토링 가기
                   <ArrowRight className="h-5 w-5" />
                 </Link>
               </Button>

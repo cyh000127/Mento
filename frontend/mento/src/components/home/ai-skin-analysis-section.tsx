@@ -21,24 +21,32 @@ export function AiSkinAnalysisSection() {
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <div className="space-y-6">
               <h2 className="text-balance text-4xl font-bold text-text-primary md:text-5xl lg:text-6xl">
-                AI Skin Analysis in seconds
+                AI를 이용한 피부 분석
               </h2>
               <p className="text-pretty text-lg leading-relaxed text-text-secondary md:text-xl">
-                Upload a photo to get AI-based skin insights across moisture, pores, wrinkles, pigmentation, and elasticity.
+                <p>
+                  사진을 업로드하면 수분, 모공, 주름, 색소 침착, 탄력 등
+                  <br className="hidden md:block" />
+                  피부 상태에 대한 AI 기반 분석 정보를 얻을 수 있습니다.
+                </p>
                 <br className="hidden md:block" />
-                Fast, easy, and personalized analysis that keeps your routine on track.
+                <p>
+                  빠르고 간편하며 개인 맞춤형 분석을 통해 일상 루틴을
+                  <br className="hidden md:block" />
+                  순조롭게 유지할 수 있습니다.
+                </p>
               </p>
               <div className="flex flex-col items-start gap-3 sm:flex-row">
                 {isLoggedIn ? (
                   <Button asChild size="lg">
                     <Link to="/ai-care">
-                      Start AI Skin Analysis
+                      AI 피부 분석 가기
                       <ArrowRight className="h-5 w-5" />
                     </Link>
                   </Button>
                 ) : (
                   <Button size="lg" onClick={() => setIsLoginOpen(true)}>
-                    Log in to use AI Skin Analysis
+                    로그인하고 AI 피부 분석 가기
                     <ArrowRight className="h-5 w-5" />
                   </Button>
                 )}

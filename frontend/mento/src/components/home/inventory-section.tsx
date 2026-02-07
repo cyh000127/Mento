@@ -32,25 +32,35 @@ export function InventorySection() {
 
             <div className="space-y-6">
               <h2 className="text-balance text-4xl font-bold text-text-primary md:text-5xl">
-                Manage all your grooming products in one place
+                모든 아이템을 쉽고
+                <br className="hidden md:block" />
+                간편하게 관리하세요
               </h2>
               <p className="text-pretty text-lg leading-relaxed text-text-secondary">
-                Organize Skin, Hair, and Beauty items with favorites and status tracking (Owned, Purchasing, Unavailable).
+                <p>
+                  스킨, 뷰티, 헤어 상품을 즐겨찾기 및 보유 상태를
+                  <br className="hidden md:block" />
+                  통해 체계적으로 관리할 수 있습니다.
+                </p>
                 <br className="hidden md:block" />
-                Register products quickly via photo OCR and use your inventory seamlessly during consultations.
+                <p>
+                  사진 OCR을 통해 제품을 신속하게 등록하고 상담 시
+                  <br className="hidden md:block" />  
+                  재고 정보를 원활하게 활용할 수 있습니다.
+                </p>
               </p>
 
               <div className="flex flex-col items-start gap-3 sm:flex-row">
                 {isLoggedIn ? (
                   <Button asChild size="lg">
                     <Link to="/inventory">
-                      Go to My Inventory
+                      인벤토리 가기
                       <ArrowRight className="h-5 w-5" />
                     </Link>
                   </Button>
                 ) : (
                   <Button size="lg" onClick={() => setIsLoginOpen(true)}>
-                    Log in to use Inventory
+                    로그인하고 인벤토리 가기
                     <ArrowRight className="h-5 w-5" />
                   </Button>
                 )}
