@@ -9,6 +9,10 @@ services:
       - ../livekit/config.yml:/etc/livekit/config.yml:ro
     depends_on:
       - redis_livekit
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   redis_livekit:
     container_name: redis_livekit
@@ -18,6 +22,10 @@ services:
       - live-network
     ports:
       - "127.0.0.1:6380:6379"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   livekit-agent:
     image: ejjem/s14p11a704:livekit-agent
@@ -40,6 +48,10 @@ services:
     depends_on:
       - livekit
       - redis_livekit
+    deploy:
+      resources:
+        limits:
+          memory: 1G
 
   livekit-egress:
     image: livekit/egress:latest
@@ -66,6 +78,10 @@ services:
       driver: "json-file"
       options:
         max-size: "100m"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
 
   livekit-cli:
     image: livekit/livekit-cli:latest
@@ -76,6 +92,11 @@ services:
       - "host.docker.internal:host-gateway"
     entrypoint: /bin/sh
     tty: true
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
 networks:
   live-network:
