@@ -12,6 +12,7 @@ import GuideDetailPage from "@/pages/guide/GuideDetailPage";
 import MentoringPage from "@/pages/mentoring/MentoringPage";
 import InventoryPage from "@/pages/inventory/InventoryPage";
 import ConsultationManagementPage from "@/pages/mypage/ConsultationManagementPage";
+import { ConsultationWaitingRoomPage } from "@/pages/consultation/ConsultationWaitingRoomPage";
 import AiSkincareHistoryPage from "@/pages/mypage/AiSkincareHistoryPage";
 import InventoryHistoryPage from "@/pages/mypage/InventoryHistoryPage";
 import AccountWithdrawalPage from "@/pages/mypage/AccountWithdrawalPage";
@@ -102,6 +103,10 @@ const router = createBrowserRouter([
           {
             path: "/consultation-room/:roomId",
             element: <ConsultationRoomPage />,
+          },
+          {
+            path: "/consultation-waiting-room/:roomId",
+            element: <ConsultationWaitingRoomPage />,
           },
         ],
       },
