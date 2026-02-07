@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { HeroSection } from "@/components/home/hero-section"
 import { FeaturesSection } from "@/components/home/features-section"
+import { InventorySection } from "@/components/home/inventory-section"
+import { AiSkinAnalysisSection } from "@/components/home/ai-skin-analysis-section"
+import { HowToUseSection } from "@/components/home/how-to-use-section"
 import { HowItWorksSection } from "@/components/home/how-it-works-section"
 import { CtaSection } from "@/components/home/cta-section"
 import { useAuthStore } from "@/stores/useAuthStore"
+import { MentoringSection } from "@/components/home/mentoring-section"
 
 if (typeof window !== "undefined" && "scrollRestoration" in history) {
   history.scrollRestoration = "manual"
@@ -101,6 +105,10 @@ export default function HomePage() {
       <HeroSection showIntro={showIntro} onIntroComplete={handleIntroComplete} />
 
       {/* Additional sections */}
+      <InventorySection />
+      <MentoringSection />
+      <AiSkinAnalysisSection />
+      <HowToUseSection />
       <FeaturesSection />
       <HowItWorksSection />
       <CtaSection />

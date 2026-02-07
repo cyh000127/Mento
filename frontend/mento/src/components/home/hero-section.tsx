@@ -113,9 +113,14 @@ export function HeroSection(props: HeroSectionProps) {
     const scrollContainer = document.querySelector("[data-home-scroll]") as HTMLElement | null;
     if (!scrollContainer) return;
 
-    const sectionElements = Array.from(scrollContainer.querySelectorAll<HTMLElement>("[data-home-section]"));
-    sectionRefs.current = sectionElements;
-    setSectionCount(sectionElements.length);
+    const collectSections = () => {
+      const sectionElements = Array.from(scrollContainer.querySelectorAll<HTMLElement>("[data-home-section]"));
+      sectionRefs.current = sectionElements;
+      setSectionCount(sectionElements.length);
+      return sectionElements;
+    };
+
+    const sectionElements = collectSections();
     if (sectionElements.length === 0) return;
     setCurrentScene(0);
 
@@ -134,7 +139,18 @@ export function HeroSection(props: HeroSectionProps) {
       observer.observe(section);
     });
 
-    return () => observer.disconnect();
+    const mutationObserver = new MutationObserver(() => {
+      observer.disconnect();
+      const nextSections = collectSections();
+      nextSections.forEach((section) => observer.observe(section));
+    });
+
+    mutationObserver.observe(scrollContainer, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+      mutationObserver.disconnect();
+    };
   }, [showIntro, imagesLoaded]);
 
   const handleIntroComplete = () => {
