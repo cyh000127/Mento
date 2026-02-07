@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- live 환경 설정 (운영 서버) -->
+    <springProfile name="live">
+        <include resource="logback-live.xml"/>
+    </springProfile>
+
+    <!-- prod 환경 설정 -->
+    <springProfile name="prod">
+        <include resource="logback-prod.xml"/>
+    </springProfile>
+
+    <!-- local 환경 설정 -->
+    <springProfile name="!live &amp; !prod">
+        <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+        <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+        <logger name="mento.backend" level="DEBUG"/>
+        <logger name="org.springframework.web" level="DEBUG"/>
+        <logger name="org.hibernate" level="DEBUG"/>
+    </springProfile>
+</configuration>

@@ -152,7 +152,12 @@ public enum ErrorCode {
 	LIVEKIT_ROOM_FULL(HttpStatus.CONFLICT, "L-001", "방 인원이 초과되었습니다."),
 	RECORDING_START_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "LK-001", "녹화 시작에 실패했습니다."),
 	RECORDING_STOP_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "LK-002", "녹화 중지에 실패했습니다."),
-	WEBHOOK_VERIFICATION_FAILED(HttpStatus.UNAUTHORIZED, "LK-003", "웹훅 검증에 실패했습니다.");
+	WEBHOOK_VERIFICATION_FAILED(HttpStatus.UNAUTHORIZED, "LK-003", "웹훅 검증에 실패했습니다."),
+
+	/**
+	 * AI Error (AI-xxx)
+	 */
+	AI_REQUEST_RETRY_FAILED(HttpStatus.BAD_GATEWAY, "AI-001", "AI 요청 재시도에 실패했습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;

@@ -205,4 +205,16 @@ public class JwtTokenProvider {
 			throw new AuthException(ErrorCode.MALFORMED_TOKEN_EXCEPTION);
 		}
 	}
+
+	public String extractUserIdFromRequest(final HttpServletRequest request) {
+		return extractAccessToken(request)
+			.map(token -> {
+				try {
+					return String.valueOf(getAuthenticatedUser(token).getId());
+				} catch (Exception _) {
+					return "UNKNOWN";
+				}
+			})
+			.orElse("UNKNOWN");
+	}
 }

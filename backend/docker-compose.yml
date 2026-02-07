@@ -66,11 +66,14 @@ services:
     image: mento-backend:latest
     environment:
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - GIT_COMMIT_SHORT=${GIT_COMMIT_SHORT:-unknown}
     restart: unless-stopped
     env_file:
       - .env
     ports:
       - "8080:8080"
+    volumes:
+      - backend-logs:/app/logs
     cpus: '3.5'
     mem_limit: 8g
     mem_reservation: 4g
@@ -97,3 +100,6 @@ volumes:
     driver: local
   redis_data:
     driver: local
+  backend-logs:
+    driver: local
+    name: backend_logs
