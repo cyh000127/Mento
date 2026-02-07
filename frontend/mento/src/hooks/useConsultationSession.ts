@@ -80,7 +80,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
       if (!("value" in data)) return undefined;
       return isValidMaskType(data.value) ? data.value : undefined;
     } catch (error) {
-      console.warn("⚠️ 마스크 데이터 파싱 실패:", error);
+      console.warn("마스크 데이터 파싱 실패:", error);
       return undefined;
     }
   };
@@ -105,7 +105,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         .filter((file): file is SharedMediaFile => Boolean(file));
       return files.length > 0 ? files : undefined;
     } catch (error) {
-      console.warn("⚠️ 미디어 데이터 파싱 실패:", error);
+      console.warn("미디어 데이터 파싱 실패:", error);
       return undefined;
     }
   };
@@ -118,7 +118,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
       if (typeof data.imageUrl !== "string") return undefined;
       return data.imageUrl;
     } catch (error) {
-      console.warn("⚠️ 이미지 공유 데이터 파싱 실패:", error);
+      console.warn("이미지 공유 데이터 파싱 실패:", error);
       return undefined;
     }
   };
@@ -129,7 +129,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
       const data = JSON.parse(text) as { type?: string };
       return data?.type === "IMAGE_CLEAR";
     } catch (error) {
-      console.warn("⚠️ 이미지 초기화 데이터 파싱 실패:", error);
+      console.warn("이미지 초기화 데이터 파싱 실패:", error);
       return false;
     }
   };
@@ -153,7 +153,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
       if (points.length < 2) return undefined;
       return { tool: "pen", color: data.color, lineWidth: data.lineWidth, points };
     } catch (error) {
-      console.warn("⚠️ 드로잉 데이터 파싱 실패:", error);
+      console.warn("드로잉 데이터 파싱 실패:", error);
       return undefined;
     }
   };
@@ -164,7 +164,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
       const data = JSON.parse(text) as { type?: string };
       return data?.type === "WHITEBOARD_CLEAR";
     } catch (error) {
-      console.warn("⚠️ 화이트보드 초기화 데이터 파싱 실패:", error);
+      console.warn("화이트보드 초기화 데이터 파싱 실패:", error);
       return false;
     }
   };
@@ -176,13 +176,13 @@ export function useConsultationSession(): UseConsultationSessionReturn {
     async (reservationId: number, options: { initialMic: boolean; initialCamera: boolean } = { initialMic: true, initialCamera: true }) => {
       // 중복 연결 방지
       if (isConnecting.current || connectionState !== "disconnected") {
-        console.warn("⚠️ 이미 연결 중이거나 연결되어 있습니다.");
+        console.warn("이미 연결 중이거나 연결되어 있습니다.");
         return;
       }
 
       // 같은 예약 ID로 중복 API 호출 방지
       if (processedReservationId.current === reservationId) {
-        console.warn("⚠️ 이미 처리된 예약입니다.");
+        console.warn("이미 처리된 예약입니다.");
         return;
       }
 
@@ -192,9 +192,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         setError(null);
 
         // 1. 상담 세션 생성 API 호출 (LiveKit 자격증명 발급)
-        console.log("📞 상담 세션 생성 요청:", { reservationId });
         const session = await createConsultationSession(reservationId);
-        console.log("✅ 상담 세션 생성 완료:", session);
 
         setSessionData(session);
         processedReservationId.current = reservationId;
@@ -214,7 +212,6 @@ export function useConsultationSession(): UseConsultationSessionReturn {
 
         // 연결 성공
         newRoom.on(RoomEvent.Connected, () => {
-          console.log("✅ LiveKit Room 연결 성공");
           setConnectionState("connected");
           setLocalParticipant(newRoom.localParticipant);
 
@@ -222,20 +219,16 @@ export function useConsultationSession(): UseConsultationSessionReturn {
           const allRemoteParticipants = Array.from(newRoom.remoteParticipants.values());
           const remoteHumans = allRemoteParticipants.filter((p) => !p.identity.includes("agent"));
 
-          console.log(`📊 현재 방 인원: 전체 ${allRemoteParticipants.length}명 (사람: ${remoteHumans.length}명)`);
-
           setRemoteParticipants(remoteHumans);
         });
 
         // 로컬 트랙 publish 이벤트
         newRoom.on(RoomEvent.LocalTrackPublished, (publication, participant) => {
-          console.log(`🎤 로컬 트랙 published: kind=${publication.kind}`);
           setLocalParticipant(participant);
         });
 
         // 연결 해제
         newRoom.on(RoomEvent.Disconnected, () => {
-          console.log("❌ LiveKit Room 연결 해제");
           setConnectionState("disconnected");
           setLocalParticipant(null);
           setRemoteParticipants([]);
@@ -244,10 +237,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
 
         // 원격 참가자 입장 (에이전트 제외)
         newRoom.on(RoomEvent.ParticipantConnected, (participant) => {
-          console.log("✅ 원격 참가자 연결:", participant.identity);
-
           if (participant.identity.includes("agent")) {
-            console.log("🤖 에이전트 입장 감지 (UI 표시 생략)");
             return;
           }
 
@@ -256,7 +246,6 @@ export function useConsultationSession(): UseConsultationSessionReturn {
 
         // 트랙 구독 이벤트
         newRoom.on(RoomEvent.TrackSubscribed, (track, _publication, participant) => {
-          console.log(`📹 트랙 구독 완료: ${participant.identity}, kind: ${track.kind}`);
           setRemoteParticipants((prev) => [...prev]);
         });
 
@@ -310,19 +299,16 @@ export function useConsultationSession(): UseConsultationSessionReturn {
 
         // 원격 참가자 퇴장
         newRoom.on(RoomEvent.ParticipantDisconnected, (participant) => {
-          console.log("❌ 원격 참가자 연결 해제:", participant.identity);
           setRemoteParticipants((prev) => prev.filter((rp) => rp.sid !== participant.sid));
         });
 
         // 4. LiveKit Room 연결
-        console.log(`🔌 LiveKit 서버 연결 시도: ${session.livekitUrl}`);
         await newRoom.connect(session.livekitUrl, session.roomToken);
 
         // 5. Room 인스턴스 저장
         setRoom(newRoom);
 
         // 6. 카메라와 마이크 활성화
-        console.log("🎥 카메라와 마이크 활성화 중... (설정값)", options);
         await newRoom.localParticipant.enableCameraAndMicrophone();
 
         // 초기 상태 적용 (enableCameraAndMicrophone은 기본적으로 둘 다 켬)
@@ -334,14 +320,12 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         }
 
         // 7. 트랙 publish 대기
-        console.log("⏳ 트랙 publish 대기 중...");
         await new Promise<void>((resolve) => {
           const checkTracks = () => {
             const videoTrack = Array.from(newRoom.localParticipant.trackPublications.values()).find((pub) => pub.kind === "video");
             const audioTrack = Array.from(newRoom.localParticipant.trackPublications.values()).find((pub) => pub.kind === "audio");
 
             if (videoTrack && audioTrack) {
-              console.log("✅ 모든 트랙 publish 완료");
               resolve();
             } else {
               setTimeout(checkTracks, 100);
@@ -360,9 +344,8 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         setDrawCommands([]);
 
         isConnecting.current = false;
-        console.log("✅ 상담 세션 연결 완료");
       } catch (e) {
-        console.error("❌ 상담 세션 연결 실패:", e);
+        console.error("상담 세션 연결 실패:", e);
         setConnectionState("error");
         const errorMessage = e instanceof Error ? e.message : "상담 세션 연결에 실패했습니다.";
         setError(errorMessage);
@@ -377,7 +360,6 @@ export function useConsultationSession(): UseConsultationSessionReturn {
    * LiveKit Room 연결 해제
    */
   const disconnect = useCallback(() => {
-    console.log("🔌 연결 해제 요청");
     room?.disconnect();
     setRoom(null);
     setLocalParticipant(null);
@@ -495,7 +477,6 @@ export function useConsultationSession(): UseConsultationSessionReturn {
   useEffect(() => {
     return () => {
       if (room) {
-        console.log("🧹 컴포넌트 언마운트: 연결 해제");
         room.disconnect();
       }
     };

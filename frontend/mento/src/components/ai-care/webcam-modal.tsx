@@ -38,7 +38,6 @@ export function WebcamModal({ open, onOpenChange, onCapture }: WebcamModalProps)
             return;
         }
 
-        console.log("Initializing FaceMesh...");
         const faceMesh = new FaceMesh({
             locateFile: (file) => {
                 return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
@@ -69,18 +68,15 @@ export function WebcamModal({ open, onOpenChange, onCapture }: WebcamModalProps)
 
     const startCamera = async () => {
         try {
-            console.log("Starting camera...");
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: "user", width: 640, height: 480 }
             });
-            console.log("Camera stream obtained");
 
             streamRef.current = stream;
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
                 // Wait for video to load enough data to play
                 videoRef.current.onloadedmetadata = () => {
-                    console.log("Video metadata loaded, playing...");
                     videoRef.current?.play();
                     processVideo(); // Start processing loop
                 };

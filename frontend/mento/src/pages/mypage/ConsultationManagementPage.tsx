@@ -425,8 +425,6 @@ export default function ConsultationManagementPage() {
   // };
 
   const handleBookConsultation = () => {
-    // Navigate to consultation booking page
-    console.log("Navigate to booking page");
   };
 
   const handleGoToPayment = (consultation: Consultation) => {

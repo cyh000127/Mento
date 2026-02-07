@@ -37,9 +37,8 @@ const addAccessToken = (config: any) => {
     const token = useAuthStore.getState().accessToken;
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        // console.log(`🔒 [${config.method?.toUpperCase()} ${config.url}] Token Attached: ${token.substring(0, 10)}...`);
     } else {
-        console.warn(`⚠️ [${config.method?.toUpperCase()} ${config.url}] No Access Token found in store!`);
+        console.warn(`[${config.method?.toUpperCase()} ${config.url}] No Access Token found in store!`);
     }
     return config;
 };

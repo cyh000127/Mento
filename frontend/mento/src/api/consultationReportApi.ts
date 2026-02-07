@@ -19,8 +19,6 @@ export async function getConsultingReportDetail(reportId: number | string): Prom
   try {
     const response = await api.get<ConsultationReportResponse>(`/consulting/${reportId}`);
 
-    console.log("✅ 상담 보고서 상세 조회 성공:", response.data);
-
     if (!response.data.success || !response.data.data) {
       throw new Error(response.data.error?.message || "상담 보고서 조회에 실패했습니다.");
     }
@@ -28,7 +26,7 @@ export async function getConsultingReportDetail(reportId: number | string): Prom
     // content(JSON) 파싱 없이 그대로 반환 (요구사항)
     return response.data.data;
   } catch (error) {
-    console.error("❌ 상담 보고서 상세 조회 실패:", {
+    console.error("상담 보고서 상세 조회 실패:", {
       error,
       message: error instanceof Error ? error.message : "Unknown error",
       response: (error as any)?.response?.data,

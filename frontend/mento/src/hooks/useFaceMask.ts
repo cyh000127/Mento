@@ -220,8 +220,6 @@ export function useFaceMask(videoElement: HTMLVideoElement | null, canvasRef: Re
       return;
     }
 
-    console.log(`🎭 FaceMesh 초기화 시작`);
-
     // MediaPipe FaceMesh 초기화
     const faceMesh = new FaceMesh({
       locateFile: (file) => {
@@ -333,10 +331,6 @@ export function useFaceMask(videoElement: HTMLVideoElement | null, canvasRef: Re
     };
 
     const startProcessing = () => {
-      console.log(`✅ FaceMesh 처리 시작`, {
-        videoWidth: videoElement.videoWidth,
-        videoHeight: videoElement.videoHeight,
-      });
       processFrame();
     };
 
@@ -348,7 +342,6 @@ export function useFaceMask(videoElement: HTMLVideoElement | null, canvasRef: Re
 
     // 클린업
     return () => {
-      console.log(`🧹 FaceMesh 클린업`);
       isCancelled = true;
 
       if (animationFrameRef.current) {
@@ -360,7 +353,7 @@ export function useFaceMask(videoElement: HTMLVideoElement | null, canvasRef: Re
         try {
           faceMeshRef.current.close();
         } catch (error) {
-          console.warn("⚠️ FaceMesh 종료 중 오류:", error);
+          console.warn("FaceMesh 종료 중 오류:", error);
         } finally {
           faceMeshRef.current = null;
         }
