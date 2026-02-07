@@ -277,17 +277,17 @@ export default function ConsultationManagementPage() {
 
         const params: ReservationListParams = searchParams
           ? {
-            startDate: searchParams.startDate,
-            endDate: searchParams.endDate,
-            page: currentPage,
-            size: pageSize,
-          }
+              startDate: searchParams.startDate,
+              endDate: searchParams.endDate,
+              page: currentPage,
+              size: pageSize,
+            }
           : {
-            startDate: "",
-            endDate: "",
-            page: currentPage,
-            size: pageSize,
-          };
+              startDate: "",
+              endDate: "",
+              page: currentPage,
+              size: pageSize,
+            };
 
         const requestKey = JSON.stringify({
           startDate: params.startDate,
@@ -424,8 +424,7 @@ export default function ConsultationManagementPage() {
   //   navigate(`/consultation-room/${encodedId}`);
   // };
 
-  const handleBookConsultation = () => {
-  };
+  const handleBookConsultation = () => {};
 
   const handleGoToPayment = (consultation: Consultation) => {
     if (!consultation.reservationId) {
@@ -442,17 +441,25 @@ export default function ConsultationManagementPage() {
   };
 
   const handleViewReport = async (consultation: Consultation) => {
-    if (consultation.status !== "completed") {
-      showAlert({
-        title: "상담 완료 후 리포트 조회 가능",
-        message: "아직 상담이 진행되지 않았습니다.",
-        type: "warning",
-      });
-      return;
-    }
+    // if (consultation.status !== "completed") {
+    //   showAlert({
+    //     title: "상담 완료 후 리포트 조회 가능",
+    //     message: "아직 상담이 진행되지 않았습니다.",
+    //     type: "warning",
+    //   });
+    //   return;
+    // }
 
     try {
       const report = await getConsultingReportDetail(consultation.reportId);
+      if(report.content === null) {
+        showAlert({
+          title: "리포트 생성 중",
+          message: "아직 생성된 상담 리포트가 없습니다.",
+          type: "warning",
+        });
+        return;
+      }
       setReport(report);
       setSelectedReportConsultation(consultation);
     } catch (error) {
