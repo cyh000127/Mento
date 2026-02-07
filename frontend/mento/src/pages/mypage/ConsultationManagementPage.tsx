@@ -125,18 +125,18 @@ const mapReservationDetailToConsultation = (reservation: ReservationDetailData):
   };
 
   if (reservation.mentorInfo) {
-    consultation.expertName = reservation.mentorInfo.mentorName;
+    consultation.expertName = reservation.mentorInfo.mentorName ?? reservation.mentorInfo.name;
   }
 
   if (reservation.mentorTypeInfo) {
-    consultation.mentorTypeName = reservation.mentorTypeInfo.mentorTypeName;
+    consultation.mentorTypeName = reservation.mentorTypeInfo.mentorTypeName ?? reservation.mentorTypeInfo.name;
     consultation.memo = reservation.mentorTypeInfo.mentorTypeDescription;
   }
 
   return consultation;
 };
 
-// 시연 끝나고 살리기기 kjm 2026-02-06
+// 시연 끝나고 살리기 kjm 2026-02-06
 // const canEnterConsultationRoom = (consultation: Consultation) => {
 //   const { scheduledDate, scheduledTime } = consultation;
 
@@ -277,17 +277,17 @@ export default function ConsultationManagementPage() {
 
         const params: ReservationListParams = searchParams
           ? {
-            startDate: searchParams.startDate,
-            endDate: searchParams.endDate,
-            page: currentPage,
-            size: pageSize,
-          }
+              startDate: searchParams.startDate,
+              endDate: searchParams.endDate,
+              page: currentPage,
+              size: pageSize,
+            }
           : {
-            startDate: "",
-            endDate: "",
-            page: currentPage,
-            size: pageSize,
-          };
+              startDate: "",
+              endDate: "",
+              page: currentPage,
+              size: pageSize,
+            };
 
         const requestKey = JSON.stringify({
           startDate: params.startDate,
@@ -424,8 +424,7 @@ export default function ConsultationManagementPage() {
   //   navigate(`/consultation-room/${encodedId}`);
   // };
 
-  const handleBookConsultation = () => {
-  };
+  const handleBookConsultation = () => {};
 
   const handleGoToPayment = (consultation: Consultation) => {
     if (!consultation.reservationId) {
@@ -453,6 +452,14 @@ export default function ConsultationManagementPage() {
 
     try {
       const report = await getConsultingReportDetail(consultation.reportId);
+      if(report.content === null) {
+        showAlert({
+          title: "리포트 생성 중",
+          message: "아직 생성된 상담 리포트가 없습니다.",
+          type: "warning",
+        });
+        return;
+      }
       setReport(report);
       setSelectedReportConsultation(consultation);
     } catch (error) {

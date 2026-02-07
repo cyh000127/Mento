@@ -5,6 +5,7 @@ import { VideoTrack } from "@/components/consultation/VideoTrack";
 import { SidePanel } from "@/components/consultation/side-panel";
 import { useConsultationStore } from "@/stores/useConsultationStore";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useConsultationParticipantStore } from "@/stores/useConsultationParticipantStore";
 
 export function ConsultationRoomPage() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -47,11 +48,51 @@ export function ConsultationRoomPage() {
     isCameraEnabled,
   } = useConsultationSession();
   const { selectedMaskArea, setActiveTab, setSelectedMaskArea } = useConsultationStore();
+  const { userInfo, mentorInfo, setReservationInfo, clearReservationInfo } = useConsultationParticipantStore();
 
   const hasConnected = useRef(false);
   const isApplyingRemoteMaskRef = useRef(false);
   const hasResetMaskOnConnectRef = useRef(false);
   const reservationIdNumber = reservationId ? Number(reservationId) : null;
+
+  useEffect(() => {
+    if (!reservationIdNumber) return;
+
+    let isCancelled = false;
+    const loadReservationDetail = async () => {
+      try {
+        const { getReservationDetail } = await import("@/api/reservationApi");
+        const detail = await getReservationDetail(reservationIdNumber);
+        if (isCancelled) return;
+
+        const userName = detail.userInfo?.name ?? detail.userInfo?.userName;
+        const mentorName = detail.mentorInfo?.name ?? detail.mentorInfo?.mentorName;
+        const mentorId = detail.mentorInfo?.id ?? detail.mentorInfo?.mentorId;
+        const mentorTypeName = detail.mentorTypeInfo?.name ?? detail.mentorTypeInfo?.mentorTypeName;
+        const mentorTypeId = detail.mentorTypeInfo?.id ?? detail.mentorTypeInfo?.mentorTypeId;
+
+        setReservationInfo({
+          userInfo: detail.userInfo?.id && userName ? { id: detail.userInfo.id, name: userName } : null,
+          mentorInfo: mentorId && mentorName ? { id: mentorId, name: mentorName } : null,
+          mentorTypeInfo: mentorTypeId && mentorTypeName ? { id: mentorTypeId, name: mentorTypeName } : null,
+        });
+      } catch (error) {
+        console.error("예약 상세 로드 실패:", error);
+      }
+    };
+
+    loadReservationDetail();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [reservationIdNumber, setReservationInfo]);
+
+  useEffect(() => {
+    return () => {
+      clearReservationInfo();
+    };
+  }, [clearReservationInfo]);
 
   // 컴포넌트 마운트 시 자동으로 상담 세션 생성 및 LiveKit 연결
   useEffect(() => {
@@ -81,10 +122,10 @@ export function ConsultationRoomPage() {
     sendImageClear();
     sendClearWhiteboard();
     disconnect();
+    clearReservationInfo();
     navigate("/mypage/consultations");
   };
 
-  // participantRole 기준으로 항상 MENTOR는 상단, USER는 하단
   const isMentor = sessionData?.participantRole === "MENTOR";
   const mentorParticipant = isMentor ? localParticipant : remoteParticipants[0];
   const userParticipant = isMentor ? remoteParticipants[0] : localParticipant;
@@ -93,8 +134,17 @@ export function ConsultationRoomPage() {
   const bottomParticipant = userParticipant;
   const sharedMaskType = selectedMaskArea;
 
-  const topLabel = isMentor ? "멘토 (나)" : mentorParticipant ? `멘토 (${mentorParticipant.identity})` : "멘토";
-  const bottomLabel = isMentor ? (userParticipant ? `고객 (${userParticipant?.identity})` : "고객") : "고객 (나)";
+  const sanitizeDisplayName = (value?: string) => {
+    if (!value) return undefined;
+    return value.includes("@") ? undefined : value;
+  };
+
+  const mentorName = sanitizeDisplayName(mentorInfo?.name) ?? sanitizeDisplayName(mentorParticipant?.name) ?? (isMentor ? sanitizeDisplayName(user?.name) : undefined);
+
+  const customerName = sanitizeDisplayName(userInfo?.name) ?? sanitizeDisplayName(userParticipant?.name) ?? (!isMentor ? sanitizeDisplayName(user?.name) : undefined);
+
+  const topLabel = mentorName ? `멘토 (${mentorName})` : "멘토";
+  const bottomLabel = customerName ? `고객 (${customerName})` : "고객";
 
   const sidePanelTabs = isMentor ? (["share", "inventory", "mask", "record"] as const) : (["share", "inventory"] as const);
   const recordProps = {

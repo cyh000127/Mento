@@ -113,9 +113,6 @@ export function VideoTrack({ participant, maskType = null }: VideoTrackProps) {
         currentAudioTrack = null;
       }
 
-      // 트랙 publications에서 비디오/오디오 트랙 찾기
-      const publications = participant.trackPublications as Map<string, TrackPublication>;
-
       const videoPublication = getVideoPublication();
       const audioPublication = getAudioPublication();
 
