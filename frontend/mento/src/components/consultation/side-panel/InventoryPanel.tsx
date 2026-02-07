@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { RotateCw } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { addCustomerInventoryItem, addInventoryItem, getCustomerInventory, getInventoryItems, getAddInventoryErrorMessage, STATUS_LABELS } from "@/api/inventoryApi";
 import { getReservationDetail } from "@/api/reservationApi";
 import { InventoryRegisterModal } from "@/components/inventory/inventory-register-modal";
+import { Button } from "@/components/ui/button";
 import type { ApiItem, Product } from "@/types/inventory";
 import { AlertModal } from "@/components/common/alert-modal";
 import { ConfirmModal } from "@/components/common/confirm-modal";
@@ -308,9 +310,22 @@ export function InventoryPanel() {
           {!isConsultant && <p className="text-xs text-gray-400">상담 중 보유 제품 목록</p>}
         </div>
 
-        <button type="button" onClick={handleAddProduct} className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200 transition-colors hover:bg-gray-700">
-          제품 등록
-        </button>
+        <div className="flex items-start gap-2">
+          <button type="button" onClick={handleAddProduct} className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200 transition-colors hover:bg-gray-700">
+            제품 등록
+          </button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => fetchInventory()}
+            className="h-9 w-9 rounded-lg border border-gray-700 bg-gray-800 text-gray-200 transition-colors hover:bg-gray-700"
+            aria-label="인벤토리 새로고침"
+            title="인벤토리 새로고침"
+          >
+            <RotateCw className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {loading && <div className="flex flex-1 items-center justify-center text-sm text-gray-400">인벤토리 불러오는 중...</div>}
