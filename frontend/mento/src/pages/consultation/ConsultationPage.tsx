@@ -89,7 +89,6 @@ export default function ConsultationPage() {
         paymentId: parsed.paymentId ?? null,
       });
     } catch {
-      // ignore invalid stored data
     }
   };
 
@@ -131,7 +130,7 @@ export default function ConsultationPage() {
           
           // 카테고리 매핑 (mentorTypeName -> ConsultationCategory)
           let category: ConsultationCategory | null = null;
-          const mentorTypeName = detail.mentorTypeInfo?.mentorTypeName?.toLowerCase() || "";
+          const mentorTypeName = (detail.mentorTypeInfo?.mentorTypeName ?? detail.mentorTypeInfo?.name ?? "").toLowerCase();
           
           if (mentorTypeName.includes("스킨케어") || mentorTypeName.includes("skincare") || mentorTypeName.includes("스킨")) {
             category = "skincare";

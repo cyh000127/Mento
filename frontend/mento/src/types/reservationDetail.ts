@@ -1,17 +1,22 @@
 export interface ReservationDetailUserInfo {
   id: number;
-  userName: string;
+  name?: string;
+  userName?: string;
 }
 
 export interface ReservationDetailMentorInfo {
-  mentorId: number;
-  mentorName: string;
+  id?: number;
+  name?: string;
+  mentorId?: number;
+  mentorName?: string;
 }
 
 export interface ReservationDetailMentorTypeInfo {
-  mentorTypeId: number;
-  mentorTypeName: string;
-  mentorTypeDescription: string;
+  id?: number;
+  name?: string;
+  mentorTypeId?: number;
+  mentorTypeName?: string;
+  mentorTypeDescription?: string;
   price?: number;
 }
 

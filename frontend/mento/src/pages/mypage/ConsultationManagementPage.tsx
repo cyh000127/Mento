@@ -125,18 +125,18 @@ const mapReservationDetailToConsultation = (reservation: ReservationDetailData):
   };
 
   if (reservation.mentorInfo) {
-    consultation.expertName = reservation.mentorInfo.mentorName;
+    consultation.expertName = reservation.mentorInfo.mentorName ?? reservation.mentorInfo.name;
   }
 
   if (reservation.mentorTypeInfo) {
-    consultation.mentorTypeName = reservation.mentorTypeInfo.mentorTypeName;
+    consultation.mentorTypeName = reservation.mentorTypeInfo.mentorTypeName ?? reservation.mentorTypeInfo.name;
     consultation.memo = reservation.mentorTypeInfo.mentorTypeDescription;
   }
 
   return consultation;
 };
 
-// 시연 끝나고 살리기기 kjm 2026-02-06
+// 시연 끝나고 살리기 kjm 2026-02-06
 // const canEnterConsultationRoom = (consultation: Consultation) => {
 //   const { scheduledDate, scheduledTime } = consultation;
 
