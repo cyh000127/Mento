@@ -124,12 +124,6 @@ export function VideoTrack({ participant, maskType = null }: VideoTrackProps) {
         videoPublication.track.attach(videoElement);
         currentVideoTrack = videoPublication.track;
       } else {
-        console.warn(`비디오 트랙 없음: ${participant.identity}`, {
-          hasPublication: !!videoPublication,
-          hasTrack: videoPublication?.track ? true : false,
-          publicationsCount: publications.size,
-        });
-
         if (isLocal) {
           if (retryTimeoutRef.current) {
             window.clearTimeout(retryTimeoutRef.current);
