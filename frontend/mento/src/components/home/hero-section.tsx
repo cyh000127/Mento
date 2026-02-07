@@ -271,57 +271,6 @@ export function HeroSection(props: HeroSectionProps) {
         </div>
       </section>
 
-      {/* Scene 2: Film Strip Climax */}
-      <section data-home-section className="relative h-screen w-full snap-start snap-always bg-background">
-        <div className="flex h-full w-full">
-          {/* Left Film Strip */}
-          <div className="w-[20%] overflow-hidden border-r border-border/30 bg-black">
-            <div className="animate-scroll-up flex flex-col">
-              {[...LEFT_IMAGES, ...LEFT_IMAGES].map((img, index) => (
-                <div key={index} className="relative h-[300px] w-full flex-shrink-0 border-b border-border/20">
-                  <div className="absolute inset-0 bg-black/40 z-10" />
-                  <img src={img} alt="" className="h-full w-full object-cover" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Center Content */}
-          <div className="relative flex w-[60%] flex-col items-center justify-center bg-background px-8">
-            <div className="text-center">
-              <h2 className="animate-scale-in mb-6 text-balance text-4xl font-bold text-text-primary md:text-5xl lg:text-6xl">
-                AI 기반
-                <br />
-                <span className="bg-gradient-to-r from-primary-500 to-primary-300 bg-clip-text text-transparent">스마트 스킨케어</span>
-              </h2>
-
-              <p className="animate-fade-in-up mx-auto max-w-2xl text-pretty text-lg leading-relaxed text-text-secondary md:text-xl" style={{ animationDelay: "0.3s", animationFillMode: "backwards" }}>
-                개인 맞춤 분석과 데이터 기반 추천으로
-                <br />더 나은 당신을 만들어갑니다
-              </p>
-            </div>
-
-            <div className="animate-fade-in-up mt-4" style={{ animationDelay: "0.6s", animationFillMode: "backwards" }}>
-              <div className="animate-bounce">
-                <ChevronDown className="mx-auto h-8 w-8 text-primary-500" />
-              </div>
-            </div>
-          </div>
-
-          {/* Right Film Strip */}
-          <div className="w-[20%] overflow-hidden border-l border-border/30 bg-black">
-            <div className="animate-scroll-down flex flex-col">
-              {[...RIGHT_IMAGES, ...RIGHT_IMAGES].map((img, index) => (
-                <div key={index} className="relative h-[300px] w-full flex-shrink-0 border-b border-border/20">
-                  <div className="absolute inset-0 bg-black/40 z-10" />
-                  <img src={img} alt="" className="h-full w-full object-cover" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Scene 3: Video Hero */}
       <section data-home-section className="relative h-screen w-full snap-start snap-always bg-background">
         <div className="relative h-full w-full">

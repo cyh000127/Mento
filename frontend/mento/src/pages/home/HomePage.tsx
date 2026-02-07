@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { HeroSection } from "@/components/home/hero-section"
-import { FeaturesSection } from "@/components/home/features-section"
 import { InventorySection } from "@/components/home/inventory-section"
 import { AiSkinAnalysisSection } from "@/components/home/ai-skin-analysis-section"
 import { HowToUseSection } from "@/components/home/how-to-use-section"
@@ -109,7 +108,6 @@ export default function HomePage() {
       <MentoringSection />
       <AiSkinAnalysisSection />
       <HowToUseSection />
-      <FeaturesSection />
       <HowItWorksSection />
       <CtaSection />
       </div>
