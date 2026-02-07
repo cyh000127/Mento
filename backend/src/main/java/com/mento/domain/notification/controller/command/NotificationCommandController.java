@@ -1,7 +1,6 @@
 package com.mento.domain.notification.controller.command;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,7 +30,7 @@ public class NotificationCommandController {
 	private final NotificationFacadeService notificationFacadeService;
 
 	@Operation(summary = "알림 발송 (테스트용)", description = "알림을 생성하고 발송합니다.")
-	@PreAuthorize("hasRole('ADMIN')")
+	// @PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/test")
 	public ResponseEntity<BaseResponse<Void>> sendNotification(
 		@RequestBody @Valid NotificationSendReqDto reqDto

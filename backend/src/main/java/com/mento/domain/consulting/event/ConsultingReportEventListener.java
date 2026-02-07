@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.retry.RetryTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -15,9 +16,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.mento.common.ai.service.AiService;
 import com.mento.common.config.properties.PromptProperties;
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.consulting.entity.ConsultingReport;
 import com.mento.domain.consulting.service.query.ConsultingReportQueryService;
 import com.mento.domain.consulting.vo.ChatLogEntryVo;
+import com.mento.domain.notification.converter.NotificationConverter;
+import com.mento.domain.notification.entity.Notification;
+import com.mento.domain.notification.entity.NotificationType;
+import com.mento.domain.notification.event.NotificationEvent;
+import com.mento.domain.notification.service.command.NotificationCommandService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +42,9 @@ public class ConsultingReportEventListener {
 
 	private final AiService<String> aiService;
 	private final RetryTemplate aiRetryTemplate;
+	private final NotificationCommandService notificationCommandService;
+	private final ApplicationEventPublisher eventPublisher;
+
 	private final PromptProperties promptProperties;
 	private final ConsultingReportQueryService consultingReportQueryService;
 
@@ -55,6 +65,9 @@ public class ConsultingReportEventListener {
 			ConsultingReport consultingReport = consultingReportQueryService.findByReservationId(reservationId);
 			consultingReport.updateContent(aiResult);
 
+			Long userId = event.getReservation().getUser().getId();
+			sendReportReadyNotification(userId);
+
 			log.info("[Consulting] AI 보고서 생성 완료 {reservationId: {}}", reservationId);
 		} catch (Exception e) {
 			log.error("[Consulting] AI 보고서 생성 실패 {reservationId: {}}", reservationId, e);
@@ -72,5 +85,16 @@ public class ConsultingReportEventListener {
 		return chatLogs.stream()
 			.map(entry -> entry.role() + COLON + entry.content())
 			.collect(Collectors.joining(LINE_BREAK));
+	}
+
+	private void sendReportReadyNotification(final Long userId) {
+		Notification notification = NotificationConverter.toEntity(
+			userId,
+			NotificationType.REPORT_READY,
+			TimeUtils.nowAsLocalDateTime().plusDays(90)
+		);
+		final Notification savedNotification = notificationCommandService.save(notification);
+		eventPublisher.publishEvent(new NotificationEvent(this, savedNotification));
+		log.info("[Notification] 보고서 알림 생성 및 전송 완료 {userId: {}}", userId);
 	}
 }

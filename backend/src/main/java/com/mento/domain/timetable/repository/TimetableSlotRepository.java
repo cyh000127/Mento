@@ -53,9 +53,9 @@ public interface TimetableSlotRepository extends JpaRepository<TimetableSlot, Lo
 		SELECT ts
 		FROM TimetableSlot ts
 		WHERE ts.timetable.scheduledDate = :date
-			AND ts.timetable.scheduledTime < :time
-			AND ts.status != 'CLOSED'
-			AND ts.deletedAt IS NULL
+		    AND ts.timetable.scheduledTime <= :time
+		    AND ts.status != 'CLOSED'
+		    AND ts.deletedAt IS NULL
 		""")
 	List<TimetableSlot> findAllActiveSlotsBefore(
 		@Param("date") final LocalDate date,

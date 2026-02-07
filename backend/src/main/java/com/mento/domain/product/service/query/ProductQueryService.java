@@ -26,6 +26,11 @@ public class ProductQueryService {
 			.orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND));
 	}
 
+	public Product findDetailById(final Long id) {
+		return productRepository.findWithBrandById(id)
+			.orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND));
+	}
+
 	public Page<ProductListResDto> getProducts(final Pageable pageable) {
 		return productRepository.findAllProductsProjected(pageable);
 	}

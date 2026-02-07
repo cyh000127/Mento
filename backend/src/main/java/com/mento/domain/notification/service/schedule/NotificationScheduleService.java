@@ -35,8 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class NotificationScheduleService {
 
-	// TODO: 컨설팅 리포트 생성 알림 구현 필요
-
 	private final NotificationCommandService notificationCommandService;
 	private final TimetableQueryService timetableQueryService;
 	private final ReservationQueryService reservationQueryService;

@@ -36,7 +36,7 @@ import com.mento.domain.timetable.entity.Timetable;
 import com.mento.domain.timetable.entity.TimetableSlot;
 import com.mento.domain.user.entity.Role;
 import com.mento.domain.user.entity.User;
-import com.mento.domain.user.service.query.UserQueryService;
+import com.mento.domain.user.service.query.UserQueryServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentFacadeServiceTest {
@@ -48,7 +48,8 @@ class PaymentFacadeServiceTest {
 	private PaymentQueryService paymentQueryService;
 
 	@Mock
-	private UserQueryService userQueryService;
+	private UserQueryServiceImpl userQueryService;
+
 
 	@Mock
 	private NotificationFacadeService notificationFacadeService;
@@ -150,11 +151,9 @@ class PaymentFacadeServiceTest {
 			.willReturn(mentor);
 		willDoNothing().given(notificationFacadeService).sendNotification(any(NotificationSendReqDto.class));
 
-		ConsultingReport mockReport = mock(ConsultingReport.class);
-		given(consultingReportFactory.createInitReport())
-			.willReturn(mockReport);
-		given(consultingReportCommandService.save(any(ConsultingReport.class)))
-			.willReturn(mockReport);
+		ConsultingReport consultingReport = ConsultingReport.builder().build();
+		given(consultingReportFactory.createInitReport()).willReturn(consultingReport);
+		given(consultingReportCommandService.save(any(ConsultingReport.class))).willReturn(consultingReport);
 
 		// When
 		ReservationDetailResDto result = paymentFacadeService.approvePaymentAndConfirmReservation(request, userId);
@@ -169,6 +168,8 @@ class PaymentFacadeServiceTest {
 		then(paymentQueryService).should(times(1)).findDetailsById(paymentId);
 		then(userQueryService).should(times(1)).findById(SKINCARE_MENTOR_ID);
 		then(notificationFacadeService).should(times(1)).sendNotification(any(NotificationSendReqDto.class));
+		then(consultingReportFactory).should(times(1)).createInitReport();
+		then(consultingReportCommandService).should(times(1)).save(any(ConsultingReport.class));
 	}
 
 	@Test

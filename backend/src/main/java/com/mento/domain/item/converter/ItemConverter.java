@@ -1,5 +1,6 @@
 package com.mento.domain.item.converter;
 
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.item.dto.common.ItemInfoResDto;
 import com.mento.domain.item.dto.response.ItemHistoryResDto;
 import com.mento.domain.item.dto.response.ItemInfoDetailResDto;
@@ -59,7 +60,7 @@ public class ItemConverter {
 			.imageUrl(history.getProduct().getImageUrl())
 			.actionType(history.getActionType())
 			.actionDescription(history.getActionType().getDescription())
-			.createdAt(history.getCreatedAt())
+			.createdAt(TimeUtils.toKoreaTime(history.getCreatedAt()))
 			.build();
 	}
 }

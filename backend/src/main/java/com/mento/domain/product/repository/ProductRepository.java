@@ -1,6 +1,7 @@
 package com.mento.domain.product.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,4 +25,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
 	@EntityGraph(attributePaths = {"brand"})
 	List<Product> findAllByIdIn(List<Long> ids);
+
+	@EntityGraph(attributePaths = {"brand"})
+	Optional<Product> findWithBrandById(Long id);
 }

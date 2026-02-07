@@ -78,7 +78,7 @@ public class NotificationFacadeService {
 
 	@Transactional
 	public void sendNotification(final NotificationSendReqDto dto) {
-		LocalDateTime expiredAt = LocalDateTime.now().plusDays(EXPIRE_DATE);
+		LocalDateTime expiredAt = TimeUtils.nowAsLocalDateTime().plusDays(EXPIRE_DATE);
 		if (dto.expiredAt() != null) {
 			expiredAt = dto.expiredAt();
 		}
