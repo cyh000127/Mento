@@ -32,18 +32,18 @@ scrape_configs:
     pipeline_stages:
       - json:
           expressions:
-            timestamp: "@timestamp"
-            level: "log.level"
-            logger: "log.logger"
-            service: "service.name"
+            timestamp: '"@timestamp"'
+            level: '"log.level"'
+            logger: '"log.logger"'
+            service: '"service.name"'
             environment: environment
             message: message
-            trace_id: "trace.id"
-            user_id: "user.id"
-            http_method: "http.request.method"
-            url_path: "url.path"
+            trace_id: '"trace.id"'
+            user_id: '"user.id"'
+            http_method: '"http.request.method"'
+            url_path: '"url.path"'
             duration: duration_ms
-            git_commit: "git.commit_short"
+            git_commit: '"git.commit_short"'
       - labels:
           level:
           service:
