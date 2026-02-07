@@ -458,8 +458,20 @@ export default function InventoryPage() {
         setSelectedProduct((prev) => (prev ? { ...prev, status: newUiStatus } : null));
       }
 
-      // API 호출
-      await updateInventoryItemStatus(parseInt(productId), newStatus);
+      // 인벤토리 상태 변경API 호출
+      const updatedItem = await updateInventoryItemStatus(parseInt(productId), newStatus);
+
+      const shouldUpdatePurchaseDate =
+        newStatus === "OWNED" && (product.status === "unavailable" || product.status === "purchasing");
+
+      if (shouldUpdatePurchaseDate && updatedItem.purchaseDate) {
+        setProducts((prev) =>
+          prev.map((p) => (p.id === productId ? { ...p, purchaseDate: updatedItem.purchaseDate } : p))
+        );
+        if (selectedProduct?.id === productId) {
+          setSelectedProduct((prev) => (prev ? { ...prev, purchaseDate: updatedItem.purchaseDate } : null));
+        }
+      }
 
       toast({
         title: "상태 변경 완료",
