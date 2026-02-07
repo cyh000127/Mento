@@ -93,7 +93,7 @@ export function ProductDetail({
   return (
     <Card className="sticky top-20 overflow-hidden shadow-sm">
       <CardContent className="p-0">
-        {/* Product Image */}
+        {/* 제품 이미지 */}
         <div className="relative aspect-square w-full overflow-hidden bg-muted">
           <img
             src={imageSrc}
@@ -107,9 +107,9 @@ export function ProductDetail({
           )}
         </div>
 
-        {/* Product Info */}
+        {/* 제품 정보 */}
         <div className="space-y-4 p-6">
-          {/* Brand and Favorite */}
+          {/* 브랜드와 즐겨찾기 */}
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-muted-foreground">
               {displayBrand}
@@ -131,10 +131,10 @@ export function ProductDetail({
             </button>
           </div>
 
-          {/* Product Name */}
+          {/* 제품 이름 */}
           <h2 className="text-xl font-bold text-foreground">{displayName}</h2>
 
-          {/* Details */}
+          {/* 상세 정보 */}
           <div className="space-y-3 border-t border-border pt-4">
             <DetailRow label="카테고리" value={displayCategory} />
             <DetailRow label="구매일" value={displayPurchaseDate} />
@@ -148,7 +148,7 @@ export function ProductDetail({
             <DetailRow label="재구매 횟수" value={displayRepurchaseCount} />
           </div>
 
-          {/* Status */}
+          {/* 상태 */}
           <div className="space-y-3 border-t border-border pt-4">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-muted-foreground">상태</span>
@@ -192,7 +192,7 @@ export function ProductDetail({
             )}
           </div>
 
-          {/* Actions */}
+          {/* 액션 */}
           <div className="space-y-2 border-t border-border pt-4">
             {!showPurchaseActions ? (
               <Button

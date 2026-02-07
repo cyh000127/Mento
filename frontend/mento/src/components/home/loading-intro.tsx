@@ -20,11 +20,11 @@ export function LoadingIntro({ onComplete }: LoadingIntroProps) {
     const timeouts: number[] = []
     let intervalId: number | null = null
 
-    const duration = 2000 // 2 seconds (faster)
+    const duration = 2000 // 2초
     const steps = 99
     let currentCount = 0
 
-    // Skip pattern: show some numbers, skip others (more aggressive skipping)
+    // 패턴 스킵
     const showNumbers = [
       0, 1, 3, 7, 12, 19, 28, 38, 49, 61, 74, 85, 92, 96, 97, 98, 99
     ]
@@ -40,12 +40,12 @@ export function LoadingIntro({ onComplete }: LoadingIntroProps) {
         if (!isActive) return
         currentCount++
 
-        // Only update display for certain numbers
+        // 특정 숫자만 표시
         if (showNumbers.includes(currentCount) || currentCount >= 95) {
           setCount(currentCount)
         }
 
-        // Gradually increase speed
+        // 속도 증가
         const speedMultiplier = 1 + (currentCount / steps) * 3
         setSpeed(speedMultiplier)
 
@@ -55,17 +55,17 @@ export function LoadingIntro({ onComplete }: LoadingIntroProps) {
             intervalId = null
           }
 
-          // Show "complete" message
+          // "complete" 메시지 표시
           const completeTimer = window.setTimeout(() => {
             if (!isActive) return
             setPhase("complete")
 
-            // Show MENTO logo
+            // MENTO 로고 표시
             const logoTimer = window.setTimeout(() => {
               if (!isActive) return
               setPhase("logo")
 
-              // Complete after showing MENTO
+              // MENTO 표시 후 완료
               const doneTimer = window.setTimeout(() => {
                 if (!isActive) return
                 finishIntro()
@@ -79,7 +79,7 @@ export function LoadingIntro({ onComplete }: LoadingIntroProps) {
       }, duration / steps)
     }
 
-    // Phase 1: Show question for 1.5 seconds
+    // 단계 1: 질문 표시 (1.5초)
     const questionTimer = window.setTimeout(() => {
       if (!isActive) return
       setPhase("counting")
@@ -99,10 +99,10 @@ export function LoadingIntro({ onComplete }: LoadingIntroProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
-      {/* Center Content */}
+      {/* 중앙 콘텐츠 */}
       <div className="relative flex flex-col items-center justify-center px-8">
         {phase === "question" && (
-          // Question phase
+          // 질문 단계
           <div className="animate-fade-in text-center">
             <h2 className="text-3xl font-bold leading-tight text-text-primary md:text-4xl lg:text-5xl">
               평소에 얼마나
@@ -115,7 +115,7 @@ export function LoadingIntro({ onComplete }: LoadingIntroProps) {
         )}
 
         {phase === "counting" && (
-          // Counter display
+          // 카운터 표시
           <div className="animate-fade-in text-center">
             <div className="relative">
               <div
@@ -126,7 +126,7 @@ export function LoadingIntro({ onComplete }: LoadingIntroProps) {
               >
                 {count.toString().padStart(2, "0")}
               </div>
-              {/* Pulse effect */}
+              {/* 펄스 효과 */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div
                   className="h-full w-full animate-ping rounded-full bg-primary-500/20"
@@ -140,7 +140,7 @@ export function LoadingIntro({ onComplete }: LoadingIntroProps) {
         )}
 
         {phase === "complete" && (
-          // Complete message
+          // 완료 메시지
           <div className="animate-scale-in text-center">
             <h2 className="text-3xl font-bold leading-tight text-text-primary md:text-4xl lg:text-5xl">
               <span className="bg-gradient-to-r from-primary-500 to-primary-300 bg-clip-text text-transparent">
@@ -153,7 +153,7 @@ export function LoadingIntro({ onComplete }: LoadingIntroProps) {
         )}
 
         {phase === "logo" && (
-          // MENTO logo
+          // MENTO 로고
           <div className="animate-scale-in text-center">
             <h1 className="mb-4 text-7xl font-bold tracking-tight text-text-primary md:text-8xl lg:text-9xl">
               MENTO
@@ -166,7 +166,7 @@ export function LoadingIntro({ onComplete }: LoadingIntroProps) {
         )}
       </div>
 
-      {/* Progress indicator */}
+      {/* 진행 표시 */}
       {(phase === "question" || phase === "counting") && (
         <div className="absolute bottom-12 left-1/2 -translate-x-1/2">
           <div className="flex items-center gap-2">

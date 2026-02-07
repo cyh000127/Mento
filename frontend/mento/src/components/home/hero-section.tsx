@@ -26,7 +26,7 @@ import nix2 from "@/assets/images/the-nix-company-QanhCEMlSdk-unsplash.jpg";
 
 import dryingHairVideo from "@/assets/videos/drying_hair.mp4";
 
-// Left film strip images - grooming process shots
+// 왼쪽 필름 스트립 이미지 - 관리 과정 촬영
 const LEFT_IMAGES = [
   curology1, // skincare products
   andrea, // grooming close-up
@@ -38,7 +38,7 @@ const LEFT_IMAGES = [
   curology2, // skincare products
 ];
 
-// Right film strip images - lifestyle and results
+// 오른쪽 필름 스트립 이미지 - 생활과 결과
 const RIGHT_IMAGES = [
   kadarius, // confident portrait
   nix1, // grooming lifestyle
@@ -70,7 +70,7 @@ export function HeroSection(props: HeroSectionProps) {
     return localStorage.getItem(INTRO_STORAGE_KEY) !== "true";
   });
 
-  // Preload images
+  // 이미지 미리 로드
   useEffect(() => {
     const allImages = [...LEFT_IMAGES, ...RIGHT_IMAGES];
     let loadedCount = 0;
@@ -175,7 +175,7 @@ export function HeroSection(props: HeroSectionProps) {
     <LoadingIntro onComplete={handleIntroComplete} />
   ) : (
     <>
-      {/* Progress indicator */}
+      {/* 진행 표시 */}
       <div className="fixed right-8 top-1/2 z-50 flex -translate-y-1/2 flex-col gap-3">
         {Array.from({ length: sectionCount }, (_, index) => (
           <button
@@ -196,10 +196,10 @@ export function HeroSection(props: HeroSectionProps) {
         ))}
       </div>
 
-      {/* Scene 1: Film Strip Intro */}
+      {/* 장면 1: 필름 스트립 소개 */}
       <section data-home-section className="relative h-screen w-full snap-start snap-always bg-background animate-fade-in">
         <div className="flex h-full w-full">
-          {/* Left Film Strip */}
+          {/* 왼쪽 필름 스트립 */}
           <div className="w-[20%] overflow-hidden border-r border-border/30 bg-black">
             <div className="animate-scroll-up flex flex-col">
               {[...LEFT_IMAGES, ...LEFT_IMAGES].map((img, index) => (
@@ -211,7 +211,7 @@ export function HeroSection(props: HeroSectionProps) {
             </div>
           </div>
 
-          {/* Center Content */}
+          {/* 중앙 콘텐츠 */}
           <div className="relative flex w-[60%] flex-col items-center justify-center bg-background px-8">
             <div className="text-center">
               <div className="animate-fade-in-up mb-6 inline-flex items-center gap-2 rounded-full border border-primary-500/20 bg-primary-100/50 px-6 py-3 shadow-lg shadow-primary-500/10">
@@ -257,7 +257,7 @@ export function HeroSection(props: HeroSectionProps) {
             </div>
           </div>
 
-          {/* Right Film Strip */}
+          {/* 오른쪽 필름 스트립 */}
           <div className="w-[20%] overflow-hidden border-l border-border/30 bg-black">
             <div className="animate-scroll-down flex flex-col">
               {[...RIGHT_IMAGES, ...RIGHT_IMAGES].map((img, index) => (
@@ -271,67 +271,16 @@ export function HeroSection(props: HeroSectionProps) {
         </div>
       </section>
 
-      {/* Scene 2: Film Strip Climax */}
-      <section data-home-section className="relative h-screen w-full snap-start snap-always bg-background">
-        <div className="flex h-full w-full">
-          {/* Left Film Strip */}
-          <div className="w-[20%] overflow-hidden border-r border-border/30 bg-black">
-            <div className="animate-scroll-up flex flex-col">
-              {[...LEFT_IMAGES, ...LEFT_IMAGES].map((img, index) => (
-                <div key={index} className="relative h-[300px] w-full flex-shrink-0 border-b border-border/20">
-                  <div className="absolute inset-0 bg-black/40 z-10" />
-                  <img src={img} alt="" className="h-full w-full object-cover" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Center Content */}
-          <div className="relative flex w-[60%] flex-col items-center justify-center bg-background px-8">
-            <div className="text-center">
-              <h2 className="animate-scale-in mb-6 text-balance text-4xl font-bold text-text-primary md:text-5xl lg:text-6xl">
-                AI 기반
-                <br />
-                <span className="bg-gradient-to-r from-primary-500 to-primary-300 bg-clip-text text-transparent">스마트 스킨케어</span>
-              </h2>
-
-              <p className="animate-fade-in-up mx-auto max-w-2xl text-pretty text-lg leading-relaxed text-text-secondary md:text-xl" style={{ animationDelay: "0.3s", animationFillMode: "backwards" }}>
-                개인 맞춤 분석과 데이터 기반 추천으로
-                <br />더 나은 당신을 만들어갑니다
-              </p>
-            </div>
-
-            <div className="animate-fade-in-up mt-4" style={{ animationDelay: "0.6s", animationFillMode: "backwards" }}>
-              <div className="animate-bounce">
-                <ChevronDown className="mx-auto h-8 w-8 text-primary-500" />
-              </div>
-            </div>
-          </div>
-
-          {/* Right Film Strip */}
-          <div className="w-[20%] overflow-hidden border-l border-border/30 bg-black">
-            <div className="animate-scroll-down flex flex-col">
-              {[...RIGHT_IMAGES, ...RIGHT_IMAGES].map((img, index) => (
-                <div key={index} className="relative h-[300px] w-full flex-shrink-0 border-b border-border/20">
-                  <div className="absolute inset-0 bg-black/40 z-10" />
-                  <img src={img} alt="" className="h-full w-full object-cover" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Scene 3: Video Hero */}
+      {/* 장면 3: 비디오 히어로 */}
       <section data-home-section className="relative h-screen w-full snap-start snap-always bg-background">
         <div className="relative h-full w-full">
-          {/* Video Background */}
+          {/* 비디오 배경 */}
           <video ref={videoRef} autoPlay muted loop playsInline className="absolute inset-0 h-full w-full object-cover opacity-30" src={dryingHairVideo} />
 
-          {/* Video overlay */}
+          {/* 비디오 오버레이 */}
           <div className="absolute inset-0 bg-black/40 pointer-events-none" />
 
-          {/* Content Overlay */}
+          {/* 콘텐츠 오버레이 */}
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-background/40 via-background/20 to-background/40 px-8 text-center">
             <div>
               <h2 className="animate-scale-in mb-6 text-balance text-5xl font-bold text-text-primary drop-shadow-lg md:text-6xl lg:text-7xl">
@@ -349,7 +298,7 @@ export function HeroSection(props: HeroSectionProps) {
                 MENTO와 함께 체계적인 뷰티 루틴을 시작하세요
               </p>
 
-              {/* CTA Buttons */}
+              {/* CTA 버튼 */}
               <div className="animate-fade-in-up flex flex-wrap items-center justify-center gap-4" style={{ animationDelay: "0.4s", animationFillMode: "backwards" }}>
                 <Link
                   to="/inventory"
