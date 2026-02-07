@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, type ChangeEvent, type PointerEvent } from "react";
+import { useRef, useState, useEffect, useMemo, useCallback, type ChangeEvent, type PointerEvent } from "react";
 import { uploadConsultationMedia } from "@/api/consultationMediaApi";
 import { ALLOWED_IMAGE_EXTENSIONS, MAX_SINGLE_FILE_BYTES, MAX_TOTAL_BYTES, type SharedMediaFile, type DrawCommand, type DrawPoint } from "@/types/consultationMedia";
 
@@ -54,11 +54,104 @@ export function SharePanel({ reservationId, onShare, sharedImageUrl, drawCommand
   const pendingPointsRef = useRef<DrawPoint[]>([]);
   const lastSendAtRef = useRef(0);
   const processedDrawIndexRef = useRef(0);
+  const penColorRef = useRef(DEFAULT_PEN_COLOR);
+  const penLineWidthRef = useRef(DEFAULT_PEN_LINE_WIDTH);
+  const onDrawCommandRef = useRef(onDrawCommand);
+  const cachedDrawCommandsRef = useRef<DrawCommand[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [penColor, setPenColor] = useState<string>(DEFAULT_PEN_COLOR);
   const [penLineWidth, setPenLineWidth] = useState<number>(DEFAULT_PEN_LINE_WIDTH);
+  const [cachedDrawCommands, setCachedDrawCommands] = useState<DrawCommand[]>([]);
+
+  useEffect(() => {
+    penColorRef.current = penColor;
+  }, [penColor]);
+
+  useEffect(() => {
+    penLineWidthRef.current = penLineWidth;
+  }, [penLineWidth]);
+
+  useEffect(() => {
+    onDrawCommandRef.current = onDrawCommand;
+  }, [onDrawCommand]);
+
+  useEffect(() => {
+    cachedDrawCommandsRef.current = cachedDrawCommands;
+  }, [cachedDrawCommands]);
+
+  const storageKey = useMemo(() => {
+    if (!reservationId || !sharedImageUrl) return null;
+    return `sharepanel-draw-${reservationId}-${sharedImageUrl}`;
+  }, [reservationId, sharedImageUrl]);
+
+  const serializeCommand = useCallback(
+    (command: DrawCommand) =>
+      JSON.stringify({
+        tool: command.tool,
+        color: command.color,
+        lineWidth: command.lineWidth,
+        points: command.points,
+      }),
+    []
+  );
+
+  const mergeCommands = useCallback(
+    (base: DrawCommand[], extra: DrawCommand[]) => {
+      if (extra.length === 0) return base;
+      if (base.length === 0) return extra;
+      const seen = new Set(base.map(serializeCommand));
+      const merged = [...base];
+      extra.forEach((command) => {
+        const key = serializeCommand(command);
+        if (!seen.has(key)) {
+          seen.add(key);
+          merged.push(command);
+        }
+      });
+      return merged;
+    },
+    [serializeCommand]
+  );
+
+  const combinedCommands = useMemo(() => mergeCommands(drawCommands, cachedDrawCommands), [drawCommands, cachedDrawCommands, mergeCommands]);
+
+  useEffect(() => {
+    if (!storageKey) {
+      setCachedDrawCommands([]);
+      return;
+    }
+    try {
+      const stored = sessionStorage.getItem(storageKey);
+      if (!stored) {
+        setCachedDrawCommands([]);
+        return;
+      }
+      const parsed = JSON.parse(stored) as DrawCommand[];
+      if (Array.isArray(parsed)) {
+        setCachedDrawCommands(parsed);
+      } else {
+        setCachedDrawCommands([]);
+      }
+    } catch (error) {
+      console.warn("로컬 드로잉 복원 실패:", error);
+      setCachedDrawCommands([]);
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!storageKey) return;
+    if (cachedDrawCommands.length === 0) {
+      sessionStorage.removeItem(storageKey);
+      return;
+    }
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify(cachedDrawCommands));
+    } catch (error) {
+      console.warn("로컬 드로잉 저장 실패:", error);
+    }
+  }, [cachedDrawCommands, storageKey]);
 
   useEffect(() => {
     processedDrawIndexRef.current = 0;
@@ -99,21 +192,21 @@ export function SharePanel({ reservationId, onShare, sharedImageUrl, drawCommand
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawCommands.forEach(drawCommandOnCanvas);
-    processedDrawIndexRef.current = drawCommands.length;
+    combinedCommands.forEach(drawCommandOnCanvas);
+    processedDrawIndexRef.current = combinedCommands.length;
   };
 
   useEffect(() => {
     if (!sharedImageUrl) return;
-    if (drawCommands.length < processedDrawIndexRef.current) {
+    if (combinedCommands.length < processedDrawIndexRef.current) {
       renderAllCommands();
       return;
     }
-    const newCommands = drawCommands.slice(processedDrawIndexRef.current);
+    const newCommands = combinedCommands.slice(processedDrawIndexRef.current);
     if (newCommands.length === 0) return;
     newCommands.forEach(drawCommandOnCanvas);
-    processedDrawIndexRef.current = drawCommands.length;
-  }, [drawCommands, sharedImageUrl]);
+    processedDrawIndexRef.current = combinedCommands.length;
+  }, [combinedCommands, sharedImageUrl]);
 
   useEffect(() => {
     const image = imageRef.current;
@@ -142,7 +235,7 @@ export function SharePanel({ reservationId, onShare, sharedImageUrl, drawCommand
     return () => {
       observer.disconnect();
     };
-  }, [sharedImageUrl, drawCommands]);
+  }, [sharedImageUrl, combinedCommands]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -240,6 +333,10 @@ export function SharePanel({ reservationId, onShare, sharedImageUrl, drawCommand
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setErrorMessage(null);
+    setCachedDrawCommands([]);
+    if (storageKey) {
+      sessionStorage.removeItem(storageKey);
+    }
     onClearWhiteboard();
   };
 
@@ -276,15 +373,45 @@ export function SharePanel({ reservationId, onShare, sharedImageUrl, drawCommand
     const now = Date.now();
     if (!force && now - lastSendAtRef.current < SEND_INTERVAL_MS) return;
     const points = [...pendingPointsRef.current];
-    onDrawCommand({
+    const newCommand: DrawCommand = {
       tool: "pen",
       color: penColor,
       lineWidth: penLineWidth,
       points,
+    };
+    onDrawCommandRef.current(newCommand);
+    setCachedDrawCommands((prev) => {
+      const key = serializeCommand(newCommand);
+      if (prev.some((command) => serializeCommand(command) === key)) {
+        return prev;
+      }
+      return [...prev, newCommand];
     });
     lastSendAtRef.current = now;
     pendingPointsRef.current = [points[points.length - 1]];
   };
+
+  useEffect(() => {
+    return () => {
+      if (pendingPointsRef.current.length < 2) return;
+      const points = [...pendingPointsRef.current];
+      const newCommand: DrawCommand = {
+        tool: "pen",
+        color: penColorRef.current,
+        lineWidth: penLineWidthRef.current,
+        points,
+      };
+      onDrawCommandRef.current(newCommand);
+      if (storageKey) {
+        const merged = mergeCommands(cachedDrawCommandsRef.current, [newCommand]);
+        try {
+          sessionStorage.setItem(storageKey, JSON.stringify(merged));
+        } catch (error) {
+          console.warn("로컬 드로잉 저장 실패:", error);
+        }
+      }
+    };
+  }, [mergeCommands, storageKey]);
 
   const handlePointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
     if (!canDraw || !sharedImageUrl) return;
