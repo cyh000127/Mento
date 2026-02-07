@@ -16,6 +16,7 @@ import type {
   InventoryHistoryFilters,
   InventoryHistoryResponse,
   ActionType,
+  InventoryStatusUpdateResponse,
 } from "@/types/inventory";
 import type { ProductListItem } from "@/types/product";
 
@@ -113,7 +114,7 @@ export const STATUS_TRANSITION_RULES: Record<ItemStatus, ItemStatus[]> = {
  */
 export const STATUS_LABELS: Record<ItemStatus, string> = {
   OWNED: "보유 중",
-  UNAVAILABLE: "사용 불가",
+  UNAVAILABLE: "사용 완료",
   PURCHASING: "구매 중",
   RECOMMENDED: "추천 제품",
   OVER_DATED: "기한 만료",
@@ -325,11 +326,12 @@ export async function toggleInventoryItemFavorite(itemId: string): Promise<{ id:
 /**
  * 재고 아이템 상태 업데이트 API
  */
-export async function updateInventoryItemStatus(itemId: number, itemStatus: ItemStatus): Promise<void> {
+export async function updateInventoryItemStatus(itemId: number, itemStatus: ItemStatus): Promise<InventoryStatusUpdateResponse["data"]> {
   try {
-    await api.put(`/items/${itemId}`, null, {
+    const response = await api.put<InventoryStatusUpdateResponse>(`/items/${itemId}`, null, {
       params: { itemStatus },
     });
+    return response.data.data;
   } catch (error: any) {
     console.error("상태 업데이트 에러:", error);
     console.error("에러 상태:", error.response?.status);

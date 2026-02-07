@@ -110,6 +110,19 @@ export interface InventoryItemDetailResponse {
   }
 }
 
+export interface InventoryStatusUpdateResponse {
+  success: boolean
+  data: {
+    id: number
+    productInfo: Record<string, unknown>
+    status: ApiProductStatus
+    isFavorite: boolean
+    purchaseCount: number
+    purchaseDate: string
+    expectedExpiryDate: string
+  }
+}
+
 // 인벤토리 히스토리 액션 타입
 export type ActionType = "CREATED" | "EXPIRED" | "DELETED"
 
