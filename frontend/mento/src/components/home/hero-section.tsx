@@ -102,7 +102,7 @@ export function HeroSection(props: HeroSectionProps) {
   useEffect(() => {
     if (videoRef.current && currentScene === 2) {
       videoRef.current.play().catch((error) => {
-        console.log("Video autoplay failed:", error);
+        console.error(error);
       });
     }
   }, [currentScene]);
@@ -132,7 +132,7 @@ export function HeroSection(props: HeroSectionProps) {
           if (index >= 0) setCurrentScene(index);
         });
       },
-      { root: scrollContainer, threshold: 0.6 }
+      { root: scrollContainer, threshold: 0.6 },
     );
 
     sectionRefs.current.forEach((section) => {
