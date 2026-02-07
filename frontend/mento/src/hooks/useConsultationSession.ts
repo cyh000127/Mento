@@ -223,7 +223,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         });
 
         // 로컬 트랙 publish 이벤트
-        newRoom.on(RoomEvent.LocalTrackPublished, (publication, participant) => {
+        newRoom.on(RoomEvent.LocalTrackPublished, (_publication, participant) => {
           setLocalParticipant(participant);
         });
 
@@ -245,7 +245,7 @@ export function useConsultationSession(): UseConsultationSessionReturn {
         });
 
         // 트랙 구독 이벤트
-        newRoom.on(RoomEvent.TrackSubscribed, (track, _publication, participant) => {
+        newRoom.on(RoomEvent.TrackSubscribed, (_track, _publication, _participant) => {
           setRemoteParticipants((prev) => [...prev]);
         });
 

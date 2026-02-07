@@ -48,7 +48,7 @@ export function ConsultationRoomPage() {
     isCameraEnabled,
   } = useConsultationSession();
   const { selectedMaskArea, setActiveTab, setSelectedMaskArea } = useConsultationStore();
-  const { userInfo, mentorInfo, mentorTypeInfo, setReservationInfo, clearReservationInfo } = useConsultationParticipantStore();
+  const { userInfo, mentorInfo, setReservationInfo, clearReservationInfo } = useConsultationParticipantStore();
 
   const hasConnected = useRef(false);
   const isApplyingRemoteMaskRef = useRef(false);
@@ -139,15 +139,9 @@ export function ConsultationRoomPage() {
     return value.includes("@") ? undefined : value;
   };
 
-  const mentorName =
-    sanitizeDisplayName(mentorInfo?.name) ??
-    sanitizeDisplayName(mentorParticipant?.name) ??
-    (isMentor ? sanitizeDisplayName(user?.name) : undefined);
+  const mentorName = sanitizeDisplayName(mentorInfo?.name) ?? sanitizeDisplayName(mentorParticipant?.name) ?? (isMentor ? sanitizeDisplayName(user?.name) : undefined);
 
-  const customerName =
-    sanitizeDisplayName(userInfo?.name) ??
-    sanitizeDisplayName(userParticipant?.name) ??
-    (!isMentor ? sanitizeDisplayName(user?.name) : undefined);
+  const customerName = sanitizeDisplayName(userInfo?.name) ?? sanitizeDisplayName(userParticipant?.name) ?? (!isMentor ? sanitizeDisplayName(user?.name) : undefined);
 
   const topLabel = mentorName ? `멘토 (${mentorName})` : "멘토";
   const bottomLabel = customerName ? `고객 (${customerName})` : "고객";
