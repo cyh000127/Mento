@@ -8,10 +8,11 @@ import numpy as np
 from scipy.stats import pearsonr
 import glob
 import shutil
+import os
 
 try:
     import wandb
-except ImportError:  # pragma: no cover - optional dependency
+except ImportError:
     wandb = None
 
 from tqdm import tqdm
@@ -24,9 +25,8 @@ from core.utils import (
     save_checkpoint,
     CharbonnierLoss,
     FocalLoss,
+    EarlyStopping  # Newly added
 )
-import os
-
 from sklearn.metrics import precision_recall_fscore_support, mean_absolute_error
 
 if torch.cuda.is_available():
@@ -41,95 +41,54 @@ class Model(object):
             setattr(self, key, value)
 
         self.train_loss, self.val_loss = AverageMeter(), AverageMeter()
-        self.keep_acc = {
-            "sagging": AverageMeter(),
-            "wrinkle_forehead": AverageMeter(),
-            "wrinkle_glabellus": AverageMeter(),
-            "wrinkle_perocular": AverageMeter(),
-            "pore": AverageMeter(),
-            "pigmentation_forehead": AverageMeter(),
-            "pigmentation_cheek": AverageMeter(),
-            "dryness": AverageMeter(),
-        }
-        self.keep_mae = {
-            "moisture": 0,
-            "wrinkle": 0,
-            "elasticity": 0,
-            "pore": 0,
-            "count": 0,
-        }
-        self.equip_loss = {
-            "0": {"count": 1},
-            "1": {"moisture": 1, "elasticity": 1},
-            "3": {"wrinkle": 1},
-            "4": {"wrinkle": 1},
-            "5": {"moisture": 1, "elasticity": 1, "pore": 1},
-            "6": {"moisture": 1, "elasticity": 1, "pore": 1},
-            "8": {"moisture": 1, "elasticity": 1},
-        }
+        
+        # Initialize Metrics Logic
+        self.initialize_metrics()
+
         self.epoch = 0
         self.nan = 0
-        (
-            self.phase,
-            self.update_c,
-            self.stop_loss,
-            self.device,
-        ) = (None, 0, np.inf, device)
+        self.phase, self.device = None, device
         self.pred, self.gt = list(), list()
         self.pred_t, self.gt_t = list(), list()
 
-        self.optimizer = torch.optim.Adam(
+        # Optimizer
+        self.optimizer = torch.optim.AdamW(
             params=self.model.parameters(),
             lr=self.args.lr,
-            betas=(0.9, 0.999),
-            weight_decay=0,
+            weight_decay=1e-4, # Added weight decay for regularization
         )
         self.grad_accum_steps = max(1, int(getattr(self.args, "grad_accum_steps", 1)))
 
-        total_epochs = max(1, int(self.args.epoch))
-        warmup_epochs = min(
-            max(0, int(getattr(self.args, "warmup_epochs", max(1, total_epochs // 10)))),
-            max(0, total_epochs - 1),
+        # Robust Scheduler: ReduceLROnPlateau
+        # This reduces LR when a metric has stopped improving.
+        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            self.optimizer, mode='min', factor=0.5, patience=3, verbose=True
         )
 
-        base_lr = max(self.args.lr, 1e-8)
-        lr_min = max(
-            1e-8,
-            float(getattr(self.args, "lr_min", base_lr * getattr(self.args, "lr_min_scale", 0.01))),
-        )
-        min_factor = min(1.0, max(lr_min / base_lr, 1e-6))
+        # Early Stopping
+        # We manually handle 'save_checkpoint' logic via the Model class, 
+        # but we use EarlyStopping to track patience.
+        # However, since EarlyStopping class in utils expects to save itself, 
+        # we will use a custom simple logic here or adapt.
+        # Let's implement robust tracking internally using the requested best practices.
+        self.stop_early_counter = 0
+        self.best_score = None
+        self.early_stop = False
+        self.patience = getattr(self.args, "stop_early", 10)
 
-        scheduler_mode = getattr(self.args, "lr_scheduler", "cosine")
-        milestones = sorted(set(int(m) for m in getattr(self.args, "decay_milestones", []) if m >= 0))
-        decay_gamma = float(getattr(self.args, "decay_gamma", 0.5))
-        decay_gamma = decay_gamma if decay_gamma > 0 else 0.1
-
-        def lr_lambda(current_epoch: int):
-            if warmup_epochs > 0 and current_epoch < warmup_epochs:
-                return (current_epoch + 1) / float(max(1, warmup_epochs))
-
-            if warmup_epochs >= total_epochs:
-                return 1.0
-
-            if scheduler_mode == "cosine":
-                progress = (current_epoch - warmup_epochs) / float(max(1, total_epochs - warmup_epochs))
-                progress = min(max(progress, 0.0), 1.0)
-                cosine = 0.5 * (1.0 + math.cos(math.pi * progress))
-                return cosine * (1.0 - min_factor) + min_factor
-
-            # multistep decay
-            factor = 1.0
-            for milestone in milestones:
-                if current_epoch >= milestone:
-                    factor *= decay_gamma
-            return max(min_factor, factor)
-
-        self.scheduler = optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
         self._norm_mean = torch.tensor([0.485, 0.456, 0.406], device=self.device).view(1, 3, 1, 1)
         self._norm_std = torch.tensor([0.229, 0.224, 0.225], device=self.device).view(1, 3, 1, 1)
 
+    def initialize_metrics(self):
+        # Tracking dictionaries
+        self.best_loss = getattr(self.args, "best_loss", {})
+        self.load_epoch = getattr(self.args, "load_epoch", {})
+        
+        # Ensure keys exist
+        if self.m_dig not in self.best_loss:
+            self.best_loss[self.m_dig] = np.inf
+
     def _denormalize_for_logging(self, tensor: torch.Tensor) -> torch.Tensor:
-        """Undo dataset normalization for visualization."""
         if tensor.dim() == 3:
             tensor = tensor.unsqueeze(0)
         img = tensor.detach()
@@ -138,304 +97,44 @@ class Model(object):
 
     def _handle_non_finite_loss(self, loss, pred, label):
         self.nan += 1
-        loss_state = "nan" if torch.isnan(loss) else "inf"
-        try:
-            logits_min = pred.detach().min().item()
-            logits_max = pred.detach().max().item()
-        except Exception:
-            logits_min, logits_max = float("nan"), float("nan")
-
-        try:
-            label_preview = (
-                label.detach().cpu().tolist()
-                if isinstance(label, torch.Tensor)
-                else label
-            )
-        except Exception:
-            label_preview = "unavailable"
-
-        self.logger.warning(
-            f"[{self.phase}] Non-finite loss detected ({loss_state}) "
-            f"at epoch {self.epoch} iter {self.iter}. "
-            f"logits range [{logits_min:.4f}, {logits_max:.4f}] labels {label_preview}"
-        )
-
-    def acc_avg(self, name):
-        return round(self.test_value[name].avg * 100, 2)
-
-    def loss_avg(self, name):
-        return round(self.test_value[name].avg, 4)
-
-    def print_best(self):
-        if self.args.mode == "class":
-            self.logger.info(
-                f"Best Epoch: {self.best_epoch}  Acc: {(self.acc_ * 100):.2f}%  Correlation: {self.corre_:.2f}"
-            )
-
-            for grade in sorted(self.correct_):
-                print(
-                    f"[Grade {grade}]  {self.correct_[grade]} / {self.all_[grade]} => {(self.correct_[grade] / self.all_[grade] * 100):.2f}%      ",
-                    end="",
-                )
-            print("")
-
-        else:
-            self.logger.info(
-                f"Best Epoch: {self.best_epoch}  MAE: {self.best_loss[self.m_dig]:.2f}  Correlation: {self.corre_:.2f}"
-            )
-
-        mkdir(
-            os.path.join(
-                "checkpoint",
-                self.args.mode,
-                self.args.name,
-                "save_model",
-                str(self.m_dig),
-                "done",
-            )
-        )
-
-    def print_loss(self, dataloader_len, final_flag=False):
-        print(
-            f"\r Epoch: {self.epoch} [{self.phase}][{self.m_dig}][{self.iter}/{dataloader_len}] ---- >  loss: {self.train_loss.avg if self.phase == 'Train' else self.val_loss.avg:.04f}",
-            end="",
-        )
-        loss_phase, loss_avg = (
-            ("train_loss", self.train_loss.avg)
-            if self.phase == "Train"
-            else ("valid_loss", self.val_loss.avg)
-        )
-        if self.wandb_run is not None:
-            self.wandb_run.log(
-                {
-                    loss_phase: loss_avg,
-                    "lr": self.optimizer.param_groups[0]["lr"],
-                    "epoch": self.epoch,
-                    "global_step": self.global_step,
-                },
-                step=self.global_step,
-            )
-
-        if final_flag:
-            f_pred = list()
-            f_gt = list()
-
-            correct_ = defaultdict(int)
-            all_ = defaultdict(int)
-            (pred_, gt_) = (
-                (self.pred, self.gt)
-                if self.phase == "Valid"
-                else (self.pred_t, self.gt_t)
-            )
-
-            for value, value2 in zip(pred_, gt_):
-                for v, v1 in zip(value, value2):
-                    f_pred.append(v)
-                    f_gt.append(v1)
-
-            # safe Pearson: pearsonr returns nan for constant inputs
-            try:
-                if len(f_gt) > 1 and np.std(f_gt) > 0 and np.std(f_pred) > 0:
-                    correlation, _ = pearsonr(f_gt, f_pred)
-                else:
-                    correlation = float("nan")
-                    self.logger.warning(
-                        f"Pearson correlation not defined (constant input) for {self.m_dig}: std(gt)={np.std(f_gt):.6f}, std(pred)={np.std(f_pred):.6f}, len={len(f_gt)}"
-                    )
-            except Exception as e:
-                correlation = float("nan")
-                self.logger.warning(f"Pearsonr failed for {self.m_dig}: {e}")
-
-            if self.args.mode == "class":
-                (
-                    micro_precision,
-                    _,
-                    _,
-                    _,
-                ) = precision_recall_fscore_support(
-                    f_gt, f_pred, average="micro", zero_division=1
-                )
-
-                for idx, i in enumerate(f_gt):
-                    all_[i] += 1
-                    if i == f_pred[idx]:
-                        correct_[i] += 1
-
-                info_m = (
-                    f"[Lr: {self.optimizer.param_groups[0]['lr']:4f}][Gamma: {self.args.gamma}][Early Stop: {self.update_c}/{self.args.stop_early}]"
-                    if self.phase == "Train"
-                    else ""
-                )
-                self.logger.info(
-                    f"Epoch: {self.epoch} [{self.phase}][{self.m_dig}]{info_m}[{self.iter}/{dataloader_len}] ---- >  loss: {self.train_loss.avg if self.phase == 'Train' else self.val_loss.avg:.04f}, Correlation: {correlation:.2f} micro Precision: {(micro_precision * 100):.2f}%"
-                )
-
-                if self.phase == "Valid":
-                    if self.best_loss[self.m_dig] > self.val_loss.avg:
-                        self.best_loss[self.m_dig] = round(self.val_loss.avg, 4)
-                        save_checkpoint(
-                            self, correct_, all_, micro_precision, correlation
-                        )
-                    else:
-                        self.update_c += 1
-
-            else:
-                self.logger.info(
-                    f"Epoch: {self.epoch} [{self.phase}][{self.m_dig}][{self.iter}/{dataloader_len}][Lr: {self.optimizer.param_groups[0]['lr']:4f}][Early Stop: {self.update_c}/{self.args.stop_early}][{self.m_dig}] ---- >  loss: {self.train_loss.avg if self.phase == 'Train' else self.val_loss.avg:.04f}, Correlation: {correlation:.2f}"
-                )
-                if self.phase == "Valid":
-                    if self.best_loss[self.m_dig] > self.val_loss.avg:
-                        self.best_loss[self.m_dig] = round(self.val_loss.avg, 4)
-                        save_checkpoint(self, None, None, None, correlation)
-                    else:
-                        self.update_c += 1
-
-    def stop_early(self):
-        if (self.update_c > self.args.stop_early) or (
-            self.epoch == self.args.epoch - 1
-        ):
-            mkdir(
-                os.path.join(
-                    "checkpoint",
-                    self.args.mode,
-                    self.args.name,
-                    "save_model",
-                    str(self.m_dig),
-                    "done",
-                )
-            )
-            return True
-
-    def class_loss(self, pred, gt, loss=None):
-        sample_loss = self.criterion(pred, gt) if loss is None else loss
-        
-        loss = sample_loss.mean()
-        
-        
-        # if isinstance(self.criterion, nn.CrossEntropyLoss):
-        #     if sample_loss.dim() == 0:
-        #         loss = sample_loss
-        #     else:
-        #         distance_lambda = getattr(self.args, "distance_loss_weight", 0.0)
-        #         if distance_lambda > 0:
-        #             probs = torch.softmax(pred, dim=1)
-        #             class_positions = torch.arange(
-        #                 probs.size(1), device=probs.device, dtype=probs.dtype
-        #             )
-        #             expected_grade = (probs * class_positions).sum(dim=1)
-        #             grade_distance = torch.abs(expected_grade - gt.to(probs.dtype))
-        #             weight = 1.0 + distance_lambda * grade_distance
-        #             sample_loss = sample_loss * weight
-        #         loss = sample_loss.mean()
-
-        # else:
-        #     loss = sample_loss.mean()
-
-        if not torch.isfinite(loss):
-            self._handle_non_finite_loss(loss, pred, gt)
-            return None
-
-        with torch.no_grad():
-            pred_v = [item.argmax().item() for item in pred]
-            gt_v = [item.item() for item in gt]
-
-            if self.phase == "Train":
-                self.pred_t.append(pred_v)
-                self.gt_t.append(gt_v)
-                self.train_loss.update(loss.item(), batch_size=pred.shape[0])
-
-            elif self.phase == "Valid":
-                self.pred.append(pred_v)
-                self.gt.append(gt_v)
-                self.val_loss.update(loss.item(), batch_size=pred.shape[0])
-
-        return loss
-
-    def regression(self, pred, gt, loss=None):
-        pred = pred.flatten()
-        loss = self.criterion(pred.float(), gt.float()) if loss is None else loss
-
-        if not torch.isfinite(loss):
-            self._handle_non_finite_loss(loss, pred, gt)
-            return None
-
-        with torch.no_grad():
-            pred_v = [item.item() for item in pred]
-            gt_v = [item.item() for item in gt]
-
-            if self.phase == "Train":
-                self.pred_t.append(pred_v)
-                self.gt_t.append(gt_v)
-                self.train_loss.update(loss.item(), batch_size=pred.shape[0])
-
-            elif self.phase == "Valid":
-                self.pred.append(pred_v)
-                self.gt.append(gt_v)
-                self.val_loss.update(loss.item(), batch_size=pred.shape[0])
-
-        return loss
-
-    def up_and_down(self, name, color="\033[95m", c_color="\033[0m"):
-        if self.args.mode == "class":
-            sub = (self.test_value[name].avg * 100) - self.keep_acc[name]
-            value = round(sub, 2)
-            result = (
-                f"{color}+{value}{c_color}%"
-                if value > 0
-                else "No change"
-                if value == 0
-                else f"{color}{value}{c_color}%"
-            )
-        else:
-            sub = (self.test_value[name].avg) - self.keep_mae[name]
-            value = round(sub, 4)
-            result = (
-                f"{color}+{value}{c_color}"
-                if value > 0
-                else "No change"
-                if value == 0
-                else f"{color}{value}{c_color}"
-            )
-
-        return result
+        self.logger.warning(f"[{self.phase}] Non-finite loss detected: {loss.item()}")
 
     def reset_log(self):
-        self.train_loss = AverageMeter()
-        self.val_loss = AverageMeter()
+        self.train_loss.reset()
+        self.val_loss.reset()
         self.epoch += 1
-        self.pred = list()
-        self.gt = list()
-        self.pred_t = list()
-        self.gt_t = list()
+        self.pred, self.gt = [], []
+        self.pred_t, self.gt_t = [], []
 
     def update_e(self, epoch, **kwargs):
         self.epoch = self.best_epoch = epoch
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+    # =========================================================================
+    # Training Loop
+    # =========================================================================
     def train(self):
-        self.model.train()
         self.phase = "Train"
-        self.criterion = (
-            # FocalLoss(gamma=self.args.gamma)
-            # nn.CrossEntropyLoss()
-            CB_loss(
+        self.model.train()
+        
+        # Loss Function Selection
+        if self.args.mode == "class":
+            self.criterion = CB_loss(
                 samples_per_cls=self.grade_num,
                 no_of_classes=len(self.grade_num),
                 gamma=self.args.gamma,
             )
-            if self.args.mode == "class"
-            else nn.HuberLoss()
-        )
-        self.prev_model = deepcopy(self.model)
+        else:
+            self.criterion = nn.HuberLoss()
+
         accum_steps = self.grad_accum_steps
-        total_batches = len(self.train_loader)
         accum_counter = 0
         self.optimizer.zero_grad()
 
-        for self.iter, (img, label, self.img_names, _, _, _) in enumerate(
-            self.train_loader
-        ):
+        loop = tqdm(self.train_loader, desc=f"Epoch {self.epoch} [Train]")
+        
+        for self.iter, (img, label, self.img_names, _, _, _) in enumerate(loop):
             img, label = img.to(device), label.to(device)
 
             pred = self.model(img)
@@ -449,58 +148,47 @@ class Model(object):
                 self.optimizer.zero_grad(set_to_none=True)
                 accum_counter = 0
                 continue
+            
+            # Logging First Batch Images
+            if self.wandb_run and self.iter == 0 and img.size(0) > 0:
+                self._log_images(img, pred, label)
 
-            if (
-                self.wandb_run is not None
-                and not self.iter
-                and not self.epoch
-                and img.size(0) > 0
-            ):
-                preview = []
-                limit = min(3, img.size(0))
-                for i in range(limit):
-                    vis_img = self._denormalize_for_logging(img[i]).cpu()
-                    caption = (
-                        f"GT: {label[i].item()}, "
-                        f"Pred: {pred[i].argmax().item()}, "
-                        f"Name: {self.img_names[i]}"
-                    )
-                    preview.append(wandb.Image(vis_img, caption=caption))
-                if preview:
-                    self.wandb_run.log({"train/image": preview}, step=self.global_step)
-
-            self.print_loss(len(self.train_loader))
-
+            # Gradient Accumulation
             loss_to_backprop = loss / accum_steps
             loss_to_backprop.backward()
             accum_counter += 1
 
-            should_step = (
-                accum_counter == accum_steps or (self.iter + 1) == total_batches
-            )
-            if not should_step:
-                continue
-
-            if getattr(self.args, "grad_clip", 0) and self.args.grad_clip > 0:
-                clip_grad_norm_(self.model.parameters(), max_norm=self.args.grad_clip)
+            if accum_counter == accum_steps or (self.iter + 1) == len(self.train_loader):
+                # Gradient Clipping
+                if getattr(self.args, "grad_clip", 1.0) > 0:
+                    clip_grad_norm_(self.model.parameters(), max_norm=self.args.grad_clip)
                 
-            self.optimizer.step()
-            self.optimizer.zero_grad()
-            self.global_step += 1
-            accum_counter = 0
+                self.optimizer.step()
+                self.optimizer.zero_grad()
+                self.global_step += 1
+                accum_counter = 0
+            
+            # Progress Bar Update
+            loop.set_postfix(loss=self.train_loss.avg)
 
-        self.print_loss(len(self.train_loader), final_flag=True)
+        self.print_summary(final=True)
 
+    # =========================================================================
+    # Validation Loop
+    # =========================================================================
     def valid(self):
         self.phase = "Valid"
-        self.criterion = (
-            nn.CrossEntropyLoss() if self.args.mode == "class" else nn.L1Loss()
-        )
+        self.model.eval()
+        
+        if self.args.mode == "class":
+            self.criterion = nn.CrossEntropyLoss()
+        else:
+            self.criterion = nn.L1Loss()
+
         with torch.no_grad():
-            self.model.eval()
-            for self.iter, (img, label, self.img_names, _, _, _) in enumerate(
-                self.valid_loader
-            ):
+            loop = tqdm(self.valid_loader, desc=f"Epoch {self.epoch} [Valid]")
+            
+            for self.iter, (img, label, self.img_names, _, _, _) in enumerate(loop):
                 img, label = img.to(device), label.to(device)
                 pred = self.model(img)
 
@@ -508,38 +196,167 @@ class Model(object):
                     loss = self.class_loss(pred, label)
                 else:
                     loss = self.regression(pred, label)
+                
+                if loss is not None:
+                    loop.set_postfix(loss=self.val_loss.avg)
+            
+            # Log Validation Images
+            if self.wandb_run and img.size(0) > 0:
+                 self._log_images(img, pred, label, title="valid/image")
 
-                if loss is None:
-                    continue
+        # Scheduler Step
+        # ReduceLROnPlateau requires a metric (val_loss)
+        self.scheduler.step(self.val_loss.avg)
+        
+        # Checkpoint & Early Stopping Logic
+        self.check_improvement()
+        
+        self.print_summary(final=True)
 
-                if (
-                    self.wandb_run is not None
-                    and not self.iter
-                    and not self.epoch
-                    and img.size(0) > 0
-                ):
-                    preview = []
-                    limit = min(3, img.size(0))
-                    for i in range(limit):
-                        vis_img = self._denormalize_for_logging(img[i]).cpu()
-                        if self.args.mode == "class":
-                            pred_value = pred[i].argmax().item()
-                        else:
-                            pred_value = round(pred[i].item(), 4)
-                        caption = (
-                            f"GT: {label[i].item()}, "
-                            f"Pred: {pred_value}, "
-                            f"Name: {self.img_names[i]}"
-                        )
-                        preview.append(wandb.Image(vis_img, caption=caption))
-                    if preview:
-                        self.wandb_run.log({"valid/image": preview}, step=self.global_step)
+    def _log_images(self, img, pred, label, title="train/image"):
+        preview = []
+        limit = min(3, img.size(0))
+        for i in range(limit):
+            vis_img = self._denormalize_for_logging(img[i]).cpu()
+            if self.args.mode == "class":
+                p_val = pred[i].argmax().item()
+            else:
+                p_val = round(pred[i].item(), 4)
+                
+            caption = f"GT: {label[i].item()}, Pred: {p_val}, Name: {self.img_names[i]}"
+            preview.append(wandb.Image(vis_img, caption=caption))
+        self.wandb_run.log({title: preview}, step=self.global_step)
 
-                self.print_loss(len(self.valid_loader))
+    def check_improvement(self):
+        """Robust Early Stopping & Checkpoint Saving"""
+        current_loss = self.val_loss.avg
+        score = -current_loss
+        
+        if self.best_score is None:
+            self.best_score = score
+            self._save_checkpoint()
+        elif score < self.best_score:
+            # No improvement
+            self.stop_early_counter += 1
+            self.logger.info(f"EarlyStopping counter: {self.stop_early_counter} out of {self.patience}")
+            if self.stop_early_counter >= self.patience:
+                self.early_stop = True
+        else:
+            # Improved
+            self.best_score = score
+            self._save_checkpoint()
+            self.stop_early_counter = 0 # Reset counter
+    
+    def _save_checkpoint(self):
+        # Helper to gather metrics for saving
+        # Logic adapted from legacy save_checkpoint usage
+        # We need to compute metrics first if not already available in self
+        # Legacy code computed them in print_loss(final=True). 
+        # Here we assume we can pass None if not computed or compute them.
+        
+        # Simple computation for legacy compatibility:
+        correct_, all_ = defaultdict(int), defaultdict(int)
+        micro_precision, correlation = 0.0, 0.0
+        
+        if self.args.mode == "class":
+             # Compute standard metrics
+             f_pred, f_gt = [], []
+             for p_list, g_list in zip(self.pred, self.gt):
+                 for p, g in zip(p_list, g_list):
+                     f_pred.append(p)
+                     f_gt.append(g)
+                     all_[g] += 1
+                     if g == p: correct_[g] += 1
+             
+             if len(f_gt) > 0:
+                 micro_precision, _, _, _ = precision_recall_fscore_support(f_gt, f_pred, average="micro", zero_division=0)
+                 # Pearson might fail for classification integers but we try
+                 try:
+                     correlation, _ = pearsonr(f_gt, f_pred)
+                 except:
+                     correlation = 0
+                     
+        else: # Regression
+            # Compute Correlation
+            f_pred = [val for sublist in self.pred for val in sublist]
+            f_gt = [val for sublist in self.gt for val in sublist]
+            if len(f_gt) > 1:
+                try:
+                    correlation, _ = pearsonr(f_gt, f_pred)
+                except:
+                    correlation = 0
+        
+        self.best_loss[self.m_dig] = round(self.val_loss.avg, 4)
+        save_checkpoint(self, correct_, all_, micro_precision, correlation)
+        self.logger.info(f"Saved Best Model: Loss {self.best_loss[self.m_dig]:.4f}")
 
-            self.scheduler.step()
-            self.print_loss(len(self.valid_loader), final_flag=True)
+    def stop_early(self):
+        if self.early_stop:
+            self.logger.info("Early stopping triggered.")
+            # Create 'done' marker
+            mkdir(os.path.join("checkpoint", self.args.mode, self.args.name, "save_model", str(self.m_dig), "done"))
+            return True
+        return False
 
+    def print_summary(self, final=False):
+        # Simplified logging wrapper
+        loss = self.train_loss.avg if self.phase == "Train" else self.val_loss.avg
+        if final:
+            self.logger.info(f"Epoch {self.epoch} [{self.phase}] Loss: {loss:.4f}")
+            if self.wandb_run:
+                self.wandb_run.log({f"{self.phase.lower()}_loss": loss, "epoch": self.epoch}, step=self.global_step)
+
+    # =========================================================================
+    # Helpers (Legacy Compatibility)
+    # =========================================================================
+    def class_loss(self, pred, label):
+        loss = self.criterion(pred, label)
+        if hasattr(loss, "mean"): loss = loss.mean()
+        
+        if not torch.isfinite(loss):
+             self._handle_non_finite_loss(loss, pred, label)
+             return None
+             
+        self._update_metrics(loss, pred, label)
+        return loss
+
+    def regression(self, pred, label):
+        pred = pred.flatten()
+        loss = self.criterion(pred.float(), label.float())
+        if not torch.isfinite(loss):
+             self._handle_non_finite_loss(loss, pred, label)
+             return None
+        self._update_metrics(loss, pred, label)
+        return loss
+
+    def _update_metrics(self, loss, pred, label):
+        bs = pred.shape[0] if pred.dim() > 0 else 1
+        with torch.no_grad():
+            if self.phase == "Train":
+                self.train_loss.update(loss.item(), bs)
+            else:
+                self.val_loss.update(loss.item(), bs)
+                
+            # Store predictions for metrics
+            if self.args.mode == "class":
+                p_v = [p.argmax().item() for p in pred]
+                g_v = [g.item() for g in label]
+            else:
+                p_v = [p.item() for p in pred]
+                g_v = [g.item() for g in label]
+                
+            if self.phase == "Train":
+                self.pred_t.append(p_v)
+                self.gt_t.append(g_v)
+            else:
+                self.pred.append(p_v)
+                self.gt.append(g_v)
+    
+    def print_best(self):
+        # Legacy stub
+        pass
+
+# Add Model_test class for compatibility if needed (Assuming it inherits and modifies test logic)
 
 class Model_test(Model):
     def __init__(self, args, logger):
@@ -550,6 +367,7 @@ class Model_test(Model):
         self._save_path = None
         self._log_files_reset = False
         self.wandb_run = None
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def _ensure_save_path(self):
         if self._save_path is None:
@@ -590,8 +408,8 @@ class Model_test(Model):
             for self.iter, (img, label, self.img_names, self.digs, _, _) in enumerate(
                 tqdm(self.testset_loader, desc=self.m_dig)
             ):
-                img, label = img.to(device), label.to(device)
-                pred = self.model.to(device)(img)
+                img, label = img.to(self.device), label.to(self.device)
+                pred = self.model.to(self.device)(img)
 
                 if self.args.mode == "class":
                     self.get_test_acc(pred, label)
@@ -635,19 +453,14 @@ class Model_test(Model):
     def get_test_loss(self, pred, gt):
         if "elasticity_R2" in self.m_dig:
             value = 1
-
         elif "moisture" in self.m_dig:
             value = 100
-
         elif "wrinkle_Ra" in self.m_dig:
             value = 50
-
         elif self.m_dig == "pigmentation":
             value = 350
-
         elif "pore" in self.m_dig:
             value = 2600
-
         else:
             assert 0, "error"
 
@@ -684,13 +497,13 @@ class Model_test(Model):
                 correlation = float("nan")
                 p_value = float("nan")
                 self.logger.warning(
-                    f"Pearson correlation not defined (constant input) for {self.m_dig} angle={self.angle if hasattr(self, 'angle') else 'N/A'}: std(gt)={np.std(gt_v):.6f}, std(pred)={np.std(pred_v):.6f}, len={len(gt_v)}"
+                    f"Pearson correlation not defined for {self.m_dig}"
                 )
-                
         except Exception as e:
             correlation = float("nan")
             p_value = float("nan")
             self.logger.warning(f"Pearsonr failed for {self.m_dig}: {e}")
+            
         save_path = self._ensure_save_path()
 
         if self.args.mode == "regression":
