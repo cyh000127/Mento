@@ -11,7 +11,6 @@ import { getNotificationEventSourceUrl, deleteNotification } from "@/api/notific
 import type { NotificationResDto } from "@/types/notification";
 
 const navItems = [
-  // { label: "추천", href: "/recommend" }, // 260128 kjm 아직 구현 여부가 결정되지 않아서 주석 처리
   { label: "멘토링", href: "/mentoring" },
   { label: "사용법", href: "/guide" },
   { label: "AI CARE", href: "/ai-care" },

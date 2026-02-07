@@ -56,7 +56,7 @@ export function ConsultationRoomPage() {
   // 컴포넌트 마운트 시 자동으로 상담 세션 생성 및 LiveKit 연결
   useEffect(() => {
     if (!reservationId) {
-      console.error("❌ reservationId가 없습니다.");
+      console.error("reservationId가 없습니다.");
       navigate("/");
       return;
     }
@@ -67,17 +67,10 @@ export function ConsultationRoomPage() {
     const id = parseInt(reservationId, 10);
 
     if (isNaN(id)) {
-      console.error("❌ 유효하지 않은 reservationId:", reservationId);
+      console.error("유효하지 않은 reservationId:", reservationId);
       navigate("/");
       return;
     }
-
-    // 디버깅: 토큰 상태 확인
-    console.log("🔑 인증 상태 확인:", {
-      hasRefreshToken: localStorage.getItem("hasRefreshToken"),
-      reservationId: id,
-      roomId: roomId, // Log obfuscated ID
-    });
 
     // 대기방에서 설정한 상태로 연결 시작
     connect(id, { initialMic, initialCamera });

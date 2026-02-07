@@ -185,12 +185,6 @@ export default function ConsultationPage() {
     setBookingData((prev) => ({ ...prev, category }));
   };
 
-  // 260126 kjm - 사용하지 않고 있어서 빌드 에러 잡느라 지웁니다
-  //              예약 붙일 때 함수 필요하면 살리기
-  // const handleDateTimeSelect = (date: Date | null, time: string) => {
-  //   setBookingData((prev) => ({ ...prev, date, time }))
-  // }
-
   const handleNext = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setCurrentStep((prev) => Math.min(prev + 1, steps.length));

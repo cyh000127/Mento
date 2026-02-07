@@ -38,11 +38,6 @@ export function VideoTrack({ participant, maskType = null }: VideoTrackProps) {
     if (!videoElement) return;
 
     const handleLoadedData = () => {
-      console.log("📹 비디오 요소 준비 완료:", {
-        identity: participant.identity,
-        videoWidth: videoElement.videoWidth,
-        videoHeight: videoElement.videoHeight,
-      });
       setVideoElementReady(true);
     };
 
@@ -64,13 +59,10 @@ export function VideoTrack({ participant, maskType = null }: VideoTrackProps) {
     const videoElement = videoRef.current;
     if (!videoElement) return;
 
-    console.log(`🔄 트랙 업데이트 감지 (count: ${trackUpdateCount}) - 재연결 시도`);
-
     const publications = participant.trackPublications as Map<string, TrackPublication>;
     const videoPublication = Array.from(publications.values()).find((pub) => pub.kind === Track.Kind.Video);
 
     if (videoPublication?.track && videoElement) {
-      console.log(`🎥 트랙 재연결: ${participant.identity}`);
       videoPublication.track.attach(videoElement);
     }
   }, [trackUpdateCount, participant, isLocal]);
@@ -79,8 +71,6 @@ export function VideoTrack({ participant, maskType = null }: VideoTrackProps) {
     const videoElement = videoRef.current;
     const audioElement = audioRef.current;
     if (!videoElement || !audioElement) return;
-
-    console.log(`🔍 VideoTrack 마운트: ${participant.identity}, 타입: ${isLocal ? "Local" : "Remote"}`);
 
     let currentVideoTrack: Track | null = null;
     let currentAudioTrack: Track | null = null;
@@ -114,57 +104,26 @@ export function VideoTrack({ participant, maskType = null }: VideoTrackProps) {
     const attachVideoTrack = () => {
       // 기존 트랙이 있으면 먼저 해제
       if (currentVideoTrack) {
-        console.log(`🔄 기존 비디오 트랙 해제: ${participant.identity}`);
         currentVideoTrack.detach(videoElement);
         currentVideoTrack = null;
       }
 
       if (currentAudioTrack) {
-        console.log(`🔄 기존 오디오 트랙 해제: ${participant.identity}`);
         currentAudioTrack.detach(audioElement);
         currentAudioTrack = null;
       }
 
       // 트랙 publications에서 비디오/오디오 트랙 찾기
       const publications = participant.trackPublications as Map<string, TrackPublication>;
-      console.log(`🔍 트랙 검색 중: ${participant.identity} (${isLocal ? "Local" : "Remote"})`, {
-        publicationsCount: publications.size,
-        allPublications: Array.from(publications.values()).map((p) => ({
-          kind: p.kind,
-          trackSid: p.trackSid,
-          hasTrack: !!p.track,
-          trackName: p.trackName,
-        })),
-      });
 
       const videoPublication = getVideoPublication();
       const audioPublication = getAudioPublication();
 
       // 비디오 트랙 연결
       if (videoPublication?.track) {
-        console.log(`🎥 비디오 트랙 연결 시작: ${participant.identity} (${isLocal ? "Local" : "Remote"})`);
-        console.log(`   트랙 정보:`, {
-          trackSid: videoPublication.trackSid,
-          trackName: videoPublication.trackName,
-          isMuted: videoPublication.isMuted,
-        });
-
         videoPublication.track.attach(videoElement);
         currentVideoTrack = videoPublication.track;
-
-        console.log(`✅ 비디오 트랙 연결 완료: ${participant.identity}`);
-        console.log(`   video element 상태:`, {
-          videoWidth: videoElement.videoWidth,
-          videoHeight: videoElement.videoHeight,
-          srcObject: !!videoElement.srcObject,
-        });
       } else {
-        console.warn(`❌ 비디오 트랙 없음: ${participant.identity}`, {
-          hasPublication: !!videoPublication,
-          hasTrack: videoPublication?.track ? true : false,
-          publicationsCount: publications.size,
-        });
-
         if (isLocal) {
           if (retryTimeoutRef.current) {
             window.clearTimeout(retryTimeoutRef.current);
@@ -177,21 +136,11 @@ export function VideoTrack({ participant, maskType = null }: VideoTrackProps) {
 
       // 오디오 트랙 연결 (로컬 참가자는 제외 - 에코 방지)
       if (!isLocal && audioPublication?.track) {
-        console.log(`🎤 오디오 트랙 연결 시작: ${participant.identity}`);
-        console.log(`   트랙 정보:`, {
-          trackSid: audioPublication.trackSid,
-          trackName: audioPublication.trackName,
-          isMuted: audioPublication.isMuted,
-        });
-
         audioPublication.track.attach(audioElement);
         currentAudioTrack = audioPublication.track;
-
-        console.log(`✅ 오디오 트랙 연결 완료: ${participant.identity}`);
       } else if (isLocal) {
-        console.log(`🔇 로컬 참가자 오디오는 연결하지 않음 (에코 방지)`);
       } else {
-        console.warn(`❌ 오디오 트랙 없음: ${participant.identity}`, {
+        console.warn(`오디오 트랙 없음: ${participant.identity}`, {
           hasPublication: !!audioPublication,
           hasTrack: audioPublication?.track ? true : false,
         });
@@ -207,9 +156,7 @@ export function VideoTrack({ participant, maskType = null }: VideoTrackProps) {
     if (isLocal) {
       // 로컬 트랙 publish 이벤트 리스너
       const handleLocalTrackPublished = (publication: TrackPublication) => {
-        console.log(`📡 로컬 트랙 published: kind=${publication.kind}, trackSid=${publication.trackSid}`);
         if (publication.kind === Track.Kind.Video) {
-          console.log(`🔄 비디오 트랙 publish 감지 - 리렌더링 트리거`);
           // 트랙이 완전히 준비될 때까지 약간 대기 후 강제 리렌더링
           setTimeout(() => {
             attachVideoTrack();
@@ -222,7 +169,6 @@ export function VideoTrack({ participant, maskType = null }: VideoTrackProps) {
 
       // 클린업
       return () => {
-        console.log(`🧹 VideoTrack 언마운트 (Local): ${participant.identity}`);
         if (currentVideoTrack) {
           currentVideoTrack.detach(videoElement);
         }
@@ -241,7 +187,6 @@ export function VideoTrack({ participant, maskType = null }: VideoTrackProps) {
        */
       // 트랙 subscribed 이벤트 리스너
       const handleTrackSubscribed = (track: Track, publication: TrackPublication) => {
-        console.log(`✅ 원격 트랙 subscribed: ${participant.identity}, kind=${publication.kind}`);
         if (publication.kind === Track.Kind.Video) {
           // 기존 트랙 해제
           if (currentVideoTrack) {
@@ -258,13 +203,11 @@ export function VideoTrack({ participant, maskType = null }: VideoTrackProps) {
           // 새 오디오 트랙 연결
           track.attach(audioElement);
           currentAudioTrack = track;
-          console.log(`✅ 원격 오디오 트랙 연결 완료: ${participant.identity}`);
         }
       };
 
       // 트랙 unsubscribed 이벤트 리스너
       const handleTrackUnsubscribed = (_track: Track, publication: TrackPublication) => {
-        console.log(`❌ 원격 트랙 unsubscribed: ${participant.identity}, kind=${publication.kind}`);
         if (publication.kind === Track.Kind.Video && currentVideoTrack) {
           currentVideoTrack.detach(videoElement);
           currentVideoTrack = null;
@@ -279,7 +222,6 @@ export function VideoTrack({ participant, maskType = null }: VideoTrackProps) {
 
       // 클린업
       return () => {
-        console.log(`🧹 VideoTrack 언마운트 (Remote): ${participant.identity}`);
         if (currentVideoTrack) {
           currentVideoTrack.detach(videoElement);
         }
