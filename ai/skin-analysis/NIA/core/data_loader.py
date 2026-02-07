@@ -259,7 +259,7 @@ class CustomDataset(Dataset):
                             )
 
     def save_dict(self, transform):
-        ori_img = cv2.imread(os.path.join("dataset/cropped_img", self.i_path + ".jpg"))
+        ori_img = cv2.imread(os.path.join("dataset/cropped_aligned", self.i_path + ".jpg"))
         pil_img = cv2.cvtColor(ori_img, cv2.COLOR_BGR2RGB)
         ori_img = cv2.resize(ori_img, (self.args.res, self.args.res))
 
