@@ -36,7 +36,7 @@ export function InventorySection() {
                 <br className="hidden md:block" />
                 간편하게 관리하세요
               </h2>
-              <p className="text-pretty text-lg leading-relaxed text-text-secondary">
+              <div className="text-pretty text-lg leading-relaxed text-text-secondary">
                 <p>
                   스킨, 뷰티, 헤어 상품을 즐겨찾기 및 보유 상태를
                   <br className="hidden md:block" />
@@ -48,7 +48,7 @@ export function InventorySection() {
                   <br className="hidden md:block" />  
                   재고 정보를 원활하게 활용할 수 있습니다.
                 </p>
-              </p>
+              </div>
 
               <div className="flex flex-col items-start gap-3 sm:flex-row">
                 {isLoggedIn ? (
