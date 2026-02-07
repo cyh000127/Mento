@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.item.enums.ItemStatus;
 import com.mento.domain.item.exception.ItemException;
 import com.mento.domain.product.entity.Product;
@@ -84,12 +85,12 @@ public class Item extends BaseEntity {
 
 	public void updateStatusToOwn() {
 		this.purchaseCount++;
-		this.purchaseDate = LocalDate.now();
-		this.expectedExpiryDate = LocalDate.now().plusDays(this.getProduct().getDefaultUsageDays());
+		this.purchaseDate = TimeUtils.nowAsLocalDate();
+		this.expectedExpiryDate = TimeUtils.nowAsLocalDate().plusDays(this.getProduct().getDefaultUsageDays());
 	}
 
 	public void withDraw() {
-		this.deletedAt = LocalDateTime.now();
+		this.deletedAt = TimeUtils.nowAsLocalDateTime();
 	}
 
 	public void assignUser(final User user) {

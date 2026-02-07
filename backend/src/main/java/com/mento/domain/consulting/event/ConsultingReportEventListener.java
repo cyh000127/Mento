@@ -25,6 +25,8 @@ import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.event.NotificationEvent;
 import com.mento.domain.notification.service.command.NotificationCommandService;
+import com.mento.domain.user.entity.User;
+import com.mento.domain.user.service.query.UserQueryService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +49,7 @@ public class ConsultingReportEventListener {
 
 	private final PromptProperties promptProperties;
 	private final ConsultingReportQueryService consultingReportQueryService;
+	private final UserQueryService userQueryService;
 
 	@Async("aiUploadThreadPoolExecutor")
 	@EventListener
@@ -88,8 +91,9 @@ public class ConsultingReportEventListener {
 	}
 
 	private void sendReportReadyNotification(final Long userId) {
+		User user = userQueryService.findById(userId);
 		Notification notification = NotificationConverter.toEntity(
-			userId,
+			user,
 			NotificationType.REPORT_READY,
 			TimeUtils.nowAsLocalDateTime().plusDays(90)
 		);

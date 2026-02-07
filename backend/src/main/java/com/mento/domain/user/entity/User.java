@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.product.exception.ProductException;
@@ -99,7 +100,7 @@ public class User extends BaseEntity {
 	}
 
 	public void withdraw() {
-		this.deletedAt = LocalDateTime.now();
+		this.deletedAt = TimeUtils.nowAsLocalDateTime();
 	}
 
 	public void assignReservation(final Reservation reservation) {

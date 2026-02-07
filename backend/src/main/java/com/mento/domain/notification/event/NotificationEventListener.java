@@ -10,6 +10,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mento.domain.notification.converter.NotificationConverter;
+import com.mento.domain.notification.dto.message.NotificationMessage;
 import com.mento.domain.notification.dto.response.NotificationResDto;
 import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.repository.SseEmitterRepository;
@@ -38,12 +39,13 @@ public class NotificationEventListener {
 		}
 
 		try {
-			String message = objectMapper.writeValueAsString(notification);
-			redisTemplate.convertAndSend("notificationTopic", message);
+			NotificationMessage message = NotificationConverter.toMessage(notification);
+			String messageString = objectMapper.writeValueAsString(message);
+			redisTemplate.convertAndSend("notificationTopic", messageString);
 
 			log.info("[NotificationEventListener] 알림 이벤트 Redis 발행 성공 {notificationId: {}, userId: {}}",
-				notification.getId(),
-				notification.getUserId());
+				message.notificationId(),
+				message.userId());
 
 		} catch (JsonProcessingException e) {
 			log.error("[NotificationEventListener] 알림 이벤트 Redis 발행 실패 {notificationId: {}}",

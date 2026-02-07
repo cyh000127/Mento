@@ -24,6 +24,8 @@ import com.mento.domain.notification.event.NotificationEvent;
 import com.mento.domain.notification.repository.SseEmitterRepository;
 import com.mento.domain.notification.service.command.NotificationCommandService;
 import com.mento.domain.notification.service.query.NotificationQueryService;
+import com.mento.domain.user.entity.User;
+import com.mento.domain.user.service.query.UserQueryService;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationFacadeServiceTest {
@@ -37,7 +39,8 @@ class NotificationFacadeServiceTest {
 	@Mock
 	private NotificationQueryService notificationQueryService;
 
-
+	@Mock
+	private UserQueryService userQueryService;
 
 	@Mock
 	private SseEmitterRepository sseEmitterRepository;
@@ -50,10 +53,11 @@ class NotificationFacadeServiceTest {
 	void subscribe_Success() {
 		// given
 		Long userId = 1L;
+		User user = User.builder().id(userId).build();
 
 		Notification notification = Notification.builder()
 			.id(1L)
-			.userId(userId)
+			.user(user)
 			.type(NotificationType.RESERVATION_REMINDER)
 			.content("60")
 			.build();
@@ -78,13 +82,16 @@ class NotificationFacadeServiceTest {
 		NotificationSendReqDto reqDto = new NotificationSendReqDto(
 			1L, NotificationType.RESERVATION_REMINDER, "60", null
 		);
+		User user = User.builder().id(1L).build();
 
 		Notification notification = Notification.builder()
 			.id(1L)
-			.userId(1L)
+			.user(user)
 			.type(NotificationType.RESERVATION_REMINDER)
 			.content("60")
 			.build();
+
+		given(userQueryService.findById(1L)).willReturn(user);
 
 		given(notificationCommandService.save(any(Notification.class))).willReturn(notification);
 
@@ -101,16 +108,17 @@ class NotificationFacadeServiceTest {
 	void getNotifications_Success() {
 		// given
 		Long userId = 1L;
-		
+		User user = User.builder().id(userId).build();
+
 		Notification notification = Notification.builder()
 			.id(1L)
-			.userId(userId)
+			.user(user)
 			.type(NotificationType.RESERVATION_REMINDER)
 			.content("60")
 			.build();
-			
+
 		List<Notification> notifications = List.of(notification);
-		
+
 		given(notificationQueryService.getNotifications(userId)).willReturn(notifications);
 
 		// when

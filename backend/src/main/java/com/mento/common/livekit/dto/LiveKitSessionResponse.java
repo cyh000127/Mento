@@ -2,6 +2,8 @@ package com.mento.common.livekit.dto;
 
 import java.time.LocalDateTime;
 
+import com.mento.common.util.TimeUtils;
+
 public record LiveKitSessionResponse(
 	Long timetableId,
 	String roomToken,
@@ -18,6 +20,6 @@ public record LiveKitSessionResponse(
 		String participantRole
 	) {
 		return new LiveKitSessionResponse(timetableId, roomToken, roomName, livekitUrl, participantRole,
-			LocalDateTime.now());
+			TimeUtils.nowAsLocalDateTime());
 	}
 }

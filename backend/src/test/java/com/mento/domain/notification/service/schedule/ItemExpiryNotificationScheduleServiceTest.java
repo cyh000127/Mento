@@ -29,6 +29,7 @@ import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.service.command.NotificationCommandService;
 import com.mento.domain.product.entity.Product;
 import com.mento.domain.user.entity.User;
+import com.mento.domain.user.service.query.UserQueryService;
 
 @ExtendWith(MockitoExtension.class)
 class ItemExpiryNotificationScheduleServiceTest {
@@ -38,6 +39,9 @@ class ItemExpiryNotificationScheduleServiceTest {
 
 	@Mock
 	private NotificationCommandService notificationCommandService;
+
+	@Mock
+	private UserQueryService userQueryService;
 
 	@InjectMocks
 	private ItemExpiryNotificationScheduleService scheduleService;
@@ -93,6 +97,9 @@ class ItemExpiryNotificationScheduleServiceTest {
 		given(itemQueryService.findItemsExpiringBetween(any(LocalDate.class), any(LocalDate.class)))
 			.willReturn(expiringItems);
 
+		given(userQueryService.findById(1L)).willReturn(user1);
+		given(userQueryService.findById(2L)).willReturn(user2);
+
 		// When
 		scheduleService.checkAndNotifyExpiringItems();
 
@@ -101,7 +108,7 @@ class ItemExpiryNotificationScheduleServiceTest {
 
 		List<Notification> capturedNotifications = notificationCaptor.getValue();
 		assertThat(capturedNotifications).hasSize(2); // 2명의 사용자
-		
+
 		// user1은 2개 아이템
 		Notification user1Notification = capturedNotifications.stream()
 			.filter(n -> n.getUserId().equals(1L))
@@ -146,6 +153,8 @@ class ItemExpiryNotificationScheduleServiceTest {
 		given(itemQueryService.findItemsExpiringBetween(any(LocalDate.class), any(LocalDate.class)))
 			.willReturn(List.of(item));
 
+		given(userQueryService.findById(1L)).willReturn(user1);
+
 		LocalDateTime expectedExpiry = LocalDateTime.of(today.plusDays(1), LocalTime.of(12, 0));
 
 		// When
@@ -173,7 +182,7 @@ class ItemExpiryNotificationScheduleServiceTest {
 		// Then
 		ArgumentCaptor<LocalDate> startDateCaptor = ArgumentCaptor.forClass(LocalDate.class);
 		ArgumentCaptor<LocalDate> endDateCaptor = ArgumentCaptor.forClass(LocalDate.class);
-		
+
 		then(itemQueryService).should(times(1))
 			.findItemsExpiringBetween(startDateCaptor.capture(), endDateCaptor.capture());
 

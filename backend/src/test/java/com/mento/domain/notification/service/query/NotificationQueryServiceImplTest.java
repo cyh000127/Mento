@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.repository.NotificationRepository;
+import com.mento.domain.user.entity.User;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationQueryServiceImplTest {
@@ -30,10 +31,11 @@ class NotificationQueryServiceImplTest {
 	void 사용자의_알림_목록을_성공적으로_조회한다() {
 		// given
 		Long userId = 1L;
+		User user = User.builder().id(userId).build();
 
 		Notification notification = Notification.builder()
 			.id(1L)
-			.userId(userId)
+			.user(user)
 			.type(NotificationType.RESERVATION_REMINDER)
 			.content("60")
 			.build();

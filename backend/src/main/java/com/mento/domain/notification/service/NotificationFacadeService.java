@@ -18,6 +18,8 @@ import com.mento.domain.notification.event.NotificationEvent;
 import com.mento.domain.notification.repository.SseEmitterRepository;
 import com.mento.domain.notification.service.command.NotificationCommandService;
 import com.mento.domain.notification.service.query.NotificationQueryService;
+import com.mento.domain.user.entity.User;
+import com.mento.domain.user.service.query.UserQueryService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ public class NotificationFacadeService {
 
 	private final NotificationCommandService notificationCommandService;
 	private final NotificationQueryService notificationQueryService;
+	private final UserQueryService userQueryService;
 
 	private final SseEmitterRepository sseEmitterRepository;
 	private final ApplicationEventPublisher eventPublisher;
@@ -82,7 +85,8 @@ public class NotificationFacadeService {
 		if (dto.expiredAt() != null) {
 			expiredAt = dto.expiredAt();
 		}
-		Notification notification = NotificationConverter.toEntity(dto, expiredAt);
+		User user = userQueryService.findById(dto.targetMemberId());
+		Notification notification = NotificationConverter.toEntity(dto, user, expiredAt);
 		Notification savedNotification = notificationCommandService.save(notification);
 
 		eventPublisher.publishEvent(new NotificationEvent(this, savedNotification));

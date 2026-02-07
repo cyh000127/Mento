@@ -10,8 +10,8 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mento.domain.notification.converter.NotificationConverter;
+import com.mento.domain.notification.dto.message.NotificationMessage;
 import com.mento.domain.notification.dto.response.NotificationResDto;
-import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.repository.SseEmitterRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -29,10 +29,10 @@ public class RedisSubscriber implements MessageListener {
 	public void onMessage(final @NonNull Message message, final byte[] pattern) {
 		try {
 			String body = new String(message.getBody());
-			Notification notification = objectMapper.readValue(body, Notification.class);
+			NotificationMessage notificationMessage = objectMapper.readValue(body, NotificationMessage.class);
 
-			Long userId = notification.getUserId();
-			NotificationResDto resDto = NotificationConverter.toNotificationResDto(notification);
+			Long userId = notificationMessage.userId();
+			NotificationResDto resDto = NotificationConverter.toNotificationResDto(notificationMessage);
 
 			sseEmitterRepository.findById(userId).ifPresent(emitter -> {
 				try {

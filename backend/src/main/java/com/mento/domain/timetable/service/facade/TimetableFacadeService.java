@@ -1,11 +1,11 @@
 package com.mento.domain.timetable.service.facade;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.mentor.entity.MentorType;
 import com.mento.domain.mentor.service.query.MentorTypeQueryService;
 import com.mento.domain.timetable.converter.TimetableConverter;
@@ -29,7 +29,7 @@ public class TimetableFacadeService {
 	private final MentorTypeQueryService mentorTypeQueryService;
 
 	public MonthlyTimetableResDto getMonthlyTimetables(final Long typeId) {
-		DateRange dateRange = DateRange.ofOneMonthFromToday(LocalDate.now());
+		DateRange dateRange = DateRange.ofOneMonthFromToday(TimeUtils.nowAsLocalDate());
 
 		MentorType mentorType = mentorTypeQueryService.findById(typeId);
 		List<Timetable> timetables = timetableQueryService.findAllByDateRange(dateRange);

@@ -18,6 +18,7 @@ import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.exception.NotificationException;
 import com.mento.domain.notification.repository.NotificationRepository;
+import com.mento.domain.user.entity.User;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationCommandServiceImplTest {
@@ -32,9 +33,10 @@ class NotificationCommandServiceImplTest {
 	@DisplayName("알림을 성공적으로 저장한다")
 	void 알림을_성공적으로_저장한다() {
 		// given
+		User user = User.builder().id(1L).build();
 		Notification notification = Notification.builder()
 			.id(100L)
-			.userId(1L)
+			.user(user)
 			.type(NotificationType.RESERVATION_REMINDER)
 			.build();
 
@@ -56,9 +58,11 @@ class NotificationCommandServiceImplTest {
 		// given
 		Long userId = 1L;
 		Long notificationId = 100L;
+		User user = User.builder().id(userId).build();
+
 		Notification notification = Notification.builder()
 			.id(notificationId)
-			.userId(userId)
+			.user(user)
 			.build();
 
 		given(notificationRepository.findById(notificationId)).willReturn(Optional.of(notification));
@@ -92,9 +96,11 @@ class NotificationCommandServiceImplTest {
 		Long userId = 1L;
 		Long otherUserId = 2L;
 		Long notificationId = 100L;
+		User otherUser = User.builder().id(otherUserId).build();
+
 		Notification notification = Notification.builder()
 			.id(notificationId)
-			.userId(otherUserId) // 소유자가 다름
+			.user(otherUser)
 			.build();
 
 		given(notificationRepository.findById(notificationId)).willReturn(Optional.of(notification));

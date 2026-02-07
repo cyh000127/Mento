@@ -101,7 +101,7 @@ public class NotificationScheduleService {
 				LocalDateTime expiredAt = scheduledDateTime.plusMinutes(expiryOffsetMinutes);
 
 				return NotificationConverter.toEntity(
-					reservation.getUser().getId(),
+					reservation.getUser(),
 					type,
 					content,
 					expiredAt
