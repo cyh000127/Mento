@@ -3,33 +3,41 @@ pipeline {
     agent any
 
     environment {
-        // 경로 및 Docker 정보
         FE_DIR = "frontend/mento"
         DOCKERHUB_REPO = "ejjem/s14p11a704"
         DOCKER_CREDENTIAL_ID = "DockerHub_Token"
+        // 빌드할 브런치 지정
+        TARGET_BRANCH = "develop-fe"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                // 특정 브런치(develop-fe)를 명시적으로 체크아웃
+                checkout([$class: 'GitSCM',
+                    branches: [[name: "*/${env.TARGET_BRANCH}"]],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [],
+                    submoduleCfg: [],
+                    userRemoteConfigs: [[
+                        url: 'https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git',
+                        credentialsId: 'Gitlab_PAT'
+                    ]]
+                ])
             }
         }
 
         stage('Frontend Build') {
             steps {
                 dir("${env.FE_DIR}") {
-                    echo "===== BUILDING FRONTEND ====="
+                    echo "===== BUILDING FRONTEND (${env.TARGET_BRANCH}) ====="
                     sh '''
                         set -euo pipefail
-                        # 의존성 설치 (lock 파일 유무에 따라 최적화)
                         if [ -f package-lock.json ]; then
                           npm ci
                         else
                           npm install
                         fi
-
-                        # 빌드 실행
                         npm run build
                     '''
                 }
@@ -41,10 +49,13 @@ pipeline {
                 echo "===== DOCKERIZING (FE) ====="
                 script {
                     dir("${env.FE_DIR}") {
-                        // Docker Build: 태그를 frontend로 지정
+                        // Dockerfile이 없을 때를 대비한 체크
+                        if (!fileExists('Dockerfile')) {
+                            error "ERROR: ${env.FE_DIR}/Dockerfile이 존재하지 않습니다. 파일을 먼저 생성해주세요!"
+                        }
+
                         sh "docker build -t ${DOCKERHUB_REPO}:frontend ."
 
-                        // Docker Login & Push
                         withCredentials([usernamePassword(
                             credentialsId: "${DOCKER_CREDENTIAL_ID}",
                             usernameVariable: 'DOCKER_USER',
@@ -53,8 +64,6 @@ pipeline {
                             sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
                             sh "docker push ${DOCKERHUB_REPO}:frontend"
                         }
-
-                        // 로컬 이미지 정리
                         sh "docker rmi ${DOCKERHUB_REPO}:frontend || true"
                     }
                 }
@@ -65,7 +74,6 @@ pipeline {
             steps {
                 script {
                     echo "===== TRIGGER CD/FINAL ====="
-                    // BE와 동일하게 TARGET_SERVICES를 'app'으로 전달
                     build job: 'CD/Final',
                         wait: true,
                         parameters: [
@@ -77,16 +85,7 @@ pipeline {
     }
 
     post {
-        success {
-            echo "CI(FE) SUCCESS"
-            sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
-        }
-        failure {
-            echo "CI(FE) FAILURE"
-            sh 'date "+%Y-%m-%d %H:%M:%S %Z"'
-        }
-        always {
-            echo "CI(FE) DONE"
-        }
+        success { echo "CI(FE) SUCCESS - Branch: ${env.TARGET_BRANCH}" }
+        failure { echo "CI(FE) FAILURE - Branch: ${env.TARGET_BRANCH}" }
     }
 }
