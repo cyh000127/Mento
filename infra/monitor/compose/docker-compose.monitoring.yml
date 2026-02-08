@@ -150,8 +150,6 @@ volumes:
   grafana-data:
   prometheus-data:
   loki-data:
-  app_mysql_data:
-    external: true
   backend-logs:
     external: true
     name: backend_logs
