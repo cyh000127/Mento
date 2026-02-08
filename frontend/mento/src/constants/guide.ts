@@ -1,3 +1,8 @@
+export const CATEGORY_LABELS: Record<string, string> = {
+  skincare: "스킨케어",
+  beauty: "뷰티",
+};
+
 export const PRODUCT_SUBTYPES: Record<string, { id: string; label: string }[]> = {
   // 스킨케어
   클렌징: [

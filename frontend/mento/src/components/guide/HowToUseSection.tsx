@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom"
 import { ProductTypeGrid } from "./ProductTypeGrid"
-import { PRODUCT_CATEGORIES } from "@/constants/guide"
+import { PRODUCT_CATEGORIES, CATEGORY_LABELS } from "@/constants/guide"
 
 interface HowToUseSectionProps {
   activeCategory: string
@@ -22,7 +22,7 @@ export function HowToUseSection({ activeCategory }: HowToUseSectionProps) {
       {/* Product Type Selection */}
       <section className="mb-12">
         <h2 className="text-2xl font-bold text-text-primary mb-6">
-          카테고리
+          {CATEGORY_LABELS[activeCategory] || "카테고리"}
         </h2>
         <ProductTypeGrid
           productTypes={products}
