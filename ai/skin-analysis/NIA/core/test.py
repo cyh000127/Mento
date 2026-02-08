@@ -106,12 +106,11 @@ def main(args):
         yaml.dump(vars(args), yaml_file, default_flow_style=False)
 
     model_num_class = (
-        {"dryness": 5, "pigmentation": 6, "pore": 6, "sagging": 6, "wrinkle": 7}
+        {"sagging": 6, "wrinkle": 7}
         if args.mode == "class"
         else {
             "pigmentation": 1,
             "moisture": 1,
-            "elasticity_R2": 1,
             "wrinkle_Ra": 1,
             "pore": 1,
         }
@@ -131,6 +130,8 @@ def main(args):
 
     if os.path.isdir(model_path):
         for path in os.listdir(model_path):
+            if path not in model_list:
+                continue
             dig_path = os.path.join(model_path, path)
             if os.path.isfile(os.path.join(dig_path, "state_dict.bin")):
                 print(f"\033[92mResuming......{dig_path}\033[0m")
@@ -154,9 +155,6 @@ def main(args):
 
     model_area_dict = (
         {
-            "dryness": ["dryness"],
-            "pigmentation": ["forehead_pigmentation", "cheek_pigmentation"],
-            "pore": ["pore"],
             "sagging": ["sagging"],
             "wrinkle": ["forehead_wrinkle", "glabellus_wrinkle", "perocular_wrinkle"],
         }
@@ -164,11 +162,6 @@ def main(args):
         else {
             "pigmentation": ["pigmentation"],
             "moisture": ["forehead_moisture", "cheek_moisture", "chin_moisture"],
-            "elasticity_R2": [
-                "forehead_elasticity_R2",
-                "cheek_elasticity_R2",
-                "chin_elasticity_R2",
-            ],
             "wrinkle_Ra": ["perocular_wrinkle_Ra"],
             "pore": ["cheek_pore"],
         }

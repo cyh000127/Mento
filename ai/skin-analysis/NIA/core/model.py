@@ -62,7 +62,7 @@ class Model(object):
         # Robust Scheduler: ReduceLROnPlateau
         # This reduces LR when a metric has stopped improving.
         self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-            self.optimizer, mode='min', factor=0.5, patience=3, verbose=True
+            self.optimizer, patience=5, factor=0.5, mode="max"
         )
 
         # Early Stopping

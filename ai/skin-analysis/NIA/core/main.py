@@ -39,7 +39,7 @@ def parse_args():
         "--equ",
         type=int,
         nargs="+",
-        default=[1],
+        default=[1, 2, 3],
         choices=[1, 2, 3],
     )
 
@@ -219,12 +219,18 @@ def main(args):
     else:
         args.effective_batch_size = args.batch_size * args.grad_accum_steps
 
-    seed = args.name.split("st")[0]
-    if seed.isdigit():
-        ValueError, f"It's not correct name, {args.name} -> {seed}"
+    # seed = args.name.split("st")[0]
+    # Robust seed extraction: matches leading digits (e.g. "3rd" -> 3, "2.0" -> 2)
+    import re
+    match = re.match(r"^\d+", args.name)
+    if match:
+        seed = int(match.group())
+    else:
+        seed = 1 # Default if no number found
+        print(f"\033[93m[Warning] Could not extract seed from name '{args.name}'. Using default seed: {seed}\033[0m")
 
-    fix_seed(int(seed))
-    args.seed = int(seed)
+    fix_seed(seed)
+    args.seed = seed
 
     check_path = os.path.join("checkpoint", args.mode, args.name)
     model_num_class = (

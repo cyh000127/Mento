@@ -209,7 +209,14 @@ class CustomDataset(Dataset):
         return device
 
     def _dataset_info_path(self, device, special):
-        return f"dataset/split/{self.args.mode}/{device}/{self.args.seed}_{self.mode}set_info.json"
+        # Default path with current seed
+        path = f"dataset/split/{self.args.mode}/{device}/{self.args.seed}_{self.mode}set_info.json"
+        
+        # Fallback to seed 1 if current seed file doesn't exist (to allow training with new seeds using original split)
+        if not os.path.exists(path):
+            path = f"dataset/split/{self.args.mode}/{device}/1_{self.mode}set_info.json"
+            
+        return path
 
     def _load_device_dataset(self, equ, special):
         device = self.get_device_name(equ)
@@ -299,7 +306,7 @@ class CustomDataset(Dataset):
         )
 
         for self.i_path, self.grade in tqdm(self.dataset_dict[dig] , desc=f"{self.dig}"):
-            if not os.path.isfile(os.path.join("dataset/cropped_img", self.i_path + ".jpg")):
+            if not os.path.isfile(os.path.join("dataset/cropped_aligned", self.i_path + ".jpg")):
                 continue
             self.save_dict(transform)
 

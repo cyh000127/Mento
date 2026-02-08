@@ -8,7 +8,6 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from PIL import Image
 
-# Use absolute paths for robustness
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 RESOURCE_DIR = os.path.join(os.path.dirname(CURRENT_DIR), "resources") 
 RULES_PATH = os.path.join(RESOURCE_DIR, "calibration_rules.json")
@@ -19,10 +18,10 @@ DEFAULT_RES = 224
 class DataDrivenScorer:
     def __init__(self):
         self.thresholds = {
-            "moisture": [52.7, 55.5, 58.5, 62.5],
-            "pore": [577.2, 817.7, 1007.0, 1250.0],
-            "pigmentation": [110.0, 135.0, 160.0, 198.0],
-            "eye_wrinkle": [17.1, 18.9, 20.8, 23.3] 
+            "moisture": [56.8, 60.3, 63.3, 67.2],
+            "pore": [564.7, 792.8, 1008.3, 1243.7],
+            "pigmentation": [104.5, 142.0, 168.1, 210.6],
+            "eye_wrinkle": [18.3, 20.3, 22.2, 24.9] 
         }
         self.descriptions = {
             "moisture": [
@@ -69,8 +68,20 @@ class DataDrivenScorer:
 
     def calculate(self, attribute, value):
         score, grade = 0, 0
+        
+        valid_ranges = {
+            "moisture": (30.0, 90.0),      # Reasonable moisture range
+            "pore": (100.0, 3000.0),       # Reasonable pore area range
+            "pigmentation": (30.0, 400.0), # Reasonable pigmentation range
+            "eye_wrinkle": (10.0, 40.0),   # Reasonable Ra range
+        }
+        if attribute in valid_ranges:
+            min_val, max_val = valid_ranges[attribute]
+            value = max(min_val, min(value, max_val))
+        
         if attribute == "sagging":
             cls = int(round(value))
+            cls = max(0, min(cls, 5))  # Clamp to valid class range
             grade = min(cls + 1, 5) if cls < 4 else 5
             scores = [15, 30, 50, 70, 90]
             score = scores[grade-1]
@@ -104,19 +115,20 @@ class ServiceAnalyzer:
         self.landmarker = self._init_landmarker()
         self.scorer = DataDrivenScorer()
         
-        # ONNX Runtime Session Options for CPU Optimization
         self.sess_options = ort.SessionOptions()
         self.sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-        self.sess_options.intra_op_num_threads = 2 # Adjust based on server cores
+        self.sess_options.enable_cpu_mem_arena = False
         
-        # Mapping for ONNX Models
+        num_threads = int(os.environ.get("ONNX_NUM_THREADS", os.environ.get("OMP_NUM_THREADS", "2")))
+        self.sess_options.intra_op_num_threads = num_threads
+        
         self.configs = {
-            "reg_moisture": "regression/1st_coat/save_model/moisture/model.onnx",
-            "reg_pore": "regression/1st_coat/save_model/pore/model.onnx",
-            "reg_pigmentation": "regression/1st_coat/save_model/pigmentation/model.onnx",
-            "reg_wrinkle_eye": "regression/1st_coat/save_model/wrinkle_Ra/model.onnx",
-            "class_wrinkle": "class/1st_coat/save_model/wrinkle/model.onnx",
-            "class_sagging": "class/1st_coat/save_model/sagging/model.onnx",
+            "reg_moisture": "regression/1st_robust/save_model/moisture/model.onnx",
+            "reg_pore": "regression/1st_robust/save_model/pore/model.onnx",
+            "reg_pigmentation": "regression/1st_robust/save_model/pigmentation/model.onnx",
+            "reg_wrinkle_eye": "regression/1st_robust/save_model/wrinkle_Ra/model.onnx",
+            "class_wrinkle": "class/1st_robust/save_model/wrinkle/model.onnx",
+            "class_sagging": "class/1st_robust/save_model/sagging/model.onnx",
         }
         self.sessions = self._load_sessions()
 
@@ -134,21 +146,18 @@ class ServiceAnalyzer:
         for name, rel_path in self.configs.items():
             full_path = os.path.join(CHECKPOINT_ROOT, rel_path)
             if os.path.exists(full_path):
-                # providers = ['CUDAExecutionProvider'] if device == 'cuda' else ['CPUExecutionProvider']
                 sessions[name] = ort.InferenceSession(full_path, self.sess_options, providers=['CPUExecutionProvider'])
             else:
                 print(f"[ERROR] ONNX Model missing: {full_path}")
         return sessions
 
     def _preprocess(self, crop_img):
-        # Resize and Normalize (Same as torch version but using numpy)
         img = cv2.resize(crop_img, (DEFAULT_RES, DEFAULT_RES))
         img = img.astype(np.float32) / 255.0
-        # Normalize
+        
         mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
         std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
         img = (img - mean) / std
-        # HWC -> CHW and add batch dim
         img = img.transpose(2, 0, 1)[np.newaxis, ...]
         return img
 
@@ -164,7 +173,6 @@ class ServiceAnalyzer:
     def _extract_crop(self, img_rgb, detection_result, rule_name):
         if img_rgb is None: return None
         
-        # If no face detected, return full image if requested, else None
         if not detection_result or not detection_result.face_landmarks:
             return img_rgb if rule_name == "full_image" else None
 
@@ -192,10 +200,8 @@ class ServiceAnalyzer:
         out = session.run(None, {session.get_inputs()[0].name: input_data})[0]
         
         if "class" in model_key:
-            # Classification: Get class index as int
             return int(np.argmax(out, axis=1).item())
         else:
-            # Regression: Get single value as float
             val = float(out.item())
             scaler = {"moisture": 100.0, "pore": 2600.0, "pigmentation": 350.0, "wrinkle_eye": 50.0}
             for k, s in scaler.items():
@@ -203,12 +209,10 @@ class ServiceAnalyzer:
             return val
 
     def analyze(self, front, l30, r30):
-        # 1. Process Images Once
         img_f, res_f = self._process_image(front)
         img_l, res_l = self._process_image(l30)
         img_r, res_r = self._process_image(r30)
 
-        # 2. Extract Crops & Run Inference
         m_l = self._run_inference("reg_moisture", self._extract_crop(img_l, res_l, "l_cheek"))
         m_r = self._run_inference("reg_moisture", self._extract_crop(img_r, res_r, "r_cheek"))
         val_moist = np.mean([v for v in [m_l, m_r] if v is not None]) if (m_l is not None or m_r is not None) else 0
@@ -226,7 +230,9 @@ class ServiceAnalyzer:
         w_gl = self._run_inference("class_wrinkle", self._extract_crop(img_f, res_f, "glabellus")) or 0
         
         s_eye, _ = self.scorer.calculate("eye_wrinkle", w_eye)
-        score_wrinkle = int((s_eye + w_fh * 20 + w_gl * 20) / 3)
+        score_fh = min(w_fh * (100 / 6), 100)
+        score_gl = min(w_gl * (100 / 6), 100)
+        score_wrinkle = int((s_eye + score_fh + score_gl) / 3)
         grade_wrinkle = min(int(score_wrinkle/20)+1, 5)
         
         val_sag = self._run_inference("class_sagging", self._extract_crop(img_r, res_r, "full_image")) or 0
