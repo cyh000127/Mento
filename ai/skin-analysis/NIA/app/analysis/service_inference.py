@@ -203,6 +203,7 @@ class ServiceAnalyzer:
             return int(np.argmax(out, axis=1).item())
         else:
             val = float(out.item())
+            print(f"[DEBUG] Model: {model_key}, Raw Output: {val:.4f}")
             scaler = {"moisture": 100.0, "pore": 2600.0, "pigmentation": 350.0, "wrinkle_eye": 50.0}
             for k, s in scaler.items():
                 if k in model_key: return val * s
@@ -215,15 +216,17 @@ class ServiceAnalyzer:
 
         m_l = self._run_inference("reg_moisture", self._extract_crop(img_l, res_l, "l_cheek"))
         m_r = self._run_inference("reg_moisture", self._extract_crop(img_r, res_r, "r_cheek"))
-        val_moist = np.mean([v for v in [m_l, m_r] if v is not None]) if (m_l is not None or m_r is not None) else 0
+        val_moist = np.mean([v for v in [m_l, m_r] if v is not None]) if (m_l is not None or m_r is not None) else 0.0
+        val_moist += 25.0  # Calibration Offset for moisture model undershoot
+        print(f"[DEBUG] Calculated val_moist (with offset): {val_moist:.4f}")
         
         p_l = self._run_inference("reg_pore", self._extract_crop(img_l, res_l, "l_cheek"))
         p_r = self._run_inference("reg_pore", self._extract_crop(img_r, res_r, "r_cheek"))
-        val_pore = np.mean([v for v in [p_l, p_r] if v is not None]) if (p_l is not None or p_r is not None) else 0
+        val_pore = np.mean([v for v in [p_l, p_r] if v is not None]) if (p_l is not None or p_r is not None) else 0.0
         
         pig_l = self._run_inference("reg_pigmentation", self._extract_crop(img_l, res_l, "l_cheek"))
         pig_r = self._run_inference("reg_pigmentation", self._extract_crop(img_r, res_r, "r_cheek"))
-        val_pig = np.mean([v for v in [pig_l, pig_r] if v is not None]) if (pig_l is not None or pig_r is not None) else 0
+        val_pig = np.mean([v for v in [pig_l, pig_r] if v is not None]) if (pig_l is not None or pig_r is not None) else 0.0
         
         w_eye = self._run_inference("reg_wrinkle_eye", self._extract_crop(img_r, res_r, "r_perocular")) or 20.0
         w_fh = self._run_inference("class_wrinkle", self._extract_crop(img_f, res_f, "forehead")) or 0
@@ -238,6 +241,7 @@ class ServiceAnalyzer:
         val_sag = self._run_inference("class_sagging", self._extract_crop(img_r, res_r, "full_image")) or 0
         score_sag, grade_sag = self.scorer.calculate("sagging", val_sag)
         score_moist, grade_moist = self.scorer.calculate("moisture", val_moist)
+        print(f"[DEBUG] Moisture Score: {score_moist}, Grade: {grade_moist}")
         score_pore, grade_pore = self.scorer.calculate("pore", val_pore)
         score_pig, grade_pig = self.scorer.calculate("pigmentation", val_pig)
         
@@ -254,11 +258,11 @@ class ServiceAnalyzer:
             "data": {
                 "total_score": total_score, "total_grade": total_grade, "skin_type_summary": skin_type,
                 "details": {
-                    "moisture": {"score": score_moist, "grade": grade_moist, "description": self.scorer.get_description("moisture", grade_moist)},
-                    "pore": {"score": score_pore, "grade": grade_pore, "description": self.scorer.get_description("pore", grade_pore)},
-                    "wrinkle": {"score": score_wrinkle, "grade": grade_wrinkle, "description": self.scorer.get_description("wrinkle", grade_wrinkle)},
-                    "pigmentation": {"score": score_pig, "grade": grade_pig, "description": self.scorer.get_description("pigmentation", grade_pig)},
-                    "sagging": {"score": score_sag, "grade": grade_sag, "description": self.scorer.get_description("sagging", grade_sag)}
+                    "moisture": {"score": score_moist, "grade": grade_moist, "raw_value": val_moist, "description": self.scorer.get_description("moisture", grade_moist)},
+                    "pore": {"score": score_pore, "grade": grade_pore, "raw_value": val_pore, "description": self.scorer.get_description("pore", grade_pore)},
+                    "wrinkle": {"score": score_wrinkle, "grade": grade_wrinkle, "raw_value": w_eye, "description": self.scorer.get_description("wrinkle", grade_wrinkle)},
+                    "pigmentation": {"score": score_pig, "grade": grade_pig, "raw_value": val_pig, "description": self.scorer.get_description("pigmentation", grade_pig)},
+                    "sagging": {"score": score_sag, "grade": grade_sag, "raw_value": val_sag, "description": self.scorer.get_description("sagging", grade_sag)}
                 }
             }
         }
