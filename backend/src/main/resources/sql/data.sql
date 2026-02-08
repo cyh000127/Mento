@@ -13,12 +13,14 @@ CREATE TABLE IF NOT EXISTS `mentor_types`
 CREATE TABLE IF NOT EXISTS `skin_analyses`
 (
     `skin_analysis_id`  BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `user_id`           BIGINT,
     `total_score`       INT,
     `total_grade`       INT,
     `skin_type_summary` VARCHAR(255),
     `analysis_details`  JSON,
     `created_at`        DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
-    `updated_at`        DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
+    `updated_at`        DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    CONSTRAINT `fk_skin_analyses_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB
     DEFAULT CHARSET=utf8mb4
     COLLATE=utf8mb4_unicode_ci;
@@ -33,12 +35,10 @@ CREATE TABLE IF NOT EXISTS `users`
     `role`           VARCHAR(20)  NOT NULL DEFAULT 'USER',
     `birth_date`     DATE                  DEFAULT NULL,
     `mentor_type_id`   BIGINT                DEFAULT NULL,
-    `skin_analysis_id` BIGINT                DEFAULT NULL,
     `created_at`       DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     `updated_at`       DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
     `deleted_at`       DATETIME(6)           DEFAULT NULL,
-    CONSTRAINT `fk_users_mentor_type`      FOREIGN KEY (`mentor_type_id`)   REFERENCES `mentor_types`    (`type_id`)          ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT `fk_users_skin_analysis`    FOREIGN KEY (`skin_analysis_id`) REFERENCES `skin_analyses`   (`skin_analysis_id`) ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT `fk_users_mentor_type`      FOREIGN KEY (`mentor_type_id`)   REFERENCES `mentor_types`    (`type_id`)          ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;

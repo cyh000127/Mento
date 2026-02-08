@@ -73,11 +73,11 @@ public class SkinAnalysisFacadeService {
 		log.info("[SkinAnalysis] AI 분석 응답 수신 완료 {userId: {}, totalScore: {}, totalGrade: {}}",
 			userId, aiResponse.totalScore(), aiResponse.totalGrade());
 
-		SkinAnalysis skinAnalysis = skinAnalysisFactory.createSkinAnalysis(aiResponse);
-		SkinAnalysis savedSkinAnalysis = skinAnalysisCommandService.save(skinAnalysis);
-
 		User user = userQueryService.findById(userId);
-		user.assignSkinAnalysis(savedSkinAnalysis);
+		SkinAnalysis skinAnalysis = skinAnalysisFactory.createSkinAnalysis(aiResponse);
+		user.assignSkinAnalysis(skinAnalysis);
+
+		SkinAnalysis savedSkinAnalysis = skinAnalysisCommandService.save(skinAnalysis);
 
 		return SkinAnalysisConverter.toSkinAnalysisDetailResDto(savedSkinAnalysis);
 	}

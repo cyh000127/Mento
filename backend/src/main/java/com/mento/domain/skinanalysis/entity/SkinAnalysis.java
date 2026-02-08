@@ -13,7 +13,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -34,7 +35,8 @@ public class SkinAnalysis extends BaseEntity {
 	@Column(name = "skin_analysis_id")
 	private Long id;
 
-	@OneToOne(mappedBy = "skinAnalysis", fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id")
 	private User user;
 
 	@Column(name = "total_score")
@@ -49,5 +51,9 @@ public class SkinAnalysis extends BaseEntity {
 	@JdbcTypeCode(SqlTypes.JSON)
 	@Column(name = "analysis_details", columnDefinition = "json")
 	private SkinDetails analysisDetails;
+
+	public void assignUser(final User user) {
+		this.user = user;
+	}
 
 }
