@@ -27,7 +27,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -56,9 +55,9 @@ public class User extends BaseEntity {
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Item> items = new ArrayList<>();
 
-	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-	@JoinColumn(name = "skin_analysis_id")
-	private SkinAnalysis skinAnalysis;
+	@Builder.Default
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<SkinAnalysis> skinAnalyses = new ArrayList<>();
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "mentor_type_id")
@@ -134,7 +133,10 @@ public class User extends BaseEntity {
 		if (skinAnalysis == null) {
 			throw new UserException(ErrorCode.MISSING_SKIN_ANALYSIS);
 		}
-		this.skinAnalysis = skinAnalysis;
+		this.skinAnalyses.add(skinAnalysis);
+		if (skinAnalysis.getUser() != this) {
+			skinAnalysis.assignUser(this);
+		}
 	}
 
 	public boolean isMentor() {
