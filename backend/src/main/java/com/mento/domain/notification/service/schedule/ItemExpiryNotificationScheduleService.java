@@ -18,6 +18,8 @@ import com.mento.domain.notification.converter.NotificationConverter;
 import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.service.command.NotificationCommandService;
+import com.mento.domain.user.entity.User;
+import com.mento.domain.user.service.query.UserQueryService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +33,7 @@ public class ItemExpiryNotificationScheduleService {
 
 	private final ItemQueryService itemQueryService;
 	private final NotificationCommandService notificationCommandService;
+	private final UserQueryService userQueryService;
 
 	/**
 	 * 매일 12시에 만료 예정 아이템 알림을 발송합니다.
@@ -60,17 +63,20 @@ public class ItemExpiryNotificationScheduleService {
 		LocalDateTime nextScheduleTime = LocalDateTime.of(today.plusDays(1), LocalTime.of(12, 0));
 
 		List<Notification> notifications = userItemCountMap.entrySet().stream()
-			.map(entry -> NotificationConverter.toEntity(
-				entry.getKey(),
-				NotificationType.INVENTORY_EXPIRY,
-				String.valueOf(entry.getValue()),
-				nextScheduleTime
-			))
+			.map(entry -> {
+				User user = userQueryService.findById(entry.getKey());
+				return NotificationConverter.toEntity(
+					user,
+					NotificationType.INVENTORY_EXPIRY,
+					String.valueOf(entry.getValue()),
+					nextScheduleTime
+				);
+			})
 			.toList();
 
 		try {
 			notificationCommandService.saveAll(notifications);
-			log.info("[ItemExpiryNotification] 만료 예정 알림 저장 완료 {userCount: {}, totalItems: {}}", 
+			log.info("[ItemExpiryNotification] 만료 예정 알림 저장 완료 {userCount: {}, totalItems: {}}",
 				userItemCountMap.size(), expiringItems.size());
 		} catch (Exception e) {
 			log.error("[ItemExpiryNotification] 알림 저장 실패", e);

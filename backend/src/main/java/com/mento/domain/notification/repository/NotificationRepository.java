@@ -13,13 +13,13 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
 	@Query("SELECT n "
 		+ "FROM Notification n "
-		+ "WHERE n.userId = :userId "
+		+ "WHERE n.user.id = :userId "
 		+ "ORDER BY n.createdAt DESC")
 	List<Notification> findAllByUserId(@Param("userId") Long userId);
 
 	@Query("SELECT n "
 		+ "FROM Notification n "
-		+ "WHERE n.userId = :userId "
+		+ "WHERE n.user.id = :userId "
 		+ "AND n.expiredAt > :now "
 		+ "ORDER BY n.createdAt DESC")
 	List<Notification> findActiveNotifications(

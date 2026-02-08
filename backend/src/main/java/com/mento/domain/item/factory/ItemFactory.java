@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import org.springframework.stereotype.Component;
 
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.enums.ItemStatus;
 import com.mento.domain.product.entity.Product;
@@ -16,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ItemFactory {
 
 	public Item createItem(final User user, final Product product, final ItemStatus status) {
-		LocalDate today = LocalDate.now();
+		LocalDate today = TimeUtils.nowAsLocalDate();
 		LocalDate expectedExpiryDate = today.plusDays(product.getDefaultUsageDays());
 
 		Item item = Item.builder()

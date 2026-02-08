@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.mento.common.entity.BaseEntity;
 import com.mento.common.error.ErrorCode;
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.consulting.entity.ConsultingReport;
 import com.mento.domain.payment.entity.Payment;
 import com.mento.domain.reservation.enums.ReservationStatus;
@@ -112,7 +113,7 @@ public class Reservation extends BaseEntity {
 
 	public void confirm() {
 		this.status = ReservationStatus.CONFIRMED;
-		this.confirmedAt = LocalDateTime.now();
+		this.confirmedAt = TimeUtils.nowAsLocalDateTime();
 		this.expiresAt = null;
 	}
 

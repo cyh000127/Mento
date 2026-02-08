@@ -5,6 +5,7 @@ import java.time.Period;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.mento.common.util.TimeUtils;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -42,6 +43,6 @@ public record SkinAnalysisClientReqDto(
 	String gender
 ) {
 	public int getCalculatedAge() {
-		return Period.between(birthDate, LocalDate.now()).getYears();
+		return Period.between(birthDate, TimeUtils.nowAsLocalDate()).getYears();
 	}
 }

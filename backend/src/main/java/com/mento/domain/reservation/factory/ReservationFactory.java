@@ -1,9 +1,8 @@
 package com.mento.domain.reservation.factory;
 
-import java.time.LocalDateTime;
-
 import org.springframework.stereotype.Component;
 
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.reservation.entity.Reservation;
 import com.mento.domain.reservation.enums.ReservationStatus;
 import com.mento.domain.timetable.entity.TimetableSlot;
@@ -20,7 +19,7 @@ public class ReservationFactory {
 	public Reservation createReservation(final User user, final TimetableSlot timetableSlot) {
 		Reservation reservation = Reservation.builder()
 			.status(ReservationStatus.IN_PROGRESS)
-			.expiresAt(LocalDateTime.now().plusMinutes(DRAFT_RESERVATION_TTL_MINUTES))
+			.expiresAt(TimeUtils.nowAsLocalDateTime().plusMinutes(DRAFT_RESERVATION_TTL_MINUTES))
 			.build();
 
 		reservation.assignUser(user);
