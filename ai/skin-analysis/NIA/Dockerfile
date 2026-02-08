@@ -30,14 +30,14 @@ COPY app ./app
 
 # 필요한 ONNX 모델 파일만 선별 복사 (model.onnx 및 model.onnx.data만 포함되도록 .dockerignore와 협업)
 # Regression Models
-COPY checkpoint/regression/1st_coat/save_model/moisture/model.onnx* ./checkpoint/regression/1st_coat/save_model/moisture/
-COPY checkpoint/regression/1st_coat/save_model/pore/model.onnx* ./checkpoint/regression/1st_coat/save_model/pore/
-COPY checkpoint/regression/1st_coat/save_model/pigmentation/model.onnx* ./checkpoint/regression/1st_coat/save_model/pigmentation/
-COPY checkpoint/regression/1st_coat/save_model/wrinkle_Ra/model.onnx* ./checkpoint/regression/1st_coat/save_model/wrinkle_Ra/
+COPY checkpoint/regression/1st_robust/save_model/moisture/model.onnx* ./checkpoint/regression/1st_robust/save_model/moisture/
+COPY checkpoint/regression/1st_robust/save_model/pore/model.onnx* ./checkpoint/regression/1st_robust/save_model/pore/
+COPY checkpoint/regression/1st_robust/save_model/pigmentation/model.onnx* ./checkpoint/regression/1st_robust/save_model/pigmentation/
+COPY checkpoint/regression/1st_robust/save_model/wrinkle_Ra/model.onnx* ./checkpoint/regression/1st_robust/save_model/wrinkle_Ra/
 
 # Classification Models
-COPY checkpoint/class/1st_coat/save_model/wrinkle/model.onnx* ./checkpoint/class/1st_coat/save_model/wrinkle/
-COPY checkpoint/class/1st_coat/save_model/sagging/model.onnx* ./checkpoint/class/1st_coat/save_model/sagging/
+COPY checkpoint/class/1st_robust/save_model/wrinkle/model.onnx* ./checkpoint/class/1st_robust/save_model/wrinkle/
+COPY checkpoint/class/1st_robust/save_model/sagging/model.onnx* ./checkpoint/class/1st_robust/save_model/sagging/
 
 # Expose Port
 EXPOSE 4000
