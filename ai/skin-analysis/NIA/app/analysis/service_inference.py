@@ -215,10 +215,12 @@ class ServiceAnalyzer:
         img_r, res_r = self._process_image(r30)
 
         m_l = self._run_inference("reg_moisture", self._extract_crop(img_l, res_l, "l_cheek"))
+        if m_l is None: print("[DEBUG] m_l is None (Detection Failed or Crop Failed)")
         m_r = self._run_inference("reg_moisture", self._extract_crop(img_r, res_r, "r_cheek"))
+        if m_r is None: print("[DEBUG] m_r is None (Detection Failed or Crop Failed)")
         val_moist = np.mean([v for v in [m_l, m_r] if v is not None]) if (m_l is not None or m_r is not None) else 0.0
-        val_moist += 25.0  # Calibration Offset for moisture model undershoot
-        print(f"[DEBUG] Calculated val_moist (with offset): {val_moist:.4f}")
+        # Offset removed - investigating 0.0 value
+        print(f"[DEBUG] Calculated val_moist: {val_moist:.4f}")
         
         p_l = self._run_inference("reg_pore", self._extract_crop(img_l, res_l, "l_cheek"))
         p_r = self._run_inference("reg_pore", self._extract_crop(img_r, res_r, "r_cheek"))
