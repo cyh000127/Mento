@@ -90,7 +90,7 @@ uv run python core/main.py --mode class --name 1st_robust --equ 1 2 3 --epoch 10
 ```
 
 ### 3.3 ONNX 변환 및 배포
-학습된 PyTorch 모델(`.pt`)을 최적화된 ONNX 모델(`.onnx`)로 변환하여 `app/resources/weights`로 복사합니다.
+학습된 PyTorch 모델을 최적화된 ONNX 모델(`.onnx`)로 변환합니다.
 ```bash
 uv run scripts/convert_to_onnx.py
 ```
