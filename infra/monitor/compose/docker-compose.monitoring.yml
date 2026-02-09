@@ -1,0 +1,163 @@
+version: '3.8'
+
+services:
+  # 1. Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - GF_SERVER_ROOT_URL=https://i14a704.p.ssafy.io/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ../grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - monitoring-network
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+  # 2. Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    expose:
+      - "9090"
+    volumes:
+      - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.external-url=https://i14a704.p.ssafy.io/prometheus/'
+      - '--web.route-prefix=/prometheus'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - monitoring-network
+      - app-network
+      - live-network
+    deploy:
+      resources:
+        limits:
+          memory: 800M
+
+  # 3. Node-Exporter
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+    networks:
+      - monitoring-network
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+
+  # 4. cAdvisor
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: unless-stopped
+    privileged: true
+    security_opt:
+      - label:disable
+    # 문제가 되는 proc_systems 플래그를 제거하고 기본 실행으로 돌립니다.
+    command:
+      - '--url_base_prefix=/cadvisor'
+      - '--housekeeping_interval=30s'
+      - '--docker_only=true'
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      # 호스트 proc 정보는 볼륨 매핑으로만 전달합니다.
+      - /proc:/host/proc:ro
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    networks:
+      - monitoring-network
+      - app-network
+      - live-network
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+        reservations:
+          memory: 200M
+
+  # 5. Loki
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: unless-stopped
+    volumes:
+      - ../loki/local-config.yaml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitoring-network
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+
+#  # 6. MySQL Exporter
+#  mysql-exporter:
+#    image: prom/mysqld-exporter
+#    container_name: mysql-exporter
+#    restart: unless-stopped
+#    environment:
+#      DATA_SOURCE_NAME: "${DB_USERNAME}:${DB_PASSWORD}@(mysql:3306)/"
+#    networks:
+#      - monitoring-network
+#      - app-network
+
+
+  # 7. Promtail
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    restart: unless-stopped
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log:/var/log:ro
+      - ../promtail/config.yml:/etc/promtail/config.yml
+      - backend-logs:/var/log/backend:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - monitoring-network
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+
+volumes:
+  grafana-data:
+  prometheus-data:
+  loki-data:
+  backend-logs:
+    external: true
+    name: backend_logs
+
+networks:
+  monitoring-network:
+    external: true
+  app-network:
+    external: true
+  live-network:
+    external: true
