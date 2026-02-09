@@ -86,13 +86,21 @@ networks:
 **라우팅 구조:**
 ```
 HTTPS (443)
-├── /api/v1/*          → Backend (8080)
-├── /rtc/*             → LiveKit (8000) - WebSocket
+├── /swagger-ui        → Backend (8080) - API 문서
+├── /v3/api-docs       → Backend (8080) - OpenAPI Spec
+├── /api/v1/*          → Backend (8080) - 메인 API
+├── /test/v1/*         → Backend (8080) - 테스트 API
+├── /api/v1/notifications/subscribe → Backend (8080) - SSE
 ├── /api/ocr/*         → OCR Service (1000)
+├── /rtc/*             → LiveKit (8000) - WebSocket
+├── /twirp/*           → LiveKit (8000) - Twirp RPC
+├── /login/*           → Backend (8080) - OAuth2
+├── /oauth2/*          → Backend (8080) - OAuth2
+├── /login/oauth2/callback → Frontend (80) - OAuth2 콜백
 ├── /grafana/*         → Grafana (3000)
 ├── /prometheus/*      → Prometheus (9090)
 ├── /kibana/*          → Kibana (5601)
-└── /*                 → Frontend (5173)
+└── /*                 → Frontend (80)
 ```
 
 **핵심 기능:**
@@ -343,12 +351,13 @@ elasticsearch:
 │   App Stack   │   │   Live Stack    │  │Monitor Stack  │
 ├───────────────┤   ├─────────────────┤  ├───────────────┤
 │ Backend:8080  │   │ LiveKit:8000    │  │ Grafana:3000  │
-│ Frontend:5173 │   │ Agent           │  │ Prometheus    │
+│ Frontend:80   │   │ Agent           │  │ Prometheus    │
 │ MySQL:3306    │   │ Egress          │  │ Loki          │
 │ Redis:6379    │   │ Redis:6380      │  │ Promtail      │
 │ OCR:1000      │   └─────────────────┘  │ cAdvisor      │
-│ Elasticsearch │                        │ Node Exporter │
-│ Kibana:5601   │                        └───────────────┘
+│Elasticsearch  │                        │ Node Exporter │
+│    :9200      │                        └───────────────┘
+│ Kibana:5601   │
 └───────────────┘
 ```
 
@@ -587,11 +596,13 @@ docker stats
 | 서비스 | 내부 주소 | 포트 |
 |--------|-----------|------|
 | Backend | backend:8080 | 8080 |
-| Frontend | frontend:5173 | 5173 |
+| Frontend | frontend:80 | 80 |
 | MySQL | mysql:3306 | 3306 |
 | Redis | redis:6379 | 6379 |
-| LiveKit | host.docker.internal:8000 | 8000 |
+| LiveKit | host.docker.internal:8000 | 8000, 8001, 8002 |
 | Elasticsearch | elasticsearch:9200 | 9200 |
+| Kibana | kibana:5601 | 5601 |
+| OCR | ocr:1000 | 1000 |
 | Grafana | grafana:3000 | 3000 |
 | Prometheus | prometheus:9090 | 9090 |
 
@@ -707,15 +718,24 @@ echo ".env" >> .gitignore
 ### 3. 방화벽 설정 (UFW)
 
 ```bash
-# 필수 포트만 오픈
-sudo ufw allow 22/tcp   # SSH
-sudo ufw allow 80/tcp   # HTTP (ACME Challenge)
-sudo ufw allow 443/tcp  # HTTPS
+# 필수 포트 오픈
+sudo ufw allow 22/tcp            # SSH
+sudo ufw allow 80/tcp            # HTTP (ACME Challenge)
+sudo ufw allow 443/tcp           # HTTPS
+sudo ufw allow 8080/tcp          # Backend (필요시)
+sudo ufw allow 8989/tcp          # Jenkins (필요시)
 
-# LiveKit RTC (UDP)
-sudo ufw allow 20000:21000/udp
+# LiveKit 포트
+sudo ufw allow 8000/tcp          # LiveKit Signaling
+sudo ufw allow 8001/tcp          # LiveKit RTC TCP
+sudo ufw allow 8002/udp          # LiveKit TURN
+sudo ufw allow 16384:32768/udp   # LiveKit Media (RTP/RTCP)
+
+# 내부 네트워크 전용 (Docker)
+sudo ufw allow from 172.16.0.0/12 to any port 8003 proto tcp
 
 sudo ufw enable
+sudo ufw status
 ```
 
 ## 🧪 헬스 체크
