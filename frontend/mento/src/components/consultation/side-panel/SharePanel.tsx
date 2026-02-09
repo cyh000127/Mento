@@ -1,0 +1,578 @@
+import { useRef, useState, useEffect, useMemo, useCallback, type ChangeEvent, type PointerEvent } from "react";
+import { uploadConsultationMedia } from "@/api/consultationMediaApi";
+import { ALLOWED_IMAGE_EXTENSIONS, MAX_SINGLE_FILE_BYTES, MAX_TOTAL_BYTES, type SharedMediaFile, type DrawCommand, type DrawPoint } from "@/types/consultationMedia";
+
+export interface SharePanelProps {
+  reservationId: number | null;
+  onShare: (files: Array<Pick<SharedMediaFile, "fileUrl" | "fileType">>) => void;
+  sharedImageUrl: string | null;
+  drawCommands: DrawCommand[];
+  onShareImage: (imageUrl: string) => void;
+  onDrawCommand: (command: DrawCommand) => void;
+  onClearWhiteboard: () => void;
+  canDraw?: boolean;
+}
+
+const getFileExtension = (name: string) => {
+  const parts = name.split(".");
+  if (parts.length < 2) return "";
+  return parts[parts.length - 1].toLowerCase();
+};
+
+const resolveFileType = (file: File): SharedMediaFile["fileType"] | null => {
+  const extension = getFileExtension(file.name);
+  if (ALLOWED_IMAGE_EXTENSIONS.includes(extension as (typeof ALLOWED_IMAGE_EXTENSIONS)[number])) {
+    return "IMAGE";
+  }
+  return null;
+};
+
+const normalizeUploadResponse = (data: unknown) => {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (typeof data === "object") {
+    const record = data as Record<string, unknown>;
+    if (Array.isArray(record.files)) return record.files as unknown[];
+    if (Array.isArray(record.uploadedFiles)) return record.uploadedFiles as unknown[];
+    if (typeof record.fileUrl === "string") return [record];
+  }
+  return [];
+};
+
+const DEFAULT_PEN_COLOR = "#ff3b30";
+const DEFAULT_PEN_LINE_WIDTH = 4;
+const PEN_COLORS = ["#ff3b30", "#ff9500", "#ffcc00", "#34c759", "#0a84ff", "#5e5ce6", "#ffffff"] as const;
+const SEND_INTERVAL_MS = 60;
+
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
+export function SharePanel({ reservationId, onShare, sharedImageUrl, drawCommands, onShareImage, onDrawCommand, onClearWhiteboard, canDraw = false }: SharePanelProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const isDrawingRef = useRef(false);
+  const pendingPointsRef = useRef<DrawPoint[]>([]);
+  const lastSendAtRef = useRef(0);
+  const processedDrawIndexRef = useRef(0);
+  const penColorRef = useRef(DEFAULT_PEN_COLOR);
+  const penLineWidthRef = useRef(DEFAULT_PEN_LINE_WIDTH);
+  const onDrawCommandRef = useRef(onDrawCommand);
+  const cachedDrawCommandsRef = useRef<DrawCommand[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [penColor, setPenColor] = useState<string>(DEFAULT_PEN_COLOR);
+  const [penLineWidth, setPenLineWidth] = useState<number>(DEFAULT_PEN_LINE_WIDTH);
+  const [cachedDrawCommands, setCachedDrawCommands] = useState<DrawCommand[]>([]);
+
+  useEffect(() => {
+    penColorRef.current = penColor;
+  }, [penColor]);
+
+  useEffect(() => {
+    penLineWidthRef.current = penLineWidth;
+  }, [penLineWidth]);
+
+  useEffect(() => {
+    onDrawCommandRef.current = onDrawCommand;
+  }, [onDrawCommand]);
+
+  useEffect(() => {
+    cachedDrawCommandsRef.current = cachedDrawCommands;
+  }, [cachedDrawCommands]);
+
+  const storageKey = useMemo(() => {
+    if (!reservationId || !sharedImageUrl) return null;
+    return `sharepanel-draw-${reservationId}-${sharedImageUrl}`;
+  }, [reservationId, sharedImageUrl]);
+
+  const serializeCommand = useCallback(
+    (command: DrawCommand) =>
+      JSON.stringify({
+        tool: command.tool,
+        color: command.color,
+        lineWidth: command.lineWidth,
+        points: command.points,
+      }),
+    []
+  );
+
+  const mergeCommands = useCallback(
+    (base: DrawCommand[], extra: DrawCommand[]) => {
+      if (extra.length === 0) return base;
+      if (base.length === 0) return extra;
+      const seen = new Set(base.map(serializeCommand));
+      const merged = [...base];
+      extra.forEach((command) => {
+        const key = serializeCommand(command);
+        if (!seen.has(key)) {
+          seen.add(key);
+          merged.push(command);
+        }
+      });
+      return merged;
+    },
+    [serializeCommand]
+  );
+
+  const combinedCommands = useMemo(() => mergeCommands(drawCommands, cachedDrawCommands), [drawCommands, cachedDrawCommands, mergeCommands]);
+
+  useEffect(() => {
+    if (!storageKey) {
+      setCachedDrawCommands([]);
+      return;
+    }
+    try {
+      const stored = sessionStorage.getItem(storageKey);
+      if (!stored) {
+        setCachedDrawCommands([]);
+        return;
+      }
+      const parsed = JSON.parse(stored) as DrawCommand[];
+      if (Array.isArray(parsed)) {
+        setCachedDrawCommands(parsed);
+      } else {
+        setCachedDrawCommands([]);
+      }
+    } catch (error) {
+      console.warn("로컬 드로잉 복원 실패:", error);
+      setCachedDrawCommands([]);
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!storageKey) return;
+    if (cachedDrawCommands.length === 0) {
+      sessionStorage.removeItem(storageKey);
+      return;
+    }
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify(cachedDrawCommands));
+    } catch (error) {
+      console.warn("로컬 드로잉 저장 실패:", error);
+    }
+  }, [cachedDrawCommands, storageKey]);
+
+  useEffect(() => {
+    processedDrawIndexRef.current = 0;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }, [sharedImageUrl]);
+
+  const drawCommandOnCanvas = (command: DrawCommand) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    if (command.points.length < 2) return;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    ctx.strokeStyle = command.color;
+    ctx.lineWidth = command.lineWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    ctx.beginPath();
+    command.points.forEach((point, index) => {
+      const x = point.x * rect.width;
+      const y = point.y * rect.height;
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  };
+
+  const renderAllCommands = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    combinedCommands.forEach(drawCommandOnCanvas);
+    processedDrawIndexRef.current = combinedCommands.length;
+  };
+
+  useEffect(() => {
+    if (!sharedImageUrl) return;
+    if (combinedCommands.length < processedDrawIndexRef.current) {
+      renderAllCommands();
+      return;
+    }
+    const newCommands = combinedCommands.slice(processedDrawIndexRef.current);
+    if (newCommands.length === 0) return;
+    newCommands.forEach(drawCommandOnCanvas);
+    processedDrawIndexRef.current = combinedCommands.length;
+  }, [combinedCommands, sharedImageUrl]);
+
+  useEffect(() => {
+    const image = imageRef.current;
+    const canvas = canvasRef.current;
+    if (!image || !canvas) return;
+
+    const updateCanvasSize = () => {
+      const rect = image.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      canvas.width = Math.floor(rect.width * dpr);
+      canvas.height = Math.floor(rect.height * dpr);
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        renderAllCommands();
+      }
+    };
+
+    updateCanvasSize();
+    const observer = new ResizeObserver(updateCanvasSize);
+    observer.observe(image);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [sharedImageUrl, combinedCommands]);
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setSelectedFiles(file ? [file] : []);
+    setErrorMessage(null);
+  };
+
+  const validateFiles = (files: File[]) => {
+    if (files.length === 0) return "업로드할 파일을 선택해주세요.";
+    const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+    if (totalBytes > MAX_TOTAL_BYTES) {
+      return "총 업로드 용량은 500MB를 초과할 수 없습니다.";
+    }
+    for (const file of files) {
+      if (file.size > MAX_SINGLE_FILE_BYTES) {
+        return `${file.name} 파일은 100MB를 초과할 수 없습니다.`;
+      }
+      if (!resolveFileType(file)) {
+        return `${file.name} 파일 형식이 지원되지 않습니다.`;
+      }
+    }
+    return null;
+  };
+
+  const handleUpload = async () => {
+    if (!reservationId) {
+      setErrorMessage("예약 ID가 없어 업로드할 수 없습니다.");
+      return;
+    }
+    const validationError = validateFiles(selectedFiles);
+    if (validationError) {
+      setErrorMessage(validationError);
+      return;
+    }
+
+    setUploading(true);
+    setErrorMessage(null);
+
+    try {
+      const responseData = await uploadConsultationMedia(reservationId, selectedFiles);
+      const normalizedData = responseData?.data ?? responseData;
+      const items = normalizeUploadResponse(normalizedData);
+
+      if (items.length === 0) {
+        throw new Error("업로드 결과를 확인할 수 없습니다.");
+      }
+
+      const uploadedItems: SharedMediaFile[] = items.map((item, index) => {
+        if (typeof item === "string") {
+          const fileType = resolveFileType(selectedFiles[index]) ?? "IMAGE";
+          return { fileUrl: item, fileType, name: selectedFiles[index]?.name, size: selectedFiles[index]?.size };
+        }
+        const record = item as { fileUrl?: string };
+        const rawUrl = record.fileUrl ?? "";
+        const fileUrl = rawUrl ? rawUrl.replace(/^.*?(?=\/reservations)/, "https://pub-e67da594a346412f91ba6f351d463038.r2.dev") : "";
+        const fileType = resolveFileType(selectedFiles[index]) ?? "IMAGE";
+        return { fileUrl, fileType, name: selectedFiles[index]?.name, size: selectedFiles[index]?.size };
+      });
+
+      const validItems = uploadedItems.filter((item) => item.fileUrl);
+      if (validItems.length === 0) {
+        throw new Error("업로드된 파일 URL이 없습니다.");
+      }
+
+      onShare(validItems.map(({ fileUrl, fileType }) => ({ fileUrl, fileType })));
+      const firstImage = validItems.find((item) => item.fileType === "IMAGE");
+      if (firstImage) {
+        onShareImage(firstImage.fileUrl);
+      }
+      setSelectedFiles([]);
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
+    } catch (error) {
+      console.error("미디어 업로드 실패:", error);
+      setErrorMessage("미디어 업로드에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleBrowseClick = () => {
+    if (!canDraw) {
+      setErrorMessage("멘토만 사진을 업로드할 수 있습니다.");
+      return;
+    }
+    inputRef.current?.click();
+  };
+
+  const handleClearWhiteboard = () => {
+    if (!canDraw) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setErrorMessage(null);
+    setCachedDrawCommands([]);
+    if (storageKey) {
+      sessionStorage.removeItem(storageKey);
+    }
+    onClearWhiteboard();
+  };
+
+  const getNormalizedPoint = (event: PointerEvent<HTMLCanvasElement>): DrawPoint => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      return { x: 0, y: 0 };
+    }
+    const x = clamp((event.clientX - rect.left) / rect.width, 0, 1);
+    const y = clamp((event.clientY - rect.top) / rect.height, 0, 1);
+    return { x, y };
+  };
+
+  const drawLocalSegment = (from: DrawPoint, to: DrawPoint) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    ctx.strokeStyle = penColor;
+    ctx.lineWidth = penLineWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(from.x * rect.width, from.y * rect.height);
+    ctx.lineTo(to.x * rect.width, to.y * rect.height);
+    ctx.stroke();
+  };
+
+  const flushPendingPoints = (force = false) => {
+    if (pendingPointsRef.current.length < 2) return;
+    const now = Date.now();
+    if (!force && now - lastSendAtRef.current < SEND_INTERVAL_MS) return;
+    const points = [...pendingPointsRef.current];
+    const newCommand: DrawCommand = {
+      tool: "pen",
+      color: penColor,
+      lineWidth: penLineWidth,
+      points,
+    };
+    onDrawCommandRef.current(newCommand);
+    setCachedDrawCommands((prev) => {
+      const key = serializeCommand(newCommand);
+      if (prev.some((command) => serializeCommand(command) === key)) {
+        return prev;
+      }
+      return [...prev, newCommand];
+    });
+    lastSendAtRef.current = now;
+    pendingPointsRef.current = [points[points.length - 1]];
+  };
+
+  useEffect(() => {
+    return () => {
+      if (pendingPointsRef.current.length < 2) return;
+      const points = [...pendingPointsRef.current];
+      const newCommand: DrawCommand = {
+        tool: "pen",
+        color: penColorRef.current,
+        lineWidth: penLineWidthRef.current,
+        points,
+      };
+      onDrawCommandRef.current(newCommand);
+      if (storageKey) {
+        const merged = mergeCommands(cachedDrawCommandsRef.current, [newCommand]);
+        try {
+          sessionStorage.setItem(storageKey, JSON.stringify(merged));
+        } catch (error) {
+          console.warn("로컬 드로잉 저장 실패:", error);
+        }
+      }
+    };
+  }, [mergeCommands, storageKey]);
+
+  const handlePointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (!canDraw || !sharedImageUrl) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    isDrawingRef.current = true;
+    const point = getNormalizedPoint(event);
+    pendingPointsRef.current = [point];
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current || !canDraw || !sharedImageUrl) return;
+    const point = getNormalizedPoint(event);
+    const prevPoint = pendingPointsRef.current[pendingPointsRef.current.length - 1];
+    pendingPointsRef.current.push(point);
+    drawLocalSegment(prevPoint, point);
+    flushPendingPoints();
+  };
+
+  const finishDrawing = () => {
+    if (!isDrawingRef.current) return;
+    isDrawingRef.current = false;
+    flushPendingPoints(true);
+    pendingPointsRef.current = [];
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      {sharedImageUrl && (
+        <div className="p-4 space-y-4">
+          {/* 공유 이미지 + 캔버스 */}
+          <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-3 space-y-2">
+            <div className="relative w-full">
+              <img ref={imageRef} src={sharedImageUrl} alt="shared" className="w-full rounded-md" />
+              <canvas
+                ref={canvasRef}
+                className={`absolute top-0 left-0 rounded-md ${canDraw ? "cursor-crosshair" : "pointer-events-none"}`}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={finishDrawing}
+                onPointerLeave={finishDrawing}
+                onPointerCancel={finishDrawing}
+              />
+            </div>
+            {canDraw && (
+              <div className="space-y-3 rounded-md border border-gray-800 bg-gray-900/60 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">펜 색상</span>
+                  <div className="flex items-center gap-2">
+                    {PEN_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setPenColor(color)}
+                        className={`h-5 w-5 rounded-full border ${penColor === color ? "border-white" : "border-gray-700"}`}
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-500">굵기</span>
+                  <input type="range" min={2} max={12} step={1} value={penLineWidth} onChange={(event) => setPenLineWidth(Number(event.target.value))} className="flex-1 accent-cyan-500" />
+                  <span className="text-xs text-gray-400 w-6 text-right">{penLineWidth}</span>
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span>실시간 드로잉 공유</span>
+              <div className="flex items-center gap-2">
+                {canDraw && (
+                  <button type="button" onClick={handleClearWhiteboard} className="px-2 py-1 rounded border border-gray-700 text-gray-300 hover:border-cyan-500 hover:text-cyan-300 transition-colors">
+                    전체 지우기
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!sharedImageUrl && !canDraw && (
+        <div className="p-4">
+          <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-4 text-sm text-gray-400 text-center">공유된 사진이 없습니다</div>
+        </div>
+      )}
+
+      {canDraw && (
+        <div className={`p-3 space-y-3 ${sharedImageUrl ? "border-t border-gray-800" : ""}`}>
+          {/* 파일 선택 영역 */}
+          <div className="relative">
+            <input ref={inputRef} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handleFileChange} className="hidden" />
+            <div onClick={handleBrowseClick} className="border-2 border-dashed border-gray-700 rounded-lg px-3 py-2 cursor-pointer hover:border-cyan-500 hover:bg-gray-800/50 transition-all">
+              <div className="flex items-center gap-3">
+                <svg className="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <div className="flex flex-col">
+                  <p className="text-xs text-gray-400">클릭하여 파일 선택</p>
+                  <p className="text-[11px] text-gray-600">JPG, PNG, WEBP</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 선택된 파일 정보 */}
+          {selectedFiles.length > 0 && (
+            <div className="bg-gray-800 rounded-lg p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-400">선택된 파일</span>
+                <span className="text-xs text-cyan-400">{selectedFiles.length}개</span>
+              </div>
+              <div className="space-y-1 max-h-24 overflow-y-auto scrollbar-slim">
+                {selectedFiles.map((file, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-xs">
+                    <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-400 truncate flex-1">{file.name}</span>
+                    <span className="text-gray-600">{(file.size / 1024 / 1024).toFixed(1)}MB</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 업로드 버튼 */}
+          <button
+            onClick={handleUpload}
+            disabled={uploading || selectedFiles.length === 0}
+            className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-sm font-medium disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed hover:from-cyan-500 hover:to-blue-500 transition-all shadow-lg disabled:shadow-none"
+          >
+            {uploading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                업로드 중...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">{sharedImageUrl ? "사진 바꾸기" : "업로드"}</span>
+            )}
+          </button>
+          {sharedImageUrl && <p className="text-xs text-amber-300">사진을 변경하거나 방을 나가면 지금까지 그린 내용이 모두 삭제됩니다.</p>}
+
+          {/* 에러 메시지 */}
+          {errorMessage && (
+            <div className="flex items-start gap-2 p-3 bg-red-900/20 border border-red-800 rounded-lg">
+              <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <p className="text-sm text-red-300">{errorMessage}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
