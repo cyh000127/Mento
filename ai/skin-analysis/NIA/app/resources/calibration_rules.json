@@ -1,0 +1,42 @@
+{
+    "6": {
+        "name": "r_cheek",
+        "landmark_id": 280,
+        "ratio": 0.1928
+    },
+    "5": {
+        "name": "l_cheek",
+        "landmark_id": 101,
+        "ratio": 0.1884
+    },
+    "8": {
+        "name": "chin",
+        "landmark_id": 200,
+        "ratio": 0.4106
+    },
+    "2": {
+        "name": "glabellus",
+        "landmark_id": 9,
+        "ratio": 0.1011
+    },
+    "1": {
+        "name": "forehead",
+        "landmark_id": 10,
+        "ratio": 0.2983
+    },
+    "3": {
+        "name": "l_perocular",
+        "landmark_id": 35,
+        "ratio": 0.1187
+    },
+    "7": {
+        "name": "lip",
+        "landmark_id": 14,
+        "ratio": 0.2005
+    },
+    "4": {
+        "name": "r_perocular",
+        "landmark_id": 265,
+        "ratio": 0.1206
+    }
+}
