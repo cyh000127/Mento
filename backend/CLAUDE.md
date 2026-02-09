@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**MReady** - Spring Boot 4.0.1 백엔드 애플리케이션
+**MENTO** - Spring Boot 4.0.1 백엔드 애플리케이션
 - Java 25, Gradle, MySQL (운영), H2 (로컬)
 - Redis, Spring Security, OAuth2, JWT, WebSocket
 - Cloudflare R2, LiveKit, Spring AI (GPT-5-mini), Elasticsearch

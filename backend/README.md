@@ -334,7 +334,7 @@ domain/{domain}/
 
 **필수:**
 - **Java 25** - [OpenJDK 25][download-openjdk]
-- **MySQL 8.0** - [MySQL Server][download-mysql]
+- **MySQL 8.4** - [MySQL Server][download-mysql]
 - **Redis** - [Redis][download-redis]
 - **Git** - 버전 관리
 
@@ -791,43 +791,6 @@ redis-cli ping  # PONG 확인
 
 ---
 
-# 👥 Backend Team
-
-> [!NOTE]
-> MENTO 백엔드는 4명의 개발자로 구성되어 있습니다.
-
-<table align="center">
-  <tr>
-    <td align="center" width="200">
-      <b>Backend Developer</b>
-      <br />
-      <sub>Core Backend</sub>
-    </td>
-    <td align="center" width="200">
-      <b>Backend Developer</b>
-      <br />
-      <sub>Core Backend</sub>
-    </td>
-    <td align="center" width="200">
-      <b>Backend Developer</b>
-      <br />
-      <sub>AI Integration</sub>
-    </td>
-    <td align="center" width="200">
-      <b>Backend Developer</b>
-      <br />
-      <sub>DevOps</sub>
-    </td>
-  </tr>
-</table>
-
-**역할 분담:**
-- **Core Backend (2명)**: CQRS 아키텍처, 예약, 결제, 상담 관리
-- **AI Integration (1명)**: Spring AI, 피부 분석, AI 리포트
-- **DevOps (1명)**: Jenkins CI/CD, Docker, AWS EC2, 인프라
-
----
-
 # 📚 추가 문서
 
 ## 📖 프로젝트 가이드
@@ -862,7 +825,7 @@ redis-cli ping  # PONG 확인
 <!-- Badges (Small) -->
 [badge-java-small]: https://img.shields.io/badge/java-25-007396?style=flat&logo=openjdk&logoColor=white
 [badge-springboot-small]: https://img.shields.io/badge/spring%20boot-4.0.1-6DB33F?style=flat&logo=springboot&logoColor=white
-[badge-mysql-small]: https://img.shields.io/badge/mysql-8.0-4479A1?style=flat&logo=mysql&logoColor=white
+[badge-mysql-small]: https://img.shields.io/badge/mysql-8.4-4479A1?style=flat&logo=mysql&logoColor=white
 [badge-redis-small]: https://img.shields.io/badge/redis-latest-DC382D?style=flat&logo=redis&logoColor=white
 
 <!-- Badges (Large) -->
@@ -871,7 +834,7 @@ redis-cli ping  # PONG 확인
 [badge-spring-security]: https://img.shields.io/badge/Spring%20Security-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white
 [badge-spring-ai]: https://img.shields.io/badge/Spring%20AI-6DB33F?style=for-the-badge&logo=spring&logoColor=white
 [badge-websocket]: https://img.shields.io/badge/WebSocket-010101?style=for-the-badge&logo=socketdotio&logoColor=white
-[badge-mysql]: https://img.shields.io/badge/MySQL%208.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white
+[badge-mysql]: https://img.shields.io/badge/MySQL%208.4-4479A1?style=for-the-badge&logo=mysql&logoColor=white
 [badge-h2]: https://img.shields.io/badge/H2-0000FF?style=for-the-badge&logo=h2&logoColor=white
 [badge-redis]: https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white
 [badge-elasticsearch]: https://img.shields.io/badge/Elasticsearch-005571?style=for-the-badge&logo=elasticsearch&logoColor=white

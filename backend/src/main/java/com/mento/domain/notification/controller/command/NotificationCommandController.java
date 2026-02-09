@@ -30,7 +30,6 @@ public class NotificationCommandController {
 	private final NotificationFacadeService notificationFacadeService;
 
 	@Operation(summary = "알림 발송 (테스트용)", description = "알림을 생성하고 발송합니다.")
-	// @PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/test")
 	public ResponseEntity<BaseResponse<Void>> sendNotification(
 		@RequestBody @Valid NotificationSendReqDto reqDto

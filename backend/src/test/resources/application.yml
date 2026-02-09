@@ -44,7 +44,7 @@ spring:
 logging:
   level:
     root: WARN
-    com.mready: INFO
+    com.mento: INFO
 
 livekit:
   url: https://test.livekit.io

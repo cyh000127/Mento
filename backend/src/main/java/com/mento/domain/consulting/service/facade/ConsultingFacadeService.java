@@ -51,17 +51,7 @@ public class ConsultingFacadeService {
 
 	public SummaryInfoDto findConsultingReportById(final Long userId, final Long reportId) {
 		ConsultingReport consultingReport = reportQueryService.findById(reportId);
-
-		// validateReportOwnership(consultingReport, userId);
-
 		return ConsultingReportConverter.toSummaryInfoDto(consultingReport);
-	}
-
-	private void validateReportOwnership(final ConsultingReport report, final Long userId) {
-		Long reportOwnerId = report.getReservation().getUser().getId();
-		if (!reportOwnerId.equals(userId)) {
-			throw new ConsultingException(ErrorCode.REPORT_ACCESS_DENIED);
-		}
 	}
 }
 

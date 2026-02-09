@@ -1,25 +1,23 @@
-# 1. Base 이미지 설정
-FROM node:20-alpine
-
-# 2. 작업 디렉토리 설정
+# --------------------------------------------------------
+# 1. Builder Stage: 빌드만 하고 빠지는 녀석
+# --------------------------------------------------------
+FROM node:20-alpine AS builder
 WORKDIR /app
-
-# 3. 의존성 파일 복사 및 설치
-# 캐시 효율을 위해 package.json만 먼저 복사합니다.
 COPY package*.json ./
-RUN npm install
-
-# 4. 전체 소스 코드 복사
+RUN npm install --frozen-lockfile
 COPY . .
-
-# 5. 빌드 (필요한 경우)
-# 만약 dev 모드로 띄울 거라면 빌드 과정은 생략해도 되지만,
-# production 환경이라면 npm run build를 권장합니다.
+# 여기서 빌드를 실행하면 /app/dist 폴더에 최적화된 html, css, js 파일이 생성됨
 RUN npm run build
 
-# 6. 포트 개방
-EXPOSE 5173
+# --------------------------------------------------------
+# 2. Production Stage: 실제로 돌아가는 녀석 (Nginx)
+# --------------------------------------------------------
+FROM nginx:1.27-alpine
+# 빌더 단계에서 만든 dist 폴더만 쏙 빼옴
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# 7. 실행 명령어
-# 외부 접속을 위해 --host 0.0.0.0이 필수입니다.
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+# SPA(React) 라우팅 문제를 해결하기 위한 Nginx 설정 파일 교체
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
