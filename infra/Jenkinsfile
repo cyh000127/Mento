@@ -1,0 +1,171 @@
+// CI/Infra Jenkinsfile
+/*
+1. 변경 사항을 추적해서, 해당 서비스들만 업데이트가 되도록 한다.
+2. MANUAL_MODE가 꺼져있을 때 TARGET_SERVICES가 공백이면 변경 사항이 없는 것으로 간주, CD/Infra를 호출 X
+3. MANUAL_MODE가 켜져있을 때 TARGET_SERVICES가 공백이면 모든 것을 변경하는 것으로 간주
+(CD/Infra에 빈 값으로 주면 모든 게 변경)
+4. Target Services는 app, monitor, live 3 종류가 존재.
+- 로깅/진단 과정에서는 변수 별로 기본값을 설정해서 파이프라인이 실패하지 않도록 설정.
+*/
+
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+        string(name: 'TARGET_SERVICES', defaultValue: '', description: '수정/배포할 프로젝트 (app, live, monitor) - 콤마 또는 공백 구분')
+        booleanParam(name: 'MANUAL_MODE', defaultValue: false, description: 'true = 변경 감지 스킵, TARGET_SERVICES 직접 지정')
+    }
+
+    environment {
+        // 경로 및 프로젝트 설정
+        EC2_PROJECT_PATH = "/home/ubuntu/app/infra/infra-repo"
+        DOCKERHUB_REPO = "ejjem/s14p11a704"
+        DOCKER_CREDENTIAL_ID = "DockerHub_Token"
+        NGINX_IMAGE = "nginx:1.27-alpine"
+
+        // CD 잡 이름
+        CD_JOB_NAME = "CD/Final"
+    }
+
+    stages {
+        stage('Setup & Detect Changes') {
+            steps {
+                script {
+                    sh 'git rev-parse --short HEAD'
+
+                    if (params.MANUAL_MODE) {
+                        env.EFFECTIVE_TARGET_SERVICES = params.TARGET_SERVICES.replace(',', ' ')
+                        env.RUN_CD = 'true'
+                        echo "🎯 MANUAL_MODE ON: Targeting [${env.EFFECTIVE_TARGET_SERVICES ?: 'ALL'}]"
+                    } else {
+                        // Git Diff를 통해 변경된 파일 목록 추출
+                        sh 'git diff --name-only HEAD~1 HEAD > changed_files.txt || touch changed_files.txt'
+                        def changedFiles = readFile('changed_files.txt').readLines()
+                        def targets = []
+
+                        changedFiles.each { line ->
+                            // 1. APP 구역 (Compose 또는 Nginx 설정 변경 시)
+                            if (line.startsWith("infra/compose/") || line.startsWith("infra/nginx/") || line.startsWith("infra/ocr/")) {
+                                targets << 'app'
+                            }
+                            // 2. LIVE 구역 (LiveKit, Agent, Egress 등)
+                            if (line.startsWith("infra/live/")) {
+                                targets << 'live'
+                            }
+                            // 3. MONITOR 구역 (Grafana, Prometheus, Loki 등)
+                            if (line.startsWith("infra/monitor/")) {
+                                targets << 'monitor'
+                            }
+
+                        }
+
+                        def finalTargets = targets.unique()
+                        if (finalTargets) {
+                            env.EFFECTIVE_TARGET_SERVICES = finalTargets.join(' ')
+                            env.RUN_CD = 'true'
+                            echo "🚀 Detected Project Changes: ${env.EFFECTIVE_TARGET_SERVICES}"
+                        } else {
+                            env.RUN_CD = 'false'
+                            echo "📢 No infrastructure changes detected."
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Nginx Lint') {
+            when {
+                expression {
+                    return env.RUN_CD == 'true' && env.EFFECTIVE_TARGET_SERVICES.contains('app')
+                }
+            }
+            steps {
+                echo "===== NGINX CONFIG LINT ====="
+                sh '''
+                ABS_CONFD="$(pwd)/infra/nginx/conf.d"
+                docker run --rm \
+                    -v "$ABS_CONFD":/etc/nginx/conf.d:ro \
+                    "${NGINX_IMAGE}" \
+                    nginx -t
+                '''
+            }
+        }
+
+        stage('Docker Build & Push (Agent)') {
+            when {
+                expression {
+                    return env.RUN_CD == 'true' && env.EFFECTIVE_TARGET_SERVICES.contains('live')
+                }
+            }
+            steps {
+                echo "===== DOCKERIZING LIVEKIT AGENT ====="
+                script {
+                    dir('infra/live/agent') {
+                        sh "docker build -t ${DOCKERHUB_REPO}:livekit-agent ."
+                        withCredentials([usernamePassword(credentialsId: "${env.DOCKER_CREDENTIAL_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                            sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+                            sh "docker push ${DOCKERHUB_REPO}:livekit-agent"
+                        }
+                        sh "docker rmi ${DOCKERHUB_REPO}:livekit-agent || true"
+                    }
+                }
+            }
+        }
+
+        stage('Docker Build & Push (OCR)') {
+            when {
+                expression {
+                    return env.RUN_CD == 'true' && env.EFFECTIVE_TARGET_SERVICES.contains('app')
+                }
+            }
+            steps {
+                echo "===== DOCKERIZING OCR SERVICE ====="
+                script {
+                    dir('infra/ocr') {
+
+                        // 1. Docker 이미지 빌드 (태그: ocr)
+                        sh "docker build -t ${DOCKERHUB_REPO}:ocr ."
+
+                        // 2. Docker Hub 로그인 및 푸시
+                        withCredentials([usernamePassword(credentialsId: "${env.DOCKER_CREDENTIAL_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                            sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+                            sh "docker push ${DOCKERHUB_REPO}:ocr"
+                        }
+
+                        // 3. 로컬에 남은 이미지 삭제 (서버 용량 관리)
+                        sh "docker rmi ${DOCKERHUB_REPO}:ocr || true"
+                    }
+                }
+            }
+        }
+
+        stage('Sync Files to EC2') {
+            steps {
+                script {
+                    echo "🚀 Syncing all infra configs to EC2..."
+                    // 소스의 '내용물(./infra/)'을 목적지의 'infra(/infra/)' 폴더로 복사
+                    sh "rsync -avz --delete ./infra/ ${env.EC2_PROJECT_PATH}/infra/"
+                }
+            }
+        }
+
+        stage('Trigger CD/Final') {
+            when { expression { return env.RUN_CD == 'true' } }
+            steps {
+                script {
+                    echo "===== TRIGGERING CD/Final FOR PROJECTS: ${env.EFFECTIVE_TARGET_SERVICES} ====="
+                    build job: env.CD_JOB_NAME,
+                        wait: true,
+                        parameters: [
+                            string(name: 'TARGET_SERVICES', value: env.EFFECTIVE_TARGET_SERVICES)
+                        ]
+                }
+            }
+        }
+    }
+}

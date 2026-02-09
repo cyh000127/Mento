@@ -1,0 +1,508 @@
+import random
+import shutil
+import sys
+import cv2
+import numpy as np
+import torch
+from torch.utils import data
+import errno
+import os
+import torch.nn as nn
+import torch.nn.functional as F
+from torchvision.utils import make_grid
+import yaml
+
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+else:
+    device = torch.device("cpu")
+
+class EarlyStopping:
+    """Early stops the training if validation loss doesn't improve after a given patience."""
+    def __init__(self, patience=7, verbose=False, delta=0, path='checkpoint.pt', trace_func=print):
+        """
+        Args:
+            patience (int): How long to wait after last time validation loss improved.
+                            Default: 7
+            verbose (bool): If True, prints a message for each validation loss improvement. 
+                            Default: False
+            delta (float): Minimum change in the monitored quantity to qualify as an improvement.
+                            Default: 0
+            path (str): Path for the checkpoint to be saved to.
+                            Default: 'checkpoint.pt'
+            trace_func (function): trace print function.
+                            Default: print            
+        """
+        self.patience = patience
+        self.verbose = verbose
+        self.counter = 0
+        self.best_score = None
+        self.early_stop = False
+        self.val_loss_min = np.inf
+        self.delta = delta
+        self.path = path
+        self.trace_func = trace_func
+    
+    def __call__(self, val_loss, model):
+
+        score = -val_loss
+
+        if self.best_score is None:
+            self.best_score = score
+            self.save_checkpoint(val_loss, model)
+        elif score < self.best_score + self.delta:
+            self.counter += 1
+            if self.verbose:
+                self.trace_func(f'EarlyStopping counter: {self.counter} out of {self.patience}')
+            if self.counter >= self.patience:
+                self.early_stop = True
+        else:
+            self.best_score = score
+            self.save_checkpoint(val_loss, model)
+            self.counter = 0
+
+    def save_checkpoint(self, val_loss, model):
+        '''Saves model when validation loss decrease.'''
+        if self.verbose:
+            self.trace_func(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
+        
+        # Determine if model is wrapped in DataParallel
+        model_to_save = model.module if hasattr(model, 'module') else model
+        torch.save(model_to_save.state_dict(), self.path)
+        self.val_loss_min = val_loss
+
+# ... existing code ...
+class CharbonnierLoss(nn.Module):
+    def __init__(self, eps=1e-6):
+        super(CharbonnierLoss, self).__init__()
+        self.eps = eps
+
+    def forward(self, prediction, target):
+        diff = prediction - target
+        loss = torch.sqrt(diff ** 2 + self.eps ** 2)
+        return torch.mean(loss)
+    
+    
+
+def collate_fn(data):  # img, grade, img_name, dig, meta
+    # for img, grade, img_name, dig, meta in data:
+
+    #     data.append()
+    pass
+
+
+def softmax(x):
+    e_x = torch.exp(x - torch.max(x, dim=1, keepdim=True).values)
+
+    return e_x / torch.sum(e_x, dim=1).unsqueeze(dim=1)
+
+
+def resume_checkpoint(args, model, path, dig, test=True):
+    state_dict = torch.load(path, map_location=device, weights_only=False)
+    if state_dict["best_loss"][dig] != np.inf and test:
+        args.best_loss[dig] = state_dict["best_loss"][dig]
+
+    if test:
+        args.load_epoch[dig] = state_dict["epoch"] + 1
+        info = state_dict["info"]
+    else:
+        info = None
+
+    if "batch_size" in state_dict:
+        args.batch_size = state_dict["batch_size"]
+        if args.batch_size != state_dict["batch_size"]:
+            print(f"batch_size update {state_dict['batch_size']} ->> {args.batch_size}")
+    model.load_state_dict(state_dict["model_state"], strict=False)
+
+    info = state_dict["info"]
+    if any(key not in info.keys() for key in ["global_step", "run_id"]):
+        step, id = 0, None
+    else:
+        step, id = info["global_step"], info["run_id"]
+    del state_dict
+
+    return model, info, step, id
+
+
+class LabelSmoothingCrossEntropy(nn.Module):
+    def __init__(self, smoothing):
+        super(LabelSmoothingCrossEntropy, self).__init__()
+        self.smoothing = smoothing
+
+    def forward(self, x, target, dig):
+        gt = target.item()
+
+        smoothing = 0.5
+        dim = 0
+        if (dig == "wrinkle" and gt == 1) or (dig == "pigmentation" and gt == 1):
+            target = torch.tensor([0, 1, 2], device="cuda")
+
+        elif dig == "sagging" and gt == 0:
+            target = torch.tensor([0, 1], device="cuda")
+
+        elif (dig == "pore" and gt == 2) or (dig == "dryness" and gt == 2):
+            target = torch.tensor([1, 2, 3], device="cuda")
+
+        else:
+            smoothing = self.smoothing
+            dim = 1
+
+        confidence = 1.0 - smoothing
+        logprobs = F.log_softmax(x, dim=-1)
+        nll_loss = -logprobs.gather(dim=-1, index=target.unsqueeze(dim))
+        nll_loss = nll_loss.squeeze(1)
+        smooth_loss = -logprobs.mean(dim=-1)
+        loss = confidence * nll_loss + smoothing * smooth_loss
+        return loss.mean()
+
+
+class AverageMeter(object):
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, batch_size=32):
+        self.val = val
+        self.sum += val * batch_size
+        self.count += batch_size
+        self.avg = self.sum / self.count
+
+    def update_acc(self, val, num=1):
+        self.val = val
+        self.sum += val
+        self.count += num
+        self.avg = self.sum / self.count
+
+
+def get_item(item, device):
+    if type(item[1]) == torch.Tensor:
+        label = item[1].to(device)
+
+    else:
+        for name in item[1]:
+            item[1][name] = item[1][name].to(device)
+        label = item[1]
+
+    img = item[0].to(device)
+
+    return img, label
+
+
+def pred_image(self, img):
+    if img.shape[-1] > 128:
+        img_l = img[:, :, :, :128]
+        img_r = torch.flip(img[:, :, :, 128:], dims=[3])
+        pred = self.model.to(self.device)(img_l)
+        pred = self.model.to(self.device)(img_r) + pred
+
+    elif img.shape[-2] > 128:
+        img_l = img[:, :, :128, :]
+        img_r = torch.flip(img[:, :, 128:, :], dims=[2])
+        pred = self.model.to(self.device)(img_l)
+        pred = self.model.to(self.device)(img_r) + pred
+
+    else:
+        pred = self.model.to(self.device)(img)
+
+    return pred
+
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+class FocalLoss(nn.Module):
+    def __init__(self, epoch=0, alpha=1, gamma=3, reduction="mean"):
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.reduction = reduction
+
+    def forward(self, inputs, targets):
+        ce_loss = F.cross_entropy(inputs, targets, reduction="none")
+        pt = torch.exp(-ce_loss)
+        focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
+
+        if self.reduction == "mean":
+            return focal_loss.mean()
+        elif self.reduction == "sum":
+            return focal_loss.sum()
+        else:
+            return focal_loss
+
+
+import torch.nn.functional as F
+
+
+class CB_loss(nn.Module):
+    def __init__(self, samples_per_cls, no_of_classes, beta=0.999, gamma=2):
+        super(CB_loss, self).__init__()
+        (
+            self.samples_per_cls,
+            self.no_of_classes,
+            self.beta,
+            self.gamma,
+        ) = (samples_per_cls, no_of_classes, beta, gamma)
+
+    def focal_loss(self, logits, labels, alpha):
+        """Compute the focal loss between `logits` and the ground truth `labels`.
+
+        Focal loss = -alpha_t * (1-pt)^gamma * log(pt)
+        where pt is the probability of being classified to the true class.
+        pt = p (if true class), otherwise pt = 1 - p. p = sigmoid(logit).
+
+        Args:
+        labels: A float tensor of size [batch, num_classes].
+        logits: A float tensor of size [batch, num_classes].
+        alpha: A float tensor of size [batch_size]
+            specifying per-example weight for balanced cross entropy.
+        gamma: A float scalar modulating loss from hard and easy examples.
+
+        Returns:
+        focal_loss: A float32 scalar representing normalized total loss.
+        """
+        logits = logits.clamp(min=-20.0, max=20.0)
+        BCLoss = F.binary_cross_entropy_with_logits(
+            input=logits, target=labels, reduction="none"
+        )
+
+        if self.gamma == 0.0:
+            loss = BCLoss
+        else:
+            probs = torch.sigmoid(logits)
+            pt = probs * labels + (1 - probs) * (1 - labels)
+            focal_weight = (1 - pt).clamp(min=0.0, max=1.0).pow(self.gamma)
+            loss = focal_weight * BCLoss
+
+        weighted_loss = alpha * loss
+        focal_loss = torch.sum(weighted_loss)
+        denom = labels.sum().clamp_min(1.0)
+        focal_loss = focal_loss / denom
+        focal_loss = torch.nan_to_num(focal_loss, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        return focal_loss
+
+    def forward(self, logits, labels):
+        """Compute the Class Balanced Loss between `logits` and the ground truth `labels`.
+
+        Class Balanced Loss: ((1-beta)/(1-beta^n))*Loss(labels, logits)
+        where Loss is one of the standard losses used for Neural Networks.
+
+        Args:
+        labels: A int tensor of size [batch].
+        logits: A float tensor of size [batch, no_of_classes].
+        samples_per_cls: A python list of size [no_of_classes].
+        no_of_classes: total number of classes. int
+        loss_type: string. One of "sigmoid", "focal", "softmax".
+        beta: float. Hyperparameter for Class balanced loss.
+        gamma: float. Hyperparameter for Focal loss.
+
+        Returns:
+        cb_loss: A float tensor representing class balanced loss
+        """
+
+        samples = np.array(self.samples_per_cls, dtype=np.float32)
+        effective_num = 1.0 - np.power(self.beta, samples)
+        effective_num = np.where(samples > 0, effective_num, np.nan)
+        weights = (1.0 - self.beta) / effective_num
+        weights = np.where(np.isfinite(weights), weights, 0.0)
+        weight_sum = np.sum(weights)
+        if weight_sum > 0:
+            weights = weights / weight_sum * self.no_of_classes
+
+        labels_one_hot = F.one_hot(labels, self.no_of_classes).float()
+
+        labels_one_hot = labels_one_hot.to(logits.device, logits.dtype)
+
+        weights = torch.tensor(weights, device=logits.device, dtype=logits.dtype)
+        weights = weights.unsqueeze(0)
+        weights = weights.repeat(labels_one_hot.shape[0], 1) * labels_one_hot
+        weights = weights.sum(1)
+        weights = weights.unsqueeze(1)
+        weights = weights.repeat(1, self.no_of_classes)
+
+        cb_loss = self.focal_loss(logits, labels_one_hot, weights)
+        cb_loss = torch.nan_to_num(cb_loss, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        # cb_loss = F.binary_cross_entropy_with_logits(input = logits,target = labels_one_hot, weights = weights)
+
+        # pred = logits.softmax(dim = 1)
+        # cb_loss = F.binary_cross_entropy(input = pred, target = labels_one_hot, weight = weights)
+
+        return cb_loss
+
+
+def save_checkpoint(self, correct_, all_, micro_precision, correlation):
+    checkpoint_dir = os.path.join(
+        "checkpoint",
+        self.args.mode,
+        self.args.name,
+        "save_model",
+        str(self.m_dig),
+    )
+
+    mkdir(checkpoint_dir)
+    model_to_save = self.model.module if hasattr(self.model, "module") else self.model
+    torch.save(
+        {
+            "model_state": model_to_save.state_dict(),
+            "epoch": self.epoch,
+            "best_loss": self.best_loss,
+            "batch_size": self.args.batch_size,
+            "info": {
+                "correct_": correct_,
+                "all_": all_,
+                "micro_precision": micro_precision,
+                "correlation": correlation,
+                "global_step": self.global_step,
+                "optimizer_state_dict": self.optimizer.state_dict(),
+                "scheduler_state_dict": self.scheduler.state_dict(),
+                "acc_": micro_precision,
+                "corre_": correlation,
+            },
+            
+        },
+        os.path.join(checkpoint_dir, "temp_file.bin"),
+    )
+
+    os.rename(
+        os.path.join(checkpoint_dir, "temp_file.bin"),
+        os.path.join(checkpoint_dir, "state_dict.bin"),
+    )
+
+    self.update_c = 0
+    self.best_epoch = self.epoch
+    self.correct_ = correct_
+    self.all_ = all_
+    self.acc_ = micro_precision
+    self.corre_ = correlation
+
+    return checkpoint_dir
+
+
+class mape_loss(nn.Module):
+    def __init__(self):
+        super(mape_loss, self).__init__()
+
+    def forward(self, input, target):
+        error = abs(input - target)
+        error = error / target
+
+        return error.mean()
+
+
+def mkdir(path):
+    # if it is the current folder, skip.
+    # otherwise the original code will raise FileNotFoundError
+    if path == "":
+        return
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+
+def save_value(args, self):
+    mkdir(args.name)
+    with open(os.path.join(args.name, f"pred.txt"), "w") as p:
+        with open(os.path.join(args.name, f"gt.txt"), "w") as g:
+            for idx in range(len(self.pred)):
+                p.write(f"{self.pred[idx][0]}, {self.pred[idx][1]} \n")
+                g.write(f"{self.gt[idx][0]}, {self.gt[idx][1]} \n")
+    g.close()
+    p.close()
+
+
+def save_image(self, img):
+    c_img = (
+        make_grid(img, nrow=int(self.args.batch_size / 4))
+        .permute(1, 2, 0)
+        .detach()
+        .cpu()
+        .numpy()
+    )
+    max_v, min_v = c_img.max(), c_img.min()
+    if min_v > 0:
+        min_v = -min_v
+    s_img = (c_img - min_v) * (255.0 / (max_v - min_v))
+
+    path = os.path.join(self.args.save_img, self.m_dig, self.phase)
+    mkdir(path)
+    img_mat = cv2.UMat(s_img)
+    j = self.args.batch_size // 4
+    for i, name in enumerate(self.img_names):
+        x, y = (i % j * (256 + 2) + 2, i // j * (256 + 2) + 20)  # 위치 조절
+        cv2.putText(
+            img_mat,
+            name,
+            (x, y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.41,
+            (255, 255, 255),
+            1,
+            cv2.LINE_AA,
+        )
+
+    saved_image = cv2.cvtColor(img_mat.get(), cv2.COLOR_RGB2BGR).astype(np.uint8)
+    cv2.imwrite(
+        os.path.join(path, f"epoch_{self.epoch}_iter_{self.iter}_{self.m_dig}.jpg"),
+        saved_image,
+    )
+
+
+def fix_seed(random_seed):
+
+    torch.manual_seed(random_seed)
+    torch.cuda.manual_seed(random_seed)
+    torch.cuda.manual_seed_all(random_seed)  # if use multi-GPU
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(random_seed)
+    random.seed(random_seed)
+
+def load_checkpoint(args, model_path, model_list, pass_list, loading):
+    for path in os.listdir(model_path):
+        dig_path = os.path.join(model_path, path)
+        if os.path.isfile(os.path.join(dig_path, "state_dict.bin")):
+            print(f"\033[92mResuming......{dig_path}\033[0m")
+            model_list[path], info, global_step, run_id = resume_checkpoint(
+                args,
+                model_list[path],
+                os.path.join(model_path, f"{path}", "state_dict.bin"),
+                path, 
+            )
+            loading = True
+            if os.path.isdir(os.path.join(dig_path, "done")):
+                print(f"\043[92mPassing......{dig_path}\043[0m")
+                pass_list.append(path)
+                    
+    return loading, model_list, pass_list, info, global_step, run_id
+
+
+def save_code_copy(args, check_path, model_path):
+    code_path = os.path.join(check_path, "code")
+    for path in [model_path, code_path]:
+        mkdir(path)
+
+    for code_name in [
+        "tool/main.py",
+        "tool/data_loader.py",
+        "tool/model.py",
+        "custom_model/resnet.py",
+        "custom_model/coatnet.py",
+    ]:
+        shutil.copy(
+            os.path.join(os.getcwd(), code_name),
+            os.path.join(code_path, os.path.basename(code_name)),
+        )
+    args_dict = vars(args)
+    yaml_file_path = os.path.join(code_path, "config.yaml")
+    with open(yaml_file_path, "w") as yaml_file:
+        yaml.dump(args_dict, yaml_file, default_flow_style=False)

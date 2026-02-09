@@ -1,0 +1,45 @@
+spring:
+  datasource:
+    url: jdbc:h2:~/mready;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1;MODE=MySQL;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: h2
+    password: h2
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: 0000
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    defer-datasource-initialization: true
+
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        show_sql: true
+        format_sql: true
+        use_sql_comments: true
+        criteria:
+          literal_handling_mode: bind
+        query:
+          in_clause_parameter_padding: true
+        connection:
+          provider_disables_autocommit: true
+        jdbc:
+          time_zone: UTC
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:sql/data.sql
+      encoding: UTF-8
+      separator: ;
+      continue-on-error: false
+
+
+kakaopay:
+  redirect-urls:
+    approval: http://localhost:5173/payments/redirect
+    fail: http://localhost:5173/payments/fail
+    cancel: http://localhost:5173/payments/fail

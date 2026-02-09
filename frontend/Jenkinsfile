@@ -1,0 +1,91 @@
+// CI/FE Jenkinsfile
+pipeline {
+    agent any
+
+    environment {
+        FE_DIR = "frontend/mento"
+        DOCKERHUB_REPO = "ejjem/s14p11a704"
+        DOCKER_CREDENTIAL_ID = "DockerHub_Token"
+        // 빌드할 브런치 지정
+        TARGET_BRANCH = "develop-fe"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // 특정 브런치(develop-fe)를 명시적으로 체크아웃
+                checkout([$class: 'GitSCM',
+                    branches: [[name: "*/${env.TARGET_BRANCH}"]],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [],
+                    submoduleCfg: [],
+                    userRemoteConfigs: [[
+                        url: 'https://lab.ssafy.com/s14-webmobile1-sub1/S14P11A704.git',
+                        credentialsId: 'Gitlab_PAT'
+                    ]]
+                ])
+            }
+        }
+
+        stage('Frontend Build') {
+            steps {
+                dir("${env.FE_DIR}") {
+                    echo "===== BUILDING FRONTEND (${env.TARGET_BRANCH}) ====="
+                    sh '''
+                        set -euo pipefail
+                        if [ -f package-lock.json ]; then
+                          npm ci
+                        else
+                          npm install
+                        fi
+                        npm run build
+                    '''
+                }
+            }
+        }
+
+        stage('Docker Build & Push') {
+            steps {
+                echo "===== DOCKERIZING (FE) ====="
+                script {
+                    dir("${env.FE_DIR}") {
+                        // Dockerfile이 없을 때를 대비한 체크
+                        if (!fileExists('Dockerfile')) {
+                            error "ERROR: ${env.FE_DIR}/Dockerfile이 존재하지 않습니다. 파일을 먼저 생성해주세요!"
+                        }
+
+                        sh "docker build -t ${DOCKERHUB_REPO}:frontend ."
+
+                        withCredentials([usernamePassword(
+                            credentialsId: "${DOCKER_CREDENTIAL_ID}",
+                            usernameVariable: 'DOCKER_USER',
+                            passwordVariable: 'DOCKER_PASS'
+                        )]) {
+                            sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+                            sh "docker push ${DOCKERHUB_REPO}:frontend"
+                        }
+                        sh "docker rmi ${DOCKERHUB_REPO}:frontend || true"
+                    }
+                }
+            }
+        }
+
+        stage('Trigger CD') {
+            steps {
+                script {
+                    echo "===== TRIGGER CD/FINAL ====="
+                    build job: 'CD/Final',
+                        wait: true,
+                        parameters: [
+                            string(name: 'TARGET_SERVICES', value: 'app'),
+                        ]
+                }
+            }
+        }
+    }
+
+    post {
+        success { echo "CI(FE) SUCCESS - Branch: ${env.TARGET_BRANCH}" }
+        failure { echo "CI(FE) FAILURE - Branch: ${env.TARGET_BRANCH}" }
+    }
+}

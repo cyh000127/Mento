@@ -1,0 +1,19 @@
+ws_url: ws://host.docker.internal:8000
+api_key: CRRsJdJGKI
+api_secret: YQGcyneUgQiNUfhazwTJizHT2rEu6x6zdx6nPvQFftBiFrmRaUio5wTyvmt7PgaP
+
+redis:
+  address: redis_livekit:6379
+
+logging:
+  level: info
+
+options:
+  video_codec: H264_MAIN
+  video_bitrate: 2500
+  framerate: 30
+  width: 1280
+  height: 720
+  audio_codec: AAC
+  audio_bitrate: 128
+  audio_frequency: 44100

@@ -1,0 +1,26 @@
+port: 8000 # Signaling 포트
+
+rtc:
+  tcp_port: 8001
+  port_range_start: 20000
+  port_range_end: 21000
+  use_external_ip: true
+
+keys:
+  CRRsJdJGKI: YQGcyneUgQiNUfhazwTJizHT2rEu6x6zdx6nPvQFftBiFrmRaUio5wTyvmt7PgaP
+
+redis:
+  address: localhost:6380
+
+prometheus:
+  port: 8003
+
+webhook:
+  api_key: CRRsJdJGKI
+  urls:
+    - https://i14a704.p.ssafy.io/api/v1/recordings/webhook
+
+turn:
+  enabled: true
+  udp_port: 8002
+

@@ -1,0 +1,110 @@
+management:
+  health:
+    elasticsearch:
+      enabled: false
+
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE}
+  web:
+    resources:
+      add-mappings: false
+  jpa:
+    open-in-view: false
+  threads:
+    virtual:
+      enabled: on
+  jmx:
+    enabled: true
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 500MB
+  elasticsearch:
+    uris: ${ELASTIC_SEARCH_URL}
+    connection-timeout: 5s
+    socket-timeout: 3s
+
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            redirect-uri: ${KAKAO_REDIRECT_URI}
+            scope: profile_nickname, account_email
+            client-name: Kakao
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+  ai:
+    openai:
+      api-key: ${GMS_KEY}
+      base-url: https://gms.ssafy.io/gmsapi/api.openai.com/v1
+      chat:
+        completions-path: /chat/completions
+        options:
+          model: gpt-5-mini
+
+kakaopay:
+  base-url: https://open-api.kakaopay.com
+  cid: ${KAKAOPAY_CLIENT_ID}
+  secret-key: ${KAKAOPAY_SECRET_KEY}
+
+encryption:
+  secret-key: ${ENCRYPTION_SECRET_KEY}
+
+springdoc:
+  api-docs:
+    groups:
+      enabled: true
+  swagger-ui:
+    display-request-duration: true
+    operations-sorter: alpha
+    groups-order: asc
+    tags-sorter: alpha
+    disable-swagger-default-url: true
+    try-it-out-enabled: true
+    default-models-expand-depth: 1
+    default-model-expand-depth: 1
+
+logging:
+  level:
+    org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver: ERROR
+
+cloudflare:
+  r2:
+    endpoint: ${CLOUDFLARE_ENDPOINT}
+    bucket: ${CLOUDFLARE_BUCKET}
+    access-key: ${CLOUDFLARE_ACCESS_KEY}
+    secret-key: ${CLOUDFLARE_SECRET_KEY}
+    outer-prefix: https://pub-e67da594a346412f91ba6f351d463038.r2.dev/
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION} # 14D
+
+livekit:
+  url: ${LIVEKIT_URL}
+  host: ${LIVEKIT_HOST}
+  api-key: ${LIVEKIT_API_KEY}
+  secret: ${LIVEKIT_API_SECRET}
+
+skinai:
+  base-url: ${SKIN_API_URL}
+
+ai:
+  async:
+    core-pool-size: 5
+    max-pool-size: 20
+    queue-capacity: 1000
+  prompts:
+    system: ${AI_PROMPT_SYSTEM:classpath:prompts/system.st}
+    consulting: ${AI_PROMPT_CONSULTING:classpath:prompts/consulting.st}
