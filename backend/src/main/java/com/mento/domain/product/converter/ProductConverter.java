@@ -1,0 +1,80 @@
+package com.mento.domain.product.converter;
+
+import com.mento.common.converter.JsonStringConverter;
+import com.mento.domain.brand.entity.Brand;
+import com.mento.domain.product.dto.common.ProductInfoDto;
+import com.mento.domain.product.dto.request.ProductCreateReqDto;
+import com.mento.domain.product.dto.response.ProductListResDto;
+import com.mento.domain.product.dto.response.ProductResDto;
+import com.mento.domain.product.entity.Product;
+
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
+public class ProductConverter {
+
+	public Product toEntity(final ProductCreateReqDto dto, final Brand brand) {
+		return Product.builder()
+			.brand(brand)
+			.oliveyoungGoodsNo(dto.oliveyoungGoodsNo())
+			.categoryMedium(dto.categoryMedium())
+			.categorySmall(dto.categorySmall())
+			.name(dto.name())
+			.volume(dto.volume())
+			.description(dto.description())
+			.ingredients(dto.ingredients())
+			.price(dto.price())
+			.imageUrl(dto.imageUrl())
+			.productUrl(dto.productUrl())
+			.skinTypes(dto.skinTypes())
+			.relatedConditions(dto.relatedConditions())
+			.benefits(dto.benefits())
+			.defaultUsageDays(dto.defaultUsageDays())
+			.build();
+	}
+
+	public ProductResDto toProductResDto(final Product entity) {
+		return ProductResDto.builder()
+			.productId(entity.getId())
+			.brandId(entity.getBrand().getId())
+			.brandName(entity.getBrand().getBrandName())
+			.oliveyoungGoodsNo(entity.getOliveyoungGoodsNo())
+			.categoryMedium(entity.getCategoryMedium())
+			.categorySmall(entity.getCategorySmall())
+			.name(entity.getName())
+			.volume(entity.getVolume())
+			.description(entity.getDescription())
+			.ingredients(entity.getIngredients())
+			.price(entity.getPrice())
+			.imageUrl(entity.getImageUrl())
+			.productUrl(entity.getProductUrl())
+			.skinTypes(JsonStringConverter.toJsonArray(entity.getSkinTypes()))
+			.relatedConditions(JsonStringConverter.toJsonArray(entity.getRelatedConditions()))
+			.benefits(JsonStringConverter.toJsonArray(entity.getBenefits()))
+			.defaultUsageDays(entity.getDefaultUsageDays())
+			.createdAt(entity.getCreatedAt())
+			.updatedAt(entity.getUpdatedAt())
+			.build();
+	}
+
+	public ProductInfoDto toProductInfoDto(final Product product) {
+		return ProductInfoDto.builder()
+			.id(product.getId())
+			.name(product.getName())
+			.categoryMedium(product.getCategoryMedium())
+			.imageUrl(product.getImageUrl())
+			.productUrl(product.getProductUrl())
+			.build();
+	}
+
+	public ProductListResDto toProductListResDto(Product product) {
+		return ProductListResDto.builder()
+			.productId(product.getId())
+			.name(product.getName())
+			.brandName(product.getBrand().getBrandName())
+			.categoryMedium(product.getCategoryMedium())
+			.imageUrl(product.getImageUrl())
+			.build();
+	}
+
+}
