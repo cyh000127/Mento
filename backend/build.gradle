@@ -11,7 +11,7 @@ ext {
 
 group = 'com'
 version = '0.0.1-SNAPSHOT'
-description = 'mready'
+description = 'mento'
 
 java {
     toolchain {
