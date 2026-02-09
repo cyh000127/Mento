@@ -8,6 +8,14 @@
 
 ---
 
+# 📚 참고 자료
+
+**Reference:**
+- NIA: https://github.com/leejeongho3214/NIA
+
+---
+
+
 ## 📋 목차
 
 - [📖 프로젝트 개요](#-프로젝트-개요)
@@ -50,7 +58,7 @@
 
 ## 🐳 Docker 지원
 - 컨테이너 기반 배포 환경 제공
-- 약 82% 이미지 크기 감소 (1.7GB → 300MB)
+- ONNX Runtime으로 Pytorch 대비 메모리 3GB 이상 절약
 
 ---
 
@@ -190,15 +198,6 @@ uv run scripts/convert_to_onnx.py
 
 **해결:**
 - `service_inference.py`에서 `sess_options.enable_cpu_mem_arena = False` 설정 확인
-
----
-
-# 📚 참고 자료
-
-**Reference:**
-- NIA: https://github.com/leejeongho3214/NIA
-
----
 
 <div align="center">
 
