@@ -572,82 +572,6 @@ gradlew checkstyleMain
 
 ---
 
-# ✍️ 커밋 컨벤션
-
-> [!NOTE]
-> 자세한 내용은 [커밋 컨벤션 문서][backend-commit-convention]를 참고하세요.
-
-## 📝 Gitmoji 사용
-
-**IntelliJ Plugin 설치:**
-- `Preferences > Plugins > Gitmoji`
-- 설정: `Use unicode emoji` 활성화
-
-## 📋 커밋 메시지 형식
-
-```
-<gitmoji> <type>: <subject>
-
-<body>
-
-Ref. #<jira-ticket>
-```
-
-## 🎯 주요 Gitmoji
-
-| 아이콘 | 설명 | 사용 시점 |
-|--------|------|-----------|
-| ✨ | 새 기능 | Introduce new features |
-| ♻️ | 리팩토링 | Refactor code |
-| 🐛 | 버그 수정 | Fix a bug |
-| ✅ | 테스트 추가/수정 | Add or update tests |
-| 📝 | 문서 추가/수정 | Add or update documentation |
-| ➕ | 의존성 추가 | Add a dependency |
-| 🔧 | 설정 파일 수정 | Add or update configuration |
-| 🔥 | 코드/파일 삭제 | Remove code or files |
-
-## ✅ 작성 규칙
-
-### 제목 (Subject)
-```bash
-✅ ♻️ refactor: Spring AI 호환성 업데이트
-❌ ♻️ refactor: Spring AI 호환성 업데이트.
-❌ ♻️ refactor: Spring AI 호환성 업데이트한다
-```
-- 50자 이내 (한글 약 25자)
-- 명령형 현재시제 사용
-- 마침표 금지
-
-### 본문 (Body)
-```bash
-- Spring AI 1.0.0 GA 버전 대응 의존성 업데이트
-- 불필요한 로그 제거 및 메시지 포맷 개선
-```
-- `-` 기호로 내용 구분
-- **왜(Why)** 변경했는지 중심으로 설명
-
-### JIRA Ticket
-```bash
-✅ Ref. #S14P11A704-32, #S14P11A704-321
-❌ Ref. S14P11A704-32
-❌ #S14P11A704-32
-```
-- `Ref. #` 접두어 필수
-- 본문과 한 줄 띄우기
-
-## 📌 예시
-
-```bash
-♻️ refactor: Spring AI 호환성 업데이트
-
-- Spring AI 1.0.0 GA 버전 대응 의존성 업데이트
-- 불필요한 로그 제거 및 메시지 포맷 개선
-
-Ref. #S14P11A704-32
-```
-
----
-
 # 🖥️ AI 개발 환경 설정
 
 > [!NOTE]
@@ -810,27 +734,6 @@ docker-compose up -d
 docker-compose logs -f mento-backend
 ```
 
-### Jenkins CI/CD
-
-**필수 플러그인:**
-- Pipeline
-- SSH Pipeline Steps
-- Docker Pipeline
-- Credentials Binding
-
-**Credentials 등록:**
-- Secret text: `db-password`, `jwt-secret`, `cloudflare-*`, `livekit-*`, `kakao-*`
-- SSH Key: `ec2-ssh-key` (PEM 파일)
-
-**자동 배포 워크플로우:**
-1. 코드 체크아웃
-2. Gradle 빌드 및 테스트
-3. Docker 이미지 생성
-4. EC2 서버로 배포
-5. Health Check
-
-**Jenkinsfile:** 프로젝트 루트에 위치
-
 ## 📊 모니터링
 
 **Health Check:**
@@ -946,7 +849,7 @@ redis-cli ping  # PONG 확인
 
 <div align="center">
 
-### ✨ **MENTO Backend - Powering AI-driven Beauty Consulting** ✨
+### **MENTO Infrastructure - AI 기반 뷰티 상담 플랫폼**
 
 **🚀 [배포 서버][deploy-url]** | **📖 [API 문서][api-docs-url]** | **💡 [개발 가이드][claude-md]**
 
