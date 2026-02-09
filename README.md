@@ -11,6 +11,7 @@
 ## 📋 목차
 
 - [📖 프로젝트 개요](#-프로젝트-개요)
+- [🏗️ 아키텍처](#️-아키텍처)
 - [📁 프로젝트 구조](#-프로젝트-구조)
 - [🤝 협업 가이드](#-협업-가이드)
   - [Ground Rule](#-ground-rule)
@@ -33,6 +34,32 @@
 - 🤝 전문 멘토와의 실시간 1:1 화상 상담
 - 🤖 AI 기반 피부 분석 및 맞춤형 리포트 제공
 - 📦 개인 맞춤형 제품 관리 및 추천
+
+---
+
+# 🏗️ 아키텍처
+
+## 전체 시스템 아키텍처
+
+<div align="center">
+
+![MENTO Architecture](images/img.png)
+
+</div>
+
+> [!NOTE]
+> MENTO는 모놀리식 아키텍처 기반으로 설계되었으며, Docker Compose를 통해 각 서비스를 오케스트레이션합니다.
+
+**주요 구성 요소:**
+- **Frontend (React 19)**: SPA 기반 사용자 인터페이스
+- **Backend (Spring Boot 4)**: RESTful API 서버 (CQRS 패턴)
+- **AI Server (FastAPI)**: ONNX 기반 피부 분석 추론 서버
+- **LiveKit**: WebRTC 기반 실시간 화상 상담
+- **Nginx**: 리버스 프록시 및 SSL/TLS 종료
+- **MySQL**: 메인 데이터베이스
+- **Redis**: 캐싱 및 세션 관리
+- **Elasticsearch**: 전문 검색 엔진
+- **Monitoring Stack**: Grafana + Prometheus + Loki
 
 ---
 
