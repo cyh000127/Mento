@@ -23,7 +23,6 @@ public class TimetableCommandController {
 	private final TimetableSchedulingService schedulingService;
 
 	@Operation(summary = "[개발용] 타임테이블 생성 스케줄링 수동 실행", description = "테스트 목적으로 생성 스케줄링을 수동 실행합니다")
-	// @PreAuthorize("hasAnyAuthority('ADMIN')")
 	@PostMapping("/schedule/generate")
 	public ResponseEntity<BaseResponse<Void>> triggerGenerateTimeTableScheduling() {
 		schedulingService.createScheduledTimetables();
