@@ -791,43 +791,6 @@ redis-cli ping  # PONG 확인
 
 ---
 
-# 👥 Backend Team
-
-> [!NOTE]
-> MENTO 백엔드는 4명의 개발자로 구성되어 있습니다.
-
-<table align="center">
-  <tr>
-    <td align="center" width="200">
-      <b>Backend Developer</b>
-      <br />
-      <sub>Core Backend</sub>
-    </td>
-    <td align="center" width="200">
-      <b>Backend Developer</b>
-      <br />
-      <sub>Core Backend</sub>
-    </td>
-    <td align="center" width="200">
-      <b>Backend Developer</b>
-      <br />
-      <sub>AI Integration</sub>
-    </td>
-    <td align="center" width="200">
-      <b>Backend Developer</b>
-      <br />
-      <sub>DevOps</sub>
-    </td>
-  </tr>
-</table>
-
-**역할 분담:**
-- **Core Backend (2명)**: CQRS 아키텍처, 예약, 결제, 상담 관리
-- **AI Integration (1명)**: Spring AI, 피부 분석, AI 리포트
-- **DevOps (1명)**: Jenkins CI/CD, Docker, AWS EC2, 인프라
-
----
-
 # 📚 추가 문서
 
 ## 📖 프로젝트 가이드
