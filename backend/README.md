@@ -334,7 +334,7 @@ domain/{domain}/
 
 **필수:**
 - **Java 25** - [OpenJDK 25][download-openjdk]
-- **MySQL 8.0** - [MySQL Server][download-mysql]
+- **MySQL 8.4** - [MySQL Server][download-mysql]
 - **Redis** - [Redis][download-redis]
 - **Git** - 버전 관리
 
@@ -825,7 +825,7 @@ redis-cli ping  # PONG 확인
 <!-- Badges (Small) -->
 [badge-java-small]: https://img.shields.io/badge/java-25-007396?style=flat&logo=openjdk&logoColor=white
 [badge-springboot-small]: https://img.shields.io/badge/spring%20boot-4.0.1-6DB33F?style=flat&logo=springboot&logoColor=white
-[badge-mysql-small]: https://img.shields.io/badge/mysql-8.0-4479A1?style=flat&logo=mysql&logoColor=white
+[badge-mysql-small]: https://img.shields.io/badge/mysql-8.4-4479A1?style=flat&logo=mysql&logoColor=white
 [badge-redis-small]: https://img.shields.io/badge/redis-latest-DC382D?style=flat&logo=redis&logoColor=white
 
 <!-- Badges (Large) -->
@@ -834,7 +834,7 @@ redis-cli ping  # PONG 확인
 [badge-spring-security]: https://img.shields.io/badge/Spring%20Security-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white
 [badge-spring-ai]: https://img.shields.io/badge/Spring%20AI-6DB33F?style=for-the-badge&logo=spring&logoColor=white
 [badge-websocket]: https://img.shields.io/badge/WebSocket-010101?style=for-the-badge&logo=socketdotio&logoColor=white
-[badge-mysql]: https://img.shields.io/badge/MySQL%208.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white
+[badge-mysql]: https://img.shields.io/badge/MySQL%208.4-4479A1?style=for-the-badge&logo=mysql&logoColor=white
 [badge-h2]: https://img.shields.io/badge/H2-0000FF?style=for-the-badge&logo=h2&logoColor=white
 [badge-redis]: https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white
 [badge-elasticsearch]: https://img.shields.io/badge/Elasticsearch-005571?style=for-the-badge&logo=elasticsearch&logoColor=white
