@@ -57,10 +57,10 @@ uv run app/main.py
 ### 2.4 Docker 실행
 ```bash
 # 이미지 빌드
-docker build -t skin-analysis .
+docker build -t aiskin .
 
 # 컨테이너 실행
-docker run -p 4000:4000 skin-analysis
+docker run -p 4000:4000 aiskin
 ```
 
 ---
