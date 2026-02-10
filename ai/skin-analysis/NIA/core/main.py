@@ -36,6 +36,13 @@ def parse_args():
     )
 
     parser.add_argument(
+        "--model_arch",
+        default="coatnet_3_rw_224",
+        type=str,
+        help="Model architecture to use (e.g., coatnet_3_rw_224, convnext_tiny, convnext_small)",
+    )
+
+    parser.add_argument(
         "--equ",
         type=int,
         nargs="+",
@@ -230,7 +237,13 @@ def main(args):
         print(f"\033[93m[Warning] Could not extract seed from name '{args.name}'. Using default seed: {seed}\033[0m")
 
     fix_seed(seed)
+    fix_seed(seed)
     args.seed = seed
+
+    print(f"\n[Info] Effective Batch Size: {args.effective_batch_size}")
+    print(f"[Info] Batch Size per Batch: {args.batch_size}")
+    print(f"[Info] Gradient Accumulation Steps: {args.grad_accum_steps}")
+    print(f"[Info] Num Workers: {args.num_workers}\n")
 
     check_path = os.path.join("checkpoint", args.mode, args.name)
     model_num_class = (
@@ -241,6 +254,7 @@ def main(args):
             "moisture": 1,
             "wrinkle_Ra": 1,
             "pore": 1,
+            "elasticity_R2": 1,
         }
     )
     pass_list = list()
@@ -251,7 +265,7 @@ def main(args):
 
     model_list = {
         # key: models.resnet50(num_classes=value)
-        key: timm.create_model("coatnet_2_rw_224", pretrained=True, num_classes=value)
+        key: timm.create_model(args.model_arch, pretrained=True, num_classes=value)
         for key, value in model_num_class.items()
     }
 
@@ -312,6 +326,18 @@ def main(args):
         val_data, _ = val_dataset.load_dataset(key)
 
         merged_data = train_data + val_data
+        
+        # Wrap the list of metadata in DynamicImageDataset
+        # Note: train_dataset.get_transform() returns the transform for the current mode of train_dataset.
+        # We need the train transform for merged_data (train+val used for training).
+        # And we might need val transform if we want to separate?
+        # Actually existing code merged train and val to train on both? 
+        # Yes, line 351 uses merged_data.
+        
+        # We need to import DynamicImageDataset
+        from core.data_loader import DynamicImageDataset
+
+        dynamic_train_dataset = DynamicImageDataset(merged_data, train_dataset.get_transform(), args, logger=logger)
 
         num_classes = model_num_class[key]
         class_counts = [0] * num_classes
@@ -331,6 +357,7 @@ def main(args):
         class_weights /= np.sum(class_weights)
         class_weights = np.nan_to_num(class_weights, nan=0.0, posinf=0.0, neginf=0.0)
 
+        # sample[1] is still the label in metadata
         sample_weights = [class_weights[int(sample[1])] for sample in merged_data]
         sample_weights = torch.as_tensor(sample_weights, dtype=torch.double)
 
@@ -341,7 +368,7 @@ def main(args):
         )
 
         trainset_loader = torch.utils.data.DataLoader(
-            dataset=merged_data,
+            dataset=dynamic_train_dataset,
             batch_size=args.batch_size,
             num_workers=args.num_workers,
             shuffle=False,
@@ -349,8 +376,11 @@ def main(args):
         )
 
         test_data, _ = test_dataset.load_dataset(key)
+        # Test data also needs dynamic wrapping (but with eval transform)
+        dynamic_test_dataset = DynamicImageDataset(test_data, test_dataset.get_transform(), args, logger=logger)
+        
         testset_loader = torch.utils.data.DataLoader(
-            dataset=test_data,
+            dataset=dynamic_test_dataset,
             batch_size=args.batch_size,
             num_workers=args.num_workers,
             shuffle=False,

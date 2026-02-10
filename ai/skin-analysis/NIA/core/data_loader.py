@@ -81,6 +81,62 @@ def mkdir(path):
             raise
 
 
+class DynamicImageDataset(Dataset):
+    def __init__(self, data_list, transform, args, logger=None):
+        self.data_list = data_list
+        self.transform = transform
+        self.args = args
+        self.logger = logger
+
+    def __len__(self):
+        return len(self.data_list)
+
+    def __getitem__(self, idx):
+        # Metadata: [img_path, label_data, desc_area, dig, 0, None]
+        item = self.data_list[idx]
+        img_path = item[0]
+        
+        # Ensure img_path is a string
+        if not isinstance(img_path, str):
+            img_path = str(img_path)
+
+        label = item[1]
+        desc_area = item[2] 
+        dig = item[3]
+
+        ori_img = cv2.imread(img_path)
+        if ori_img is None:
+             # Fallback: return a black image or raise error. 
+             # Since we filter in load_dataset, this should rarely happen unless file deleted.
+             # Returning black image to prevent crash
+             if self.logger:
+                 self.logger.warning(f"Could not read image: {img_path}")
+             else:
+                 print(f"Warning: Could not read image: {img_path}")
+
+             ori_img = np.zeros((self.args.res, self.args.res, 3), dtype=np.uint8)
+
+        # Preprocessing (same as old save_dict)
+        pil_img = cv2.cvtColor(ori_img, cv2.COLOR_BGR2RGB)
+        # Resize is now part of transform or done here?
+        # In old code: resize then transform.
+        # But transform includes resize? 
+        # Old code: _build_transform has Resize(self.args.res). 
+        # BUT old save_dict ALSO did cv2.resize. Double resize?
+        # Let's keep cv2.resize for consistency or rely on transform.
+        # core/data_loader.py line 113: resize = transforms.Resize...
+        # So we can remove cv2.resize if transform handles it.
+        # However, to match previous logic perfectly:
+        ori_img = cv2.resize(ori_img, (self.args.res, self.args.res))
+
+        pil = Image.fromarray(pil_img.astype(np.uint8)).convert("RGB")
+        patch_img = self.transform(pil)
+        
+        # Return format consistent with what main.py expects
+        # args.mode "class" -> sample[1] is label
+        # main.py accesses sample[1] for weighting.
+        return patch_img, label, desc_area, dig, 0, 0 # 0 for dummy ori_img replacement
+
 class CustomDataset(Dataset):
     def __init__(self, args, logger, mode, special = False):
         self.args = args
@@ -93,6 +149,9 @@ class CustomDataset(Dataset):
         self.loading(special)
         self._train_transform = self._build_transform(train=True)
         self._eval_transform = self._build_transform(train=False)
+
+    def get_transform(self):
+        return self._train_transform if self.mode == "train" else self._eval_transform
 
     def _build_transform(self, train: bool):
         normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -266,9 +325,8 @@ class CustomDataset(Dataset):
                             )
 
     def save_dict(self, transform):
-        ori_img = cv2.imread(os.path.join("dataset/cropped_aligned", self.i_path + ".jpg"))
-        pil_img = cv2.cvtColor(ori_img, cv2.COLOR_BGR2RGB)
-        ori_img = cv2.resize(ori_img, (self.args.res, self.args.res))
+        # We don't load image here anymore. Just store metadata.
+        full_path = os.path.join("dataset/cropped_aligned", self.i_path + ".jpg")
 
         s_list = self.i_path.split("/")[-1].split("_")
         desc_area = (
@@ -288,10 +346,8 @@ class CustomDataset(Dataset):
             norm_v = self.norm_reg(self.grade)
             label_data = norm_v
 
-        pil = Image.fromarray(pil_img.astype(np.uint8))
-        patch_img = transform(pil)
-
-        self.area_list.append([patch_img, label_data, desc_area, self.dig, 0, ori_img])
+        # area_list format for metadata: [img_path, label, desc, dig, 0, 0]
+        self.area_list.append([full_path, label_data, desc_area, self.dig, 0, 0])
 
     def load_dataset(self, dig):
         if self.args.mode == "class":
