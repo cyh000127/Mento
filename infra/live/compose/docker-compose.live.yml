@@ -83,21 +83,6 @@ services:
         limits:
           memory: 1G
 
-  livekit-cli:
-    image: livekit/livekit-cli:latest
-    container_name: livekit-cli
-    networks:
-      - live-network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    entrypoint: /bin/sh
-    tty: true
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-
 networks:
   live-network:
     external: true
