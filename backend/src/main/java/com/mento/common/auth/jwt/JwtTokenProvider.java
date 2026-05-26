@@ -57,6 +57,10 @@ public class JwtTokenProvider {
 		);
 	}
 
+	public String createRefreshToken(final User user) {
+		return generateRefreshToken(user);
+	}
+
 	/**
 	 * 시현용 테스트 코드 (토큰 발행)
 	 */

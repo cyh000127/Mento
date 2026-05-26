@@ -41,7 +41,7 @@ class JwtTokenProviderTest {
 			.build();
 
 		when(jwtProperties.secret()).thenReturn(secretKey);
-		when(jwtProperties.accessTokenExpiration()).thenReturn(3600000L); // 1 hour
+		lenient().when(jwtProperties.accessTokenExpiration()).thenReturn(3600000L); // 1 hour
 		when(jwtProperties.refreshTokenExpiration()).thenReturn(1209600000L); // 14 days
 	}
 
@@ -52,6 +52,15 @@ class JwtTokenProviderTest {
 
 		assertThat(token.accessToken()).isNotNull();
 		assertThat(token.refreshToken()).isNotNull();
+	}
+
+	@Test
+	@DisplayName("Refresh Token 단독 생성 성공")
+	void createRefreshToken() {
+		String refreshToken = jwtTokenProvider.createRefreshToken(user);
+
+		assertThat(refreshToken).isNotNull();
+		jwtTokenProvider.validateRefreshToken(refreshToken);
 	}
 
 	@Test
