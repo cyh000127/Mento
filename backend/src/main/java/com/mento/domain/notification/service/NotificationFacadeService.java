@@ -3,6 +3,7 @@ package com.mento.domain.notification.service;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -40,17 +41,18 @@ public class NotificationFacadeService {
 	private final ApplicationEventPublisher eventPublisher;
 
 	public SseEmitter subscribe(final Long userId) {
+		String emitterId = UUID.randomUUID().toString();
 		SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT);
-		sseEmitterRepository.save(userId, emitter);
+		sseEmitterRepository.save(userId, emitterId, emitter);
 
 		emitter.onTimeout(() -> {
-			log.info("[Notification] Emitter 타임아웃 발생 {userId: {}}", userId);
-			sseEmitterRepository.deleteById(userId);
+			log.info("[Notification] Emitter 타임아웃 발생 {userId: {}, emitterId: {}}", userId, emitterId);
+			sseEmitterRepository.deleteById(userId, emitterId);
 		});
 
 		emitter.onCompletion(() -> {
-			log.info("[Notification] Emitter 완료 {userId: {}}", userId);
-			sseEmitterRepository.deleteById(userId);
+			log.info("[Notification] Emitter 완료 {userId: {}, emitterId: {}}", userId, emitterId);
+			sseEmitterRepository.deleteById(userId, emitterId);
 		});
 
 		try {
@@ -72,8 +74,8 @@ public class NotificationFacadeService {
 			}
 
 		} catch (IOException e) {
-			log.error("[Notification] 초기 알림 전송 실패 {userId: {}}", userId, e);
-			sseEmitterRepository.deleteById(userId);
+			log.error("[Notification] 초기 알림 전송 실패 {userId: {}, emitterId: {}}", userId, emitterId, e);
+			sseEmitterRepository.deleteById(userId, emitterId);
 		}
 
 		return emitter;

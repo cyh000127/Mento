@@ -1,5 +1,7 @@
 package com.mento.domain.notification.event;
 
+import java.util.Map;
+
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -29,12 +31,13 @@ public class NotificationEventListener {
 
 	@Async
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-	public void handleNotificationEvent(NotificationEvent event) {
+	public void handleNotificationEvent(final NotificationEvent event) {
 		Notification notification = event.getNotification();
 		Long userId = notification.getUserId();
+		Map<String, SseEmitter> emitters = sseEmitterRepository.findAllByUserId(userId);
 
-		if (sseEmitterRepository.findById(userId).isPresent()) {
-			sendToLocalEmitter(userId, notification);
+		if (!emitters.isEmpty()) {
+			sendToLocalEmitters(userId, notification, emitters);
 			return;
 		}
 
@@ -53,18 +56,25 @@ public class NotificationEventListener {
 		}
 	}
 
-	private void sendToLocalEmitter(Long userId, Notification notification) {
-		sseEmitterRepository.findById(userId).ifPresent(emitter -> {
+	private void sendToLocalEmitters(
+		final Long userId,
+		final Notification notification,
+		final Map<String, SseEmitter> emitters
+	) {
+		NotificationResDto resDto = NotificationConverter.toNotificationResDto(notification);
+
+		emitters.forEach((emitterId, emitter) -> {
 			try {
-				NotificationResDto resDto = NotificationConverter.toNotificationResDto(notification);
 				emitter.send(SseEmitter.event()
 					.name("notification")
 					.data(resDto));
-				log.info("[NotificationEventListener] 로컬 SSE 전송 성공 {userId: {}, notificationId: {}}",
-					userId, notification.getId());
+				log.info(
+					"[NotificationEventListener] 로컬 SSE 전송 성공 {userId: {}, emitterId: {}, notificationId: {}}",
+					userId, emitterId, notification.getId());
 			} catch (Exception e) {
-				log.error("[NotificationEventListener] 로컬 SSE 전송 실패 {userId: {}}", userId, e);
-				sseEmitterRepository.deleteById(userId);
+				log.error("[NotificationEventListener] 로컬 SSE 전송 실패 {userId: {}, emitterId: {}}",
+					userId, emitterId, e);
+				sseEmitterRepository.deleteById(userId, emitterId);
 			}
 		});
 	}
