@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.mento.common.auth.constant.AuthConstant;
-import com.mento.common.auth.dto.Token;
 import com.mento.common.auth.jwt.JwtProperties;
 import com.mento.common.auth.jwt.JwtTokenProvider;
 import com.mento.common.auth.principal.CustomOAuth2User;
@@ -46,17 +45,14 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 			throw new BusinessException(ErrorCode.USER_NOT_FOUND);
 		}
 
-		Token token = jwtTokenProvider.createToken(user.getUser());
+		String refreshToken = jwtTokenProvider.createRefreshToken(user.getUser());
 
-		CookieUtil.addCookie(response, "refreshToken", token.refreshToken(),
+		CookieUtil.addCookie(response, AuthConstant.REFRESH_TOKEN, refreshToken,
 			(int)(jwtProperties.refreshTokenExpiration() / 1000));
-
-		response.setHeader(AuthConstant.AUTHORIZATION, AuthConstant.BEARER + token.accessToken());
 
 		String targetUrl = UriComponentsBuilder
 			.fromUriString(FrontDomain.current().getUrl())
 			.path("/login/oauth2/callback")
-			.queryParam("accessToken", token.accessToken())
 			.build()
 			.toUriString();
 

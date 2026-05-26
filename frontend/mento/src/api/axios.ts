@@ -33,6 +33,10 @@ let refreshTokenPromise: Promise<string | null> | null = null;
 
 // 요청마다 accessToken 붙이기 (메모리에서 가져옴)
 const addAccessToken = (config: any) => {
+    if (config.url?.includes("/auth/reissue")) {
+        return config;
+    }
+
     // zustand store에서 토큰 가져오기
     const token = useAuthStore.getState().accessToken;
     if (token) {
