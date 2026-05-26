@@ -72,7 +72,7 @@ class NotificationFacadeServiceTest {
 
 		// then
 		assertThat(result).isNotNull();
-		verify(sseEmitterRepository).save(eq(userId), any(SseEmitter.class));
+		verify(sseEmitterRepository).save(eq(userId), anyString(), any(SseEmitter.class));
 	}
 
 	@Test

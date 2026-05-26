@@ -1,6 +1,7 @@
 package com.mento.domain.notification.service;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.redis.connection.Message;
@@ -34,15 +35,18 @@ public class RedisSubscriber implements MessageListener {
 			Long userId = notificationMessage.userId();
 			NotificationResDto resDto = NotificationConverter.toNotificationResDto(notificationMessage);
 
-			sseEmitterRepository.findById(userId).ifPresent(emitter -> {
+			Map<String, SseEmitter> emitters = sseEmitterRepository.findAllByUserId(userId);
+
+			emitters.forEach((emitterId, emitter) -> {
 				try {
 					emitter.send(SseEmitter.event()
 						.name("notification")
 						.data(resDto));
-					log.info("[onMessage] 알림 전송 성공 {userId: {}, notificationId: {}}", userId, resDto.notificationId());
+					log.info("[onMessage] 알림 전송 성공 {userId: {}, emitterId: {}, notificationId: {}}",
+						userId, emitterId, resDto.notificationId());
 				} catch (IOException _) {
-					log.error("[onMessage] SSE 알림 전송 실패 {userId: {}}", userId);
-					sseEmitterRepository.deleteById(userId);
+					log.error("[onMessage] SSE 알림 전송 실패 {userId: {}, emitterId: {}}", userId, emitterId);
+					sseEmitterRepository.deleteById(userId, emitterId);
 				}
 			});
 
