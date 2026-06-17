@@ -44,6 +44,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
 	Optional<Reservation> findBySlotTimetableId(Long timetableId);
 
+	@EntityGraph(attributePaths = {"user", "slot", "slot.timetable", "payment"})
 	List<Reservation> findAllBySlotTimetableIdIn(List<Long> timetableIds);
 
 
