@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.mento.domain.item.dto.common.ExpiringItemCountDto;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.enums.ItemStatus;
 
@@ -82,6 +83,22 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 		ORDER BY i.expectedExpiryDate ASC
 		""")
 	List<Item> findItemsExpiringBetween(
+		@Param("startDate") LocalDate startDate,
+		@Param("endDate") LocalDate endDate
+	);
+
+	@Query("""
+		SELECT new com.mento.domain.item.dto.common.ExpiringItemCountDto(u, COUNT(i))
+		FROM Item i
+		JOIN i.user u
+		WHERE i.expectedExpiryDate BETWEEN :startDate AND :endDate
+		AND i.status = 'OWNED'
+		AND i.deletedAt IS NULL
+		AND u.deletedAt IS NULL
+		GROUP BY u
+		ORDER BY MIN(i.expectedExpiryDate) ASC
+		""")
+	List<ExpiringItemCountDto> countExpiringItemsByUserBetween(
 		@Param("startDate") LocalDate startDate,
 		@Param("endDate") LocalDate endDate
 	);

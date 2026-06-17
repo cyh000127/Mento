@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.mento.domain.item.dto.common.ExpiringItemCountDto;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.enums.ItemCategory;
 import com.mento.domain.item.enums.ItemStatus;
@@ -27,6 +28,8 @@ public interface ItemQueryService {
 	List<Item> findOverdueItems(LocalDate today);
 
 	List<Item> findItemsExpiringBetween(LocalDate startDate, LocalDate endDate);
+
+	List<ExpiringItemCountDto> countExpiringItemsByUserBetween(LocalDate startDate, LocalDate endDate);
 
 	Item findByIdWithDetail(Long id);
 }

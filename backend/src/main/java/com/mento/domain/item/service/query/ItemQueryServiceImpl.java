@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mento.common.error.ErrorCode;
+import com.mento.domain.item.dto.common.ExpiringItemCountDto;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.enums.ItemCategory;
 import com.mento.domain.item.enums.ItemStatus;
@@ -77,5 +78,16 @@ public class ItemQueryServiceImpl implements ItemQueryService {
 		log.info("[Item] 만료 예정 아이템 조회 완료 {startDate: {}, endDate: {}, count: {}}",
 			startDate, endDate, items.size());
 		return items;
+	}
+
+	@Override
+	public List<ExpiringItemCountDto> countExpiringItemsByUserBetween(
+		final LocalDate startDate,
+		final LocalDate endDate
+	) {
+		List<ExpiringItemCountDto> itemCounts = itemRepository.countExpiringItemsByUserBetween(startDate, endDate);
+		log.info("[Item] 사용자별 만료 예정 아이템 집계 완료 {startDate: {}, endDate: {}, userCount: {}}",
+			startDate, endDate, itemCounts.size());
+		return itemCounts;
 	}
 }

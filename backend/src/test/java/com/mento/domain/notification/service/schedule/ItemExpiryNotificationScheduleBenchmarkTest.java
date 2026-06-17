@@ -19,8 +19,8 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -28,10 +28,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.mento.common.util.TimeUtils;
 import com.mento.common.util.AesUtils;
+import com.mento.common.util.TimeUtils;
 import com.mento.domain.brand.entity.Brand;
 import com.mento.domain.brand.repository.BrandRepository;
+import com.mento.domain.item.dto.common.ExpiringItemCountDto;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.enums.ItemStatus;
 import com.mento.domain.item.repository.ItemRepository;
@@ -92,36 +93,53 @@ class ItemExpiryNotificationScheduleBenchmarkTest {
 	private EntityManagerFactory entityManagerFactory;
 
 	@Test
-	@DisplayName("기존_만료_예정_아이템_알림_조회_그룹핑_성능을_측정한다")
-	void 기존_만료_예정_아이템_알림_조회_그룹핑_성능을_측정한다() {
+	@DisplayName("만료_예정_아이템_알림_조회_그룹핑_성능을_비교한다")
+	void 만료_예정_아이템_알림_조회_그룹핑_성능을_비교한다() {
 		// given
 		prepareExpiringItems();
 
 		for (int warmupIndex = 0; warmupIndex < WARMUP_COUNT; warmupIndex++) {
 			measureLegacyReadAndGrouping();
+			measureAggregateReadAndMapping();
 		}
 
 		// when
-		List<BenchmarkSample> samples = new ArrayList<>();
+		List<BenchmarkSample> legacySamples = new ArrayList<>();
+		List<BenchmarkSample> aggregateSamples = new ArrayList<>();
 		for (int measureIndex = 0; measureIndex < MEASURE_COUNT; measureIndex++) {
-			samples.add(measureLegacyReadAndGrouping());
+			legacySamples.add(measureLegacyReadAndGrouping());
+			aggregateSamples.add(measureAggregateReadAndMapping());
 		}
 
-		BenchmarkSummary summary = BenchmarkSummary.from(samples);
+		BenchmarkSummary legacySummary = BenchmarkSummary.from(legacySamples);
+		BenchmarkSummary aggregateSummary = BenchmarkSummary.from(aggregateSamples);
 		System.out.printf(
 			"%n[ItemExpiryNotification][legacy] users=%d, items=%d, avgMs=%.2f, p95Ms=%.2f, "
 				+ "preparedStatements=%.1f, entityLoads=%.1f%n",
 			USER_COUNT,
 			USER_COUNT * ITEM_COUNT_PER_USER,
-			summary.averageElapsedMillis(),
-			summary.p95ElapsedMillis(),
-			summary.averagePreparedStatements(),
-			summary.averageEntityLoads()
+			legacySummary.averageElapsedMillis(),
+			legacySummary.p95ElapsedMillis(),
+			legacySummary.averagePreparedStatements(),
+			legacySummary.averageEntityLoads()
+		);
+		System.out.printf(
+			"[ItemExpiryNotification][aggregate] users=%d, items=%d, avgMs=%.2f, p95Ms=%.2f, "
+				+ "preparedStatements=%.1f, entityLoads=%.1f%n",
+			USER_COUNT,
+			USER_COUNT * ITEM_COUNT_PER_USER,
+			aggregateSummary.averageElapsedMillis(),
+			aggregateSummary.p95ElapsedMillis(),
+			aggregateSummary.averagePreparedStatements(),
+			aggregateSummary.averageEntityLoads()
 		);
 
 		// then
-		assertThat(summary.averageNotificationCount()).isEqualTo(USER_COUNT);
-		assertThat(summary.averagePreparedStatements()).isLessThanOrEqualTo(2.0);
+		assertThat(legacySummary.averageNotificationCount()).isEqualTo(USER_COUNT);
+		assertThat(aggregateSummary.averageNotificationCount()).isEqualTo(USER_COUNT);
+		assertThat(legacySummary.averagePreparedStatements()).isLessThanOrEqualTo(2.0);
+		assertThat(aggregateSummary.averagePreparedStatements()).isLessThanOrEqualTo(2.0);
+		assertThat(aggregateSummary.averageEntityLoads()).isLessThan(legacySummary.averageEntityLoads());
 	}
 
 	private BenchmarkSample measureLegacyReadAndGrouping() {
@@ -153,6 +171,39 @@ class ItemExpiryNotificationScheduleBenchmarkTest {
 					nextScheduleTime
 				);
 			})
+			.toList();
+		long elapsedNanos = System.nanoTime() - startNanos;
+
+		return new BenchmarkSample(
+			elapsedNanos,
+			statistics.getPrepareStatementCount(),
+			statistics.getEntityLoadCount(),
+			notifications.size()
+		);
+	}
+
+	private BenchmarkSample measureAggregateReadAndMapping() {
+		entityManager.flush();
+		entityManager.clear();
+
+		Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+		statistics.clear();
+
+		LocalDate today = TimeUtils.nowAsLocalDate();
+		LocalDate oneWeekLater = today.plusDays(7);
+		LocalDateTime nextScheduleTime = LocalDateTime.of(today.plusDays(1), LocalTime.of(12, 0));
+
+		long startNanos = System.nanoTime();
+		List<ExpiringItemCountDto> expiringItemCounts =
+			itemQueryService.countExpiringItemsByUserBetween(today, oneWeekLater);
+
+		List<Notification> notifications = expiringItemCounts.stream()
+			.map(itemCount -> NotificationConverter.toEntity(
+				itemCount.user(),
+				NotificationType.INVENTORY_EXPIRY,
+				String.valueOf(itemCount.itemCount()),
+				nextScheduleTime
+			))
 			.toList();
 		long elapsedNanos = System.nanoTime() - startNanos;
 

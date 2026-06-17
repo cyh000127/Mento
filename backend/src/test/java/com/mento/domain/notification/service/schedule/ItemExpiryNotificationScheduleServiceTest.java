@@ -21,15 +21,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.mento.domain.item.entity.Item;
-import com.mento.domain.item.enums.ItemStatus;
+import com.mento.domain.item.dto.common.ExpiringItemCountDto;
 import com.mento.domain.item.service.query.ItemQueryService;
 import com.mento.domain.notification.entity.Notification;
 import com.mento.domain.notification.entity.NotificationType;
 import com.mento.domain.notification.service.command.NotificationCommandService;
-import com.mento.domain.product.entity.Product;
 import com.mento.domain.user.entity.User;
-import com.mento.domain.user.service.query.UserQueryService;
 
 @ExtendWith(MockitoExtension.class)
 class ItemExpiryNotificationScheduleServiceTest {
@@ -40,9 +37,6 @@ class ItemExpiryNotificationScheduleServiceTest {
 	@Mock
 	private NotificationCommandService notificationCommandService;
 
-	@Mock
-	private UserQueryService userQueryService;
-
 	@InjectMocks
 	private ItemExpiryNotificationScheduleService scheduleService;
 
@@ -51,7 +45,6 @@ class ItemExpiryNotificationScheduleServiceTest {
 
 	private User user1;
 	private User user2;
-	private Product product;
 
 	@BeforeEach
 	void setUp() {
@@ -66,39 +59,19 @@ class ItemExpiryNotificationScheduleServiceTest {
 			.email("user2@test.com")
 			.build();
 		ReflectionTestUtils.setField(user2, "id", 2L);
-
-		com.mento.domain.brand.entity.Brand brand = com.mento.domain.brand.entity.Brand.builder()
-			.brandName("테스트 브랜드")
-			.build();
-		ReflectionTestUtils.setField(brand, "id", 1L);
-
-		product = Product.builder()
-			.name("테스트 상품")
-			.brand(brand)
-			.oliveyoungGoodsNo("TEST001")
-			.defaultUsageDays(90)
-			.build();
-		ReflectionTestUtils.setField(product, "id", 1L);
 	}
 
 	@Test
 	@DisplayName("만료 예정 아이템이_있을때_알림이_DB에_저장된다")
 	void 만료_예정_아이템이_있을때_알림이_DB에_저장된다() {
 		// Given
-		LocalDate today = LocalDate.now();
-		LocalDate expiryDate = today.plusDays(3);
+		List<ExpiringItemCountDto> expiringItemCounts = Arrays.asList(
+			new ExpiringItemCountDto(user1, 2L),
+			new ExpiringItemCountDto(user2, 1L)
+		);
 
-		Item item1 = createItem(1L, user1, product, expiryDate, ItemStatus.OWNED);
-		Item item2 = createItem(2L, user1, product, expiryDate.plusDays(1), ItemStatus.OWNED);
-		Item item3 = createItem(3L, user2, product, expiryDate.plusDays(2), ItemStatus.OWNED);
-
-		List<Item> expiringItems = Arrays.asList(item1, item2, item3);
-
-		given(itemQueryService.findItemsExpiringBetween(any(LocalDate.class), any(LocalDate.class)))
-			.willReturn(expiringItems);
-
-		given(userQueryService.findById(1L)).willReturn(user1);
-		given(userQueryService.findById(2L)).willReturn(user2);
+		given(itemQueryService.countExpiringItemsByUserBetween(any(LocalDate.class), any(LocalDate.class)))
+			.willReturn(expiringItemCounts);
 
 		// When
 		scheduleService.checkAndNotifyExpiringItems();
@@ -131,7 +104,7 @@ class ItemExpiryNotificationScheduleServiceTest {
 	@DisplayName("만료_예정_아이템이_없으면_알림을_보내지_않는다")
 	void 만료_예정_아이템이_없으면_알림을_보내지_않는다() {
 		// Given
-		given(itemQueryService.findItemsExpiringBetween(any(LocalDate.class), any(LocalDate.class)))
+		given(itemQueryService.countExpiringItemsByUserBetween(any(LocalDate.class), any(LocalDate.class)))
 			.willReturn(List.of());
 
 		// When
@@ -146,14 +119,8 @@ class ItemExpiryNotificationScheduleServiceTest {
 	void 알림_만료시간이_다음날_12시로_설정된다() {
 		// Given
 		LocalDate today = LocalDate.now();
-		LocalDate expiryDate = today.plusDays(5);
-
-		Item item = createItem(1L, user1, product, expiryDate, ItemStatus.OWNED);
-
-		given(itemQueryService.findItemsExpiringBetween(any(LocalDate.class), any(LocalDate.class)))
-			.willReturn(List.of(item));
-
-		given(userQueryService.findById(1L)).willReturn(user1);
+		given(itemQueryService.countExpiringItemsByUserBetween(any(LocalDate.class), any(LocalDate.class)))
+			.willReturn(List.of(new ExpiringItemCountDto(user1, 1L)));
 
 		LocalDateTime expectedExpiry = LocalDateTime.of(today.plusDays(1), LocalTime.of(12, 0));
 
@@ -173,7 +140,7 @@ class ItemExpiryNotificationScheduleServiceTest {
 	void 칠일_이내_만료_예정_아이템만_조회한다() {
 		// Given
 		LocalDate today = LocalDate.now();
-		given(itemQueryService.findItemsExpiringBetween(any(LocalDate.class), any(LocalDate.class)))
+		given(itemQueryService.countExpiringItemsByUserBetween(any(LocalDate.class), any(LocalDate.class)))
 			.willReturn(List.of());
 
 		// When
@@ -184,21 +151,9 @@ class ItemExpiryNotificationScheduleServiceTest {
 		ArgumentCaptor<LocalDate> endDateCaptor = ArgumentCaptor.forClass(LocalDate.class);
 
 		then(itemQueryService).should(times(1))
-			.findItemsExpiringBetween(startDateCaptor.capture(), endDateCaptor.capture());
+			.countExpiringItemsByUserBetween(startDateCaptor.capture(), endDateCaptor.capture());
 
 		assertThat(startDateCaptor.getValue()).isEqualTo(today);
 		assertThat(endDateCaptor.getValue()).isEqualTo(today.plusDays(7));
-	}
-
-	private Item createItem(Long id, User user, Product product, LocalDate expiryDate, ItemStatus status) {
-		Item item = Item.builder()
-			.user(user)
-			.product(product)
-			.expectedExpiryDate(expiryDate)
-			.status(status)
-			.purchaseCount(1)
-			.build();
-		ReflectionTestUtils.setField(item, "id", id);
-		return item;
 	}
 }

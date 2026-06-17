@@ -23,6 +23,7 @@ import org.springframework.data.domain.Sort;
 
 import com.mento.common.error.ErrorCode;
 import com.mento.domain.brand.entity.Brand;
+import com.mento.domain.item.dto.common.ExpiringItemCountDto;
 import com.mento.domain.item.entity.Item;
 import com.mento.domain.item.enums.ItemCategory;
 import com.mento.domain.item.enums.ItemStatus;
@@ -440,6 +441,28 @@ class ItemQueryServiceTest {
 			assertThat(result).hasSize(1);
 			assertThat(result.get(0).getStatus()).isEqualTo(ItemStatus.OWNED);
 			then(itemRepository).should(times(1)).findItemsExpiringBetween(today, oneWeekLater);
+		}
+
+		@Test
+		@DisplayName("사용자별_만료_예정_아이템_집계_성공")
+		void 사용자별_만료_예정_아이템_집계_성공() {
+			// given
+			LocalDate today = LocalDate.now();
+			LocalDate oneWeekLater = today.plusDays(7);
+			List<ExpiringItemCountDto> itemCounts = List.of(new ExpiringItemCountDto(testUser, 2L));
+
+			given(itemRepository.countExpiringItemsByUserBetween(today, oneWeekLater))
+				.willReturn(itemCounts);
+
+			// when
+			List<ExpiringItemCountDto> result = itemQueryService.countExpiringItemsByUserBetween(today, oneWeekLater);
+
+			// then
+			assertThat(result)
+				.hasSize(1)
+				.containsExactlyElementsOf(itemCounts);
+			assertThat(result.get(0).itemCount()).isEqualTo(2L);
+			then(itemRepository).should(times(1)).countExpiringItemsByUserBetween(today, oneWeekLater);
 		}
 	}
 }
